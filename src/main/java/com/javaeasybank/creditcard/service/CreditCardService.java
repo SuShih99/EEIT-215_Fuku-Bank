@@ -2,14 +2,13 @@ package com.javaeasybank.creditcard.service;
 
 import java.util.List;
 
-import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.creditcard.entity.CreditCard;
 import com.javaeasybank.creditcard.repository.CreditCardRepository;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service

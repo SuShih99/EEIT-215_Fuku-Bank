@@ -3,6 +3,7 @@ package com.javaeasybank.creditcard.service;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.creditcard.entity.CardApplication;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Service
+@Transactional
 public class CardAppService {
 
 	private final CardAppRepository cardAppRepository;

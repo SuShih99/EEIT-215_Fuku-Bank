@@ -16,7 +16,7 @@ import com.javaeasybank.creditcard.repository.CreditCardRepository;
 import com.javaeasybank.creditcard.entity.CardType;
 import com.javaeasybank.creditcard.repository.CardTypeRepository;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service

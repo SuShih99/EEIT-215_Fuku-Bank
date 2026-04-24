@@ -1,6 +1,7 @@
 package com.javaeasybank.creditcard.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.creditcard.entity.CardApplicationItem;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class CardAppItemService {
 
 	private final CardAppItemRepository cardAppItemRepository;
