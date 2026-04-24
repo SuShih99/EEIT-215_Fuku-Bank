@@ -3,7 +3,7 @@ package com.javaeasybank.common.exception;
 import com.javaeasybank.common.dto.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
  * 全域例外處理器。
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
  * - 不要自己 catch、不要自己寫回傳格式
  * - 這裡會自動處理
  */
-@RestController
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
     /**

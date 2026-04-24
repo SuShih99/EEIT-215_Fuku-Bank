@@ -8,8 +8,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.javaeasybank.creditcard.entity.CreditCard;
-import com.javaeasybank.creditcard.service.CardAppService;
-import com.javaeasybank.creditcard.service.CardTypeService;
 import com.javaeasybank.creditcard.service.CreditCardService;
 
 import lombok.RequiredArgsConstructor;
@@ -19,11 +17,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CardController {
 
-	private final CardTypeService cardTypeService;
 	private final CreditCardService creditCardService;
-	private final CardAppService cardAppService;
-	
-	
 	// 卡片列表
 	//http://localhost:8080/card/my-cards
 	@GetMapping
