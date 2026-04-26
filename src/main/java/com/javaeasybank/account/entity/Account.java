@@ -7,8 +7,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -85,7 +83,6 @@ public class Account {
     /**
      * 帳戶創建時間，自動生成，不可為空，不可更新。
      */
-    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -98,7 +95,6 @@ public class Account {
     /**
      * 帳戶最後更新時間，自動更新，不可為空。
      */
-    @UpdateTimestamp
     @Column(name = "changed_at", nullable = false)
     private LocalDateTime changedAt;
 
@@ -107,6 +103,28 @@ public class Account {
      */
     @Column(name = "changed_by", length = 20)
     private String changedBy;
+
+    /**
+     * 在實體持久化之前執行。
+     * 如果 createdAt 為 null，則設置為當前時間。
+     * 同時設置 changedAt 為當前時間。
+     */
+    @PrePersist
+    public void prePersist() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        changedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 在實體更新之前執行。
+     * 設置 changedAt 為當前時間。
+     */
+    @PreUpdate
+    public void preUpdate() {
+        changedAt = LocalDateTime.now();
+    }
 
     /**
      * 重寫 equals 方法，僅比較帳號 (accountNumber) 作為業務主鍵。
