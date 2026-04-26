@@ -10,7 +10,7 @@
 
 | 項目 | 版本 |
 |---|---|
-| Java | 17 |
+| Java | 21 |
 | Spring Boot | 4.0.5 |
 | Spring Data JPA / Hibernate | 隨 Spring Boot |
 | Spring Security | 隨 Spring Boot |
