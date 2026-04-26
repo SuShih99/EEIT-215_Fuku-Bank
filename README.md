@@ -44,7 +44,7 @@
 
 ### 1. 環境準備
 
-- JDK 17
+- JDK 21
 - Maven 3.8+
 - MS SQL Server
 - Node.js 18+（前端）
