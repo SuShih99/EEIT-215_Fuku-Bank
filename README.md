@@ -10,7 +10,7 @@
 
 | 項目 | 版本 |
 |---|---|
-| Java | 17 |
+| Java | 21 |
 | Spring Boot | 4.0.5 |
 | Spring Data JPA / Hibernate | 隨 Spring Boot |
 | Spring Security | 隨 Spring Boot |
@@ -31,7 +31,7 @@
 
 | 模組 | 負責人 |
 |---|---|
-| 共用元件 + Auth 骨架 | 漢億（組長） |
+| 共用元件 | 漢億（組長） |
 | 系統與權限 (Auth) + 顧客管理 (Customer) | 以琳（副組長） |
 | 帳務監控 (Account) | 漢億 |
 | 授信放款 (Loan) | 泓翔 |
@@ -44,7 +44,7 @@
 
 ### 1. 環境準備
 
-- JDK 17
+- JDK 21
 - Maven 3.8+
 - MS SQL Server
 - Node.js 18+（前端）
