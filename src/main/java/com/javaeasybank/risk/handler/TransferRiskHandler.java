@@ -7,7 +7,6 @@ import java.math.BigDecimal;
 
 public class TransferRiskHandler implements RiskHandler {
 
-
     @Override
     public RiskScene getScene() {
         return RiskScene.TRANSFER;

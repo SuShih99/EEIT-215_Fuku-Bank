@@ -1,6 +1,5 @@
 package com.javaeasybank.risk.dto;
 
-
 import lombok.Getter;
 import lombok.Setter;
 
@@ -25,7 +24,5 @@ public class RiskEventResponse {
     private BigDecimal transactionAmount;
 
     private LocalDateTime createdAt;
-
-
 
 }
