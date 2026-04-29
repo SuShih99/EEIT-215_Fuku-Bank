@@ -12,6 +12,7 @@ import com.javaeasybank.account.repository.AccountRepository;
 import com.javaeasybank.account.repository.TransLogRepository;
 import com.javaeasybank.account.utils.ReferenceIdGenerator;
 import com.javaeasybank.risk.annotation.RiskCheck;
+import com.javaeasybank.risk.core.RiskScene;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,7 +38,7 @@ public class TransferService {
      * @return 轉帳響應，包含參考 ID、轉出轉入帳戶餘額及轉帳時間。
      * @throws TransferException 如果轉帳驗證失敗（例如帳戶不存在、餘額不足、幣別不符等）。
      */
-    @RiskCheck(scene = "TRANSFER")//風控
+    @RiskCheck(scene = RiskScene.TRANSFER)//風控
     @Transactional
     public TransferResponse transfer(TransferRequest request) {
         String fromAccNum = request.getFromAccountNumber();
@@ -112,7 +113,7 @@ public class TransferService {
         fromLog.setBalanceAfter(fromAccount.getBalance());
         fromLog.setCurrency(fromAccount.getCurrency());
         fromLog.setNote(request.getNote());
-        
+
         // 目的帳戶紀錄 (CREDIT 入帳)
         TransLog toLog = new TransLog();
         toLog.setReferenceId(referenceId);

@@ -1,5 +1,7 @@
 package com.javaeasybank.risk.annotation;
 
+import com.javaeasybank.risk.core.RiskScene;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -12,5 +14,5 @@ import java.lang.annotation.Target;
 public @interface RiskCheck {
 
     // 定義業務場景，預設值為 GENERAL
-    String scene() default "GENERAL";
+    RiskScene scene() default RiskScene.GENERAL;
 }
