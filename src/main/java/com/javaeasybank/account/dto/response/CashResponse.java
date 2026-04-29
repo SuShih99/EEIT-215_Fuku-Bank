@@ -1,9 +1,6 @@
 package com.javaeasybank.account.dto.response;
 
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -18,8 +15,11 @@ public class CashResponse {
     // 帳號
     private String accountNumber;
 
-    // 金額
+    // 交易金額
     private BigDecimal amount;
+
+    // 餘額
+    private BigDecimal balance;
 
     // 交易時間
     private LocalDateTime transactedAt;

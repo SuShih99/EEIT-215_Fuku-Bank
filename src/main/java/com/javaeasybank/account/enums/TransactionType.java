@@ -9,5 +9,6 @@ public enum TransactionType {
     WITHDRAW,           // 提款
     INTEREST,           // 利息入帳
     LOAN_DISBURSEMENT,  // 貸款撥款
-    LOAN_REPAYMENT      // 貸款還款
+    LOAN_REPAYMENT,     // 貸款還款
+    REVERSAL            // 沖正
 }

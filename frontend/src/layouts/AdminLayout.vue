@@ -21,7 +21,7 @@
         </a-menu-item>
         <a-menu-item key="admin-transfers" @click="$router.push('/admin/transfers')">
           <SwapOutlined />
-          <span>轉帳</span>
+          <span>交易操作</span>
         </a-menu-item>
         <a-menu-item key="admin-trans-logs" @click="$router.push('/admin/trans-logs')">
           <FileTextOutlined />

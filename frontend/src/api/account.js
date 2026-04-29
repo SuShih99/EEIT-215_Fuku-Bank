@@ -84,3 +84,18 @@ export function updateAccountStatus(accountNumber, newStatus) {
     params: { newStatus },
   })
 }
+
+// 存款
+export function deposit(data) {
+  return api.post('/api/cash/deposit', data)
+}
+
+// 提款
+export function withdraw(data) {
+  return api.post('/api/cash/withdraw', data)
+}
+
+// 沖正
+export function reversal(data) {
+  return api.post('/api/transfers/reversal', data)
+}

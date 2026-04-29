@@ -32,6 +32,14 @@ public interface TransLogRepository extends JpaRepository<TransLog, String>, Jpa
     List<TransLog> findByReferenceId(String referenceId);
 
     /**
+     * 檢查是否存在 note 中包含指定關鍵字的交易紀錄（用於沖正重複檢查）。
+     *
+     * @param keyword note 中的關鍵字。
+     * @return 是否存在匹配的紀錄。
+     */
+    boolean existsByNoteContaining(String keyword);
+
+    /**
      * 查詢與指定帳號相關的所有交易紀錄（包括作為影響帳號或對手方帳號的交易），並進行分頁。
      *
      * @param accountNumber 要查詢的帳號。
