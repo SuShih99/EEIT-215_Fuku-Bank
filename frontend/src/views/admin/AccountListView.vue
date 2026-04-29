@@ -80,6 +80,7 @@
         showTotal: (t) => `共 ${t} 筆`,
       }"
       @change="handleTableChange"
+      @resizeColumn="handleResizeColumn"
     />
 
     <!-- 建立帳戶 Modal -->
@@ -243,22 +244,24 @@ const total = ref(0)
 // 記錄當前用哪種查詢，換頁時要用
 const lastSearchType = ref('')
 
-const columns = [
-  { title: '帳號', dataIndex: 'accountNumber', key: 'accountNumber', width: 150 },
-  { title: '客戶 ID', dataIndex: 'customerId', key: 'customerId', width: 100 },
+const columns = ref([
+  { title: '帳號', dataIndex: 'accountNumber', key: 'accountNumber', width: 150, resizable: true },
+  { title: '客戶 ID', dataIndex: 'customerId', key: 'customerId', width: 100, resizable: true },
   {
     title: '型別',
     dataIndex: 'accountType',
     key: 'accountType',
     width: 100,
+    resizable: true,
     customRender: ({ text }) => typeMap[text] || text,
   },
-  { title: '幣別', dataIndex: 'currency', key: 'currency', width: 80 },
+  { title: '幣別', dataIndex: 'currency', key: 'currency', width: 80, resizable: true },
   {
     title: '餘額',
     dataIndex: 'balance',
     key: 'balance',
     width: 120,
+    resizable: true,
     align: 'right',
     customRender: ({ text }) => formatAmount(text),
   },
@@ -267,6 +270,7 @@ const columns = [
     dataIndex: 'status',
     key: 'status',
     width: 100,
+    resizable: true,
     customRender: ({ text }) => statusMap[text] || text,
   },
   {
@@ -274,6 +278,7 @@ const columns = [
     dataIndex: 'createdAt',
     key: 'createdAt',
     width: 180,
+    resizable: true,
     customRender: ({ text }) => formatTime(text),
   },
   {
@@ -286,7 +291,11 @@ const columns = [
       return h('a', { onClick: () => openStatusModal(record) }, '變更狀態')
     },
   },
-]
+])
+
+function handleResizeColumn(w, col) {
+  col.width = w
+}
 
 async function handleSearch() {
   currentPage.value = 1

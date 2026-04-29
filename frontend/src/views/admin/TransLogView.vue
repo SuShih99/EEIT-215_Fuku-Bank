@@ -71,6 +71,7 @@
         showTotal: (t) => `共 ${t} 筆`,
       }"
       @change="handleTableChange"
+      @resizeColumn="handleResizeColumn"
     />
 
     <!-- 帳戶詳情彈窗 -->
@@ -180,13 +181,14 @@ function formatTime(value) {
   return value.replace('T', ' ').substring(0, 19)
 }
 
-const columns = [
-  { title: '交易編號', dataIndex: 'referenceId', key: 'referenceId', width: 260 },
+const columns = ref([
+  { title: '交易編號', dataIndex: 'referenceId', key: 'referenceId', width: 260, resizable: true },
   {
     title: '帳號',
     dataIndex: 'accountNumber',
     key: 'accountNumber',
     width: 260,
+    resizable: true,
     customRender: ({ text }) => {
       if (!text) return '-'
       return h('a', { onClick: () => handleClickAccount(text) }, text)
@@ -197,6 +199,7 @@ const columns = [
     dataIndex: 'counterpartAccount',
     key: 'counterpartAccount',
     width: 140,
+    resizable: true,
     customRender: ({ text }) => {
       if (!text) return '-'
       return h('a', { onClick: () => handleClickAccount(text) }, text)
@@ -207,6 +210,7 @@ const columns = [
     dataIndex: 'entryType',
     key: 'entryType',
     width: 80,
+    resizable: true,
     customRender: ({ text }) => entryTypeMap[text] || text,
   },
   {
@@ -214,6 +218,7 @@ const columns = [
     dataIndex: 'transactionType',
     key: 'transactionType',
     width: 100,
+    resizable: true,
     customRender: ({ text }) => transactionTypeMap[text] || text,
   },
   {
@@ -221,6 +226,7 @@ const columns = [
     dataIndex: 'amount',
     key: 'amount',
     width: 120,
+    resizable: true,
     align: 'right',
     customRender: ({ text }) => formatAmount(text),
   },
@@ -229,6 +235,7 @@ const columns = [
     dataIndex: 'balanceBefore',
     key: 'balanceBefore',
     width: 120,
+    resizable: true,
     align: 'right',
     customRender: ({ text }) => formatAmount(text),
   },
@@ -237,11 +244,12 @@ const columns = [
     dataIndex: 'balanceAfter',
     key: 'balanceAfter',
     width: 120,
+    resizable: true,
     align: 'right',
     customRender: ({ text }) => formatAmount(text),
   },
-  { title: '幣別', dataIndex: 'currency', key: 'currency', width: 60 },
-  { title: '備註', dataIndex: 'note', key: 'note', width: 120 },
+  { title: '幣別', dataIndex: 'currency', key: 'currency', width: 60, resizable: true },
+  { title: '備註', dataIndex: 'note', key: 'note', width: 120, resizable: true },
   {
     title: '時間',
     dataIndex: 'createdAt',
@@ -249,7 +257,11 @@ const columns = [
     width: 180,
     customRender: ({ text }) => formatTime(text),
   },
-]
+])
+
+function handleResizeColumn(w, col) {
+  col.width = w
+}
 
 function handleSearchTypeChange() {
   searchValue.value = ''
