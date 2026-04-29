@@ -10,4 +10,5 @@ public class CardTypeRequestDto {
     private String brand;
     private BigDecimal annualFee;
     private BigDecimal cashbackRate;
+    private String cardImageUrl;
 }

@@ -26,3 +26,13 @@ export function updateCardType(id, data) {
 export function deleteCardType(id) {
   return api.delete(`/api/admin/card-types/${id}`)
 }
+//新增圖片
+export function uploadImage(formData) {
+  return api.post('/api/admin/card-types/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+  }
+
+// ===

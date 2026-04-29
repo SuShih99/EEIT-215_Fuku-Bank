@@ -31,15 +31,15 @@ public class CardTypeService {
 	private final CardTypeMapper cardTypeMapper;
 
 	// 新增卡片型態
-	public CardTypeResponseDto createCardType(CardTypeRequestDto request, MultipartFile mf) throws IOException {
-		if (mf == null || mf.isEmpty()) {
-			throw new BusinessException("Image file is required");
-		}
+	public CardTypeResponseDto createCardType(CardTypeRequestDto request) throws IOException {
+		if (request.getCardImageUrl() == null || request.getCardImageUrl().isEmpty()) {
+	        throw new BusinessException("Image URL is required");
+	    }
 		// 建立卡片型態
 		CardType cardType = cardTypeMapper.toEntity(request);
 
 		// 存圖片
-		cardType.setCardImageUrl(saveImage(mf));
+		cardType.setCardImageUrl(request.getCardImageUrl());
 		CardType saved = cardTypeRepository.save(cardType);
 		return cardTypeMapper.toDto(saved);
 	}
