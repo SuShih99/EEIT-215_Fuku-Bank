@@ -21,20 +21,9 @@ public class RiskEventService {
                 .map(this::toDto);
     }
 
-    // 根據事件類型查詢
-    public List<RiskEventResponse> findByEventType(String eventType) {
-        return riskEventLogRepository.findByEventType(eventType)
-                .stream()
-                .map(this::toDto)
-                .toList();
-    }
-
-    // 根據採取的行動查詢 (補上你的 Repository 方法)
-    public List<RiskEventResponse> findByActionTaken(String actionTaken) {
-        return riskEventLogRepository.findByActionTaken(actionTaken)
-                .stream()
-                .map(this::toDto)
-                .toList();
+    public Page<RiskEventResponse> search(String eventType, String actionTaken, Pageable pageable) {
+        return riskEventLogRepository.search(eventType, actionTaken, pageable)
+                .map(this::toDto);
     }
 
     private RiskEventResponse toDto(RiskEventLog rel) {
