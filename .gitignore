@@ -60,6 +60,9 @@ yarn-debug.log*
 yarn-error.log*
 .eslintcache
 
+# 忽略 Vite 的快取資料夾
+frontend/.vite/
+
 # Log files
 *.log
 logs/
