@@ -19,7 +19,7 @@ public class AuthController {
         this.authEmpService = authEmpService;
     }
 
-    // ===== 登入（所有人都能打，SecurityConfig 設定為 permitAll）=====
+    // ===== 登入（所有人都能打）=====
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthDto.AuthEmpResponse>> login(
             @RequestBody AuthDto.LoginRequest request) {
@@ -33,11 +33,20 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    // ===== 查詢所有員工：CISO + ISSA 可查 =====
+    // ===== 查詢員工（支援模糊搜尋）=====
+    // GET /api/auth/employees          → 全部
+    // GET /api/auth/employees?keyword=林 → 姓名含「林」的
     @PreAuthorize("hasAnyRole('CISO', 'ISSA')")
     @GetMapping("/employees")
-    public ResponseEntity<ApiResponse<List<AuthDto.AuthEmpResponse>>> getAllEmps() {
-        return ResponseEntity.ok(ApiResponse.success(authEmpService.getAllEmps()));
+    public ResponseEntity<ApiResponse<List<AuthDto.AuthEmpResponse>>> getEmps(
+            @RequestParam(required = false) String keyword) {
+        List<AuthDto.AuthEmpResponse> result;
+        if (keyword != null && !keyword.isEmpty()) {
+            result = authEmpService.searchEmpsByName(keyword);
+        } else {
+            result = authEmpService.getAllEmps();
+        }
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 
     // ===== 新增員工：僅 CISO =====
@@ -63,5 +72,13 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> suspendEmp(@PathVariable String empId) {
         authEmpService.suspendEmp(empId);
         return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // ===== 一鍵帶入測試資料：僅 CISO =====
+    @PreAuthorize("hasRole('CISO')")
+    @PostMapping("/employees/seed")
+    public ResponseEntity<ApiResponse<String>> seedEmployees() {
+        authEmpService.seedTestData();
+        return ResponseEntity.ok(ApiResponse.success("已成功帶入測試資料"));
     }
 }
