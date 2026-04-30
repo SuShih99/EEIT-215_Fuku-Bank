@@ -45,6 +45,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/login").permitAll()   // 登入不需驗證
                 .requestMatchers("/api/auth/logout").permitAll()  // 登出不需驗證
+                
+                .requestMatchers("/api/auth/employees/seed").permitAll() // seed功能不需登入也能執行
                 .anyRequest().authenticated()                     // 其餘都要登入
             )
             .formLogin(form -> form.disable())       // 不用 Spring 預設登入頁

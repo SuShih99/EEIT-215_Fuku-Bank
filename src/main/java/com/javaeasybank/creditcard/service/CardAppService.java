@@ -12,7 +12,7 @@ import com.javaeasybank.creditcard.entity.CardApplication;
 import com.javaeasybank.creditcard.enums.CardApplicationStatus;
 import com.javaeasybank.creditcard.mapper.CardApplicationMapper;
 import com.javaeasybank.creditcard.repository.CardAppRepository;
-import com.javaeasybank.customer.entity.Customer;
+import com.javaeasybank.customer.entity.CustomerProfile;
 
 import lombok.RequiredArgsConstructor;
 
@@ -56,7 +56,7 @@ public class CardAppService {
 
         entity.setStatus(CardApplicationStatus.PENDING);
 
-        Customer customer = customerRepository.findById(requestDto.getCustomerId())
+        CustomerProfile customer = customerRepository.findById(requestDto.getCustomerId())
         .orElseThrow(() -> new BusinessException("Customer not found"));
         entity.setCustomer(customer);
 

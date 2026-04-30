@@ -3,7 +3,7 @@ package com.javaeasybank.creditcard.entity;
 import java.time.LocalDateTime;
 
 import com.javaeasybank.creditcard.enums.CardApplicationStatus;
-import com.javaeasybank.customer.entity.Customer;
+import com.javaeasybank.customer.entity.CustomerProfile;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -49,7 +49,7 @@ public class CardApplication {
     
     @ManyToOne
     @JoinColumn(name = "customer_id", nullable = false)
-    private Customer customer;
+    private CustomerProfile customer;
     
     //預設申請是pending
     @PrePersist

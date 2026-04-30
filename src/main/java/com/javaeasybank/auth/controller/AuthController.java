@@ -75,7 +75,7 @@ public class AuthController {
     }
 
     // ===== 一鍵帶入測試資料：僅 CISO =====
-    @PreAuthorize("hasRole('CISO')")
+    // @PreAuthorize("hasRole('CISO')")
     @PostMapping("/employees/seed")
     public ResponseEntity<ApiResponse<String>> seedEmployees() {
         authEmpService.seedTestData();
