@@ -48,7 +48,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, h } from 'vue'
 import axios from 'axios'
 
 const dataSource = ref([])
@@ -64,7 +64,22 @@ const columns = [
   { title: 'ID', dataIndex: 'logId' },
   { title: '事件類型', dataIndex: 'eventType' },
   { title: '目標識別碼', dataIndex: 'targetIdentifier' },
-  { title: '風險等級', dataIndex: 'riskLevel' },
+  {
+    title: '風險等級',
+    dataIndex: 'riskLevel',
+    customRender: ({ text }) => {
+      const colorMap = {
+        LOW: 'green',
+        MEDIUM: 'orange',
+        HIGH: 'red',
+        SUSPENDED: 'purple',
+      }
+
+      const color = colorMap[text] || 'gray'
+
+      return h('span', { style: { color, fontWeight: 'bold' } }, text)
+    },
+  },
   { title: '採取行動', dataIndex: 'actionTaken' },
   { title: '時間', dataIndex: 'createdAt' },
 ]
@@ -78,7 +93,7 @@ const pagination = reactive({
 const loadData = async () => {
   loading.value = true
   try {
-    const res = await axios.get('/api/admin/riskevent/search', {
+    const res = await axios.get('/api/riskevent/search', {
       params: {
         page: pagination.current - 1, // 後端從 0 開始
         size: pagination.pageSize,

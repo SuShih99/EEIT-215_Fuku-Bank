@@ -57,6 +57,15 @@ public class CustomerProfile {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedAt;
 
+
+    //風控
+    @Column(name="job")
+    private String job;
+    @Column(name="annual_income")
+    private Integer annualIncome;
+    @Column(name="risk_level")
+    private String riskLevel;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

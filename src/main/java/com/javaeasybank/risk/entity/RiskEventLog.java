@@ -25,7 +25,7 @@ public class RiskEventLog {
     @Column(name = "[TargetIdentifier]", nullable = false, length = 100)
     private String targetIdentifier;
 
-    @Column(name = "[RiskLevel]", nullable = false, length = 20)
+    @Column(name = "risk_level", nullable = false, length = 20)
     private String riskLevel;
 
     @Column(name = "[ActionTaken]", nullable = false, length = 50)

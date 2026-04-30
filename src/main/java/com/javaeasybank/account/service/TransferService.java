@@ -12,7 +12,7 @@ import com.javaeasybank.account.repository.AccountRepository;
 import com.javaeasybank.account.repository.TransLogRepository;
 import com.javaeasybank.account.utils.ReferenceIdGenerator;
 import com.javaeasybank.risk.annotation.RiskCheck;
-import com.javaeasybank.risk.core.RiskScene;
+import com.javaeasybank.risk.core.enums.RiskScene;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
