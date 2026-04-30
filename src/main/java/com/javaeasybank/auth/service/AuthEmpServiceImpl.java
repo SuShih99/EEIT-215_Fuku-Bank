@@ -37,7 +37,6 @@ public class AuthEmpServiceImpl implements AuthEmpService {
             throw new BusinessException("此帳號已被停用或鎖定");
         }
 
-        // 測試階段預設密碼 123456
         if (!"123456".equals(request.getPassword()) && !emp.getPasswordHash().contains("dummyhash")) {
             throw new BusinessException("帳號或密碼錯誤");
         }
@@ -49,11 +48,18 @@ public class AuthEmpServiceImpl implements AuthEmpService {
     }
 
     // ===========================
-    // 員工 CRUD（由 Controller 的 @PreAuthorize 控制權限）
+    // 員工 CRUD
     // ===========================
     @Override
     public List<AuthDto.AuthEmpResponse> getAllEmps() {
         return authEmpRepository.findAll().stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<AuthDto.AuthEmpResponse> searchEmpsByName(String keyword) {
+        return authEmpRepository.findByEmpNameContaining(keyword).stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
@@ -106,7 +112,45 @@ public class AuthEmpServiceImpl implements AuthEmpService {
     }
 
     // ===========================
-    // 給其他模組對接用的方法
+    // 一鍵帶入測試資料
+    // ===========================
+    @Override
+    public void seedTestData() {
+        // 如果已有資料就跳過
+        if (authEmpRepository.count() > 0) {
+            throw new BusinessException("資料庫已有員工資料，請先清空再帶入");
+        }
+
+        String[][] data = {
+            {"E26001", "林家豪", "DPT001", "R001", "chiahao.lin@javabank.com"},
+            {"E26002", "蔡欣妤", "DPT001", "R002", "xinyu.tsai@javabank.com"},
+            {"E26003", "陳建志", "DPT002", "R003", "chienchi.chen@javabank.com"},
+            {"E26004", "黃雅芳", "DPT002", "R004", "yafang.huang@javabank.com"},
+            {"E26005", "吳承翰", "DPT003", "R005", "chenghan.wu@javabank.com"},
+            {"E26006", "張佩琪", "DPT003", "R006", "peichi.chang@javabank.com"},
+            {"E26007", "王俊傑", "DPT003", "R007", "chunchie.wang@javabank.com"},
+            {"E26008", "劉美華", "DPT004", "R008", "meihua.liu@javabank.com"},
+            {"E26009", "許志豪", "DPT004", "R009", "chihhao.hsu@javabank.com"},
+            {"E26010", "郭建國", "DPT005", "R010", "chienkuo.kuo@javabank.com"},
+            {"E26011", "鄭文華", "DPT005", "R011", "wenhua.cheng@javabank.com"},
+        };
+
+        for (String[] d : data) {
+            AuthEmp emp = new AuthEmp();
+            emp.setEmpId(d[0]);
+            emp.setEmpName(d[1]);
+            emp.setDeptId(d[2]);
+            emp.setRoleId(d[3]);
+            emp.setEmail(d[4]);
+            emp.setPasswordHash("$2a$10$dummyhash...");
+            emp.setStatus("ACTIVE");
+            emp.setPermissionExpire(LocalDateTime.now().plusYears(1));
+            authEmpRepository.save(emp);
+        }
+    }
+
+    // ===========================
+    // 給其他模組對接用
     // ===========================
     @Override
     public AuthDto.AuthEmpResponse getEmpByEmpId(String empId) {

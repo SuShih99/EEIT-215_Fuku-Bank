@@ -5,14 +5,18 @@ import java.util.List;
 
 public interface AuthEmpService {
 
-    // === 登入登出 ===
+    // === 登入 ===
     AuthDto.AuthEmpResponse login(AuthDto.LoginRequest request);
 
     // === 員工 CRUD ===
     List<AuthDto.AuthEmpResponse> getAllEmps();
+    List<AuthDto.AuthEmpResponse> searchEmpsByName(String keyword);
     AuthDto.AuthEmpResponse createEmp(AuthDto.AuthEmpRequest request);
     AuthDto.AuthEmpResponse updateEmp(String empId, AuthDto.AuthEmpRequest request);
     void suspendEmp(String empId);
+
+    // === 一鍵帶入測試資料 ===
+    void seedTestData();
 
     // === 給其他模組對接用 ===
     AuthDto.AuthEmpResponse getEmpByEmpId(String empId);
