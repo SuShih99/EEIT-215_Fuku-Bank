@@ -55,6 +55,12 @@ const router = createRouter({
           //http://localhost:5173/admin/card-applications
           component: () => import('../views/admin/CardApplicationList.vue'),
         },
+        {
+          name:'admin-card-application-detail',
+          path:'/admin/card-applications/:id',
+          component: () => import('../views/admin/CardApplicationDetailView.vue'),
+
+        }
 
       ],
     },
@@ -72,7 +78,7 @@ const router = createRouter({
     // {
     //   path: '/user/cards',
     //   name: 'user-cards',
-    //   component: () => import('../views/user/CardListView.vue'),
+    //   component: () => import('../views/user/CardTypeListView.vue'),
     // }
 
   

@@ -27,6 +27,17 @@
           <FileTextOutlined />
           <span>交易紀錄</span>
         </a-menu-item>
+        <a-menu-item key="admin-card-types" @click="$router.push('/admin/card-types')">
+          <FileTextOutlined />
+          <span>卡別管理</span>
+        </a-menu-item>
+        <a-menu-item key="admin-card-applications" @click="$router.push('/admin/card-applications')">
+          <FileTextOutlined />
+          <span>信用卡申請管理</span>
+        </a-menu-item>
+        
+          
+
       </a-menu>
     </a-layout-sider>
 
