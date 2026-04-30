@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 
 public record CardApplicationItemResponseDto
 	(Integer itemId,
-    String cardName,
+    String cardTypeName,
     String result,
     BigDecimal approvedLimit,
     BigDecimal annualFee,

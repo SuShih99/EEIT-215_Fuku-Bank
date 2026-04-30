@@ -53,5 +53,12 @@ public class CardApplicationAdminController {
         return ResponseEntity.ok(Map.of(
                 "message", "Card application deleted"
         ));
-    }   
+    }
+    //修改備註
+    @PutMapping("/{id}/remark")
+    public ResponseEntity<CardApplicationResponseDto> updateRemark(
+            @PathVariable Integer id,@RequestBody CardApplicationResponseDto dto) {
+                return ResponseEntity.ok(cardAppService.updateRemark(id, dto.getRemark()));
+        
+    }
 }

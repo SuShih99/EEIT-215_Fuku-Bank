@@ -77,4 +77,12 @@ public class CardAppService {
 
         return cardApplicationMapper.toDto(saved);
     }
+
+    public CardApplicationResponseDto updateRemark(Integer id, String remark) {
+        CardApplication app = cardAppRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Card application not found"));
+
+        app.setRemark(remark);
+        return cardApplicationMapper.toDto(cardAppRepository.save(app));
+    }
 }

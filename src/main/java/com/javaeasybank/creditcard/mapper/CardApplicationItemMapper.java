@@ -19,7 +19,7 @@ public interface CardApplicationItemMapper {
     CardApplicationItem toEntity(CardApplicationItemRequestDto dto);
 
     // 查詢用
-    @Mapping(source = "cardType.cardTypeName", target = "cardName")
+    @Mapping(source = "cardType.cardTypeName", target = "cardTypeName")
     CardApplicationItemResponseDto toDto(CardApplicationItem entity);
 
     // 更新用
