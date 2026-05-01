@@ -23,7 +23,7 @@ export function updateCustomer(customerId, data) {
 
 // 註銷客戶（軟刪除）
 export function deactivateCustomer(customerId) {
-  return api.delete(`/api/customers/${customerId}/deactivate`)
+  return api.put(`/api/customers/${customerId}/deactivate`)
 }
 
 // 一鍵帶入測試資料
