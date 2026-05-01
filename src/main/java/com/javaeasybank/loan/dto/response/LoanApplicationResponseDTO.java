@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Setter
 public class LoanApplicationResponseDTO {
     private String applicationId;
-    private Integer customerId;
+    private String customerId;
     private String applicantName;
     private String applicantPhone;
     private String applicantEmail;
@@ -20,7 +20,6 @@ public class LoanApplicationResponseDTO {
     private Integer applyPeriod;
     private BigDecimal rate;
     private LoanApplicationStatus applicationStatus;
-    private String empId;
     private LocalDateTime createTime;
     private LoanContactStatus latestContactStatus;
     private LocalDateTime latestContactTime;

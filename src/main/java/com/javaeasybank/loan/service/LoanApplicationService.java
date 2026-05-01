@@ -64,7 +64,7 @@ public class LoanApplicationService {
         LoanApplication loan = buildBaseLoan();
         loan.setCustomerId(dto.getCustomerId());
         fillLoanContent(loan, dto.getApplyType(), dto.getApplyAmount(),
-                dto.getApplyPeriod(), dto.getRate(), dto.getEmpId());
+                dto.getApplyPeriod(), dto.getRate());
         laRepo.save(loan);
         return loan.getApplicationId();
     }
@@ -76,7 +76,7 @@ public class LoanApplicationService {
         loan.setApplicantPhone(dto.getApplicantPhone());
         loan.setApplicantEmail(dto.getApplicantEmail());
         fillLoanContent(loan, dto.getApplyType(), dto.getApplyAmount(),
-                dto.getApplyPeriod(), dto.getRate(), dto.getEmpId());
+                dto.getApplyPeriod(), dto.getRate());
         laRepo.save(loan);
         return loan.getApplicationId();
     }
@@ -95,12 +95,11 @@ public class LoanApplicationService {
     // 共用：填申請內容
     private void fillLoanContent(LoanApplication loan, String applyType,
                                  Long applyAmount, Integer applyPeriod,
-                                 BigDecimal rate, String empId) {
+                                 BigDecimal rate) {
         loan.setApplyType(applyType);
         loan.setApplyAmount(applyAmount);
         loan.setApplyPeriod(applyPeriod);
         loan.setRate(rate);
-        loan.setEmpId(empId);
     }
 
     // ===聯繫紀錄===
@@ -296,7 +295,6 @@ public class LoanApplicationService {
         dto.setApplyPeriod(loan.getApplyPeriod());
         dto.setRate(loan.getRate());
         dto.setApplicationStatus(loan.getApplicationStatus());
-        dto.setEmpId(loan.getEmpId());
         dto.setCreateTime(loan.getCreateTime());
         dto.setLatestContactStatus(loan.getLatestContactStatus());
         dto.setLatestContactTime(loan.getLatestContactTime());

@@ -5,11 +5,13 @@
       <div class="header-left">
         <h1 class="page-title">貸款申請管理</h1>
       </div>
-      <button class="btn btn-ghost btn-sm" @click.stop="fetchApplications" :disabled="loading">
-        <span v-if="loading" class="spin">⟳</span>
-        <span v-else>↻</span>
-        重新整理
-      </button>
+      <div class="header-actions">
+        <button class="btn btn-ghost btn-sm" @click.stop="fetchApplications" :disabled="loading">
+          <span v-if="loading" class="spin">⟳</span>
+          <span v-else>↻</span>
+          重新整理
+        </button>
+      </div>
     </div>
 
     <!-- ── 篩選列 ── -->
@@ -351,7 +353,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import LoanContactLogModal from './LoanContactLogModal.vue'
 import LoanReviewModal from './LoanReviewModal.vue'
@@ -527,7 +529,10 @@ async function fetchApplications() {
   loading.value = true
   error.value = ''
   try {
-    const res = await axios.get(API_URL, { params: { status: currentStatus.value } })
+    const res = await axios.get(API_URL, {
+      params: { status: currentStatus.value },
+      headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+    })
     applications.value = res.data.success ? res.data.data : []
   } catch (e) {
     error.value =
@@ -590,7 +595,18 @@ function formatTime(d) {
   return d ? d.replace('T', ' ').substring(11, 16) : ''
 }
 
-onMounted(fetchApplications)
+// ── Auto-refresh（固定 30 秒）──
+let refreshTimer = null
+
+function startAutoRefresh() {
+  refreshTimer = setInterval(fetchApplications, 30_000)
+}
+
+onMounted(() => {
+  fetchApplications()
+  startAutoRefresh()
+})
+onUnmounted(() => clearInterval(refreshTimer))
 </script>
 
 <style scoped>
@@ -637,6 +653,59 @@ onMounted(fetchApplications)
   font-weight: 700;
   color: var(--ink);
   line-height: 1.2;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Auto-refresh */
+.auto-refresh-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ar-label {
+  font-size: 12px;
+  color: var(--muted-2);
+  white-space: nowrap;
+}
+.ar-select {
+  min-width: 80px;
+}
+.ar-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-lt);
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+.ar-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+.ar-dot.pulsing {
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
 }
 
 /* ── Filter Bar ── */

@@ -47,22 +47,27 @@ const router = createRouter({
           name: 'admin-card-types',
           //http://localhost:5173/admin/card-types
           component: () => import('../views/admin/CardTypeListView.vue'),
-
         },
         {
-          path:'card-applications',
-          name:'admin-card-applications',
+          path: 'card-applications',
+          name: 'admin-card-applications',
           //http://localhost:5173/admin/card-applications
           component: () => import('../views/admin/CardApplicationList.vue'),
         },
-        
+
         // 貸款功能相關
-      {
+        {
+          // 客戶端申請功能測試
+          path: 'loan-apply',
+          name: 'loan-apply',
+          //http://localhost:5173/admin/loan-applications
+          component: () => import('../views/admin/LoanApplyView.vue'),
+        },
+        {
           path: 'loan-applications',
           name: 'loan-applications',
           //http://localhost:5173/admin/loan-applications
           component: () => import('../views/admin/LoanApplicationView.vue'),
-
         },
       ],
     },
@@ -71,10 +76,8 @@ const router = createRouter({
     // {
     //   path: '/user',
     //   component: () => import('../layouts/UserLayout.vue'),
-    //   children: [ 
-    // 
-    
-
+    //   children: [
+    //
 
     // === 客戶端信用卡頁面===
     // {
@@ -83,16 +86,18 @@ const router = createRouter({
     //   component: () => import('../views/user/CardListView.vue'),
     // }
 
-  
     //    ],
     // },
 
+    // === 客戶端貸款申請頁面===
+    // {
+    //   path: '/user/loans',
+    //   name: 'user-loans',
+    //   component: () => import('../views/user/LoanApplyView.vue'),
+    // }
 
-
-
-
-
-
+    //    ],
+    // },
   ],
 })
 

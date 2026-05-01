@@ -16,5 +16,4 @@ public class LoanNonMemberRequestDTO {
     private Long applyAmount;
     private Integer applyPeriod;
     private BigDecimal rate;
-    private String empId;
 }

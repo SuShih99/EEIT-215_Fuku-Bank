@@ -24,7 +24,7 @@ public class LoanApplication {
     @Id
     private String applicationId;          // application_id (PK)
 
-    private Integer customerId;            // customer_id（會員 NULL）
+    private String customerId;            // customer_id（會員 NULL）
 
     // 非會員另填
     private String applicantName;          // applicant_name
@@ -38,8 +38,6 @@ public class LoanApplication {
 
     @Enumerated(EnumType.STRING)
     private LoanApplicationStatus applicationStatus; // application_status
-
-    private String empId;                  // 申請負責行員
 
     private LocalDateTime createTime;      // create_time
 
