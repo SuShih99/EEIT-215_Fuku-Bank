@@ -15,10 +15,11 @@ import java.time.LocalDateTime;
 public class CustomerProfile {
 
     @Id
-    @Column(name = "customer_id", length = 20)
+    @Column(name = "customer_id", length = 20, nullable = false)
     private String customerId;
 
-    @Column(length = 11, nullable = false, unique = true)
+    // 💡 確保 CIF 的長度為 20，對應 SQL 的 VARCHAR(20)
+    @Column(length = 20, nullable = false, unique = true)
     private String cif;
 
     @Column(name = "id_number", length = 20, nullable = false, unique = true)
