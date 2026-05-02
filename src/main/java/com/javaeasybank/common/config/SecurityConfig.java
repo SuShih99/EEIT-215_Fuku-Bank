@@ -46,8 +46,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login").permitAll()   // 登入不需驗證
                 .requestMatchers("/api/auth/logout").permitAll()  // 登出不需驗證
 
-                .requestMatchers("/api/auth/employees/seed").permitAll() // seed功能不需登入也能執行
-                .requestMatchers("/api/auth/debug/**").permitAll()   // [暫時] 除錯用，用完請刪
+                .requestMatchers("/api/auth/employees/seed").permitAll() // seed：第一次灌資料時尚未登入
+                .requestMatchers("/api/customers/seed").permitAll()  // seed：客戶測試資料
                 .anyRequest().authenticated()                     // 其餘都要登入
             )
             .formLogin(form -> form.disable())       // 不用 Spring 預設登入頁
@@ -83,7 +83,7 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         config.setAllowedOrigins(List.of("http://localhost:5173"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
 
