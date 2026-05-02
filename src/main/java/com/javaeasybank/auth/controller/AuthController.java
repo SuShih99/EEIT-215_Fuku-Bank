@@ -33,12 +33,6 @@ public class AuthController {
             @RequestBody AuthDto.LoginRequest request,
             HttpSession session) {
 
-        // [暫時除錯] 印出前端送來的資料
-        System.out.println("=== LOGIN DEBUG ===");
-        System.out.println("email: [" + request.getEmail() + "]");
-        System.out.println("password: [" + request.getPassword() + "]");
-        System.out.println("=== END DEBUG ===");
-
         // 1. 透過 Spring Security 的 AuthenticationManager 做驗證
         //    會呼叫 CustomUserDetailsService.loadUserByUsername()
         Authentication authentication = authenticationManager.authenticate(
@@ -105,35 +99,9 @@ public class AuthController {
     }
 
     // ===== 一鍵帶入測試資料：僅 CISO =====
-    // @PreAuthorize("hasRole('CISO')")
     @PostMapping("/employees/seed")
     public ResponseEntity<ApiResponse<String>> seedEmployees() {
         authEmpService.seedTestData();
         return ResponseEntity.ok(ApiResponse.success("已成功帶入測試資料"));
-    }
-
-    // ===== [暫時] 除錯用：測試密碼比對 =====
-    // 用完請刪除
-    @GetMapping("/debug/password-check")
-    public ResponseEntity<ApiResponse<String>> debugPasswordCheck(
-            @RequestParam String email,
-            @RequestParam String rawPassword) {
-        try {
-            // 直接查出 hash 做比對
-            var emp = authEmpService.getEmpByEmail(email);
-            String info = "找到員工: " + emp.getEmpName()
-                    + ", roleId: " + emp.getRoleId()
-                    + ", roleCode: " + emp.getRoleCode()
-                    + ", status: " + emp.getStatus();
-
-            // 嘗試用 AuthenticationManager 驗證
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(email, rawPassword)
-            );
-            info += " | AuthenticationManager 驗證成功!";
-            return ResponseEntity.ok(ApiResponse.success(info));
-        } catch (Exception e) {
-            return ResponseEntity.ok(ApiResponse.fail("驗證失敗: " + e.getClass().getSimpleName() + " - " + e.getMessage()));
-        }
     }
 }
