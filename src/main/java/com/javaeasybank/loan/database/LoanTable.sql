@@ -1,7 +1,7 @@
 -- ===建表===
 CREATE TABLE LOAN_APPLICATION (
     application_id      NVARCHAR(50)    NOT NULL PRIMARY KEY,
-    customer_id         INT             NULL,
+    customer_id         NVARCHAR(50)    NULL,
     applicant_name      NVARCHAR(50)    NULL,
     applicant_phone     NVARCHAR(20)    NULL,
     applicant_email     NVARCHAR(100)   NULL,

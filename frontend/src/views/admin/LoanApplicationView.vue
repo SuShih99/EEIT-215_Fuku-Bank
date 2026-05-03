@@ -400,6 +400,7 @@ const STATUS_OPTIONS = [
   { value: 'REJECTED', label: '已拒絕', dot: 'dot-red' },
   { value: 'DISBURSED', label: '已撥款', dot: 'dot-teal' },
   { value: 'CLOSED', label: '已結案', dot: 'dot-gray' },
+  { value: 'CANCELLED', label: '已取消',  dot: 'dot-gray'   }
 ]
 
 const STATUS_LABEL = {

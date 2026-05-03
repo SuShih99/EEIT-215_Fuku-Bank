@@ -305,7 +305,7 @@
           </div>
         </div>
 
-        <button class="btn btn-outline btn-lg" @click="resetAll">再提交一筆申請</button>
+        <button class="btn btn-outline btn-lg" @click="resetAll">返回</button>
       </div>
     </div>
   </div>

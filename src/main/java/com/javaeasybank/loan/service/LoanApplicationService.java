@@ -12,6 +12,7 @@ import com.javaeasybank.loan.entity.LoanApplication;
 import com.javaeasybank.loan.entity.LoanContactLog;
 import com.javaeasybank.loan.entity.LoanReviewDetail;
 import com.javaeasybank.loan.enums.LoanApplicationStatus;
+import com.javaeasybank.loan.enums.LoanContactStatus;
 import com.javaeasybank.loan.enums.LoanReviewStatus;
 import com.javaeasybank.loan.repository.LoanApplicationRepository;
 import com.javaeasybank.loan.repository.LoanContactLogRepository;
@@ -129,6 +130,10 @@ public class LoanApplicationService {
         // 若主表仍是 PENDING_CONTACT，推進為 IN_CONTACT
         if (loan.getApplicationStatus() == LoanApplicationStatus.PENDING_CONTACT) {
             loan.setApplicationStatus(LoanApplicationStatus.IN_CONTACT);
+        }
+        // 客戶放棄時，主表推進為 CANCELLED
+        if (dto.getContactStatus() == LoanContactStatus.DECLINED) {
+            loan.setApplicationStatus(LoanApplicationStatus.CANCELLED);
         }
 
         laRepo.save(loan);
