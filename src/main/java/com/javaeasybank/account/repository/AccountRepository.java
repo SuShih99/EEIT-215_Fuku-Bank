@@ -25,7 +25,7 @@ public interface AccountRepository extends JpaRepository<Account, String> {
      * @param pageable   分頁資訊。
      * @return 包含帳戶實體的分頁列表。
      */
-    Page<Account> findByCustomerId(Long customerId, Pageable pageable);
+    Page<Account> findByCustomerId(String customerId, Pageable pageable);
 
     /**
      * 根據帳戶狀態篩選帳戶並進行分頁。
@@ -54,7 +54,7 @@ public interface AccountRepository extends JpaRepository<Account, String> {
      * @param currency    貨幣。
      * @return 如果存在則返回 true，否則返回 false。
      */
-    boolean existsByCustomerIdAndAccountTypeAndCurrency(Long customerId, AccountType accountType, Currency currency);
+    boolean existsByCustomerIdAndAccountTypeAndCurrency(String customerId, AccountType accountType, Currency currency);
 
     /**
      * 檢查指定客戶是否擁有特定帳戶類型、貨幣和狀態的帳戶。
@@ -65,7 +65,7 @@ public interface AccountRepository extends JpaRepository<Account, String> {
      * @param status      帳戶狀態。
      * @return 如果存在則返回 true，否則返回 false。
      */
-    boolean existsByCustomerIdAndAccountTypeAndCurrencyAndStatus(Long customerId, AccountType accountType, Currency currency, AccountStatus status);
+    boolean existsByCustomerIdAndAccountTypeAndCurrencyAndStatus(String customerId, AccountType accountType, Currency currency, AccountStatus status);
 
     /**
      * 查詢所有帳戶並按建立時間倒序排序（最新建立的排在前面），並進行分頁。
@@ -81,5 +81,5 @@ public interface AccountRepository extends JpaRepository<Account, String> {
      * @param customerId 客戶 ID。
      * @return 帳戶列表。
      */
-    List<Account> findAllByCustomerId(Long customerId);
+    List<Account> findAllByCustomerId(String customerId);
 }

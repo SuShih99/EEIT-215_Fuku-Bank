@@ -405,7 +405,7 @@ async function handleCreate() {
 
   // 非子帳戶，直接建立
   await doCreateAccount({
-    customerId: Number(createForm.customerId),
+    customerId: createForm.customerId,
     accountType: createForm.accountType,
     currency: createForm.currency,
     parentAccountNumber: null,
@@ -449,15 +449,16 @@ async function doCreateAccount(data) {
 }
 
 // === 一鍵帶入 Demo 資料 ===
-function randomCustomerId() {
-  // 產生 1~9999 的隨機整數
-  return Math.floor(Math.random() * 9999) + 1
-}
+// customer_profile 的真實 customer_id（來自 seed 資料）
+const demoCustomerIds = [
+  'X7K9P2M4', 'V4L6T1Y8', 'D3H8F5G2', 'B9W1C7R5', 'P6M4N2Q8',
+  'K1T9V5L3', 'Y5R4W1H6', 'G7N3M8P2', 'J2F6K9V1', 'Q4W8C1T7',
+]
 
 function fillDemoAccount(type, currency) {
   createForm.accountType = type
   createForm.currency = currency
-  createForm.customerId = String(randomCustomerId())
+  createForm.customerId = demoCustomerIds[Math.floor(Math.random() * demoCustomerIds.length)]
   createForm.parentAccountNumber = ''
 }
 

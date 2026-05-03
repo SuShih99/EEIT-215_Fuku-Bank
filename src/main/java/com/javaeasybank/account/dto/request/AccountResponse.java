@@ -21,7 +21,7 @@ public class AccountResponse {
     /**
      * 客戶 ID。
      */
-    private Long customerId;
+    private String customerId;
     /**
      * 帳戶類型。
      */

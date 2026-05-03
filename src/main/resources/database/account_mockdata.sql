@@ -1,96 +1,139 @@
-SET NOCOUNT ON;
+-- ============================================================
+-- Account Module Mock Data
+-- 依賴：customer_profile 表必須先有資料（執行 auth_customer_insert.sql）
+-- ============================================================
 
--- 1. 設定參數
-DECLARE @TotalAccounts INT = 10000;      -- 預計生成帳戶數
-DECLARE @TotalTransactions INT = 20000;  -- 預計生成轉帳次數 (每筆產生 2 筆 LOG)
-DECLARE @BatchSize INT = 5000;           -- 批次提交大小 (防止 Transaction Log 撐爆)
+-- ===== 清除舊資料（按 FK 依賴順序）=====
+DELETE FROM TRANS_LOG                WHERE transaction_id IS NOT NULL;
+DELETE FROM ACCOUNT_DAILY_SNAPSHOTS  WHERE snapshot_id IS NOT NULL;
+DELETE FROM ACCOUNT_STATUS_HISTORY   WHERE history_id IS NOT NULL;
+DELETE FROM ACCOUNT                  WHERE account_number IS NOT NULL;
 
--- 2. 帳戶生成模組
-DECLARE @CurrentAccount INT = 1;
-DECLARE @AccNum VARCHAR(12);
-DECLARE @CustId BIGINT;
-
-PRINT '開始生成 ACCOUNT 相關資料...';
-
-BEGIN TRAN;
-WHILE @CurrentAccount <= @TotalAccounts
-BEGIN
-    SET @AccNum = '9000' + RIGHT('00000000' + CAST(@CurrentAccount AS VARCHAR(8)), 8);
-    SET @CustId = 10000 + @CurrentAccount;
-
+-- ===== 帳戶資料（20 位客戶，共 30 個帳戶）=====
 INSERT INTO ACCOUNT (
     account_number, customer_id, account_type, currency,
     balance, liability, interest_rate, status,
     parent_account_number, created_at, changed_at, created_by, changed_by
-) VALUES (
-             @AccNum, @CustId, 'CHECKING', 'TWD',
-             100000.0000, 0.0000, 0.00150, 'ACTIVE',
-             NULL, GETDATE(), GETDATE(), 'system_mock', 'system_mock'
-         );
+) VALUES
+-- 王大明：TWD 活存 + USD 活存
+('062033441957', 'X7K9P2M4', 'CHECKING', 'TWD', 358000.0000, 0, 0.00150, 'ACTIVE', NULL, '2026-01-15 09:00:00', '2026-01-15 09:00:00', 'system', 'system'),
+('062033441958', 'X7K9P2M4', 'CHECKING', 'USD', 12500.0000, 0, 0.00100, 'ACTIVE', NULL, '2026-02-10 10:00:00', '2026-02-10 10:00:00', 'system', 'system'),
+-- 林小華：TWD 活存 + 定存
+('081991378662', 'V4L6T1Y8', 'CHECKING', 'TWD', 125000.0000, 0, 0.00150, 'ACTIVE', NULL, '2026-01-20 11:00:00', '2026-01-20 11:00:00', 'system', 'system'),
+('081991378663', 'V4L6T1Y8', 'TIME_DEPOSIT', 'TWD', 500000.0000, 0, 0.01200, 'ACTIVE', NULL, '2026-03-01 09:30:00', '2026-03-01 09:30:00', 'system', 'system'),
+-- 陳建國：TWD 活存
+('073522196841', 'D3H8F5G2', 'CHECKING', 'TWD', 89000.0000, 0, 0.00150, 'ACTIVE', NULL, '2026-01-22 14:00:00', '2026-01-22 14:00:00', 'system', 'system'),
+-- 張雅婷：TWD 活存 + JPY 活存
+('054817293650', 'B9W1C7R5', 'CHECKING', 'TWD', 210000.0000, 0, 0.00150, 'ACTIVE', NULL, '2026-02-01 10:00:00', '2026-02-01 10:00:00', 'system', 'system'),
+('054817293651', 'B9W1C7R5', 'CHECKING', 'JPY', 850000.0000, 0, 0.00050, 'ACTIVE', NULL, '2026-02-15 11:00:00', '2026-02-15 11:00:00', 'system', 'system'),
+-- 李志明：TWD 活存 + 貸款
+('096438572190', 'P6M4N2Q8', 'CHECKING', 'TWD', 1520000.0000, 0, 0.00150, 'ACTIVE', NULL, '2026-01-10 09:00:00', '2026-01-10 09:00:00', 'system', 'system'),
+('096438572191', 'P6M4N2Q8', 'LOAN', 'TWD', 0, 2000000.0000, 0.02500, 'ACTIVE', NULL, '2026-03-15 13:00:00', '2026-03-15 13:00:00', 'system', 'system'),
+-- 吳美玲：TWD 活存
+('038276415903', 'K1T9V5L3', 'CHECKING', 'TWD', 67000.0000, 0, 0.00150, 'ACTIVE', NULL, '2026-02-20 15:00:00', '2026-02-20 15:00:00', 'system', 'system'),
+-- 黃文輝：TWD 活存（已凍結）
+('047193826540', 'E8C2X7J4', 'CHECKING', 'TWD', 45000.0000, 0, 0.00150, 'FROZEN', NULL, '2026-01-05 08:00:00', '2026-04-10 16:00:00', 'system', 'system'),
+-- 蔡佳蓉：TWD 活存 + EUR 活存
+('085612347890', 'Y5R4W1H6', 'CHECKING', 'TWD', 190000.0000, 0, 0.00150, 'ACTIVE', NULL, '2026-01-25 10:30:00', '2026-01-25 10:30:00', 'system', 'system'),
+('085612347891', 'Y5R4W1H6', 'CHECKING', 'EUR', 5000.0000, 0, 0.00080, 'ACTIVE', NULL, '2026-03-05 11:00:00', '2026-03-05 11:00:00', 'system', 'system'),
+-- 劉冠宇：TWD 活存
+('029385716420', 'G7N3M8P2', 'CHECKING', 'TWD', 320000.0000, 0, 0.00150, 'ACTIVE', NULL, '2026-02-05 09:00:00', '2026-02-05 09:00:00', 'system', 'system'),
+-- 許家瑩：TWD 活存
+('016274839501', 'J2F6K9V1', 'CHECKING', 'TWD', 42000.0000, 0, 0.00150, 'ACTIVE', NULL, '2026-03-10 14:00:00', '2026-03-10 14:00:00', 'system', 'system'),
+-- 鄭宗翰：TWD 活存 + 定存
+('078463921580', 'Q4W8C1T7', 'CHECKING', 'TWD', 280000.0000, 0, 0.00150, 'ACTIVE', NULL, '2026-01-18 09:00:00', '2026-01-18 09:00:00', 'system', 'system'),
+('078463921581', 'Q4W8C1T7', 'TIME_DEPOSIT', 'TWD', 1000000.0000, 0, 0.01500, 'ACTIVE', NULL, '2026-02-28 10:00:00', '2026-02-28 10:00:00', 'system', 'system'),
+-- 洪玉婷：TWD 活存
+('053917284630', 'M9P2R5N4', 'CHECKING', 'TWD', 78000.0000, 0, 0.00150, 'ACTIVE', NULL, '2026-02-12 11:00:00', '2026-02-12 11:00:00', 'system', 'system'),
+-- 邱信宏：TWD 活存 + 貸款
+('041628573940', 'H3T7J1V9', 'CHECKING', 'TWD', 155000.0000, 0, 0.00150, 'ACTIVE', NULL, '2026-01-08 10:00:00', '2026-01-08 10:00:00', 'system', 'system'),
+('041628573941', 'H3T7J1V9', 'LOAN', 'TWD', 0, 800000.0000, 0.03000, 'ACTIVE', NULL, '2026-04-01 09:00:00', '2026-04-01 09:00:00', 'system', 'system'),
+-- 曾婉茹：TWD 活存
+('067384295100', 'L5V1M6P3', 'CHECKING', 'TWD', 98000.0000, 0, 0.00150, 'ACTIVE', NULL, '2026-03-20 13:00:00', '2026-03-20 13:00:00', 'system', 'system'),
+-- 廖偉翔：TWD 活存
+('092745138260', 'R8K4N9M2', 'CHECKING', 'TWD', 430000.0000, 0, 0.00150, 'ACTIVE', NULL, '2026-01-12 09:00:00', '2026-01-12 09:00:00', 'system', 'system'),
+-- 賴怡君：TWD 活存（靜止戶）
+('034859617200', 'T1C7W4R8', 'CHECKING', 'TWD', 1200.0000, 0, 0.00150, 'DORMANT', NULL, '2025-06-01 10:00:00', '2026-03-01 00:00:00', 'system', 'system'),
+-- 徐俊傑：TWD 活存
+('086192473500', 'N6M9P2V5', 'CHECKING', 'TWD', 560000.0000, 0, 0.00150, 'ACTIVE', NULL, '2026-01-28 11:00:00', '2026-01-28 11:00:00', 'system', 'system'),
+-- 卓佩樺：TWD 活存 + USD 活存
+('025738149600', 'W2R5T8C1', 'CHECKING', 'TWD', 175000.0000, 0, 0.00150, 'ACTIVE', NULL, '2026-02-08 14:00:00', '2026-02-08 14:00:00', 'system', 'system'),
+('025738149601', 'W2R5T8C1', 'CHECKING', 'USD', 8000.0000, 0, 0.00100, 'ACTIVE', NULL, '2026-03-12 10:00:00', '2026-03-12 10:00:00', 'system', 'system'),
+-- 江宇軒：TWD 活存
+('071463829500', 'C4H1K7N9', 'CHECKING', 'TWD', 2800000.0000, 0, 0.00150, 'ACTIVE', NULL, '2026-01-03 09:00:00', '2026-01-03 09:00:00', 'system', 'system'),
+-- 郭欣儀：TWD 活存
+('048291637500', 'V7P3M1R6', 'CHECKING', 'TWD', 115000.0000, 0, 0.00150, 'ACTIVE', NULL, '2026-02-18 10:00:00', '2026-02-18 10:00:00', 'system', 'system');
 
-INSERT INTO ACCOUNT_STATUS_HISTORY (
-    history_id, account_number, old_status, new_status, change_reason, changed_at, changed_by
-) VALUES (
-             CAST(NEWID() AS CHAR(36)), @AccNum, 'PENDING', 'ACTIVE', N'大量測試資料建立', GETDATE(), 'system_mock'
-         );
-
-INSERT INTO ACCOUNT_DAILY_SNAPSHOTS (
-    snapshot_id, account_number, snapshot_date, balance, interest_rate, daily_interest, created_at
-) VALUES (
-             CAST(NEWID() AS CHAR(36)), @AccNum, CAST(GETDATE() AS DATE), 100000.0000, 0.00150, (100000.0000 * 0.00150 / 365), GETDATE()
-         );
-
--- 批次提交邏輯
-IF @CurrentAccount % @BatchSize = 0
-BEGIN
-COMMIT TRAN;
-PRINT '已寫入 ' + CAST(@CurrentAccount AS VARCHAR) + ' 筆帳戶資料...';
-BEGIN TRAN;
-END
-
-    SET @CurrentAccount = @CurrentAccount + 1;
-END
-COMMIT TRAN;
-
-PRINT '帳戶生成完畢。開始生成 TRANS_LOG...';
-
--- 3. 交易紀錄生成模組
-DECLARE @SuccessfulTx INT = 0; -- 改為計算成功寫入的次數，確保絕對數量正確
-DECLARE @FromAcc VARCHAR(12);
-DECLARE @ToAcc VARCHAR(12);
-DECLARE @RefId VARCHAR(30);
-
-BEGIN TRAN;
-WHILE @SuccessfulTx < @TotalTransactions
-BEGIN
-    SET @FromAcc = '9000' + RIGHT('00000000' + CAST((ABS(CHECKSUM(NEWID())) % @TotalAccounts) + 1 AS VARCHAR(8)), 8);
-    SET @ToAcc = '9000' + RIGHT('00000000' + CAST((ABS(CHECKSUM(NEWID())) % @TotalAccounts) + 1 AS VARCHAR(8)), 8);
-
-    -- 確保不碰撞才執行寫入
-    IF @FromAcc <> @ToAcc
-BEGIN
-        SET @RefId = 'TXN-' + REPLACE(CONVERT(VARCHAR, GETDATE(), 112), '-', '') + '-' +
-                     REPLACE(CONVERT(VARCHAR, GETDATE(), 108), ':', '') + '-' + RIGHT(CONVERT(VARCHAR(36), NEWID()), 8);
-
+-- ===== 交易紀錄（擬真場景）=====
 INSERT INTO TRANS_LOG (
     transaction_id, reference_id, account_number, counterpart_account,
-    counterpart_bank_code, entry_type, transaction_type, amount,
+    entry_type, transaction_type, amount,
     balance_before, balance_after, currency, note, created_at
 ) VALUES
-      (CAST(NEWID() AS CHAR(36)), @RefId, @FromAcc, @ToAcc, NULL, 'DEBIT', 'TRANSFER', 500.0000, 100000.0000, 99500.0000, 'TWD', N'Mock大量轉帳測試', GETDATE()),
-      (CAST(NEWID() AS CHAR(36)), @RefId, @ToAcc, @FromAcc, NULL, 'CREDIT', 'TRANSFER', 500.0000, 100000.0000, 100500.0000, 'TWD', N'Mock大量轉帳測試', GETDATE());
+-- 王大明 存款 50000
+(CAST(NEWID() AS CHAR(36)), 'TXN-20260415-100001-a1b2c3d4', '062033441957', NULL,
+ 'CREDIT', 'DEPOSIT', 50000, 308000, 358000, 'TWD', N'薪資入帳', '2026-04-15 09:30:00'),
 
-SET @SuccessfulTx = @SuccessfulTx + 1;
+-- 王大明 → 林小華 轉帳 10000
+(CAST(NEWID() AS CHAR(36)), 'TXN-20260420-140000-e5f6g7h8', '062033441957', '081991378662',
+ 'DEBIT', 'TRANSFER', 10000, 358000, 348000, 'TWD', N'房租', '2026-04-20 14:00:00'),
+(CAST(NEWID() AS CHAR(36)), 'TXN-20260420-140000-e5f6g7h8', '081991378662', '062033441957',
+ 'CREDIT', 'TRANSFER', 10000, 115000, 125000, 'TWD', N'房租', '2026-04-20 14:00:00'),
 
-        -- 批次提交邏輯
-        IF @SuccessfulTx % @BatchSize = 0
-BEGIN
-COMMIT TRAN;
-PRINT '已寫入 ' + CAST(@SuccessfulTx AS VARCHAR) + ' 筆轉帳交易...';
-BEGIN TRAN;
-END
-END
-END
-COMMIT TRAN;
+-- 陳建國 提款 5000
+(CAST(NEWID() AS CHAR(36)), 'TXN-20260418-110000-i9j0k1l2', '073522196841', NULL,
+ 'DEBIT', 'WITHDRAW', 5000, 94000, 89000, 'TWD', N'ATM 提款', '2026-04-18 11:00:00'),
 
-PRINT '所有測試資料生成完畢，交易精確收斂完成。';
+-- 李志明 → 劉冠宇 轉帳 30000
+(CAST(NEWID() AS CHAR(36)), 'TXN-20260422-093000-m3n4o5p6', '096438572190', '029385716420',
+ 'DEBIT', 'TRANSFER', 30000, 1550000, 1520000, 'TWD', N'貨款', '2026-04-22 09:30:00'),
+(CAST(NEWID() AS CHAR(36)), 'TXN-20260422-093000-m3n4o5p6', '029385716420', '096438572190',
+ 'CREDIT', 'TRANSFER', 30000, 290000, 320000, 'TWD', N'貨款', '2026-04-22 09:30:00'),
+
+-- 蔡佳蓉 存款 20000
+(CAST(NEWID() AS CHAR(36)), 'TXN-20260425-153000-q7r8s9t0', '085612347890', NULL,
+ 'CREDIT', 'DEPOSIT', 20000, 170000, 190000, 'TWD', N'兼職收入', '2026-04-25 15:30:00'),
+
+-- 鄭宗翰 → 許家瑩 轉帳 8000
+(CAST(NEWID() AS CHAR(36)), 'TXN-20260426-160000-u1v2w3x4', '078463921580', '016274839501',
+ 'DEBIT', 'TRANSFER', 8000, 288000, 280000, 'TWD', N'聚餐分攤', '2026-04-26 16:00:00'),
+(CAST(NEWID() AS CHAR(36)), 'TXN-20260426-160000-u1v2w3x4', '016274839501', '078463921580',
+ 'CREDIT', 'TRANSFER', 8000, 34000, 42000, 'TWD', N'聚餐分攤', '2026-04-26 16:00:00'),
+
+-- 江宇軒 → 王大明 轉帳 100000
+(CAST(NEWID() AS CHAR(36)), 'TXN-20260427-115721-1a260525', '071463829500', '062033441957',
+ 'DEBIT', 'TRANSFER', 100000, 2900000, 2800000, 'TWD', N'投資款', '2026-04-27 11:57:21'),
+(CAST(NEWID() AS CHAR(36)), 'TXN-20260427-115721-1a260525', '062033441957', '071463829500',
+ 'CREDIT', 'TRANSFER', 100000, 248000, 348000, 'TWD', N'投資款', '2026-04-27 11:57:21'),
+
+-- 邱信宏 → 洪玉婷 轉帳 15000
+(CAST(NEWID() AS CHAR(36)), 'TXN-20260427-123833-35b1cef8', '041628573940', '053917284630',
+ 'DEBIT', 'TRANSFER', 15000, 170000, 155000, 'TWD', N'借款歸還', '2026-04-27 12:38:33'),
+(CAST(NEWID() AS CHAR(36)), 'TXN-20260427-123833-35b1cef8', '053917284630', '041628573940',
+ 'CREDIT', 'TRANSFER', 15000, 63000, 78000, 'TWD', N'借款歸還', '2026-04-27 12:38:33'),
+
+-- 廖偉翔 存款 80000
+(CAST(NEWID() AS CHAR(36)), 'TXN-20260428-091500-y5z6a7b8', '092745138260', NULL,
+ 'CREDIT', 'DEPOSIT', 80000, 350000, 430000, 'TWD', N'獎金入帳', '2026-04-28 09:15:00'),
+
+-- 卓佩樺 提款 3000
+(CAST(NEWID() AS CHAR(36)), 'TXN-20260428-143000-c9d0e1f2', '025738149600', NULL,
+ 'DEBIT', 'WITHDRAW', 3000, 178000, 175000, 'TWD', N'生活費', '2026-04-28 14:30:00'),
+
+-- 郭欣儀 → 吳美玲 轉帳 5000
+(CAST(NEWID() AS CHAR(36)), 'TXN-20260429-100500-g3h4i5j6', '048291637500', '038276415903',
+ 'DEBIT', 'TRANSFER', 5000, 120000, 115000, 'TWD', N'代購費', '2026-04-29 10:05:00'),
+(CAST(NEWID() AS CHAR(36)), 'TXN-20260429-100500-g3h4i5j6', '038276415903', '048291637500',
+ 'CREDIT', 'TRANSFER', 5000, 62000, 67000, 'TWD', N'代購費', '2026-04-29 10:05:00'),
+
+-- 王大明 存款 10000 → 再沖正
+(CAST(NEWID() AS CHAR(36)), 'TXN-20260429-115318-73427c3c', '062033441957', NULL,
+ 'CREDIT', 'DEPOSIT', 5000, 353000, 358000, 'TWD', N'零用金存入', '2026-04-29 11:53:18'),
+(CAST(NEWID() AS CHAR(36)), 'TXN-20260429-120639-38185f7a', '062033441957', NULL,
+ 'DEBIT', 'REVERSAL', 5000, 358000, 353000, 'TWD', N'沖正 ref: TXN-20260429-115318-73427c3c', '2026-04-29 12:06:39'),
+
+-- 徐俊傑 存款 60000
+(CAST(NEWID() AS CHAR(36)), 'TXN-20260430-090000-k7l8m9n0', '086192473500', NULL,
+ 'CREDIT', 'DEPOSIT', 60000, 500000, 560000, 'TWD', N'股利入帳', '2026-04-30 09:00:00');
+
+PRINT '帳戶與交易 Mock 資料寫入完畢。';

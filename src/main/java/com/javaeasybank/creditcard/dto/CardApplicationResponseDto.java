@@ -9,7 +9,7 @@ import lombok.Data;
 public class CardApplicationResponseDto {
 
 	private Integer applicationId;
-    private Integer customerId;
+    private String customerId;
     private String customerName;
     private LocalDateTime applyDate;
     private CardApplicationStatus status;

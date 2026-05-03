@@ -61,7 +61,7 @@ public class AccountController {
      */
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<AccountResponse>>> getAccountsByCustomerId(
-            @RequestParam Long customerId,
+            @RequestParam String customerId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         log.info("Received request to get accounts for customer: {}", customerId);

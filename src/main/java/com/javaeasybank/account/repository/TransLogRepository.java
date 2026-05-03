@@ -58,7 +58,7 @@ public interface TransLogRepository extends JpaRepository<TransLog, String>, Jpa
      * @return 包含交易日誌實體的分頁列表。
      */
     @Query("SELECT t FROM TransLog t JOIN Account a ON t.accountNumber = a.accountNumber WHERE a.customerId = :customerId")
-    Page<TransLog> findByCustomerId(@Param("customerId") Long customerId, Pageable pageable);
+    Page<TransLog> findByCustomerId(@Param("customerId") String customerId, Pageable pageable);
 
     /**
      * 根據客戶 ID 和日期範圍查詢該客戶名下所有帳戶的所有交易紀錄，並進行分頁。
@@ -72,7 +72,7 @@ public interface TransLogRepository extends JpaRepository<TransLog, String>, Jpa
     @Query("SELECT t FROM TransLog t JOIN Account a ON t.accountNumber = a.accountNumber " +
            "WHERE a.customerId = :customerId AND t.createdAt >= :startDate AND t.createdAt <= :endDate")
     Page<TransLog> findByCustomerIdAndDateRange(
-            @Param("customerId") Long customerId,
+            @Param("customerId") String customerId,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable);

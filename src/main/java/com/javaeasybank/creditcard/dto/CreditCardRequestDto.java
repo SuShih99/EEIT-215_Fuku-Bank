@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 public class CreditCardRequestDto {
 
-    private Integer customerId;
+    private String customerId;
     private Integer cardTypeId;
     private Integer applicationItemId;
     private BigDecimal creditLimit;

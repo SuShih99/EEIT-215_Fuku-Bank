@@ -31,7 +31,8 @@ public class CreditCard {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "card_id")
     private Integer cardId;
-    private Integer customerId;
+    @Column(name = "customer_id")
+    private String customerId;
 //    private Integer cardTypeId;//FK關聯 不留
     
     @ManyToOne//對應很多cardType

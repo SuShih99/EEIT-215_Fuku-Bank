@@ -9,6 +9,7 @@ import com.javaeasybank.account.enums.Currency;
 import com.javaeasybank.account.exception.AccountException;
 import com.javaeasybank.account.repository.AccountRepository;
 import com.javaeasybank.account.utils.AccountNumberGenerator;
+import com.javaeasybank.customer.repository.CustomerProfileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -29,6 +30,7 @@ public class AccountService {
     private static final BigDecimal CHECKING_INTEREST_RATE = new BigDecimal("0.0015");
 
     private final AccountRepository accountRepository;
+    private final CustomerProfileRepository customerProfileRepository;
 
     /**
      * 建立新帳戶。
@@ -96,7 +98,7 @@ public class AccountService {
      * @return 包含帳戶響應的分頁列表。
      */
     @Transactional(readOnly = true)
-    public Page<AccountResponse> getAccountsByCustomerId(Long customerId, Pageable pageable) {
+    public Page<AccountResponse> getAccountsByCustomerId(String customerId, Pageable pageable) {
         return accountRepository.findByCustomerId(customerId, pageable)
                 .map(AccountResponse::fromEntity);
     }
@@ -221,9 +223,11 @@ public class AccountService {
      *
      * @param customerId 客戶 ID。
      */
-    private void validateKyc(Long customerId) {
-        // TODO: 呼叫 Customer Service 驗證 KYC，目前 Mock 通過
-        log.debug("KYC validation passed for customer: {}", customerId);
+    private void validateKyc(String customerId) {
+        if (!customerProfileRepository.existsById(customerId)) {
+            throw new AccountException("CUSTOMER_NOT_FOUND", "客戶不存在：" + customerId);
+        }
+        log.debug("Customer validation passed for: {}", customerId);
     }
 
     /**
@@ -234,7 +238,7 @@ public class AccountService {
      * @throws AccountException 如果帳戶類型規則不符。
      */
     private void validateAccountTypeRules(AccountCreateRequest request) {
-        Long customerId = request.getCustomerId();
+        String customerId = request.getCustomerId();
         AccountType type = request.getAccountType();
         Currency currency = request.getCurrency();
 

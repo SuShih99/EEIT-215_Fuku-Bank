@@ -32,8 +32,8 @@ public class Account {
     /**
      * 客戶 ID，不可為空。
      */
-    @Column(name = "customer_id", nullable = false)
-    private Long customerId;
+    @Column(name = "customer_id", nullable = false, length = 20)
+    private String customerId;
 
     /**
      * 帳戶類型，使用枚舉儲存，不可為空。

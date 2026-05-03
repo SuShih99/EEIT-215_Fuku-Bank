@@ -60,7 +60,7 @@ public class TransLogService {
      * @return 包含交易紀錄響應的分頁列表。
      */
     @Transactional(readOnly = true)
-    public Page<TransLogResponse> getByCustomerId(Long customerId, Pageable pageable) {
+    public Page<TransLogResponse> getByCustomerId(String customerId, Pageable pageable) {
         log.debug("Fetching trans logs by customerId: {}", customerId);
         return transLogRepository.findByCustomerId(customerId, pageable)
                 .map(TransLogResponse::fromEntity);
@@ -76,7 +76,7 @@ public class TransLogService {
      * @return 包含交易紀錄響應的分頁列表。
      */
     @Transactional(readOnly = true)
-    public Page<TransLogResponse> getByCustomerIdAndDateRange(Long customerId, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
+    public Page<TransLogResponse> getByCustomerIdAndDateRange(String customerId, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
         log.debug("Fetching trans logs by customerId: {} and date range: {} to {}", customerId, startDate, endDate);
         return transLogRepository.findByCustomerIdAndDateRange(customerId, startDate, endDate, pageable)
                 .map(TransLogResponse::fromEntity);

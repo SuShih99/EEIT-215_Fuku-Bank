@@ -14,7 +14,7 @@ public class AccountCreateRequest {
      * 客戶 ID，不可為空。
      */
     @NotNull
-    private Long customerId;
+    private String customerId;
     
     /**
      * 帳戶類型，不可為空。

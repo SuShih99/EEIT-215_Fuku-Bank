@@ -73,7 +73,7 @@ public class TransLogController {
      */
     @GetMapping("/customer/{customerId}")
     public ResponseEntity<ApiResponse<PageResponse<TransLogResponse>>> getByCustomerId(
-            @PathVariable Long customerId,
+            @PathVariable String customerId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         log.info("Received request to get trans logs by customerId: {}", customerId);
@@ -98,7 +98,7 @@ public class TransLogController {
      */
     @GetMapping("/customer/{customerId}/range")
     public ResponseEntity<ApiResponse<PageResponse<TransLogResponse>>> getByCustomerIdAndDateRange(
-            @PathVariable Long customerId,
+            @PathVariable String customerId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
             @RequestParam(defaultValue = "0") int page,

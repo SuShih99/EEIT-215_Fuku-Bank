@@ -3,7 +3,7 @@
 -- ============================================================
 CREATE TABLE [ACCOUNT] (
     [account_number]        VARCHAR(12)     PRIMARY KEY,            -- 帳戶號碼 (PK, 業務編號, Java端生成)
-    [customer_id]           BIGINT          NOT NULL,               -- 客戶識別碼 (未來補FK)
+    [customer_id]           VARCHAR(20)     NOT NULL,               -- 客戶識別碼 (FK → customer_profile)
     [account_type]          VARCHAR(20)     NOT NULL,               -- 帳戶型別 (CHECKING/TIME_DEPOSIT/LOAN/SUB_ACCOUNT)
     [currency]              CHAR(3)         NOT NULL,               -- 幣別 (ISO 4217, 固定3碼)
     [balance]               DECIMAL(19,4)   NULL DEFAULT 0,         -- 餘額 (活存/定存用, 預設0防止NULL運算錯誤)
