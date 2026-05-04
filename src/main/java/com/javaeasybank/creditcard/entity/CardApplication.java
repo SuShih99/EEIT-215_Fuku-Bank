@@ -49,7 +49,7 @@ public class CardApplication {
     
     @ManyToOne
     @JoinColumn(name = "customer_id", nullable = false)
-    private CustomerProfile customer;
+    private CustomerProfile customerProfile;
     
     //預設申請是pending
     @PrePersist

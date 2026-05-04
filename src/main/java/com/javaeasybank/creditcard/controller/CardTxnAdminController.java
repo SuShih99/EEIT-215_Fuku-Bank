@@ -1,6 +1,6 @@
 package com.javaeasybank.creditcard.controller;
 
-import java.util.Map;
+import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.javaeasybank.common.dto.response.ApiResponse;
 import com.javaeasybank.creditcard.dto.CardTxnRequestDto;
+import com.javaeasybank.creditcard.dto.CardTxnResponseDto;
 import com.javaeasybank.creditcard.service.CardTxnService;
 
 import lombok.RequiredArgsConstructor;
@@ -25,45 +27,31 @@ public class CardTxnAdminController {
     private final CardTxnService cardTxnService;
 
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getAllTransactions() {
-        return ResponseEntity.ok(Map.of(
-                "message", "Transactions retrieved successfully",
-                "data", cardTxnService.findAll()
-        ));
+    public ResponseEntity<ApiResponse<List<CardTxnResponseDto>>> getAllTransactions() {
+        return ResponseEntity.ok(ApiResponse.success(cardTxnService.findAll()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> getTransaction(@PathVariable Integer id) {
-        return ResponseEntity.ok(Map.of(
-                "message", "Transaction retrieved successfully",
-                "data", cardTxnService.findById(id)
-        ));
+    public ResponseEntity<ApiResponse<CardTxnResponseDto>> getTransaction(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success(cardTxnService.findById(id)));
     }
 
     @PostMapping
-    public ResponseEntity<Map<String, Object>> createTransaction(@RequestBody CardTxnRequestDto dto) {
-        return ResponseEntity.ok(Map.of(
-                "message", "Transaction created successfully",
-                "data", cardTxnService.create(dto)
-        ));
+    public ResponseEntity<ApiResponse<CardTxnResponseDto>> createTransaction(@RequestBody CardTxnRequestDto dto) {
+        return ResponseEntity.ok(ApiResponse.success("Transaction created successfully", cardTxnService.create(dto)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> updateTransaction(
+    public ResponseEntity<ApiResponse<CardTxnResponseDto>> updateTransaction(
             @PathVariable Integer id,
             @RequestBody CardTxnRequestDto dto
     ) {
-        return ResponseEntity.ok(Map.of(
-                "message", "Transaction updated successfully",
-                "data", cardTxnService.update(id, dto)
-        ));
+        return ResponseEntity.ok(ApiResponse.success("Transaction updated successfully", cardTxnService.update(id, dto)));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> deleteTransaction(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<Void>> deleteTransaction(@PathVariable Integer id) {
         cardTxnService.deleteById(id);
-        return ResponseEntity.ok(Map.of(
-                "message", "Transaction deleted successfully"
-        ));
+        return ResponseEntity.ok(ApiResponse.success("Transaction deleted successfully", null));
     }
 }

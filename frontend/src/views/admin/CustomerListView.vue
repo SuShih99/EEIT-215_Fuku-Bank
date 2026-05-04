@@ -67,8 +67,6 @@
       @cancel="resetForm"
     >
       <a-form layout="vertical">
-<<<<<<< HEAD
-=======
         <!-- 一鍵帶入 -->
         <div v-if="!isEdit" style="margin-bottom: 12px">
           <span style="font-size: 12px; color: #999; margin-right: 8px">快速帶入：</span>
@@ -76,7 +74,6 @@
           <a-button size="small" @click="fillDemoCustomer('F')">女性客戶</a-button>
         </div>
 
->>>>>>> main
         <a-form-item label="身分證字號">
           <a-input v-model:value="form.idNumber" placeholder="請輸入身分證字號" :disabled="isEdit" />
         </a-form-item>
@@ -135,8 +132,6 @@ const genderMap = {
   F: '女',
 }
 
-<<<<<<< HEAD
-=======
 // === 一鍵帶入 Demo 資料 ===
 const maleNames = ['張志豪', '林建宏', '黃柏翔', '吳宗翰', '陳俊傑', '劉冠廷', '周政廷', '方建宏']
 const femaleNames = ['陳怡君', '林佳蓉', '王雅婷', '黃詩涵', '許家瑩', '曾婉茹', '卓佩樺', '賴怡君']
@@ -188,7 +183,6 @@ function fillDemoCustomer(gender) {
   form.address = `${city}${district}${road}${num}號${floor}樓`
 }
 
->>>>>>> main
 // === 查詢相關 ===
 const keyword = ref('')
 const customers = ref([])

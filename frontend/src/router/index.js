@@ -98,15 +98,12 @@ const router = createRouter({
           //http://localhost:5173/admin/loan-applications
           component: () => import('../views/admin/LoanApplicationView.vue'),
         },
-<<<<<<< HEAD
-=======
         {
           path: 'blacklist',
           name: 'admin-blacklist',
           //http://localhost:5173/admin/blacklist
           component: () => import('../views/admin/BlackListView.vue'),
         },
->>>>>>> main
       ],
     },
 

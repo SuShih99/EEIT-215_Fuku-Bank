@@ -205,11 +205,7 @@
                   <div class="nm-meta">
                     <span v-if="app.applicantPhone">📞 {{ app.applicantPhone }}</span>
                     <span v-if="app.applicantEmail" class="nm-email"
-<<<<<<< HEAD
-                      >✉ {{ app.applicantEmail }}</span
-=======
                       >✉️ {{ app.applicantEmail }}</span
->>>>>>> main
                     >
                   </div>
                 </div>

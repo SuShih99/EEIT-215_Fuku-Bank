@@ -31,6 +31,14 @@ public class ApiResponse<T> {
         res.data = data;
         return res;
     }
+    // 法2:成功回傳，附帶訊息與資料
+    public static <T> ApiResponse<T> success(String message, T data) {
+    ApiResponse<T> res = new ApiResponse<>();
+    res.success = true;
+    res.message = message;
+    res.data = data;
+    return res;
+    }
 
     /**
      * 失敗回傳，附帶錯誤訊息

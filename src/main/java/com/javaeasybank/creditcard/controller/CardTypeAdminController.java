@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.javaeasybank.common.dto.response.ApiResponse;
 import com.javaeasybank.creditcard.dto.CardTypeRequestDto;
 import com.javaeasybank.creditcard.dto.CardTypeResponseDto;
 import com.javaeasybank.creditcard.service.CardTypeService;
@@ -37,30 +38,28 @@ public class CardTypeAdminController {
 
     // 查詢所有卡別
     @GetMapping
-    public ResponseEntity<List<CardTypeResponseDto>> getAll() {
-        return ResponseEntity.ok(cardTypeService.findAll());
+    public ResponseEntity<ApiResponse<List<CardTypeResponseDto>>> getAll() {
+        return ResponseEntity.ok(ApiResponse.success(cardTypeService.findAll()));
     }
 
     // 查詢單一卡別
     @GetMapping("/{id}")
-    public ResponseEntity<CardTypeResponseDto> getById(@PathVariable Integer id) {
-        return ResponseEntity.ok(cardTypeService.findById(id));
+    public ResponseEntity<ApiResponse<CardTypeResponseDto>> getById(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success(cardTypeService.findById(id)));
     }
 
     // 新增卡別（含圖片）
     @PostMapping
-    public ResponseEntity<Map<String, Object>> create(
+    public ResponseEntity<ApiResponse<CardTypeResponseDto>> create(
     		@RequestBody CardTypeRequestDto req) throws IOException {
 
-        CardTypeResponseDto card = cardTypeService.createCardType(req);
+        CardTypeResponseDto cardTypeDto = cardTypeService.createCardType(req);
 
-        return ResponseEntity.ok(Map.of(
-                "message", "Card type created",
-                "data", card));
+        return ResponseEntity.ok(ApiResponse.success("Card type created",cardTypeDto));
     }
     // 上傳圖片
     @PostMapping("/upload")
-    public ResponseEntity<Map<String, String>> upload(
+    public ResponseEntity<ApiResponse<Map<String, String>>> upload(
     		@RequestParam("file") MultipartFile file) throws IOException {
 
         String filename = System.currentTimeMillis() + "_" + file.getOriginalFilename();
@@ -72,30 +71,24 @@ public class CardTypeAdminController {
         // ✅ 只回傳相對路徑
         String url = "uploads/" + filename;
 
-        return ResponseEntity.ok(Map.of("url", url));
+        return ResponseEntity.ok(ApiResponse.success(Map.of("url", url)));
     }
 
     // 更新卡別（圖片可選）
     @PutMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> update(
-            @PathVariable Integer id,
-            @RequestPart("data") CardTypeRequestDto req,
-            @RequestPart(value = "mf", required = false) MultipartFile mf) throws IOException {
+public ResponseEntity<ApiResponse<CardTypeResponseDto>> update(
+        @PathVariable Integer id,
+        @RequestBody CardTypeRequestDto req) {
 
-        CardTypeResponseDto card = cardTypeService.updateCardType(id, req, mf);
+    CardTypeResponseDto card = cardTypeService.updateCardType(id, req);
 
-        return ResponseEntity.ok(Map.of(
-                "message", "Card type updated",
-                "data", card));
-    }
+    return ResponseEntity.ok(ApiResponse.success("Card type updated", card));
+}
 
     // 刪除卡別
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> deletebyId(@PathVariable Integer id) {
-
+    public ResponseEntity<ApiResponse<Void>> deletebyId(@PathVariable Integer id) {
         cardTypeService.deleteById(id);
-
-        return ResponseEntity.ok(Map.of(
-                "message", "Card type deleted"));
+        return ResponseEntity.ok(ApiResponse.success("Card type deleted", null));
     }
 }

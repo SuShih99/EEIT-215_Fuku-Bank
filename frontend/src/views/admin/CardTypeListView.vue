@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import api from '@/api/axios'
-import { createCardType, uploadImage,  deleteCardType } from '@/api/cardtype'
+import { getCardTypes,createCardType, uploadImage,  deleteCardType,updateCardType } from '@/api/cardtype'
 
 const cardTypes = ref([])
 const loading = ref(true)
@@ -15,7 +15,10 @@ const file = ref(null)
 // 表單資料
 const form = ref({
   cardTypeName: '',
+  cashbackRate:0,
 })
+// 編輯id
+const editingId = ref(null)
 // modal控制
 const open = ref(false)
 //==工具函式==
@@ -52,37 +55,84 @@ const columns = [
 const fetchCardTypes = async () => {
   loading.value = true
   try {
-    const response = await api.get('/api/admin/card-types')
-    console.log(response.data)
-    cardTypes.value = response.data
+    const data = await getCardTypes()
+    cardTypes.value = data
+    console.log(data);
+    
   } catch (error) {
-    message.error('讀取資料失敗: ' + (error.response?.data?.message || error.message))
+    message.error(error.response?.data?.message || '讀取資料失敗')
   } finally {
     loading.value = false
   }
 }
-//處理新增
+// 新增卡別
+// 新增 / 更新
 const handleCreate = async () => {
   try {
-    console.log(file.value)
-    const formData = new FormData()
-    formData.append('file', file.value)
+    if (!form.value.cardTypeName) {
+      message.error('請輸入卡片名稱')
+      return
+    }
 
-    const res = await uploadImage(formData)
-    const imageUrl = res.data.url
+    let imageUrl = null
 
-    await createCardType({
-      cardTypeName: form.value.cardTypeName,
-      cardImageUrl: imageUrl,
-    })
+    // 有選圖片才上傳
+    if (file.value) {
+      const formData = new FormData()
+      formData.append('file', file.value)
 
-    message.success('新增成功')
+      const imageRes = await uploadImage(formData)
+      imageUrl = imageRes.url
+    }
+
+    if (editingId.value) {
+      // 更新
+      await updateCardType(editingId.value, {
+        cardTypeName: form.value.cardTypeName,
+        cashbackRate: form.value.cashbackRate,
+        cardImageUrl: imageUrl, // 可為 null（看後端）
+      })
+      message.success('更新成功')
+    } else {
+      // 新增
+      if (!imageUrl) {
+        message.error('請選擇圖片')
+        return
+      }
+
+      await createCardType({
+        cardTypeName: form.value.cardTypeName,
+        cashbackRate: form.value.cashbackRate,
+        cardImageUrl: imageUrl,
+      })
+      message.success('新增成功')
+    }
+
+    // reset
     open.value = false
+    editingId.value = null
+    form.value.cardTypeName = ''
+    form.value.cashbackRate = 0
+    file.value = null
+
     await fetchCardTypes()
   } catch (error) {
     message.error(error.response?.data?.message || '新增失敗')
   }
 }
+// 編輯處理
+const handleEdit = (record)=>{
+  editingId.value = record.cardTypeId
+  form.value.cardTypeName = record.cardTypeName
+  form.value.cashbackRate = record.cashbackRate
+  open.value = true
+  file.value = null
+}
+
+
+
+
+
 
 // 刪除處理
 const handleDelete = (id) => {
@@ -150,8 +200,7 @@ onMounted(() => {
         <!-- 操作按鈕處理 -->
         <template v-else-if="column.key === 'action'">
           <a-space>
-            <a-button size="small" @click="() => message.info('編輯 ID: ' + record.cardTypeId)"
-              >編輯</a-button
+            <a-button size="small" @click="handleEdit(record)">編輯</a-button
             >
             <a-button size="small" danger @click="handleDelete(record.cardTypeId)">刪除</a-button>
           </a-space>
@@ -159,7 +208,7 @@ onMounted(() => {
       </template>
     </a-table>
     <!-- modal -->
-    <a-modal v-model:open="open" title="新增卡別" @ok="handleCreate">
+    <a-modal v-model:open="open" :title="editingId ? '編輯卡別' : '新增卡別'" @ok="handleCreate">
       <a-form layout="vertical">
         <a-form-item label="卡片名稱">
           <a-input v-model:value="form.cardTypeName" />
@@ -167,6 +216,9 @@ onMounted(() => {
 
         <a-form-item label="圖片">
           <input type="file" @change="handleFileChange" />
+        </a-form-item>
+        <a-form-item label="回饋率(%)">
+          <a-input-number v-model:value="form.cashbackRate" min="0" max="100"/>
         </a-form-item>
       </a-form>
     </a-modal>

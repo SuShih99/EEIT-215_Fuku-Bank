@@ -51,15 +51,25 @@ public class CardTypeService {
 		// 更新基本欄位
 		cardTypeMapper.updateEntityFromDto(request, cardType);
 
-
-		// 刪舊圖片
-		String oldImageUrl = cardType.getCardImageUrl();
-		if (oldImageUrl != null && oldImageUrl.startsWith("/uploads/")) {
-			String oldFileName = oldImageUrl.replace("/uploads/", "");
-			Path oldPath = Paths.get("uploads/", oldFileName);
-			Files.deleteIfExists(oldPath);
+		// 如果有傳新圖片才處理
+		if (mf != null && !mf.isEmpty()) {
+			// 刪舊圖片
+			String oldImageUrl = cardType.getCardImageUrl();
+			if (oldImageUrl != null && oldImageUrl.startsWith("uploads/")) {
+				String oldFileName = oldImageUrl.replace("uploads/", "");
+				Path oldPath = Paths.get("uploads/", oldFileName);
+				Files.deleteIfExists(oldPath);
+			}
+			cardType.setCardImageUrl(saveImage(mf));
 		}
-		cardType.setCardImageUrl(saveImage(mf));
+
+		return cardTypeMapper.toDto(cardTypeRepository.save(cardType));
+	}
+
+	public CardTypeResponseDto updateCardType(Integer id, CardTypeRequestDto request) {
+		CardType cardType = cardTypeRepository.findById(id)
+				.orElseThrow(() -> new BusinessException("Card type not found, id: " + id));
+		cardTypeMapper.updateEntityFromDto(request, cardType);
 		return cardTypeMapper.toDto(cardTypeRepository.save(cardType));
 	}
 	// 存圖片
@@ -83,7 +93,7 @@ public class CardTypeService {
 		Files.createDirectories(path.getParent());
 		Files.write(path, mf.getBytes());
 
-		return "/uploads/" + fileName;
+		return "uploads/" + fileName;
 	}
 	// 刪除卡片型態
 	public void deleteById(Integer id) {

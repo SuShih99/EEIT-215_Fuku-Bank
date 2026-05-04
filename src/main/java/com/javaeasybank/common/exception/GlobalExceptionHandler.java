@@ -4,10 +4,7 @@ import com.javaeasybank.account.exception.AccountException;
 import com.javaeasybank.common.dto.response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-<<<<<<< HEAD
-=======
 import org.springframework.security.authorization.AuthorizationDeniedException;
->>>>>>> main
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;

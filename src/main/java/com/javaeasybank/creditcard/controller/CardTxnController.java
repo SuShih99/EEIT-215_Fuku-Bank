@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.javaeasybank.common.dto.response.ApiResponse;
 import com.javaeasybank.creditcard.dto.CardTxnRequestDto;
 import com.javaeasybank.creditcard.dto.CardTxnResponseDto;
 import com.javaeasybank.creditcard.service.CardTxnService;
@@ -24,17 +25,17 @@ public class CardTxnController {
     private final CardTxnService cardTxnService;
 
     @GetMapping
-    public ResponseEntity<List<CardTxnResponseDto>> getAllTransactions() {
-        return ResponseEntity.ok(cardTxnService.findAll());
+    public ResponseEntity<ApiResponse<List<CardTxnResponseDto>>> getAllTransactions() {
+        return ResponseEntity.ok(ApiResponse.success(cardTxnService.findAll()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CardTxnResponseDto> getTransaction(@PathVariable Integer id) {
-        return ResponseEntity.ok(cardTxnService.findById(id));
+    public ResponseEntity<ApiResponse<CardTxnResponseDto>> getTransaction(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success(cardTxnService.findById(id)));
     }
 
     @PostMapping
-    public ResponseEntity<CardTxnResponseDto> create(@RequestBody CardTxnRequestDto dto) {
-        return ResponseEntity.ok(cardTxnService.create(dto));
+    public ResponseEntity<ApiResponse<CardTxnResponseDto>> create(@RequestBody CardTxnRequestDto dto) {
+        return ResponseEntity.ok(ApiResponse.success("Transaction created successfully", cardTxnService.create(dto)));
     }
 }

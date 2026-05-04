@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.javaeasybank.common.dto.response.ApiResponse;
 import com.javaeasybank.creditcard.dto.CardTypeResponseDto;
 import com.javaeasybank.creditcard.service.CardTypeService;
 
@@ -22,13 +23,13 @@ public class CardTypeController {
 
     // 🔹 1. 查全部卡別
     @GetMapping
-    public ResponseEntity<List<CardTypeResponseDto>> getAll() {
-        return ResponseEntity.ok(cardTypeService.findAll());
+    public ResponseEntity<ApiResponse<List<CardTypeResponseDto>>> getAll() {
+        return ResponseEntity.ok(ApiResponse.success(cardTypeService.findAll()));
     }
 
     // 🔹 2. 查單一卡別
     @GetMapping("/{id}")
-    public ResponseEntity<CardTypeResponseDto> getById(@PathVariable Integer id) {
-        return ResponseEntity.ok(cardTypeService.findById(id));
+    public ResponseEntity<ApiResponse<CardTypeResponseDto>> getById(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success(cardTypeService.findById(id)));
     }
 }

@@ -1,6 +1,6 @@
 package com.javaeasybank.creditcard.controller;
 
-import java.util.Map;
+import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.javaeasybank.common.dto.response.ApiResponse;
 import com.javaeasybank.creditcard.dto.CreditCardRequestDto;
 import com.javaeasybank.creditcard.dto.CreditCardResponseDto;
 import com.javaeasybank.creditcard.service.CreditCardService;
@@ -27,51 +28,37 @@ public class CardAdminController {
 
     // 查詢卡列表
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getAllCards() {
-        return ResponseEntity.ok(Map.of(
-                "message", "Credit cards retrieved successfully",
-                "data", cardService.findAll()
-        ));
+    public ResponseEntity<ApiResponse<List<CreditCardResponseDto>>> getAllCards() {
+        return ResponseEntity.ok(ApiResponse.success(cardService.findAll()));
     }
 
     // 查詢單一卡
     @GetMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> getCardById(@PathVariable Integer id) {
-        return ResponseEntity.ok(Map.of(
-                "message", "Credit card retrieved successfully",
-                "data", cardService.findById(id)
-        ));
+    public ResponseEntity<ApiResponse<CreditCardResponseDto>> getCardById(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success(cardService.findById(id)));
     }
 
     // 新增卡
     @PostMapping
-    public ResponseEntity<Map<String, Object>> createCard(@RequestBody CreditCardRequestDto dto) {
+    public ResponseEntity<ApiResponse<CreditCardResponseDto>> createCard(@RequestBody CreditCardRequestDto dto) {
         CreditCardResponseDto created = cardService.create(dto);
-        return ResponseEntity.ok(Map.of(
-                "message", "Credit card created successfully",
-                "data", created
-        ));
+        return ResponseEntity.ok(ApiResponse.success("Credit card created successfully", created));
     }
 
     // 更新卡
     @PutMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> updateCard(
+    public ResponseEntity<ApiResponse<CreditCardResponseDto>> updateCard(
             @PathVariable Integer id,
             @RequestBody CreditCardRequestDto dto
     ) {
         CreditCardResponseDto updated = cardService.update(id, dto);
-        return ResponseEntity.ok(Map.of(
-                "message", "Credit card updated successfully",
-                "data", updated
-        ));
+        return ResponseEntity.ok(ApiResponse.success("Credit card updated successfully", updated));
     }
 
     // 刪除卡
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> deleteCard(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<Void>> deleteCard(@PathVariable Integer id) {
         cardService.deleteById(id);
-        return ResponseEntity.ok(Map.of(
-                "message", "Credit card deleted successfully"
-        ));
+        return ResponseEntity.ok(ApiResponse.success("Credit card deleted successfully", null));
     }
 }
