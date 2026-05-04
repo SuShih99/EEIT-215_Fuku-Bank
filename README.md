@@ -2,7 +2,7 @@
 
 資展國際 EEIT-215 第四組專題
 
-銀行業務系統，提供**管理端（行員）**與**客戶端（顧客）**兩套介面，涵蓋顧客管理、帳務監控、授信放款、信用卡業務、保險業務等核心功能。
+銀行業務系統，提供**管理端（行員）**與**客戶端（顧客）**兩套介面，涵蓋顧客管理、帳務監控、授信放款、信用卡業務、風險控管等核心功能。
 
 ---
 
@@ -24,19 +24,19 @@
 
 ```
 管理端（行員）  →  /api/admin/**
-客戶端（顧客）  →  /api/client/**
+客戶端（顧客）  →  /api/client/** (尚未實作)
 ```
 
 ### 模組分工
 
 | 模組 | 負責人 |
 |---|---|
-| 共用元件 | 漢億（組長） |
-| 系統與權限 (Auth) + 顧客管理 (Customer) | 以琳（副組長） |
+| 共用元件 | 漢億 |
+| 系統與權限 (Auth) + 顧客管理 (Customer) | 以琳 |
 | 帳務監控 (Account) | 漢億 |
 | 授信放款 (Loan) | 泓翔 |
 | 信用卡 (Credit Card) | 王昶 |
-| 保險 (Insurance) | 世帆 |
+| 風險控管 (Risk) | 世帆 |
 
 ---
 
@@ -66,14 +66,14 @@ CREATE DATABASE java_easy_bank;
 
 ### 4. 建立本機設定檔
 
-在 `src/main/resources/` 建立 `application.properties`，填入自己的資料庫帳號密碼：
+在 `src/main/resources/` 建立 `application-local.properties`，填入自己的資料庫帳號密碼：
 
 ```properties
 # Server
 server.port=8080
 
 # Database
-spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=java_easy_bank;encrypt=false;trustServerCertificate=true
+spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=你的資料庫;encrypt=false;trustServerCertificate=true
 spring.datasource.username=你的帳號
 spring.datasource.password=你的密碼
 spring.datasource.driver-class-name=com.microsoft.sqlserver.jdbc.SQLServerDriver
@@ -88,11 +88,11 @@ spring.jackson.time-zone=Asia/Taipei
 spring.jackson.serialization.write-dates-as-timestamps=false
 ```
 
-> ⚠️ `application.properties` 已加入 `.gitignore`，不會推上 GitHub，請勿將密碼推上遠端。
+> ⚠️ `application-local.properties` 已加入 `.gitignore`，不會推上 GitHub，請勿將密碼推上遠端。
 
 ### 5. 初始化資料
 
-執行 `src/main/resources/data.sql`（待補）
+執行 `src/main/resources/database`
 
 ### 6. 啟動後端
 
@@ -107,7 +107,7 @@ spring.jackson.serialization.write-dates-as-timestamps=false
 Started JavaEasyBankApplication in X.XX seconds
 ```
 
-### 7. 啟動前端（待補）
+### 7. 啟動前端
 
 ```bash
 cd frontend
@@ -127,21 +127,21 @@ src/main/java/com/javaeasybank/
 │   ├── config/          # SecurityConfig、CorsConfig
 │   ├── dto/response/    # ApiResponse、PageResponse
 │   ├── entity/          # BaseEntity
-│   ├── exception/       # BusinessException、GlobalExceptionHandler
-│   └── util/            # SessionUtil
+│   └── exception/       # BusinessException、GlobalExceptionHandler
+│   
 ├── auth/                # 系統與權限管理
-├── customer/            # 顧客管理
-├── account/             # 帳務監控
+├── customer/            # 顧客
+├── account/             # 帳戶
 ├── loan/                # 授信放款
 ├── creditcard/          # 信用卡業務
-└── insurance/           # 保險業務
+└── risk/                # 風險控管
 ```
 
 ---
 
 ## 開發規範
 
-詳見 Notion 開發指南（內部文件）
+詳見 Notion 開發指南
 
 - Git branch 命名：`feature/{模組}-{功能}`、`fix/{模組}-{問題}`
 - Commit 格式：`feat account：新增轉帳 API`
