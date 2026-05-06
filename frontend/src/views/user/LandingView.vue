@@ -1,412 +1,365 @@
 <template>
-  <div class="landing-container">
-    <!-- 背景光暈 (靜態) -->
-    <div class="bg-glow"></div>
-
-    <!-- 上方導覽列 (只有 Logo) -->
-    <header class="header">
-      <div class="logo-wrapper">
-        <div class="logo-icon">
-          <BankOutlined style="font-size: 24px; color: #fff" />
-        </div>
-        <span class="logo-text">福庫銀行</span>
-        <span class="logo-text-en">Java Easy Bank</span>
+  <div class="customer-page landing">
+    <!-- 頂部導覽 -->
+    <header class="landing-header">
+      <div class="header-inner">
+        <a class="logo-group" href="/" @click.prevent="$router.push('/')">
+          <div class="jb-stamp">福</div>
+          <div class="logo-text">
+            <span class="logo-zh">JAVA_BANK</span>
+            <span class="logo-en">CALM &middot; BALANCE &middot; TRUST</span>
+          </div>
+        </a>
+        <nav class="header-nav" aria-label="主導覽">
+          <button class="jb-btn jb-btn-secondary jb-btn-sm" @click="$router.push('/login')">登入</button>
+          <button class="jb-btn jb-btn-primary jb-btn-sm" @click="$router.push('/register')">立即開戶</button>
+        </nav>
       </div>
     </header>
 
-    <!-- 主視覺區塊 (左文右圖) -->
-    <main class="hero-section">
-      <div class="hero-content">
-        <!-- 左側：文字與按鈕 -->
-        <div class="hero-left">
-          <h1 class="main-title">
-            讓理財更簡單<br />
-            帳戶安全更放心
-          </h1>
-          <p class="subtitle">
-            | 福庫銀行 | 最瞭解您的專業財務夥伴
+    <!-- 主視覺 Hero -->
+    <section class="hero" aria-label="主視覺">
+      <div class="hero-inner">
+        <div class="hero-content">
+          <h1 class="hero-title">靜心理財<br />安穩致遠</h1>
+          <p class="hero-sub">
+            以沉穩的態度面對每一筆資產，<br />
+            讓您的財務如流水般自在運行。
           </p>
-          <a-button
-            class="cta-btn-join"
-            @click="$router.push('/register')"
-          >
-            立即加入
-          </a-button>
-        </div>
-
-        <!-- 右側：漂浮信用卡模擬 (純 CSS 製作) -->
-        <div class="hero-right">
-          <div class="visual-wrapper">
-            <div class="backdrop-glow"></div>
-            <div class="floating-card top-card">
-              <div class="chip"></div>
-              <div class="number">**** **** **** 9101</div>
-              <div class="card-holder">FUKU BANK</div>
-            </div>
-            <div class="floating-card bottom-card">
-              <div class="chip"></div>
-              <div class="number">**** **** **** 1234</div>
-            </div>
+          <div class="hero-actions">
+            <button class="jb-btn jb-btn-primary jb-btn-lg" @click="$router.push('/register')">
+              立即開戶
+            </button>
+            <button class="jb-btn jb-btn-secondary jb-btn-lg" @click="$router.push('/login')">
+              已有帳戶
+            </button>
           </div>
         </div>
-      </div>
-    </main>
-
-    <!-- 下方四個功能卡片 -->
-    <section class="features-section">
-      <div class="features-grid">
-        <div class="feature-card" @click="$router.push('/login')">
-          <div class="card-icon-wrapper account-icon">
-            <UserOutlined />
-          </div>
-          <h3 class="card-title">我的帳戶</h3>
-          <p class="card-desc">查看餘額、交易紀錄與帳戶管理</p>
-        </div>
-
-        <div class="feature-card" @click="handleComingSoon">
-          <div class="card-icon-wrapper credit-icon">
-            <CreditCardOutlined />
-          </div>
-          <h3 class="card-title">信用卡</h3>
-          <p class="card-desc">申請、管理與帳單查詢</p>
-        </div>
-
-        <div class="feature-card" @click="handleComingSoon">
-          <div class="card-icon-wrapper loan-icon">
-            <DollarCircleOutlined />
-          </div>
-          <h3 class="card-title">貸款</h3>
-          <p class="card-desc">房貸、車貸與信貸服務</p>
-        </div>
-
-        <div class="feature-card" @click="handleComingSoon">
-          <div class="card-icon-wrapper invest-icon">
-            <FundOutlined />
-          </div>
-          <h3 class="card-title">投資理財</h3>
-          <p class="card-desc">投資組合、基金與證券服務</p>
+        <div class="hero-visual" aria-hidden="true">
+          <div class="ink-wash"></div>
+          <div class="ink-circle"></div>
+          <div class="ink-stroke"></div>
         </div>
       </div>
     </section>
 
-    <!-- 底部管理員入口 -->
-    <footer class="footer">
-      <router-link to="/admin/login" class="admin-link">
-        <SettingOutlined /> 管理員入口
-      </router-link>
+    <!-- 服務特色 -->
+    <section class="features" aria-label="服務特色">
+      <h2 class="section-heading">穩健服務</h2>
+      <div class="features-grid">
+        <article
+          v-for="item in features"
+          :key="item.label"
+          class="feature-item"
+          tabindex="0"
+          role="button"
+          :aria-label="item.label"
+          @click="item.route ? $router.push(item.route) : handleComingSoon()"
+          @keydown.enter="item.route ? $router.push(item.route) : handleComingSoon()"
+        >
+          <div class="feature-icon" v-html="item.svg" aria-hidden="true"></div>
+          <h3>{{ item.label }}</h3>
+          <p>{{ item.desc }}</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- 底部 -->
+    <footer class="landing-footer">
+      <p>&copy; 2025 Java Easy Bank. All rights reserved.</p>
+      <router-link to="/admin/login" class="admin-entry">管理員入口</router-link>
     </footer>
   </div>
 </template>
 
 <script setup>
-import { message } from 'ant-design-vue';
-import {
-  BankOutlined,
-  UserOutlined,
-  CreditCardOutlined,
-  DollarCircleOutlined,
-  FundOutlined,
-  SettingOutlined,
-} from '@ant-design/icons-vue';
+const features = [
+  {
+    label: '帳戶總覽',
+    desc: '即時查看餘額與交易紀錄',
+    route: '/login',
+    svg: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 10h20"/></svg>',
+  },
+  {
+    label: '信用卡',
+    desc: '申請、管理與帳單查詢',
+    route: null,
+    svg: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>',
+  },
+  {
+    label: '貸款服務',
+    desc: '房貸、車貸與信貸方案',
+    route: null,
+    svg: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+  },
+  {
+    label: '安全防護',
+    desc: '多重驗證保障資金安全',
+    route: null,
+    svg: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+  },
+]
 
-const handleComingSoon = () => {
-  message.info('此功能即將推出，敬請期待！');
-};
+function handleComingSoon() {
+  alert('此功能即將推出，敬請期待！')
+}
 </script>
 
 <style scoped>
-.landing-container {
+.landing {
   min-height: 100vh;
-  background-color: #0e1015;
-  color: #ffffff;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  position: relative;
-  overflow-x: hidden;
-  padding-bottom: 40px;
+  background: var(--bg-primary);
 }
 
-/* 背景霓虹光暈 */
-.bg-glow {
-  position: absolute;
-  top: -20%;
-  right: -10%;
-  width: 60%;
-  height: 60%;
-  background: radial-gradient(circle, rgba(123, 31, 162, 0.15) 0%, rgba(0,0,0,0) 70%);
-  border-radius: 50%;
-  pointer-events: none;
+/* === Header === */
+.landing-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(245, 241, 234, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
 }
 
-/* Header */
-.header {
-  padding: 24px 80px;
-}
-
-.logo-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.logo-icon {
-  width: 40px;
-  height: 40px;
-  background-color: #1a1e29;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.logo-text {
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: 1px;
-}
-
-.logo-text-en {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.5);
-  margin-left: 8px;
-  font-weight: 300;
-}
-
-/* 主視覺區塊 Hero */
-.hero-section {
-  padding: 40px 80px 80px;
-}
-
-.hero-content {
+.header-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-6);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  max-width: 1200px;
+}
+
+.logo-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  text-decoration: none;
+  color: inherit;
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-zh {
+  font-family: var(--font-heading);
+  font-size: var(--text-h3);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 2px;
+}
+
+.logo-en {
+  font-size: 10px;
+  color: var(--text-secondary);
+  letter-spacing: 3px;
+  margin-top: 2px;
+}
+
+.header-nav {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* === Hero === */
+.hero {
+  padding: var(--space-8) var(--space-6) var(--space-8);
+}
+
+.hero-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+}
+
+.hero-content {
+  flex: 1;
+  max-width: 480px;
+}
+
+.hero-title {
+  font-size: 48px;
+  letter-spacing: 4px;
+  margin-bottom: var(--space-4);
+}
+
+.hero-sub {
+  font-size: 16px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+  margin-bottom: var(--space-6);
+}
+
+.hero-actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+/* 水墨裝飾 */
+.hero-visual {
+  flex: 1;
+  max-width: 400px;
+  height: 340px;
+  position: relative;
+}
+
+.ink-wash {
+  position: absolute;
+  top: 8%;
+  left: 8%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(
+    ellipse at 40% 40%,
+    rgba(92, 107, 95, 0.14) 0%,
+    rgba(92, 107, 95, 0.05) 40%,
+    transparent 70%
+  );
+  border-radius: 50% 40% 60% 50%;
+  filter: blur(2px);
+}
+
+.ink-circle {
+  position: absolute;
+  top: 16%;
+  right: 8%;
+  width: 180px;
+  height: 180px;
+  border: 2px solid rgba(92, 107, 95, 0.16);
+  border-radius: 50%;
+  clip-path: polygon(0 0, 95% 0, 100% 85%, 5% 100%);
+}
+
+.ink-stroke {
+  position: absolute;
+  bottom: 16%;
+  left: 18%;
+  width: 200px;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(92, 107, 95, 0.28) 20%,
+    rgba(92, 107, 95, 0.12) 80%,
+    transparent 100%
+  );
+  transform: rotate(-5deg);
+}
+
+/* === Features === */
+.features {
+  padding: var(--space-8) var(--space-6);
+  max-width: 1080px;
   margin: 0 auto;
 }
 
-.hero-left {
-  flex: 1;
-  max-width: 600px;
-}
-
-.main-title {
-  font-size: 48px;
-  font-weight: 700;
-  color: #fff;
-  line-height: 1.3;
-  margin: 0 0 24px;
-  letter-spacing: 2px;
-}
-
-.subtitle {
-  font-size: 16px;
-  color: rgba(255, 255, 255, 0.6);
-  margin: 0 0 48px;
-  font-weight: 300;
-  letter-spacing: 1px;
-}
-
-.cta-btn-join {
-  background: linear-gradient(135deg, #ffeb3b 0%, #ff9800 100%);
-  border: none;
-  color: #000;
-  font-weight: 600;
-  padding: 0 32px;
-  height: 48px;
-  border-radius: 24px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
-}
-
-.cta-btn-join:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 152, 0, 0.5);
-  color: #000 !important;
-}
-
-/* 右側模擬視覺 */
-.hero-right {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  position: relative;
-}
-
-.visual-wrapper {
-  position: relative;
-  width: 400px;
-  height: 300px;
-}
-
-.backdrop-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 120%;
-  height: 120%;
-  background: radial-gradient(circle, rgba(255, 63, 129, 0.15) 0%, rgba(255, 179, 0, 0.1) 40%, rgba(0,0,0,0) 70%);
-  filter: blur(20px);
-}
-
-.floating-card {
-  position: absolute;
-  width: 260px;
-  height: 160px;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  backdrop-filter: blur(5px);
-  animation: float-animation 6s ease-in-out infinite;
-}
-
-@keyframes float-animation {
-  0%, 100% { transform: translateY(0) rotate(-10deg); }
-  50% { transform: translateY(-15px) rotate(-8deg); }
-}
-
-.top-card {
-  background: linear-gradient(135deg, rgba(255, 63, 129, 0.2) 0%, rgba(123, 31, 162, 0.2) 100%);
-  border: 1px solid rgba(255, 63, 129, 0.4);
-  top: 0;
-  right: 20px;
-  z-index: 2;
-}
-
-.bottom-card {
-  background: linear-gradient(135deg, rgba(0, 229, 255, 0.15) 0%, rgba(21, 101, 192, 0.15) 100%);
-  border: 1px solid rgba(0, 229, 255, 0.3);
-  bottom: 0;
-  left: 20px;
-  transform: rotate(5deg);
-  z-index: 1;
-  animation-delay: -3s;
-  animation-name: float-animation-bottom;
-}
-
-@keyframes float-animation-bottom {
-  0%, 100% { transform: translateY(0) rotate(5deg); }
-  50% { transform: translateY(-10px) rotate(7deg); }
-}
-
-.chip {
-  width: 40px;
-  height: 30px;
-  background-color: rgba(255, 215, 0, 0.5);
-  border-radius: 4px;
-  margin-bottom: 40px;
-}
-
-.number {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 16px;
-  letter-spacing: 2px;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.card-holder {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
-  margin-top: 10px;
-}
-
-/* 下方功能卡片 section */
-.features-section {
-  padding: 0 80px 60px;
+.section-heading {
+  font-family: var(--font-heading);
+  font-size: var(--text-h2);
+  text-align: center;
+  margin-bottom: var(--space-7);
+  letter-spacing: 6px;
 }
 
 .features-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
+  gap: var(--space-3);
 }
 
-.feature-card {
-  background-color: #161922;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 32px 24px;
-  transition: all 0.3s;
+.feature-item {
+  background: var(--bg-card);
+  border: 1px solid rgba(214, 206, 195, 0.5);
+  border-radius: var(--radius-md);
+  padding: var(--space-5) var(--space-4);
+  text-align: center;
   cursor: pointer;
+  transition: transform var(--duration) var(--ease),
+              box-shadow var(--duration) var(--ease),
+              border-color var(--duration) var(--ease);
 }
 
-.feature-card:hover {
-  transform: translateY(-5px);
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-  background-color: #1a1e29;
+.feature-item:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
 }
 
-.card-icon-wrapper {
-  width: 48px;
-  height: 48px;
-  border-radius: 24px;
+.feature-item:active {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.feature-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto var(--space-3);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  margin-bottom: 24px;
+  color: var(--primary);
+  background: var(--primary-light);
+  border-radius: 50%;
 }
 
-/* 不同卡片的霓虹配色 */
-.account-icon { background-color: rgba(255, 179, 0, 0.1); color: #ffb300; }
-.credit-icon { background-color: rgba(0, 229, 255, 0.1); color: #00e5ff; }
-.loan-icon { background-color: rgba(255, 63, 129, 0.1); color: #ff3f81; }
-.invest-icon { background-color: rgba(123, 31, 162, 0.1); color: #ba68c8; }
-
-.card-title {
-  color: #fff;
-  font-size: 18px;
-  font-weight: 600;
-  margin: 0 0 12px;
+.feature-item h3 {
+  font-size: var(--text-body);
+  margin-bottom: var(--space-2);
 }
 
-.card-desc {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 14px;
-  margin: 0;
-  line-height: 1.5;
-  font-weight: 300;
+.feature-item p {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
 }
 
-/* Footer */
-.footer {
+/* === Footer === */
+.landing-footer {
   text-align: center;
-  padding-top: 20px;
-}
-
-.admin-link {
-  color: rgba(255, 255, 255, 0.2);
-  font-size: 12px;
-  text-decoration: none;
-  transition: color 0.2s;
-  display: inline-flex;
+  padding: var(--space-5) var(--space-6);
+  border-top: 1px solid var(--border);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
-.admin-link:hover {
-  color: rgba(255, 255, 255, 0.5);
+.admin-entry {
+  font-size: var(--text-xs);
+  color: var(--border);
+  text-decoration: none;
+  transition: color var(--duration) var(--ease);
 }
 
-/* 響應式：針對較小螢幕調整 */
-@media (max-width: 1024px) {
-  .header, .hero-section, .features-section { padding-left: 40px; padding-right: 40px; }
-  .main-title { font-size: 36px; }
-  .hero-content { flex-direction: column-reverse; text-align: center; gap: 40px; }
-  .hero-left { max-width: 100%; display: flex; flex-direction: column; align-items: center; }
-  .subtitle { margin-bottom: 32px; }
+.admin-entry:hover {
+  color: var(--text-secondary);
+}
+
+/* === RWD === */
+@media (max-width: 900px) {
+  .hero-inner {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--space-5);
+  }
+  .hero-content { max-width: 100%; }
+  .hero-actions { justify-content: center; }
+  .hero-visual { display: none; }
   .features-grid { grid-template-columns: repeat(2, 1fr); }
+  .hero-title { font-size: 36px; }
 }
 
-@media (max-width: 600px) {
-  .header { padding: 16px 20px; }
+@media (max-width: 500px) {
+  .header-inner { padding: var(--space-3) var(--space-3); }
+  .hero { padding: var(--space-6) var(--space-3); }
+  .features { padding: var(--space-6) var(--space-3); }
   .features-grid { grid-template-columns: 1fr; }
-  .visual-wrapper { width: 300px; height: 220px; transform: scale(0.8); }
+  .hero-title { font-size: 30px; }
 }
 </style>

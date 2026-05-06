@@ -1,4 +1,5 @@
 import './assets/main.css'
+import './assets/customer-theme.css'
 
 // 載入Vue的運行環境
 import { createApp } from 'vue'

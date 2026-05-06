@@ -1,19 +1,21 @@
 <template>
-  <div class="profile-page">
+  <div class="customer-page profile-page">
     <h2 class="page-title">會員中心</h2>
 
     <div class="profile-layout">
       <!-- 左欄：大頭照 + CIF -->
-      <div class="profile-left">
+      <aside class="profile-left">
         <div class="avatar-section">
-          <div class="avatar-wrapper" @click="triggerUpload">
-            <a-avatar :size="120" :src="avatarSrc">
-              <template #icon><UserOutlined style="font-size: 60px" /></template>
-            </a-avatar>
-            <div class="avatar-overlay">
-              <CameraOutlined style="font-size: 24px; color: #fff" />
-            </div>
-          </div>
+          <button class="avatar-wrapper" @click="triggerUpload" aria-label="更換大頭照">
+            <img v-if="avatarSrc" :src="avatarSrc" class="avatar-img" alt="使用者大頭照" />
+            <span v-else class="avatar-fallback" aria-hidden="true">{{ (profile.name || '會')[0] }}</span>
+            <span class="avatar-overlay" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+            </span>
+          </button>
           <input
             ref="fileInput"
             type="file"
@@ -24,77 +26,77 @@
           <p class="avatar-hint">點擊更換大頭照</p>
         </div>
 
-        <div class="cif-section">
-          <div class="cif-label">客戶編號 (CIF)</div>
-          <div class="cif-value">{{ profile.cif || '-' }}</div>
+        <div class="cif-box">
+          <span class="cif-label">客戶編號 (CIF)</span>
+          <span class="cif-value">{{ profile.cif || '-' }}</span>
         </div>
-      </div>
+      </aside>
 
-      <!-- 右欄：個人資料表單 -->
-      <div class="profile-right">
-        <a-form layout="vertical">
+      <!-- 右欄：個人資料 -->
+      <section class="profile-right jb-card">
+        <form @submit.prevent="handleSave" novalidate>
           <div class="form-grid">
-            <!-- 唯讀欄位 -->
-            <a-form-item label="姓名">
-              <a-input :value="profile.name" disabled />
-            </a-form-item>
-
-            <a-form-item label="生日">
-              <a-input :value="profile.birthday" disabled />
-            </a-form-item>
-
-            <a-form-item label="性別">
-              <a-input :value="genderMap[profile.gender] || profile.gender" disabled />
-            </a-form-item>
-
-            <a-form-item label="使用者帳號">
-              <a-input :value="profile.username" disabled />
-            </a-form-item>
+            <!-- 唯讀 -->
+            <div class="jb-form-item">
+              <label class="jb-label">姓名</label>
+              <input :value="profile.name" class="jb-input" disabled aria-label="姓名" />
+            </div>
+            <div class="jb-form-item">
+              <label class="jb-label">生日</label>
+              <input :value="profile.birthday" class="jb-input" disabled aria-label="生日" />
+            </div>
+            <div class="jb-form-item">
+              <label class="jb-label">性別</label>
+              <input :value="genderMap[profile.gender] || profile.gender" class="jb-input" disabled aria-label="性別" />
+            </div>
+            <div class="jb-form-item">
+              <label class="jb-label">使用者帳號</label>
+              <input :value="profile.username" class="jb-input" disabled aria-label="帳號" />
+            </div>
 
             <!-- 密碼 -->
-            <a-form-item label="密碼" class="full-width">
+            <div class="jb-form-item full-width">
+              <label class="jb-label">密碼</label>
               <div class="password-row">
-                <a-input value="••••••••" disabled style="flex: 1" />
-                <a-button type="primary" ghost @click="handleRequestReset">
-                  <MailOutlined />
+                <input value="••••••••" class="jb-input" disabled style="flex: 1" aria-label="密碼" />
+                <button type="button" class="jb-btn jb-btn-secondary jb-btn-sm" @click="handleRequestReset">
                   變更密碼
-                </a-button>
+                </button>
               </div>
-            </a-form-item>
+            </div>
 
-            <!-- 可編輯欄位 -->
-            <a-form-item label="手機號碼">
-              <a-input v-model:value="editForm.phone" placeholder="請輸入手機號碼" />
-            </a-form-item>
-
-            <a-form-item label="信箱">
-              <a-input v-model:value="editForm.email" placeholder="請輸入信箱" />
-            </a-form-item>
-
-            <a-form-item label="地址" class="full-width">
-              <a-input v-model:value="editForm.address" placeholder="請輸入地址" />
-            </a-form-item>
+            <!-- 可編輯 -->
+            <div class="jb-form-item">
+              <label for="profile-phone" class="jb-label">手機號碼</label>
+              <input id="profile-phone" v-model="editForm.phone" type="tel" class="jb-input" placeholder="請輸入手機號碼" />
+            </div>
+            <div class="jb-form-item">
+              <label for="profile-email" class="jb-label">電子信箱</label>
+              <input id="profile-email" v-model="editForm.email" type="email" class="jb-input" placeholder="請輸入信箱" />
+            </div>
+            <div class="jb-form-item full-width">
+              <label for="profile-address" class="jb-label">通訊地址</label>
+              <input id="profile-address" v-model="editForm.address" type="text" class="jb-input" placeholder="請輸入地址" />
+            </div>
           </div>
 
-          <a-button
-            type="primary"
-            size="large"
-            :loading="saving"
-            @click="handleSave"
-            style="margin-top: 8px"
+          <button
+            type="submit"
+            class="jb-btn jb-btn-primary jb-btn-lg"
+            :disabled="saving"
+            style="margin-top: var(--space-2)"
           >
-            儲存變更
-          </a-button>
-        </a-form>
-      </div>
+            <span v-if="saving" class="jb-spinner" style="width:18px;height:18px;"></span>
+            <span>{{ saving ? '儲存中...' : '儲存變更' }}</span>
+          </button>
+        </form>
+      </section>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { message } from 'ant-design-vue'
-import { UserOutlined, CameraOutlined, MailOutlined } from '@ant-design/icons-vue'
 import {
   customerGetProfile,
   customerUpdateProfile,
@@ -131,7 +133,6 @@ const editForm = reactive({
 
 const avatarSrc = ref(null)
 
-// 載入個人資料
 onMounted(async () => {
   try {
     const res = await customerGetProfile()
@@ -141,20 +142,15 @@ onMounted(async () => {
     editForm.email = data.email
     editForm.address = data.address
     updateAvatarSrc(data.avatarUrl)
-  } catch (err) {
-    message.error('載入個人資料失敗')
+  } catch {
+    alert('載入個人資料失敗')
   }
 })
 
 function updateAvatarSrc(url) {
-  if (!url) {
-    avatarSrc.value = null
-  } else {
-    avatarSrc.value = url.startsWith('http') ? url : BASE_URL + url
-  }
+  avatarSrc.value = !url ? null : url.startsWith('http') ? url : BASE_URL + url
 }
 
-// 上傳大頭照
 function triggerUpload() {
   fileInput.value?.click()
 }
@@ -162,31 +158,24 @@ function triggerUpload() {
 async function handleFileChange(e) {
   const file = e.target.files[0]
   if (!file) return
-
-  // 前端預覽
   avatarSrc.value = URL.createObjectURL(file)
 
-  // 上傳到後端
   const formData = new FormData()
   formData.append('file', file)
   try {
     const res = await customerUploadAvatar(formData)
     const data = res.data.data
     updateAvatarSrc(data.avatarUrl)
-
-    // 更新 store 的 avatarUrl
     if (customerAuthStore.customer) {
       customerAuthStore.customer.avatarUrl = data.avatarUrl
       customerAuthStore.setCustomer(customerAuthStore.customer)
     }
-
-    message.success('大頭照更新成功')
-  } catch (err) {
-    message.error('大頭照上傳失敗')
+    alert('大頭照更新成功')
+  } catch {
+    alert('大頭照上傳失敗')
   }
 }
 
-// 儲存變更
 async function handleSave() {
   saving.value = true
   try {
@@ -195,23 +184,21 @@ async function handleSave() {
       email: editForm.email,
       address: editForm.address,
     })
-    const data = res.data.data
-    Object.assign(profile, data)
-    message.success('個人資料已更新')
+    Object.assign(profile, res.data.data)
+    alert('個人資料已更新')
   } catch (err) {
-    message.error(err.response?.data?.message || '更新失敗')
+    alert(err.response?.data?.message || '更新失敗')
   } finally {
     saving.value = false
   }
 }
 
-// 請求密碼重設
 async function handleRequestReset() {
   try {
     await customerRequestReset({ email: profile.email })
-    message.success('密碼重設連結已發送至您的信箱，請查收')
+    alert('密碼重設連結已發送至您的信箱，請查收')
   } catch (err) {
-    message.error(err.response?.data?.message || '發送失敗')
+    alert(err.response?.data?.message || '發送失敗')
   }
 }
 </script>
@@ -222,19 +209,15 @@ async function handleRequestReset() {
 }
 
 .page-title {
-  font-size: 22px;
-  font-weight: 600;
-  color: #1a1a2e;
-  margin-bottom: 24px;
+  font-family: var(--font-heading);
+  font-size: var(--text-h2);
+  margin-bottom: var(--space-4);
+  letter-spacing: 3px;
 }
 
 .profile-layout {
   display: flex;
-  gap: 32px;
-  background: #fff;
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  gap: var(--space-4);
 }
 
 /* 左欄 */
@@ -252,10 +235,37 @@ async function handleRequestReset() {
 
 .avatar-wrapper {
   position: relative;
-  cursor: pointer;
   display: inline-block;
   border-radius: 50%;
   overflow: hidden;
+  border: none;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.avatar-img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--border);
+  display: block;
+}
+
+.avatar-fallback {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  color: var(--primary);
+  font-family: var(--font-heading);
+  font-size: 48px;
+  font-weight: 600;
+  border: 3px solid var(--border);
 }
 
 .avatar-overlay {
@@ -264,9 +274,9 @@ async function handleRequestReset() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(43, 43, 43, 0.4);
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity var(--duration) var(--ease);
   border-radius: 50%;
 }
 
@@ -275,42 +285,46 @@ async function handleRequestReset() {
 }
 
 .avatar-hint {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #999;
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
 }
 
-.cif-section {
-  margin-top: 24px;
+.cif-box {
+  margin-top: var(--space-4);
   text-align: center;
-  padding: 16px;
-  background: #f5f6fa;
-  border-radius: 10px;
+  padding: var(--space-3);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
   width: 100%;
+  border: 1px solid rgba(214, 206, 195, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .cif-label {
-  font-size: 12px;
-  color: #8c8c8c;
-  margin-bottom: 4px;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
 }
 
 .cif-value {
-  font-size: 15px;
+  font-size: var(--text-body);
   font-weight: 600;
-  color: #1a1a2e;
+  color: var(--text-primary);
   letter-spacing: 1px;
 }
 
 /* 右欄 */
 .profile-right {
   flex: 1;
+  min-width: 0;
 }
 
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0 20px;
+  gap: 0 var(--space-3);
 }
 
 .form-grid .full-width {
@@ -319,7 +333,7 @@ async function handleRequestReset() {
 
 .password-row {
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 @media (max-width: 700px) {

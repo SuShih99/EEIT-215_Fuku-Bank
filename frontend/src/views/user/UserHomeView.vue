@@ -1,50 +1,51 @@
 <template>
-  <div class="user-home">
+  <div class="customer-page home-page">
     <!-- 歡迎卡片 -->
-    <div class="welcome-card">
+    <section class="welcome-card" aria-label="歡迎">
       <div class="welcome-left">
-        <h1>{{ greeting }}，{{ customerName }}</h1>
+        <p class="welcome-greeting">{{ greeting }}，</p>
+        <h1 class="welcome-name">{{ customerName }}</h1>
         <p class="welcome-sub">歡迎使用爪哇銀行網路服務</p>
       </div>
-      <div class="welcome-avatar" @click="$router.push({ name: 'user-profile' })">
-        <a-avatar :size="72" :src="avatarSrc">
-          <template #icon><UserOutlined style="font-size: 36px" /></template>
-        </a-avatar>
+      <div class="welcome-right">
+        <button
+          class="welcome-avatar"
+          aria-label="前往會員中心"
+          @click="$router.push({ name: 'user-profile' })"
+        >
+          <img v-if="avatarSrc" :src="avatarSrc" class="avatar-img" alt="使用者大頭照" />
+          <span v-else class="avatar-fallback" aria-hidden="true">{{ customerInitial }}</span>
+        </button>
+        <div class="welcome-ink" aria-hidden="true"></div>
       </div>
-    </div>
+    </section>
 
-    <!-- 快捷功能 -->
-    <div class="section-title">我的服務</div>
-    <div class="service-grid">
-      <div
-        v-for="item in services"
-        :key="item.label"
-        class="service-card"
-        @click="handleServiceClick(item)"
-      >
-        <div class="service-icon" :style="{ background: item.bg }">
-          <component :is="item.icon" :style="{ color: item.color, fontSize: '28px' }" />
-        </div>
-        <div class="service-label">{{ item.label }}</div>
-        <div class="service-desc">{{ item.desc }}</div>
+    <!-- 快捷服務 -->
+    <section aria-label="我的服務">
+      <h2 class="section-title">我的服務</h2>
+      <div class="service-grid">
+        <article
+          v-for="item in services"
+          :key="item.label"
+          class="service-card"
+          tabindex="0"
+          role="button"
+          :aria-label="item.label"
+          @click="handleServiceClick(item)"
+          @keydown.enter="handleServiceClick(item)"
+        >
+          <div class="service-icon" v-html="item.svg" aria-hidden="true"></div>
+          <h3 class="service-label">{{ item.label }}</h3>
+          <p class="service-desc">{{ item.desc }}</p>
+        </article>
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { message } from 'ant-design-vue'
-import {
-  UserOutlined,
-  BankOutlined,
-  SwapOutlined,
-  CreditCardOutlined,
-  SafetyCertificateOutlined,
-  FileTextOutlined,
-  DollarOutlined,
-} from '@ant-design/icons-vue'
 import { useCustomerAuthStore } from '@/stores/customerAuth'
 import { BASE_URL } from '@/api/axios'
 
@@ -52,6 +53,7 @@ const router = useRouter()
 const customerAuthStore = useCustomerAuthStore()
 
 const customerName = computed(() => customerAuthStore.customer?.name || '會員')
+const customerInitial = computed(() => (customerAuthStore.customer ?.name || '會')[0])
 
 const avatarSrc = computed(() => {
   const url = customerAuthStore.customer?.avatarUrl
@@ -67,113 +69,208 @@ const greeting = computed(() => {
 })
 
 const services = [
-  { label: '個人資料', desc: '查看與修改個人資訊', icon: UserOutlined, bg: '#e6f7ff', color: '#1890ff', route: 'user-profile' },
-  { label: '帳戶總覽', desc: '查看我的帳戶', icon: BankOutlined, bg: '#f6ffed', color: '#52c41a', route: null },
-  { label: '轉帳匯款', desc: '國內轉帳服務', icon: SwapOutlined, bg: '#fff7e6', color: '#fa8c16', route: null },
-  { label: '信用卡', desc: '卡片申辦與管理', icon: CreditCardOutlined, bg: '#f9f0ff', color: '#722ed1', route: null },
-  { label: '貸款服務', desc: '線上貸款申請', icon: DollarOutlined, bg: '#e6fffb', color: '#13c2c2', route: null },
-  { label: '安全中心', desc: '密碼修改與安全設定', icon: SafetyCertificateOutlined, bg: '#fff1f0', color: '#f5222d', route: 'user-profile' },
+  {
+    label: '個人資料',
+    desc: '查看與修改個人資訊',
+    svg: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+    route: 'user-profile',
+  },
+  {
+    label: '帳戶總覽',
+    desc: '查看我的帳戶餘額',
+    svg: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 10h20"/></svg>',
+    route: null,
+  },
+  {
+    label: '轉帳匯款',
+    desc: '國內轉帳服務',
+    svg: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>',
+    route: null,
+  },
+  {
+    label: '信用卡',
+    desc: '卡片申辦與管理',
+    svg: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>',
+    route: null,
+  },
+  {
+    label: '貸款服務',
+    desc: '線上貸款申請',
+    svg: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+    route: null,
+  },
+  {
+    label: '安全中心',
+    desc: '密碼修改與安全設定',
+    svg: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+    route: 'user-profile',
+  },
 ]
 
 function handleServiceClick(item) {
   if (item.route) {
     router.push({ name: item.route })
   } else {
-    message.info('此功能即將推出，敬請期待！')
+    alert('此功能即將推出，敬請期待！')
   }
 }
 </script>
 
 <style scoped>
-.user-home {
+.home-page {
   max-width: 900px;
 }
 
+/* === Welcome === */
 .welcome-card {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  padding: 32px 36px;
-  margin-bottom: 32px;
-  color: #fff;
+  justify-content: space-between;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6) var(--space-6);
+  margin-bottom: var(--space-6);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(214, 206, 195, 0.5);
 }
 
-.welcome-left h1 {
-  color: #fff;
-  font-size: 26px;
-  margin: 0 0 8px 0;
-  font-weight: 600;
+.welcome-greeting {
+  font-size: var(--text-body);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+.welcome-name {
+  font-size: 30px;
+  margin-bottom: var(--space-2);
+  letter-spacing: 2px;
 }
 
 .welcome-sub {
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 15px;
-  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.welcome-right {
+  position: relative;
 }
 
 .welcome-avatar {
+  background: none;
+  border: none;
+  padding: 0;
   cursor: pointer;
-  transition: transform 0.2s;
+  border-radius: 50%;
+  position: relative;
+  z-index: 1;
+  transition: transform var(--duration) var(--ease);
 }
 
-.welcome-avatar:hover {
-  transform: scale(1.08);
+.welcome-avatar:hover { transform: scale(1.06); }
+
+.avatar-img {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(214, 206, 195, 0.6);
+  display: block;
 }
 
-.section-title {
-  font-size: 18px;
+.avatar-fallback {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  color: var(--primary);
+  font-family: var(--font-heading);
+  font-size: 28px;
   font-weight: 600;
-  color: #1a1a2e;
-  margin-bottom: 16px;
+  border: 3px solid rgba(214, 206, 195, 0.6);
+}
+
+.welcome-ink {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 160px;
+  height: 160px;
+  background: radial-gradient(circle, rgba(92, 107, 95, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+/* === Services === */
+.section-title {
+  font-family: var(--font-heading);
+  font-size: var(--text-h3);
+  font-weight: 600;
+  margin-bottom: var(--space-4);
+  letter-spacing: 3px;
 }
 
 .service-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: var(--space-3);
 }
 
 .service-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 24px 20px;
+  background: var(--bg-card);
+  border: 1px solid rgba(214, 206, 195, 0.4);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-3);
   text-align: center;
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-  transition: all 0.25s;
+  transition: transform var(--duration) var(--ease),
+              box-shadow var(--duration) var(--ease),
+              border-color var(--duration) var(--ease);
 }
 
 .service-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+}
+
+.service-card:active {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .service-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
+  width: 52px;
+  height: 52px;
+  margin: 0 auto var(--space-3);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 14px;
+  color: var(--primary);
+  background: var(--primary-light);
+  border-radius: 50%;
 }
 
 .service-label {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1a1a2e;
-  margin-bottom: 4px;
+  font-size: var(--text-body);
+  margin-bottom: var(--space-1);
 }
 
 .service-desc {
-  font-size: 12px;
-  color: #8c8c8c;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
 }
 
 @media (max-width: 700px) {
   .service-grid { grid-template-columns: repeat(2, 1fr); }
-  .welcome-card { flex-direction: column; text-align: center; gap: 16px; }
+  .welcome-card {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--space-4);
+    padding: var(--space-4);
+  }
+  .welcome-name { font-size: var(--text-h2); }
 }
 </style>
