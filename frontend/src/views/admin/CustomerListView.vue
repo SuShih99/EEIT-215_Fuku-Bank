@@ -48,11 +48,12 @@
           <a-space>
             <a-button size="small" @click="openEditModal(record)">編輯</a-button>
             <a-button
+              v-if="isSuperAdmin"
               size="small"
               danger
               @click="handleDeactivate(record.customerId)"
-              :disabled="record.status === 'DEACTIVATED'"
-            >註銷</a-button>
+              :disabled="record.status === 'DEACTIVATED' || record.status === 'INACTIVE'"
+            >停用</a-button>
           </a-space>
         </template>
       </template>
@@ -109,7 +110,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import {
   getCustomers,
@@ -118,6 +119,15 @@ import {
   deactivateCustomer,
   seedCustomers,
 } from '@/api/customer'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+
+// === RBAC：只有 SUPER_ADMIN (CISO/CSDM) 才看得到「停用」按鈕 ===
+const isSuperAdmin = computed(() => {
+  const roleCode = authStore.user?.roleCode
+  return ['CISO', 'CSDM'].includes(roleCode)
+})
 
 // === 中文對照 ===
 const statusMap = {

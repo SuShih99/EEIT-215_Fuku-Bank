@@ -12,22 +12,30 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /**
- * Spring Security 設定（階段二：取代 SessionUtil）
- * * 重點：
+ * Spring Security 設定
+ *
+ * 重點：
  * 1. @EnableMethodSecurity → 啟用 @PreAuthorize 註解
- * 2. /api/auth/login 和 /api/auth/logout → 不用登入就能打
- * 3. 其餘所有 /api/** → 必須登入才能打
- * 4. 組員在自己的 Controller 上加 @PreAuthorize("hasRole('XXX')") 控制角色
+ * 2. 管理端：Session-based 認證（/api/auth/**）
+ * 3. 客戶端：JWT-based 認證（/api/customer/auth/**）
+ * 4. JwtAuthenticationFilter 在 UsernamePasswordAuthenticationFilter 之前執行
  */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity  // ← 這行讓 @PreAuthorize 生效
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -43,13 +51,31 @@ public class SecurityConfig {
 
             // 路由權限設定
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/login").permitAll()   // 登入不需驗證
-                .requestMatchers("/api/auth/logout").permitAll()  // 登出不需驗證
+                // === 管理端：登入/登出 不需驗證 ===
+                .requestMatchers("/api/auth/login").permitAll()
+                .requestMatchers("/api/auth/logout").permitAll()
 
-                .requestMatchers("/api/auth/employees/seed").permitAll() // seed：第一次灌資料時尚未登入
-                .requestMatchers("/api/customers/seed").permitAll()  // seed：客戶測試資料
-                .anyRequest().authenticated()                     // 其餘都要登入
+                // === 管理端：Seed 測試資料 ===
+                .requestMatchers("/api/auth/employees/seed").permitAll()
+                .requestMatchers("/api/customers/seed").permitAll()
+
+                // === 客戶端：註冊、登入、密碼重設 不需驗證 ===
+                .requestMatchers("/api/customer/auth/register").permitAll()
+                .requestMatchers("/api/customer/auth/login").permitAll()
+                .requestMatchers("/api/customer/auth/request-reset").permitAll()
+                .requestMatchers("/api/customer/auth/reset-password").permitAll()
+                .requestMatchers("/api/customer/auth/seed").permitAll()
+
+                // === 靜態資源：大頭照可公開存取 ===
+                .requestMatchers("/uploads/**").permitAll()
+
+                // === 其餘都要登入 ===
+                .anyRequest().authenticated()
             )
+
+            // 在 UsernamePasswordAuthenticationFilter 之前加入 JWT 過濾器
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
             .formLogin(form -> form.disable())       // 不用 Spring 預設登入頁
             .httpBasic(basic -> basic.disable());     // 不用 HTTP Basic 認證
 

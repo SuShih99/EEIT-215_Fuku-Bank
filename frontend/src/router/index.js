@@ -3,11 +3,49 @@ import { createRouter, createWebHistory } from 'vue-router'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // === 客戶端登入 ===
+    // === 客戶端：登入前 ===
     {
       path: '/',
+      name: 'landing',
+      component: () => import('../views/user/LandingView.vue'),
+    },
+    {
+      path: '/login',
       name: 'user-login',
       component: () => import('../views/user/UserLoginView.vue'),
+    },
+    {
+      path: '/register',
+      name: 'user-register',
+      component: () => import('../views/user/RegisterView.vue'),
+    },
+    {
+      path: '/reset-password',
+      name: 'reset-password',
+      component: () => import('../views/user/ResetPasswordView.vue'),
+    },
+
+    // === 客戶端：登入後 ===
+    {
+      path: '/user',
+      component: () => import('../layouts/UserLayout.vue'),
+      meta: { requiresCustomerAuth: true },
+      children: [
+        {
+          path: '',
+          redirect: { name: 'user-home' },
+        },
+        {
+          path: 'home',
+          name: 'user-home',
+          component: () => import('../views/user/UserHomeView.vue'),
+        },
+        {
+          path: 'profile',
+          name: 'user-profile',
+          component: () => import('../views/user/UserProfileView.vue'),
+        },
+      ],
     },
 
     // === 管理端登入 ===
@@ -107,40 +145,52 @@ const router = createRouter({
       ],
     },
 
-    // === 客戶端頁面（未來做） ===
-    // {
-    //   path: '/user',
-    //   component: () => import('../layouts/UserLayout.vue'),
-    //   children: [
-    //
-
-
-
-    // === 客戶端信用卡頁面===
-    // {
-    //   path: '/user/cards',
-    //   name: 'user-cards',
-    //   component: () => import('../views/user/CardTypeListView.vue'),
-    // }
-
-
-    //    ],
-    // },
-
-
-
-
+    // === 403 頁面 ===
+    {
+      path: '/forbidden',
+      name: 'forbidden',
+      component: {
+        template: `
+          <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f5f6fa">
+            <div style="text-align:center">
+              <h1 style="font-size:72px;color:#ff4d4f;margin:0">403</h1>
+              <p style="font-size:18px;color:#666">您沒有權限存取此頁面</p>
+              <a-button type="primary" @click="$router.push('/')">回到首頁</a-button>
+            </div>
+          </div>
+        `,
+      },
+    },
   ],
 })
 
-// === 路由守衛：未登入的人不能進管理端 ===
+// === 路由守衛 ===
 router.beforeEach(async (to) => {
-  // 檢查目標路由（或其父路由）是否需要登入
+  // --- 客戶端路由守衛 ---
+  if (to.matched.some((record) => record.meta.requiresCustomerAuth)) {
+    const customerToken = localStorage.getItem('customer_token')
+    if (!customerToken) {
+      return { name: 'user-login' }
+    }
+    // Token 存在 → 放行（JWT 過期由後端 401 處理）
+  }
+
+  // --- 管理端路由守衛 ---
   if (to.matched.some((record) => record.meta.requiresAuth)) {
     const authUser = localStorage.getItem('auth_user')
     if (!authUser) {
       // localStorage 沒資料 → 一定沒登入
       return { name: 'admin-login' }
+    }
+
+    // 檢查是否為 CUSTOMER 角色越權存取管理端
+    try {
+      const parsed = JSON.parse(authUser)
+      if (parsed.role === 'CUSTOMER') {
+        return { name: 'forbidden' }
+      }
+    } catch {
+      // ignore parse error
     }
 
     // localStorage 有資料 → 再跟後端確認 Session 是否還活著
@@ -154,6 +204,7 @@ router.beforeEach(async (to) => {
       return { name: 'admin-login' }
     }
   }
+
   return true
 })
 
