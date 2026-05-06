@@ -18,10 +18,13 @@ public interface CardTxnMapper {
 
     List<CardTxnResponseDto> toDtoList(List<CardTransaction> list);
 
+    
     default String maskCard(String cardNumber) {
         if (cardNumber == null || cardNumber.length() < 4) {
             return cardNumber;
         }
-        return "****" + cardNumber.substring(cardNumber.length() - 4);
+        return cardNumber.substring(0, 4)
+            + " **** **** "
+            + cardNumber.substring(cardNumber.length() - 4);
     }
 }

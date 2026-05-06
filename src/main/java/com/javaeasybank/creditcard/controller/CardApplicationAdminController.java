@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.javaeasybank.common.dto.response.ApiResponse;
@@ -28,8 +29,8 @@ public class CardApplicationAdminController {
     private final CardAppService cardAppService;
     // 查全部
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<CardApplicationResponseDto>>> getAll(Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(cardAppService.findAll(pageable)));
+    public ResponseEntity<ApiResponse<Page<CardApplicationResponseDto>>> getAll(Pageable pageable,@RequestParam(required = false) String keyword,@RequestParam(required = false) CardApplicationStatus status)   {
+        return ResponseEntity.ok(ApiResponse.success(cardAppService.search(pageable,keyword,status)));
     }
     // 查單筆（DTO）
     @GetMapping("/{id}")

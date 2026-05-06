@@ -13,6 +13,7 @@ import com.javaeasybank.creditcard.enums.CardApplicationStatus;
 import com.javaeasybank.creditcard.mapper.CardApplicationMapper;
 import com.javaeasybank.creditcard.repository.CardAppRepository;
 import com.javaeasybank.customer.entity.CustomerProfile;
+import com.javaeasybank.customer.repository.CustomerProfileRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,15 +22,14 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class CardAppService {
 
-	private final CardAppRepository cardAppRepository;
-	private final CardApplicationMapper cardApplicationMapper;
-    private final CustomerRepository customerRepository;
+    private final CardAppRepository cardAppRepository;
+    private final CardApplicationMapper cardApplicationMapper;
+    private final CustomerProfileRepository customerRepository;
 
-
-	// 查全部
+    // 查全部
     public Page<CardApplicationResponseDto> findAll(Pageable pageable) {
         return cardAppRepository.findAll(pageable)
-            .map(cardApplicationMapper::toDto);
+                .map(cardApplicationMapper::toDto);
 
     }
 
@@ -41,7 +41,7 @@ public class CardAppService {
     // 內部用（Entity）
     private CardApplication getEntityById(Integer id) {
         return cardAppRepository.findById(id)
-            .orElseThrow(() -> new BusinessException("Credit card application not found."));
+                .orElseThrow(() -> new BusinessException("Credit card application not found."));
     }
 
     // 刪除
@@ -57,10 +57,8 @@ public class CardAppService {
         entity.setStatus(CardApplicationStatus.PENDING);
 
         CustomerProfile customerProfile = customerRepository.findById(requestDto.getCustomerId())
-        .orElseThrow(() -> new BusinessException("Customer not found"));
+                .orElseThrow(() -> new BusinessException("Customer not found"));
         entity.setCustomerProfile(customerProfile);
-
-
 
         CardApplication saved = cardAppRepository.save(entity);
 
@@ -84,5 +82,12 @@ public class CardAppService {
 
         app.setRemark(remark);
         return cardApplicationMapper.toDto(cardAppRepository.save(app));
+    }
+
+    public Page<CardApplicationResponseDto> search(Pageable pageable, String keyword, CardApplicationStatus status) {
+        return cardAppRepository.search(
+                pageable,
+                keyword,
+                status).map(cardApplicationMapper::toDto);
     }
 }

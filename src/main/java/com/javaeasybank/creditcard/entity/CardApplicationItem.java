@@ -1,6 +1,7 @@
 package com.javaeasybank.creditcard.entity;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import com.javaeasybank.creditcard.enums.CardApplicationItemResult;
 
@@ -61,6 +62,10 @@ public class CardApplicationItem {
 
     @Column(name = "create_card_flag")
     private Boolean createCardFlag;
+
+    @Column(name = "review_date")
+    private LocalDateTime reviewDate;
+
 
     @Column(name = "remark", length = 200)
     private String remark;

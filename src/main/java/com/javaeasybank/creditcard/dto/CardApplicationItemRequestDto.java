@@ -11,5 +11,7 @@ public record CardApplicationItemRequestDto(
     BigDecimal annualFee,
     Boolean createCardFlag,
     String remark
+    
+
 ) {
 }

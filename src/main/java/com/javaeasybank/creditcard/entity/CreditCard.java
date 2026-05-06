@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.javaeasybank.creditcard.enums.CardStatus;
+import com.javaeasybank.customer.entity.CustomerProfile;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -31,8 +32,11 @@ public class CreditCard {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "card_id")
     private Integer cardId;
-    @Column(name = "customer_id")
-    private String customerId;
+    // @Column(name = "customer_id")
+    // private String customerId;
+    @ManyToOne
+    @JoinColumn(name = "customer_id")
+    private CustomerProfile customer;
 //    private Integer cardTypeId;//FK關聯 不留
     
     @ManyToOne//對應很多cardType

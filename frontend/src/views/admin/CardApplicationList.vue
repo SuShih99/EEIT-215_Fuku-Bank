@@ -1,7 +1,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
-import { getApplications, deleteApplication, updateApplicationStatus,updateApplicationRemark } from '@/api/cardApplication'
+import {
+  getApplications,
+  deleteApplication,
+  updateApplicationStatus,
+  updateApplicationRemark,
+} from '@/api/cardApplication'
 import { useRouter } from 'vue-router'
 import dayjs from 'dayjs'
 import { DownOutlined } from '@ant-design/icons-vue'
@@ -14,6 +19,16 @@ const goDetail = (record) => {
 
 const applications = ref([])
 const loading = ref(false)
+
+const keyword = ref('')
+const status = ref(null)
+
+const statusOptions = [
+  { label: '全部', value: null },
+  { label: '審核中', value: 'PENDING' },
+  { label: '核准', value: 'APPROVED' },
+  { label: '拒絕', value: 'REJECTED' },
+]
 
 //分頁機
 const pagination = ref({
@@ -44,8 +59,6 @@ const handleUpdateRemark = async () => {
   }
 }
 
-
-
 // 表格欄位
 const columns = [
   { title: 'ID', dataIndex: 'applicationId', key: 'applicationId' },
@@ -66,15 +79,17 @@ const columns = [
 const fetchData = async () => {
   loading.value = true
   try {
-    const response = await getApplications({
+    const data = await getApplications({
       page: pagination.value.current - 1,
       size: pagination.value.pageSize,
+      keyword: keyword.value,
+      status: status.value,
     })
-    applications.value = response.data.content
+    applications.value = data.content
 
     console.log('applications:', applications.value)
 
-    pagination.value.total = response.data.totalElements
+    pagination.value.total = data.totalElements
   } catch (error) {
     console.log(error)
   } finally {
@@ -130,6 +145,41 @@ onMounted(() => {
 <template>
   <div>
     <h2>信用卡申請管理</h2>
+    <a-space style="margin-bottom: 20px">
+      <!-- 關鍵字搜尋 -->
+      <a-input
+        v-model:value="keyword"
+        placeholder="搜尋使用者 / 備註"
+        style="width: 240px"
+        allow-clear
+        @pressEnter="fetchData"
+      />
+
+      <!-- 狀態篩選 -->
+      <a-select
+        v-model:value="status"
+        :options="statusOptions"
+        placeholder="狀態"
+        style="width: 140px"
+        allow-clear
+      />
+
+      <!-- 搜尋按鈕 -->
+      <a-button
+        type="primary"
+        @click="
+          () => {
+            pagination.current = 1
+            fetchData()
+          }
+        "
+      >
+        搜尋
+      </a-button>
+    </a-space>
+
+    <!-- 表格 -->
+
     <a-table
       :columns="columns"
       :data-source="applications"
@@ -149,7 +199,7 @@ onMounted(() => {
             <template #overlay>
               <a-menu>
                 <a-menu-item @click="handleApprove(record)"> 核准 </a-menu-item>
-                
+
                 <a-menu-item @click="handleReject(record)"> 拒絕 </a-menu-item>
                 <a-menu-item @click="openRemarkModal(record)"> 修改備註 </a-menu-item>
 
@@ -169,7 +219,7 @@ onMounted(() => {
       @ok="handleUpdateRemark"
       @cancel="remarkModalVisible = false"
     >
-    <a-input v-model:value="remarkInput" placeholder="請輸入備註" autofocus></a-input>
+      <a-input v-model:value="remarkInput" placeholder="請輸入備註" autofocus></a-input>
     </a-modal>
   </div>
 </template>

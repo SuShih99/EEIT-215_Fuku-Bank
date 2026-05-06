@@ -48,6 +48,7 @@ const columns = [
     width: 150,
     align: 'center',
   },
+  { title: '回饋率(%)', dataIndex: 'cashbackRate', key: 'cashbackRate' },
   { title: '操作', key: 'action', width: 200, align: 'center' },
 ]
 

@@ -1,6 +1,7 @@
 package com.javaeasybank.creditcard.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public record CardApplicationItemResponseDto
 	(Integer itemId,
@@ -9,5 +10,6 @@ public record CardApplicationItemResponseDto
     BigDecimal approvedLimit,
     BigDecimal annualFee,
     Boolean createCardFlag,
+    LocalDateTime reviewDate,
     String remark) {
 }

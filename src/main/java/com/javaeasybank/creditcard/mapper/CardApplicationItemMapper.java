@@ -5,12 +5,13 @@ import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.ReportingPolicy;
 
 import com.javaeasybank.creditcard.dto.CardApplicationItemRequestDto;
 import com.javaeasybank.creditcard.dto.CardApplicationItemResponseDto;
 import com.javaeasybank.creditcard.entity.CardApplicationItem;
 
-@Mapper(componentModel = "spring",config = CentralMapperConfig.class)
+@Mapper(componentModel = "spring",config = CentralMapperConfig.class,unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface CardApplicationItemMapper {
 
     // 新增用
