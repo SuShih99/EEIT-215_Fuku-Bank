@@ -21,7 +21,7 @@
             style="display: none"
             @change="handleFileChange"
           />
-          <p class="avatar-hint">點擊更換大頭照</p>
+          <p class="avatar-hint">點擊更換大頭照 (僅支援 JPG/PNG)</p>
         </div>
 
         <div class="cif-section">
@@ -162,6 +162,13 @@ function triggerUpload() {
 async function handleFileChange(e) {
   const file = e.target.files[0]
   if (!file) return
+
+  // 根據 Reichart 規範：檢查格式
+  const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png'
+  if (!isJpgOrPng) {
+    message.error('大頭照僅支援 JPG/PNG 格式！')
+    return
+  }
 
   // 前端預覽
   avatarSrc.value = URL.createObjectURL(file)

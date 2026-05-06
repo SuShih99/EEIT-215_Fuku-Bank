@@ -48,9 +48,12 @@
           <a-form-item
             label="身分證字號"
             name="idNumber"
-            :rules="[{ required: true, message: '請輸入身分證字號' }]"
+            :rules="[
+              { required: true, message: '請輸入身分證字號' },
+              { validator: validateLength10, trigger: 'blur' }
+            ]"
           >
-            <a-input v-model:value="form.idNumber" placeholder="例如：A123456789" />
+            <a-input v-model:value="form.idNumber" :maxlength="10" placeholder="例如：A123456789" />
           </a-form-item>
 
           <a-form-item
@@ -72,10 +75,13 @@
           <a-form-item
             label="手機號碼"
             name="phone"
-            :rules="[{ required: true, message: '請輸入手機號碼' }]"
+            :rules="[
+              { required: true, message: '請輸入手機號碼' },
+              { validator: validateLength10, trigger: 'blur' }
+            ]"
             class="full-width"
           >
-            <a-input v-model:value="form.phone" placeholder="例如：0912345678" />
+            <a-input v-model:value="form.phone" :maxlength="10" placeholder="例如：0912345678" />
           </a-form-item>
 
           <a-form-item
@@ -141,6 +147,13 @@ const form = reactive({
   email: '',
   address: '',
 })
+
+const validateLength10 = async (_rule, value) => {
+  if (value && value.length < 10) {
+    return Promise.reject('請輸入 10 碼')
+  }
+  return Promise.resolve()
+}
 
 async function handleRegister() {
   loading.value = true

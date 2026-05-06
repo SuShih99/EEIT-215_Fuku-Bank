@@ -34,9 +34,9 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { message } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
 import { BankOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons-vue'
 import { useCustomerAuthStore } from '@/stores/customerAuth'
 import { BASE_URL } from '@/api/axios'
@@ -58,6 +58,27 @@ function handleLogout() {
   message.success('已登出')
   router.push({ name: 'user-login' })
 }
+
+let logoutTimer = null
+
+onMounted(() => {
+  // 每 5 分鐘提示一次是否登出 (300,000 ms)
+  logoutTimer = setInterval(() => {
+    Modal.confirm({
+      title: '登出提醒',
+      content: '您已登入一段時間，是否需要登出？',
+      okText: '登出',
+      cancelText: '繼續使用',
+      onOk() {
+        handleLogout()
+      },
+    })
+  }, 300000)
+})
+
+onUnmounted(() => {
+  if (logoutTimer) clearInterval(logoutTimer)
+})
 </script>
 
 <style scoped>

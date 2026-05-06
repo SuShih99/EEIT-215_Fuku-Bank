@@ -46,6 +46,28 @@
           </a-input-password>
         </a-form-item>
 
+        <a-form-item
+          label="驗證碼"
+          name="captcha"
+          :rules="[{ required: true, message: '請輸入驗證碼' }]"
+        >
+          <div style="display: flex; gap: 8px">
+            <a-input
+              v-model:value="form.captcha"
+              size="large"
+              placeholder="請輸入驗證碼"
+              style="flex: 1"
+            >
+              <template #prefix>
+                <SafetyOutlined style="color: rgba(0, 0, 0, 0.25)" />
+              </template>
+            </a-input>
+            <div class="captcha-box" title="點擊更換驗證碼" @click="generateCaptcha">
+              {{ currentCaptcha }}
+            </div>
+          </div>
+        </a-form-item>
+
         <a-form-item>
           <div class="btn-group">
             <a-button
@@ -77,10 +99,10 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { BankOutlined, UserOutlined, LockOutlined, ThunderboltOutlined } from '@ant-design/icons-vue'
+import { BankOutlined, UserOutlined, LockOutlined, ThunderboltOutlined, SafetyOutlined } from '@ant-design/icons-vue'
 import { customerLogin } from '@/api/customerAuth'
 import { useCustomerAuthStore } from '@/stores/customerAuth'
 
@@ -88,19 +110,42 @@ const router = useRouter()
 const customerAuthStore = useCustomerAuthStore()
 const loading = ref(false)
 
+const currentCaptcha = ref('')
+
+function generateCaptcha() {
+  const chars = '0123456789'
+  let code = ''
+  for (let i = 0; i < 4; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  currentCaptcha.value = code
+}
+
+onMounted(() => {
+  generateCaptcha()
+})
+
 const form = reactive({
   username: '',
   password: '',
+  captcha: '',
 })
 
 // 一鍵帶入測試帳密
 function fillTestAccount() {
   form.username = 'mingwang85'
   form.password = '123456'
+  form.captcha = currentCaptcha.value
 }
 
 async function handleLogin() {
-  if (!form.username || !form.password) return
+  if (!form.username || !form.password || !form.captcha) return
+
+  if (form.captcha !== currentCaptcha.value) {
+    message.error('驗證碼錯誤')
+    generateCaptcha()
+    return
+  }
 
   loading.value = true
   try {
@@ -181,6 +226,28 @@ async function handleLogin() {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.captcha-box {
+  width: 100px;
+  height: 40px;
+  background: #f0f2f5;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: bold;
+  letter-spacing: 4px;
+  color: #1677ff;
+  cursor: pointer;
+  user-select: none;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.captcha-box:hover {
+  background: #e6f4ff;
 }
 
 .register-link {
