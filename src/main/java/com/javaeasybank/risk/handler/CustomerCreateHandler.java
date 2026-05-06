@@ -6,13 +6,16 @@ import com.javaeasybank.risk.core.RiskTarget;
 import com.javaeasybank.risk.core.enums.BlacklistType;
 import com.javaeasybank.risk.core.KYC;
 import com.javaeasybank.risk.core.enums.BusinessScene;
+import com.javaeasybank.risk.core.enums.Disposition;
+import com.javaeasybank.risk.core.enums.RiskLevel;
 import com.javaeasybank.risk.service.BlackListService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -31,36 +34,31 @@ public class CustomerCreateHandler implements RiskHandler {
 
     @Override
     public void handle(RiskTarget target) {
-        // 1. 取得所有擴充欄位
+        // 取得所有擴充欄位
         Map<String, Object> metadata = target.getRiskMetadata();
 
-        List<String> failedDescriptions = new ArrayList<>();
+        // 1. 組裝校驗矩陣
+        Map<BlacklistType, String> checkMap = new EnumMap<>(BlacklistType.class);
+        checkMap.put(BlacklistType.ID_CARD, (String) metadata.get(KYC.ID_CARD));
+        checkMap.put(BlacklistType.PHONE, (String) metadata.get(KYC.PHONE));
+        checkMap.put(BlacklistType.EMAIL, (String) metadata.get(KYC.EMAIL));
 
-        // 2. 定義需要比對的維度與對應的黑名單類型
-        // Map.of(MetadataKey, BlacklistType)
-        Map<String, BlacklistType> checkMap = Map.of(
-                KYC.ID_CARD, BlacklistType.ID_CARD,
-                KYC.PHONE, BlacklistType.PHONE,
-                KYC.EMAIL, BlacklistType.EMAIL
-        );
+        List<BlacklistType> hits = blService.checkAll(checkMap);
 
-        for (Map.Entry<String, BlacklistType> entry : checkMap.entrySet()) {
-            Object value = metadata.get(entry.getKey());
-            if (value instanceof String valStr && !valStr.isBlank()) {
-                if (blService.isBlacklisted(entry.getValue(), valStr)) {
-                    // 2. 發現異常不立刻拋出，先記下來
-                    failedDescriptions.add(entry.getValue().getDescription());
-                }
-            }
-        }
-        if (!failedDescriptions.isEmpty()) {
-            String errorMsg = String.format("風險控管攔截：您的 (%s) 存在異常，請聯繫客服。",
-                    String.join("、", failedDescriptions));
-            // 結果會像：風險控管攔截：您的 (身分證字號、手機號碼) 存在異常...
-            throw new BusinessException(errorMsg);
+        if (!hits.isEmpty()) {
+            String hitDetails = hits.stream()
+                    .map(BlacklistType::getDescription)
+                    .collect(Collectors.joining(", "));
+
+            // 嚴格處置：拋出異常前，必須確保 Event 被送出以供 RiskLogService 記錄
+            String reason = "命中黑名單: " + hitDetails;
+
+            // 發送事件 (這部分邏輯應寫在基底類或輔助類中)
+           // publishRiskEvent(target, RiskLevel.HIGH, Disposition.REJECT, reason ,businessID);
+
+            throw new BusinessException("風險控管攔截：系統偵測到異常資訊，請聯繫分行人員。");
         }
     }
-
     @Override
     public RiskTarget resolve(Object[] args) {
         if (args == null || args.length == 0) {

@@ -8,7 +8,7 @@ public class LoanApplyHandler implements RiskHandler {
 
     @Override
     public BusinessScene getScene() {
-        return BusinessScene.TRANSFER;
+        return BusinessScene.LOAN;
     }
 
     @Override

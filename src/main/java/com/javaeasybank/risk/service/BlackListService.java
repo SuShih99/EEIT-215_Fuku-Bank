@@ -12,6 +12,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +30,7 @@ public class BlackListService {
         return blRepos.findByFilter(activated, pageable)
                 .map(this::toResponse);
     }
+
     //行員手動建檔
     @Transactional
     public BlackListRequest create(BlackListRequest request) {
@@ -79,6 +86,25 @@ public class BlackListService {
     public boolean isBlacklisted(BlacklistType type, String value) {
         // 調用 Repository 的 findActiveBlacklist 確保只針對「生效中」的黑名單進行攔截
         return blRepos.findActiveBlacklist(type, value).isPresent();
+    }
+
+    //批次檢查所有資料
+    public List<BlacklistType> checkAll(Map<BlacklistType, String> map) {
+        if (map == null || map.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<BlacklistType> result = new ArrayList<>();
+        // 嚴格校驗邏輯：逐一比對生效中的黑名單
+        map.forEach((type, value) -> {
+            if (StringUtils.hasText(value)) {
+                // 調用現有的 findActiveBlacklist 邏輯
+                if (blRepos.findActiveBlacklist(type, value).isPresent()) {
+                    result.add(type);
+                }
+            }
+        });
+        return result;
     }
 
     private BlackListResponse toResponse(Blacklist bl) {

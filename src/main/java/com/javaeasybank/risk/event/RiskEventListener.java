@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
 @Slf4j
@@ -19,6 +21,7 @@ public class RiskEventListener {
     private final ReviewTaskService rtService;
 
     @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void handleRiskManualReview(ManualReviewEvent event) {
         log.info("接收到審核事件，準備建立任務：{}", event.scene());
 
