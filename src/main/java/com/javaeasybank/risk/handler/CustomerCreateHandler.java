@@ -25,7 +25,6 @@ public class CustomerCreateHandler extends BaseRiskHandler {
 
     private final BlackListService blService;
 
-
     @Override
     public BusinessScene getScene() {
         return BusinessScene.CREATE_CUSTOMER;

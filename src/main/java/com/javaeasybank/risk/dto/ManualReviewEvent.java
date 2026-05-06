@@ -2,8 +2,11 @@ package com.javaeasybank.risk.dto;
 
 import com.javaeasybank.risk.core.RiskTarget;
 import com.javaeasybank.risk.core.enums.Disposition;
+import com.javaeasybank.risk.core.enums.ReviewResult;
 import com.javaeasybank.risk.core.enums.RiskLevel;
 import com.javaeasybank.risk.core.enums.BusinessScene;
+
+import java.time.LocalDateTime;
 
 /**
  * 風控人工審核事件
@@ -20,6 +23,18 @@ public record ManualReviewEvent(
         RiskLevel level,
         Disposition disposition,
         String reason
-
+//        BusinessScene scene,
+//        String businessId,
+//        RiskTarget target,
+//        RiskLevel level,
+//        Disposition disposition,
+//        String status,
+//        String reason,
+//        ReviewResult reviewResult,
+//        String assignee,
+//        String adminComment,
+//        Integer priority,
+//        LocalDateTime createAt,
+//        LocalDateTime processedAt
 ) {
 }

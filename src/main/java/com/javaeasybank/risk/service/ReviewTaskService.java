@@ -6,6 +6,8 @@ import com.javaeasybank.risk.entity.RiskEventLog;
 import com.javaeasybank.risk.repository.ReviewTaskRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,7 +19,9 @@ public class ReviewTaskService {
 
     private final ReviewTaskRepository rtRepos;
 
-
+    public Page<ReviewTask> findAll(Pageable pageable) {
+        return rtRepos.findAll(pageable);
+    }
 
     @Transactional
     public void createTask(RiskEventLog savedLog, ManualReviewEvent event) {

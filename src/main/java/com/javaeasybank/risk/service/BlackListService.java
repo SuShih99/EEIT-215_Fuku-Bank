@@ -107,6 +107,7 @@ public class BlackListService {
         return result;
     }
 
+
     private BlackListResponse toResponse(Blacklist bl) {
         BlackListResponse response = new BlackListResponse();
         response.setListType(bl.getListType());
