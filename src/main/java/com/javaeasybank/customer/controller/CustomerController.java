@@ -34,7 +34,7 @@ public class CustomerController {
     }
 
     // ===== 新增客戶 =====
-    @PreAuthorize("hasAnyRole('CSVO', 'CSDM', 'CFSO')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<ApiResponse<CustomerDto.CustomerResponse>> createCustomer(
             @RequestBody CustomerDto.CustomerRequest request) {
@@ -42,7 +42,7 @@ public class CustomerController {
     }
 
     // ===== 修改客戶聯絡資訊 =====
-    @PreAuthorize("hasAnyRole('CSVO', 'CSDM')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{customerId}")
     public ResponseEntity<ApiResponse<CustomerDto.CustomerResponse>> updateCustomer(
             @PathVariable String customerId,
@@ -50,20 +50,19 @@ public class CustomerController {
         return ResponseEntity.ok(ApiResponse.success(customerService.updateCustomer(customerId, request)));
     }
 
-    // ===== 註銷客戶（軟刪除）：建議改用 PutMapping 體現狀態更新 =====
-    @PreAuthorize("hasRole('CSDM')")
-    @PutMapping("/{customerId}/deactivate") // 💡 改為 PutMapping，符合狀態變更邏輯
+    // ===== 註銷客戶（軟刪除） =====
+    @PreAuthorize("isAuthenticated()")
+    @PutMapping("/{customerId}/deactivate")
     public ResponseEntity<ApiResponse<Void>> deactivateCustomer(@PathVariable String customerId) {
         customerService.deactivateCustomer(customerId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    // ===== 一鍵帶入測試資料 =====
-    // 💡 seed 會執行 DELETE 清空動作，建議移除 CSVO (專員) 權限，僅限經理與資安長
-    @PreAuthorize("hasAnyRole('CSDM', 'CISO')") 
+    // ===== 一鍵帶入資料 =====
+    @PreAuthorize("isAuthenticated()") 
     @PostMapping("/seed")
     public ResponseEntity<ApiResponse<String>> seedCustomers() {
         customerService.seedTestData();
-        return ResponseEntity.ok(ApiResponse.success("已成功重置並帶入測試資料"));
+        return ResponseEntity.ok(ApiResponse.success("已成功重置並帶入資料"));
     }
 }
