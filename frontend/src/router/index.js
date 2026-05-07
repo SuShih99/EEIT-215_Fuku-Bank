@@ -96,6 +96,7 @@ const router = createRouter({
         {
           path: 'employees',
           name: 'admin-employees',
+          meta: { requiresAdmin: true },
           //http://localhost:5173/admin/employees
           component: () => import('../views/admin/EmployeeListView.vue'),
         },
@@ -108,6 +109,7 @@ const router = createRouter({
         {
           path: 'card-types',
           name: 'admin-card-types',
+          meta: { requiresAdmin: true },
           //http://localhost:5173/admin/card-types
           component: () => import('../views/admin/CardTypeListView.vue'),
 
@@ -115,23 +117,27 @@ const router = createRouter({
         {
           path:'card-applications',
           name:'admin-card-applications',
+          meta: { requiresAdmin: true },
           //http://localhost:5173/admin/card-applications
           component: () => import('../views/admin/CardApplicationList.vue'),
         },
         {
           path: 'risk-events',
           name: 'admin-risk-events',
+          meta: { requiresAdmin: true },
           //http://localhost:5173/admin/risk-events
           component: () => import('../views/admin/RiskEventView.vue'),
         },
         {
           name:'admin-card-application-detail',
           path:'/admin/card-applications/:id',
+          meta: { requiresAdmin: true },
           component: () => import('../views/admin/CardApplicationDetailView.vue'),
         },
         {
           path: 'cards',
           name: 'admin-cards',
+          meta: { requiresAdmin: true },
           component: () => import('../views/admin/CardView.vue'),
         },
         // 貸款功能相關
@@ -145,18 +151,21 @@ const router = createRouter({
         {
           path: 'loan-applications',
           name: 'loan-applications',
+          meta: { requiresAdmin: true },
           //http://localhost:5173/admin/loan-applications
           component: () => import('../views/admin/LoanApplicationView.vue'),
         },
         {
           path: 'blacklist',
           name: 'admin-blacklist',
+          meta: { requiresAdmin: true },
           //http://localhost:5173/admin/blacklist
           component: () => import('../views/admin/BlackListView.vue'),
         },
         {
           path: 'logs',
           name: 'admin-logs',
+          meta: { requiresAdmin: true },
           //http://localhost:5173/admin/logs
           component: () => import('../views/admin/SystemLogView.vue'),
         },
@@ -202,13 +211,26 @@ router.beforeEach(async (to) => {
     }
 
     // 檢查是否為 CUSTOMER 角色越權存取管理端
+    let parsedUser = null
     try {
-      const parsed = JSON.parse(authUser)
-      if (parsed.role === 'CUSTOMER') {
+      parsedUser = JSON.parse(authUser)
+      if (parsedUser.role === 'CUSTOMER') {
         return { name: 'forbidden' }
       }
     } catch {
       // ignore parse error
+    }
+
+    // --- 檢查 11種職位對應的管理員權限 ---
+    if (to.matched.some((record) => record.meta.requiresAdmin)) {
+      if (parsedUser) {
+        const adminRoles = ['CFDM', 'CSDM', 'CRDM', 'CRO', 'COO', 'ISSA', 'CISO', 'SYS_SUPER']
+        if (!adminRoles.includes(parsedUser.roleCode)) {
+          return { name: 'forbidden' } // 不是管理員職位，進入 forbidden
+        }
+      } else {
+        return { name: 'admin-login' }
+      }
     }
 
     // localStorage 有資料 → 再跟後端確認 Session 是否還活著

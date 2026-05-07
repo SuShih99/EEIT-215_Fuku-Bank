@@ -102,9 +102,7 @@ const form = reactive({
 // 測試帳號
 const testAccounts = [
   { name: '鄭文華', role: 'CISO',  username: 'wenhua.cheng' },
-  { name: '郭建國', role: 'ISSA',  username: 'chienkuo.kuo' },
   { name: '林家豪', role: 'CFSO',  username: 'chiahao.lin' },
-  { name: '王俊傑', role: 'CRO',   username: 'chunchie.wang' },
 ]
 
 function fillAccount(acc) {
