@@ -100,7 +100,7 @@ public class CreditCardService {
     public void createFromApplicationItem(CardApplicationItem item){
 
         CreditCard card = new CreditCard();
-        card.setCustomer(item.getApplication().getCustomerProfile());
+        card.setCustomer(item.getApplication().getCustomer());
     card.setCardType(item.getCardType());
     card.setCreditLimit(item.getApprovedLimit());
 

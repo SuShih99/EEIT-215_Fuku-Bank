@@ -14,6 +14,10 @@ import Antd from 'ant-design-vue' // 螞蟻骨架
 import 'ant-design-vue/dist/reset.css' // 螞蟻css
 import { createPinia } from 'pinia' // 狀態管理
 
+//載入tailwind
+import './assets/tailwind.css'
+
+
 // 將根元件掛載到變數 才能使用其方法
 const app = createApp(App)
 

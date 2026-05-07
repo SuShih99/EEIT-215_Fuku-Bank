@@ -28,12 +28,21 @@ export async function deleteApplication(id){
     return unwrap(res)
 }
 
-// 使用者送出申請（前台）
-export async function createApplication(data) {
-  const res = await api.post('/api/card-applications', data)
+//--使用者功能
+//使用者查詢自己的申請紀錄
+export async function getMyApplications(params) {
+  const res = await api.get('/user/card-applications', { params })
   return unwrap(res)
 }
 
+// 使用者送出申請（前台）
+export async function createApplication(data) {
+  const res = await api.post('/user/card-applications', data)
+  return unwrap(res)
+}
+
+
+//--申請明細--
 //修改備註
 export async function updateApplicationRemark(id, remark) {
   const res = await api.put(`/api/admin/card-applications/${id}/remark`, {

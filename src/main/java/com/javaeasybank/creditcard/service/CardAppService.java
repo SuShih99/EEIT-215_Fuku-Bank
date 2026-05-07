@@ -56,9 +56,9 @@ public class CardAppService {
 
         entity.setStatus(CardApplicationStatus.PENDING);
 
-        CustomerProfile customerProfile = customerRepository.findById(requestDto.getCustomerId())
+        CustomerProfile customer = customerRepository.findById(requestDto.getCustomerId())
                 .orElseThrow(() -> new BusinessException("Customer not found"));
-        entity.setCustomerProfile(customerProfile);
+        entity.setCustomer(customer);
 
         CardApplication saved = cardAppRepository.save(entity);
 
@@ -89,5 +89,11 @@ public class CardAppService {
                 pageable,
                 keyword,
                 status).map(cardApplicationMapper::toDto);
+    }
+
+    public Page<CardApplicationResponseDto> findMyApplications(String customerId, Pageable pageable) {
+        return cardAppRepository
+            .findByCustomer_CustomerId(customerId, pageable)
+            .map(cardApplicationMapper::toDto);
     }
 }

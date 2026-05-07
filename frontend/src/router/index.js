@@ -45,6 +45,18 @@ const router = createRouter({
           name: 'user-profile',
           component: () => import('../views/user/UserProfileView.vue'),
         },
+        {
+          path: 'card-types',
+          name: 'user-card-types',
+          component: () => import('../views/user/CardTypeListView.vue'),
+        },
+        {
+          path:'card-applications',
+          name:'user-card-applications',
+          component: () => import('../views/user/CardApplicationForm.vue'),
+        },
+        
+      
       ],
     },
 

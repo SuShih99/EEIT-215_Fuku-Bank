@@ -2,10 +2,9 @@
   <div class="customer-page register-page">
     <main class="register-container">
       <!-- Logo -->
-      <a class="register-logo" href="/" @click.prevent="$router.push('/')">
-        <div class="jb-stamp">福</div>
-        <span class="logo-label">JAVA_BANK</span>
-      </a>
+      <div class="register-logo">
+        <JbLogo size="md" clickable @navigate="$router.push('/')" />
+      </div>
 
       <section class="register-card jb-card">
         <h1 class="register-title">開立帳戶</h1>
@@ -107,6 +106,7 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { customerRegister } from '@/api/customerAuth'
+import JbLogo from '@/components/JbLogo.vue'
 
 const router = useRouter()
 const loading = ref(false)
@@ -167,20 +167,9 @@ async function handleRegister() {
 }
 
 .register-logo {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
   margin-bottom: var(--space-5);
-  text-decoration: none;
-  color: inherit;
-}
-
-.logo-label {
-  font-family: var(--font-heading);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: 2px;
+  display: flex;
+  justify-content: center;
 }
 
 .register-card {

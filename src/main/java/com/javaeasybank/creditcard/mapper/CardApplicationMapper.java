@@ -14,11 +14,11 @@ import com.javaeasybank.creditcard.entity.CardApplication;
 public interface CardApplicationMapper {
 
 	// 查詢用
-	@Mapping(source = "customerProfile.customerId", target = "customerId")
-    @Mapping(source = "customerProfile.name", target = "customerName")
+	@Mapping(source = "customer.customerId", target = "customerId")
+    @Mapping(source = "customer.name", target = "customerName")
     CardApplicationResponseDto toDto(CardApplication app);
 	// 更新用
-	@Mapping(source = "customerId", target = "customerProfile.customerId")
+	@Mapping(source = "customerId", target = "customer.customerId")
     CardApplication toEntity(CardApplicationRequestDto requestDto);
 
 	List<CardApplicationResponseDto> toDtoList(List<CardApplication> all);

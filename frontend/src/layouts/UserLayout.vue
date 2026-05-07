@@ -3,10 +3,7 @@
     <!-- 頂部導覽列 -->
     <header class="user-header">
       <div class="header-inner">
-        <a class="header-left" href="/user/home" @click.prevent="$router.push({ name: 'user-home' })">
-          <div class="jb-stamp" style="width:36px;height:36px;font-size:13px;border-width:1.5px;">福</div>
-          <span class="brand-name">JAVA_BANK</span>
-        </a>
+        <JbLogo size="sm" clickable @navigate="$router.push({ name: 'user-home' })" />
 
         <nav class="header-right" aria-label="使用者導覽">
           <button
@@ -42,6 +39,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCustomerAuthStore } from '@/stores/customerAuth'
 import { BASE_URL } from '@/api/axios'
+import JbLogo from '@/components/JbLogo.vue'
 
 const router = useRouter()
 const customerAuthStore = useCustomerAuthStore()
@@ -81,27 +79,13 @@ function handleLogout() {
   max-width: 1080px;
   margin: 0 auto;
   padding: 0 var(--space-6);
-  height: 64px;
+  height: 88px;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  text-decoration: none;
-  color: inherit;
-}
-
-.brand-name {
-  font-family: var(--font-heading);
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: 2px;
-}
+/* header-left 已由 JbLogo 取代 */
 
 .header-right {
   display: flex;
@@ -153,8 +137,8 @@ function handleLogout() {
 }
 
 @media (max-width: 700px) {
-  .header-inner { padding: 0 var(--space-3); height: 56px; }
+  .header-inner { padding: 0 var(--space-3); height: 72px; }
   .user-content { padding: var(--space-4) var(--space-3); }
-  .brand-name { display: none; }
+  /* brand-name 已由 JbLogo 取代 */
 }
 </style>

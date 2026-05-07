@@ -22,4 +22,11 @@ export const deleteCardType = async (id) =>
 export const uploadImage = async (formData) =>
   (await api.post('/api/admin/card-types/upload', formData)).data.data
 
+// === User Card Type API ===
+export const getUserCardTypes = async () =>
+  (await api.get('/user/card-types')).data.data
+
+export const getUserCardTypeById = async (id) =>
+  (await api.get(`/user/card-types/${id}`)).data.data
+
 // ===

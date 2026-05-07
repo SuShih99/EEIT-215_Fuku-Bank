@@ -66,8 +66,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/customer/auth/reset-password").permitAll()
                 .requestMatchers("/api/customer/auth/seed").permitAll()
 
-                // === 靜態資源：大頭照可公開存取 ===
+                // === 靜態資源：大頭照可公開存取 & 圖片可公開存取 ===
                 .requestMatchers("/uploads/**").permitAll()
+                .requestMatchers("/img/**").permitAll()
 
                 // === 其餘都要登入 ===
                 .anyRequest().authenticated()

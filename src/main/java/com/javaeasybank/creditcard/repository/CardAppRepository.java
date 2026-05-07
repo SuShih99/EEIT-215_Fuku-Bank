@@ -16,8 +16,8 @@ public interface CardAppRepository extends JpaRepository<CardApplication, Intege
             WHERE (
                 :keyword IS NULL
                 OR c.remark LIKE %:keyword%
-                OR c.customerProfile.customerId LIKE %:keyword%
-                OR c.customerProfile.name LIKE %:keyword%
+                OR c.customer.customerId LIKE %:keyword%
+                OR c.customer.name LIKE %:keyword%
             )
             AND (
                 :status IS NULL
@@ -28,4 +28,6 @@ public interface CardAppRepository extends JpaRepository<CardApplication, Intege
             Pageable pageable,
             @Param("keyword") String keyword,
             @Param("status") CardApplicationStatus status);
+
+    Page<CardApplication> findByCustomer_CustomerId(String customerId, Pageable pageable);
 }

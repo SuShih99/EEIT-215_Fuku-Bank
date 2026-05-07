@@ -6,8 +6,7 @@
         <div class="deco-ink-wash"></div>
         <div class="deco-circle"></div>
         <div class="deco-brand">
-          <div class="jb-stamp" style="width:64px;height:64px;font-size:24px;">福</div>
-          <span class="deco-text">JAVA_BANK</span>
+          <JbLogo size="lg" />
         </div>
       </aside>
 
@@ -94,6 +93,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { customerLogin } from '@/api/customerAuth'
 import { useCustomerAuthStore } from '@/stores/customerAuth'
+import JbLogo from '@/components/JbLogo.vue'
 
 const router = useRouter()
 const customerAuthStore = useCustomerAuthStore()
@@ -186,17 +186,8 @@ async function handleLogin() {
   position: relative;
   z-index: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: var(--space-3);
-}
-
-.deco-text {
-  font-family: var(--font-heading);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: 3px;
+  justify-content: center;
 }
 
 /* 右表單 */

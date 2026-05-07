@@ -2,10 +2,9 @@
   <div class="customer-page reset-page">
     <main class="reset-container">
       <!-- Logo -->
-      <a class="reset-logo" href="/" @click.prevent="$router.push('/')">
-        <div class="jb-stamp">福</div>
-        <span class="logo-label">JAVA_BANK</span>
-      </a>
+      <div class="reset-logo">
+        <JbLogo size="md" clickable @navigate="$router.push('/')" />
+      </div>
 
       <section class="reset-card jb-card">
         <!-- 重設表單 -->
@@ -104,6 +103,7 @@
 import { reactive, ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { customerResetPassword } from '@/api/customerAuth'
+import JbLogo from '@/components/JbLogo.vue'
 
 const route = useRoute()
 const loading = ref(false)
@@ -163,20 +163,9 @@ async function handleReset() {
 }
 
 .reset-logo {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
   margin-bottom: var(--space-5);
-  text-decoration: none;
-  color: inherit;
-}
-
-.logo-label {
-  font-family: var(--font-heading);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: 2px;
+  display: flex;
+  justify-content: center;
 }
 
 .reset-card {

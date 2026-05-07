@@ -15,12 +15,14 @@
   "dependencies": {
     "@ant-design/icons-vue": "^7.0.1",
     "@fortawesome/vue-fontawesome": "^3.2.0",
+    "@tailwindcss/vite": "^4.2.4",
     "ant-design-vue": "^4.2.6",
     "axios": "^1.15.2",
     "dayjs": "^1.11.20",
     "file-saver": "^2.0.5",
     "pinia": "^3.0.4",
     "router": "^2.2.0",
+    "tailwindcss": "^4.2.4",
     "vue": "^3.5.32",
     "vue-router": "^5.0.4",
     "xlsx": "^0.18.5"
