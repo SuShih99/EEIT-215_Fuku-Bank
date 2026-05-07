@@ -82,12 +82,12 @@ public class CardTxnService {
     // 查全部交易(DTO)
     public Page<CardTxnResponseDto> findAll(Pageable pageable) {
         return cardTxnRepository.findAll(pageable)
-                .map(mapper::toDto);
+                .map(this::toResponseDto);
     }
 
     // 查單筆交易(DTO)
     public CardTxnResponseDto findById(Integer id) {
-        return mapper.toDto(cardTxnRepository.findById(id)
+        return toResponseDto(cardTxnRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("Transaction not found")));
     }
 
@@ -134,6 +134,9 @@ public class CardTxnService {
         if (originalTxn.getTxnType() == TxnType.REFUND) {
             throw new BusinessException("此交易已為刷退交易");
         }
+        if (cardTxnRepository.existsByRefTxn_TxnId(id)) {
+            throw new BusinessException("此交易已刷退");
+        }
 
         // 建立刷退交易
         CardTransaction refundTxn = new CardTransaction();
@@ -158,6 +161,7 @@ public class CardTxnService {
 
         // ===== 可選：紀錄原交易 =====
         // refundTxn.setOriginalTxn(originalTxn);
+        refundTxn.setRefTxn(originalTxn);
 
         // ===== 更新信用卡已使用額度 =====
         CreditCard card = originalTxn.getCard();
@@ -169,6 +173,14 @@ public class CardTxnService {
         CardTransaction savedTxn = cardTxnRepository.save(refundTxn);
         cardRepository.save(card);
 
-        return mapper.toDto(savedTxn);
+        return toResponseDto(savedTxn);
+    }
+
+    private CardTxnResponseDto toResponseDto(CardTransaction txn) {
+        CardTxnResponseDto dto = mapper.toDto(txn);
+        dto.setRefunded(
+                txn.getTxnType() != TxnType.REFUND
+                        && cardTxnRepository.existsByRefTxn_TxnId(txn.getTxnId()));
+        return dto;
     }
 }

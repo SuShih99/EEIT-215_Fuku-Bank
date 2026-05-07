@@ -6,4 +6,5 @@ import com.javaeasybank.creditcard.entity.CardTransaction;
 
 public interface CardTxnRepository extends JpaRepository<CardTransaction, Integer> {
 
+    boolean existsByRefTxn_TxnId(Integer txnId);
 }

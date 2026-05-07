@@ -16,6 +16,7 @@ public interface CardTxnMapper {
     @Mapping(source = "merchant.merchantName", target = "merchantName")
     @Mapping(source = "card.customer.name", target = "customerName")
     @Mapping(source = "card.cardNumber", target = "cardNumber", qualifiedByName = "maskCard")
+    @Mapping(source = "refTxn.txnId", target = "refTxnId")
     CardTxnResponseDto toDto(CardTransaction txn);
 
     List<CardTxnResponseDto> toDtoList(List<CardTransaction> list);

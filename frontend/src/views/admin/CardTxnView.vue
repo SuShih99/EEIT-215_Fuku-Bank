@@ -110,13 +110,7 @@ const handleTableChange = (pager) => {
 }
 //已刷退
 const isRefunded = (record) => {
-
-  return transactions.value.some(
-    txn =>
-      txn.txnType === 'REFUND' 
-      // && txn.description === `Refund - ${record.description}`
-  )
-
+  return record.refunded === true
 }
 
 onMounted(() => {
@@ -139,7 +133,7 @@ onMounted(() => {
         :data-source="transactions"
         :loading="loading"
         :pagination="pagination"
-        row-key="id"
+        row-key="txnId"
         @change="handleTableChange"
       >
         <!-- 客製欄位 -->
@@ -165,7 +159,15 @@ onMounted(() => {
           <!-- 刷退按鈕 -->
           <template v-else-if="column.key === 'action'">
 
-  <template v-if="isRefunded(record)">
+  <template v-if="record.txnType === 'REFUND'">
+
+    <a-tag color="red">
+      刷退交易
+    </a-tag>
+
+  </template>
+
+  <template v-else-if="isRefunded(record)">
 
     <a-tag color="red">
       已刷退
