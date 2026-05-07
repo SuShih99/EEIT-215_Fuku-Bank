@@ -7,11 +7,14 @@ import com.javaeasybank.auth.repository.AuthEmpRepository;
 import com.javaeasybank.auth.repository.AuthRoleRepository;
 import com.javaeasybank.common.exception.BusinessException;
 import org.springframework.beans.BeanUtils;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,18 +23,39 @@ public class AuthEmpServiceImpl implements AuthEmpService {
     private final AuthEmpRepository authEmpRepository;
     private final AuthRoleRepository authRoleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthActionLogService actionLogService;
 
     public AuthEmpServiceImpl(AuthEmpRepository authEmpRepository,
                               AuthRoleRepository authRoleRepository,
-                              PasswordEncoder passwordEncoder) {
+                              PasswordEncoder passwordEncoder,
+                              AuthActionLogService actionLogService) {
         this.authEmpRepository = authEmpRepository;
         this.authRoleRepository = authRoleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.actionLogService = actionLogService;
+    }
+
+    private void recordLog(String action, String details) {
+        String empId = "SYSTEM";
+        String empName = "系統";
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+                String email = auth.getName();
+                Optional<AuthEmp> optEmp = authEmpRepository.findByEmail(email);
+                if (optEmp.isPresent()) {
+                    empId = optEmp.get().getEmpId();
+                    empName = optEmp.get().getEmpName();
+                }
+            }
+        } catch (Exception e) {
+            // Ignored for system level actions
+        }
+        actionLogService.saveLog(empId, empName, action, details);
     }
 
     // ===========================
-    // 登入（密碼驗證已由 AuthenticationManager 在 Controller 完成）
-    // 這裡只做：更新最後登入時間 + 回傳員工資訊
+    // 登入
     // ===========================
     @Override
     public AuthDto.AuthEmpResponse login(AuthDto.LoginRequest request) {
@@ -41,6 +65,7 @@ public class AuthEmpServiceImpl implements AuthEmpService {
         emp.setLastLoginDate(LocalDateTime.now());
         authEmpRepository.save(emp);
 
+        recordLog("LOGIN", "員工登入");
         return convertToResponse(emp);
     }
 
@@ -72,7 +97,6 @@ public class AuthEmpServiceImpl implements AuthEmpService {
 
         AuthEmp emp = new AuthEmp();
         BeanUtils.copyProperties(request, emp);
-        // 用 BCrypt 加密密碼（預設密碼 123456）
         String rawPassword = request.getPassword() != null ? request.getPassword() : "123456";
         emp.setPasswordHash(passwordEncoder.encode(rawPassword));
         emp.setStatus("ACTIVE");
@@ -81,6 +105,7 @@ public class AuthEmpServiceImpl implements AuthEmpService {
         }
 
         AuthEmp saved = authEmpRepository.save(emp);
+        recordLog("CREATE_EMP", "新增員工: " + saved.getEmpName());
         return convertToResponse(saved);
     }
 
@@ -99,6 +124,7 @@ public class AuthEmpServiceImpl implements AuthEmpService {
         }
 
         AuthEmp saved = authEmpRepository.save(emp);
+        recordLog("UPDATE_EMP", "修改員工: " + saved.getEmpName());
         return convertToResponse(saved);
     }
 
@@ -108,6 +134,7 @@ public class AuthEmpServiceImpl implements AuthEmpService {
                 .orElseThrow(() -> new BusinessException("查無此員工"));
         emp.setStatus("SUSPENDED");
         authEmpRepository.save(emp);
+        recordLog("SUSPEND_EMP", "停用員工: " + emp.getEmpName());
     }
 
     // ===========================
@@ -115,7 +142,6 @@ public class AuthEmpServiceImpl implements AuthEmpService {
     // ===========================
     @Override
     public void seedTestData() {
-        // 如果已有資料就跳過
         if (authEmpRepository.count() > 0) {
             throw new BusinessException("資料庫已有員工資料，請先清空再帶入");
         }
@@ -148,6 +174,7 @@ public class AuthEmpServiceImpl implements AuthEmpService {
             emp.setPermissionExpire(LocalDateTime.now().plusYears(1));
             authEmpRepository.save(emp);
         }
+        recordLog("SEED_DATA", "一鍵帶入測試員工資料");
     }
 
     // ===========================
@@ -176,9 +203,6 @@ public class AuthEmpServiceImpl implements AuthEmpService {
         return role.getRoleCode();
     }
 
-    // ===========================
-    // 私有轉換方法
-    // ===========================
     private AuthDto.AuthEmpResponse convertToResponse(AuthEmp emp) {
         AuthDto.AuthEmpResponse res = new AuthDto.AuthEmpResponse();
         BeanUtils.copyProperties(emp, res);

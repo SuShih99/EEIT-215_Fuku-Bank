@@ -4,9 +4,7 @@
       <h2 class="page-title">客戶管理</h2>
     </div>
 
-    <!-- 頂部 F 的第一橫劃：搜尋與主操作 -->
     <div class="action-bar">
-      <!-- 左側搜尋區 -->
       <div class="search-group">
         <a-input
           v-model:value="keyword"
@@ -19,19 +17,14 @@
         </a-input>
         <a-button type="primary" class="rounded-btn" @click="handleSearch">查詢</a-button>
         <a-button class="rounded-btn btn-ghost" @click="handleClear">清除</a-button>
-      </div>
-
-      <!-- 右側全域操作區 -->
-      <div class="global-actions">
-        <a-button class="rounded-btn btn-ghost" @click="handleSeed" :loading="seedLoading">帶入測試資料</a-button>
         <a-button type="primary" class="rounded-btn" @click="openCreateModal">
-          <template #icon><PlusOutlined /></template>
           新增客戶
         </a-button>
       </div>
+      <div class="global-actions">
+        </div>
     </div>
 
-    <!-- 表格 -->
     <a-table
       :columns="columns"
       :data-source="customers"
@@ -42,7 +35,6 @@
       :pagination="{ pageSize: 10, showSizeChanger: false }"
     >
       <template #bodyCell="{ column, record }">
-        <!-- F 主幹：最強烈的視覺辨識 (姓名 + ID) -->
         <template v-if="column.key === 'name'">
           <div class="emp-name-cell">
             <div class="emp-avatar">{{ record.name.charAt(0) }}</div>
@@ -52,21 +44,15 @@
             </div>
           </div>
         </template>
-
-        <!-- 性別顯示 -->
         <template v-else-if="column.key === 'gender'">
           {{ genderMap[record.gender] || record.gender }}
         </template>
-
-        <!-- 狀態顯示 -->
         <template v-else-if="column.key === 'status'">
           <div :class="['status-tag', `status-${record.status.toLowerCase()}`]">
             <span class="status-dot"></span>
             {{ statusMap[record.status] || record.status }}
           </div>
         </template>
-
-        <!-- F 終點：右側行動按鈕 -->
         <template v-else-if="column.key === 'action'">
           <div class="action-cell">
             <a-button type="link" class="action-btn edit-btn" @click="openEditModal(record)">
@@ -87,7 +73,6 @@
       </template>
     </a-table>
 
-    <!-- 新增/編輯 Modal -->
     <a-modal
       v-model:open="showModal"
       :title="isEdit ? '編輯客戶' : '新增客戶'"
@@ -96,11 +81,11 @@
       @cancel="resetForm"
     >
       <a-form layout="vertical">
-        <!-- 一鍵帶入 -->
-        <div v-if="!isEdit" style="margin-bottom: 12px">
-          <span style="font-size: 12px; color: #999; margin-right: 8px">快速帶入：</span>
+        <div v-if="!isEdit" style="margin-bottom: 12px; display: flex; gap: 8px;">
+          <span style="font-size: 12px; color: #999; margin-right: 8px; line-height: 24px;">快速帶入：</span>
           <a-button size="small" @click="fillDemoCustomer('M')">男性客戶</a-button>
           <a-button size="small" @click="fillDemoCustomer('F')">女性客戶</a-button>
+          <a-button size="small" type="dashed" @click="handleSeed" :loading="seedLoading">一鍵帶入</a-button>
         </div>
 
         <a-form-item label="身分證字號">
@@ -140,7 +125,7 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { message, Modal } from 'ant-design-vue'
-import { SearchOutlined, PlusOutlined } from '@ant-design/icons-vue'
+import { SearchOutlined } from '@ant-design/icons-vue'
 import {
   getCustomers,
   createCustomer,
@@ -152,13 +137,11 @@ import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
 
-// === RBAC：只有 SUPER_ADMIN (CISO/CSDM) 才看得到「停用」按鈕 ===
 const isSuperAdmin = computed(() => {
   const roleCode = authStore.user?.roleCode
   return ['CISO', 'CSDM'].includes(roleCode)
 })
 
-// === 中文對照 ===
 const statusMap = {
   ACTIVE: '正常',
   DEACTIVATED: '已註銷',
@@ -171,7 +154,6 @@ const genderMap = {
   F: '女',
 }
 
-// === 一鍵帶入 Demo 資料 ===
 const maleNames = ['張志豪', '林建宏', '黃柏翔', '吳宗翰', '陳俊傑', '劉冠廷', '周政廷', '方建宏']
 const femaleNames = ['陳怡君', '林佳蓉', '王雅婷', '黃詩涵', '許家瑩', '曾婉茹', '卓佩樺', '賴怡君']
 const cities = ['台北市', '新北市', '桃園市', '台中市', '高雄市', '台南市']
@@ -185,7 +167,6 @@ const districts = {
 }
 const roads = ['中正路', '民生路', '忠孝東路', '復興南路', '和平東路', '仁愛路', '光復路', '建國路']
 
-// 台灣身分證字號產生（符合格式但非真實）
 function generateIdNumber(gender) {
   const cityCode = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
   const letter = cityCode[Math.floor(Math.random() * cityCode.length)]
@@ -222,7 +203,6 @@ function fillDemoCustomer(gender) {
   form.address = `${city}${district}${road}${num}號${floor}樓`
 }
 
-// === 查詢相關 ===
 const keyword = ref('')
 const customers = ref([])
 const loading = ref(false)
@@ -260,7 +240,6 @@ function handleClear() {
   customers.value = []
 }
 
-// === 新增/編輯相關 ===
 const showModal = ref(false)
 const isEdit = ref(false)
 const submitLoading = ref(false)
@@ -337,7 +316,6 @@ async function handleSubmit() {
   }
 }
 
-// === 註銷客戶 ===
 function handleDeactivate(customerId) {
   Modal.confirm({
     title: '確定要註銷此客戶嗎？',
@@ -357,17 +335,17 @@ function handleDeactivate(customerId) {
   })
 }
 
-// === 帶入測試資料 ===
 const seedLoading = ref(false)
 
 async function handleSeed() {
   seedLoading.value = true
   try {
     const res = await seedCustomers()
-    message.success(res.data.data || '測試資料已帶入')
+    message.success(res.data.data || '一鍵帶入成功')
     await fetchData()
+    showModal.value = false
   } catch (err) {
-    message.error(err.response?.data?.message || '帶入測試資料失敗')
+    message.error(err.response?.data?.message || '一鍵帶入失敗')
   } finally {
     seedLoading.value = false
   }
@@ -375,7 +353,6 @@ async function handleSeed() {
 </script>
 
 <style scoped>
-/* 左側 F 主幹：姓名與頭像 */
 .emp-name-cell {
   display: flex;
   align-items: center;
@@ -412,7 +389,6 @@ async function handleSeed() {
   margin-top: 2px;
 }
 
-/* 狀態標籤 */
 .status-tag {
   display: inline-flex;
   align-items: center;
@@ -447,7 +423,6 @@ async function handleSeed() {
 }
 .status-pending .status-dot { background-color: #fa8c16; }
 
-/* 停用按鈕專屬樣式 */
 .suspend-btn {
   color: #ff4d4f;
 }

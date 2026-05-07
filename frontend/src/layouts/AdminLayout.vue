@@ -14,35 +14,34 @@
             <span>首頁</span>
           </a-menu-item>
 
-          <a-menu-item-group title="客戶管理">
-            <a-menu-item key="admin-customers" @click="$router.push({ name: 'admin-customers' })">
-              <template #icon><UserOutlined /></template>
-              <span>客戶管理</span>
-            </a-menu-item>
-          </a-menu-item-group>
+          <template v-if="!isCISO">
+            <a-menu-item-group title="客戶管理">
+              <a-menu-item key="admin-customers" @click="$router.push({ name: 'admin-customers' })">
+                <template #icon><UserOutlined /></template>
+                <span>客戶管理</span>
+              </a-menu-item>
+            </a-menu-item-group>
 
-          <a-menu-item-group title="帳戶管理">
-            <a-menu-item key="admin-accounts" @click="$router.push({ name: 'admin-accounts' })">
-              <template #icon><BankOutlined /></template>
-              <span>帳戶管理</span>
-            </a-menu-item>
-            <a-menu-item key="admin-transfers" @click="$router.push({ name: 'admin-transfers' })">
-              <template #icon><SwapOutlined /></template>
-              <span>交易操作</span>
-            </a-menu-item>
-            <a-menu-item key="admin-trans-logs" @click="$router.push({ name: 'admin-trans-logs' })">
-              <template #icon><ProfileOutlined /></template>
-              <span>交易紀錄</span>
-            </a-menu-item>
-          </a-menu-item-group>
+            <a-menu-item-group title="帳戶管理">
+              <a-menu-item key="admin-accounts" @click="$router.push({ name: 'admin-accounts' })">
+                <template #icon><BankOutlined /></template>
+                <span>帳戶管理</span>
+              </a-menu-item>
+              <a-menu-item key="admin-transfers" @click="$router.push({ name: 'admin-transfers' })">
+                <template #icon><SwapOutlined /></template>
+                <span>交易操作</span>
+              </a-menu-item>
+              <a-menu-item key="admin-trans-logs" @click="$router.push({ name: 'admin-trans-logs' })">
+                <template #icon><ProfileOutlined /></template>
+                <span>交易紀錄</span>
+              </a-menu-item>
+            </a-menu-item-group>
 
-          <a-menu-item-group title="消金貸款業務">
-            <a-menu-item key="loan-apply" @click="$router.push({ name: 'loan-apply' })">
-              <template #icon><FileAddOutlined /></template>
-              <span>貸款進件申請</span>
-            </a-menu-item>
-            
-            <template v-if="isAdmin">
+            <a-menu-item-group title="消金貸款業務">
+              <a-menu-item key="loan-apply" @click="$router.push({ name: 'loan-apply' })">
+                <template #icon><FileAddOutlined /></template>
+                <span>貸款進件申請</span>
+              </a-menu-item>
               <a-menu-item key="loan-applications" @click="$router.push({ name: 'loan-applications' })">
                 <template #icon><AuditOutlined /></template>
                 <span>貸款申請管理</span>
@@ -59,10 +58,8 @@
                 <template #icon><CreditCardOutlined /></template>
                 <span>信用卡卡片管理</span>
               </a-menu-item>
-            </template>
-          </a-menu-item-group>
+            </a-menu-item-group>
 
-          <template v-if="isAdmin">
             <a-menu-item-group title="風險管理">
               <a-menu-item key="admin-risk-events" @click="$router.push({ name: 'admin-risk-events' })">
                 <template #icon><AlertOutlined /></template>
@@ -73,7 +70,9 @@
                 <span>黑名單</span>
               </a-menu-item>
             </a-menu-item-group>
+          </template>
 
+          <template v-if="isAdmin || isCISO">
             <a-menu-item-group title="系統管理">
               <a-menu-item key="admin-employees" @click="$router.push({ name: 'admin-employees' })">
                 <template #icon><TeamOutlined /></template>
@@ -128,10 +127,11 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
-// 11-Role Permissions Logic
-const adminRoles = ['CFDM', 'CSDM', 'CRDM', 'CRO', 'COO', 'ISSA', 'CISO', 'SYS_SUPER']
+const isCISO = computed(() => authStore.user?.roleCode === 'CISO')
+// 排除 CISO 讓其走獨立邏輯，其他需看到系統管理的管理員可在此定義
 const isAdmin = computed(() => {
-  return adminRoles.includes(authStore.user?.roleCode)
+  const adminRoles = ['ISSA', 'SYS_SUPER', 'SYS_STAFF'] 
+  return adminRoles.includes(authStore.user?.roleCode) && !isCISO.value
 })
 
 const selectedKeys = ref([route.name])
@@ -157,24 +157,17 @@ async function handleLogout() {
   min-height: 100vh;
 }
 
-/* =========================================
-   側邊欄 Logo 與背景樣式
-========================================= */
-/* 強制設定側邊欄背景為淡墨綠色，與純白內容區做區隔 */
 :deep(.ant-layout-sider) {
   background-color: #f1f3f0 !important;
-  /* 移除預設 padding，改用內部 sider-content 處理 */
 }
 
-/* 讓內部內容可滾動，隱藏原始滾動條保持美觀 */
 .sider-content {
   height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 20px 15px 60px; /* 底部留白避免被摺疊按鈕擋住 */
+  padding: 20px 15px 60px;
 }
 
-/* 針對 webkit 瀏覽器自訂滾動條 */
 .sider-content::-webkit-scrollbar {
   width: 6px;
 }
@@ -205,9 +198,6 @@ async function handleLogout() {
   color: #4A574D;
 }
 
-/* =========================================
-   側邊欄選單膠囊化設計 (強制覆蓋黑色)
-========================================= */
 :deep(.ant-menu) {
   background: transparent !important;
   border-inline-end: none !important;
@@ -223,7 +213,6 @@ async function handleLogout() {
   transition: all 0.3s ease;
 }
 
-/* 群組標題加上淺淺的橫線與優化字體 */
 :deep(.ant-menu-item-group-title) {
   color: #8c9891 !important;
   font-size: 12px !important;
@@ -234,14 +223,12 @@ async function handleLogout() {
   padding-top: 16px;
 }
 
-/* 讓第一個群組不要有頂部邊界 */
 :deep(.ant-menu-item-group:first-of-type .ant-menu-item-group-title) {
   border-top: none;
   margin-top: 8px;
   padding-top: 8px;
 }
 
-/* 確保選中的膠囊是墨綠色，絕對不會是黑色！ */
 :deep(.ant-menu-item-selected) {
   background-color: #5C6B5F !important;
   color: #ffffff !important;
@@ -257,16 +244,12 @@ async function handleLogout() {
   font-size: 15px;
 }
 
-/* 消除所有點擊時的藍色外框 */
 :deep(.ant-menu-item:focus-visible),
 :deep(.ant-menu-item:focus) {
   outline: none !important;
   box-shadow: none !important;
 }
 
-/* =========================================
-   頂部導覽列與右側帳號區塊
-========================================= */
 .custom-header {
   height: 80px !important; 
   line-height: 80px !important;
@@ -277,7 +260,6 @@ async function handleLogout() {
   align-items: center;
 }
 
-/* 移除 Header 藍色 Hover */
 .custom-header a:hover,
 .custom-header .anticon:hover {
   color: #5C6B5F !important;
@@ -321,15 +303,11 @@ async function handleLogout() {
   gap: 4px;
 }
 
-/* =========================================
-   右下角內容區塊
-========================================= */
 .admin-content {
   padding: 0 32px 32px;
   overflow-y: auto;
 }
 
-/* 頁面切換過場動畫 */
 .fade-enter-active, .fade-leave-active { 
   transition: opacity 0.2s ease; 
 }

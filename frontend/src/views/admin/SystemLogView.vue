@@ -4,9 +4,7 @@
       <h2 class="page-title">系統日誌</h2>
     </div>
 
-    <!-- 頂部 F 橫劃：主操作 -->
     <div class="action-bar" style="justify-content: flex-end;">
-      <!-- 右側全域操作區 -->
       <div class="global-actions">
         <a-button class="rounded-btn btn-ghost" @click="handleExportCsv">
           <template #icon><DownloadOutlined /></template>
@@ -29,10 +27,10 @@
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'emp'">
           <div class="emp-name-cell">
-            <div class="emp-avatar">{{ record.empName ? record.empName.charAt(0) : '?' }}</div>
+            <div class="emp-avatar">{{ record.empName ? record.empName.charAt(0) : '系' }}</div>
             <div class="emp-info">
-              <span class="emp-name-text">{{ record.empName }}</span>
-              <span class="emp-id-text">{{ record.empId }}</span>
+              <span class="emp-name-text">{{ record.empName || '系統' }}</span>
+              <span class="emp-id-text">{{ record.empId || 'SYSTEM' }}</span>
             </div>
           </div>
         </template>
@@ -117,7 +115,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* F-Pattern 專用組件 */
 .emp-name-cell {
   display: flex;
   align-items: center;

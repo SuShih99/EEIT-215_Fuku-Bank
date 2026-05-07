@@ -4,9 +4,7 @@
       <h2 class="page-title">員工管理</h2>
     </div>
 
-    <!-- 頂部 F 的第一橫劃：搜尋與主操作 -->
     <div class="action-bar">
-      <!-- 左側搜尋區 -->
       <div class="search-group">
         <a-input
           v-model:value="keyword"
@@ -21,9 +19,8 @@
         <a-button class="rounded-btn btn-ghost" @click="handleClear">清除</a-button>
       </div>
 
-      <!-- 右側全域操作區 -->
       <div class="global-actions">
-        <a-button class="rounded-btn btn-ghost" @click="handleSeed" :loading="seedLoading">帶入測試資料</a-button>
+        <a-button class="rounded-btn btn-ghost" @click="handleSeed" :loading="seedLoading">一鍵帶入</a-button>
         <a-button v-if="authStore.user?.permLevel === 0" type="primary" class="rounded-btn" @click="openCreateModal">
           <template #icon><PlusOutlined /></template>
           新增
@@ -31,7 +28,6 @@
       </div>
     </div>
 
-    <!-- 列表主體：左側辨識，右側行動 -->
     <a-table
       :columns="columns"
       :data-source="employees"
@@ -42,7 +38,6 @@
       :pagination="{ pageSize: 10, showSizeChanger: false }"
     >
       <template #bodyCell="{ column, record }">
-        <!-- F 主幹：最強烈的視覺辨識 (姓名 + ID) -->
         <template v-if="column.key === 'empName'">
           <div class="emp-name-cell">
             <div class="emp-avatar">{{ record.empName.charAt(0) }}</div>
@@ -52,16 +47,12 @@
             </div>
           </div>
         </template>
-
-        <!-- 狀態標籤 -->
         <template v-else-if="column.key === 'status'">
           <div :class="['status-tag', `status-${record.status.toLowerCase()}`]">
             <span class="status-dot"></span>
             {{ statusMap[record.status] || record.status }}
           </div>
         </template>
-
-        <!-- F 終點：右側行動按鈕 -->
         <template v-else-if="column.key === 'action'">
           <div class="action-cell">
             <a-button v-if="authStore.user?.permLevel === 1" type="link" class="action-btn edit-btn" @click="openEditModal(record)">
@@ -82,7 +73,6 @@
       </template>
     </a-table>
 
-    <!-- 新增/編輯 Modal -->
     <a-modal
       v-model:open="showModal"
       :title="isEdit ? '編輯員工' : '新增員工'"
@@ -155,14 +145,12 @@ import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
 
-// === 狀態中文對照 ===
 const statusMap = {
   ACTIVE: '啟用',
   SUSPENDED: '停用',
   LOCKED: '鎖定',
 }
 
-// === 角色資料（對應 auth_role 表）===
 const allRoles = [
   { id: 'R001', deptId: 'DPT001', code: 'CFSO', name: '消金業務專員' },
   { id: 'R002', deptId: 'DPT001', code: 'CFDM', name: '消金部經理' },
@@ -179,18 +167,15 @@ const allRoles = [
   { id: 'R013', deptId: 'DPT005', code: 'SYS_SUPER', name: '超級管理員' },
 ]
 
-// 根據選中的部門篩選角色
 const filteredRoles = computed(() => {
   if (!form.deptId) return []
   return allRoles.filter(r => r.deptId === form.deptId)
 })
 
-// 切換部門時清空角色
 function handleDeptChange() {
   form.roleId = undefined
 }
 
-// === 一鍵帶入 Demo 資料 ===
 const demoNames = ['周政廷', '許家瑩', '楊宗翰', '賴怡君', '方建宏', '曾婉茹', '廖偉翔', '卓佩樺']
 const deptRoleMap = {
   CF:  { deptId: 'DPT001', roleId: 'R001' },
@@ -215,13 +200,11 @@ function fillDemoEmployee(deptCode) {
   form.permissionExpire = '2026-12-31T00:00:00'
 }
 
-// === 格式化工具 ===
 function formatTime(value) {
   if (!value) return '-'
   return value.replace('T', ' ').substring(0, 19)
 }
 
-// === 查詢相關 ===
 const keyword = ref('')
 const employees = ref([])
 const loading = ref(false)
@@ -263,7 +246,6 @@ function handleClear() {
   employees.value = []
 }
 
-// === 新增/編輯相關 ===
 const showModal = ref(false)
 const isEdit = ref(false)
 const submitLoading = ref(false)
@@ -344,7 +326,6 @@ async function handleSubmit() {
   }
 }
 
-// === 停用員工 ===
 function handleSuspend(empId) {
   Modal.confirm({
     title: '確定要停用此員工嗎？',
@@ -364,17 +345,16 @@ function handleSuspend(empId) {
   })
 }
 
-// === 帶入測試資料 ===
 const seedLoading = ref(false)
 
 async function handleSeed() {
   seedLoading.value = true
   try {
     const res = await seedEmployees()
-    message.success(res.data.data || '測試資料已帶入')
+    message.success(res.data.data || '資料已帶入')
     await fetchData()
   } catch (err) {
-    message.error(err.response?.data?.message || '帶入測試資料失敗')
+    message.error(err.response?.data?.message || '一鍵帶入失敗')
   } finally {
     seedLoading.value = false
   }
@@ -382,7 +362,6 @@ async function handleSeed() {
 </script>
 
 <style scoped>
-/* 左側 F 主幹：姓名與頭像 */
 .emp-name-cell {
   display: flex;
   align-items: center;
@@ -419,7 +398,6 @@ async function handleSeed() {
   margin-top: 2px;
 }
 
-/* 狀態標籤 */
 .status-tag {
   display: inline-flex;
   align-items: center;
@@ -448,7 +426,6 @@ async function handleSeed() {
 }
 .status-suspended .status-dot { background-color: #ff4d4f; }
 
-/* 停用按鈕專屬樣式 */
 .suspend-btn {
   color: #ff4d4f;
 }

@@ -33,18 +33,13 @@ public class AuthController {
             @RequestBody AuthDto.LoginRequest request,
             HttpSession session) {
 
-        // 1. 透過 Spring Security 的 AuthenticationManager 做驗證
-        //    會呼叫 CustomUserDetailsService.loadUserByUsername()
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
-        // 2. 把驗證結果放進 SecurityContext → 存入 Session
-        //    後續 API 呼叫時 Spring Security 會自動從 Session 讀取，就不會 403
         SecurityContextHolder.getContext().setAuthentication(authentication);
         session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
 
-        // 3. 呼叫業務邏輯取得完整的員工資訊回傳給前端
         AuthDto.AuthEmpResponse response = authEmpService.login(request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -52,8 +47,6 @@ public class AuthController {
     // ===== 確認登入狀態（給前端路由守衛用）=====
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<Void>> me() {
-        // 如果 Session 有效 → Spring Security 放行 → 回 200
-        // 如果 Session 過期 → Spring Security 攔截 → 回 401（不會進到這裡）
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -66,9 +59,7 @@ public class AuthController {
     }
 
     // ===== 查詢員工（支援模糊搜尋）=====
-    // GET /api/auth/employees          → 全部
-    // GET /api/auth/employees?keyword=林 → 姓名含「林」的
-    @PreAuthorize("hasAnyRole('CISO', 'ISSA', 'SYS_STAFF', 'SYS_SUPER')")
+    @PreAuthorize("hasAnyRole('CISO', 'ISSA')")
     @GetMapping("/employees")
     public ResponseEntity<ApiResponse<List<AuthDto.AuthEmpResponse>>> getEmps(
             @RequestParam(required = false) String keyword) {
@@ -81,16 +72,16 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
-    // ===== 新增員工：僅 CISO =====
-    @PreAuthorize("hasAnyRole('CISO', 'SYS_STAFF')")
+    // ===== 新增員工 =====
+    @PreAuthorize("hasAnyRole('CISO', 'ISSA')")
     @PostMapping("/employees")
     public ResponseEntity<ApiResponse<AuthDto.AuthEmpResponse>> createEmp(
             @RequestBody AuthDto.AuthEmpRequest request) {
         return ResponseEntity.ok(ApiResponse.success(authEmpService.createEmp(request)));
     }
 
-    // ===== 修改員工：僅 CISO =====
-    @PreAuthorize("hasAnyRole('CISO', 'SYS_SUPER')")
+    // ===== 修改員工 =====
+    @PreAuthorize("hasAnyRole('CISO', 'ISSA')")
     @PutMapping("/employees/{empId}")
     public ResponseEntity<ApiResponse<AuthDto.AuthEmpResponse>> updateEmp(
             @PathVariable String empId,
@@ -98,18 +89,19 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(authEmpService.updateEmp(empId, request)));
     }
 
-    // ===== 停用員工（軟刪除）：僅 CISO =====
-    @PreAuthorize("hasAnyRole('CISO', 'SYS_SUPER')")
+    // ===== 停用員工（軟刪除） =====
+    @PreAuthorize("hasAnyRole('CISO', 'ISSA')")
     @DeleteMapping("/employees/{empId}/suspend")
     public ResponseEntity<ApiResponse<Void>> suspendEmp(@PathVariable String empId) {
         authEmpService.suspendEmp(empId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    // ===== 一鍵帶入測試資料：僅 CISO =====
+    // ===== 一鍵帶入資料 =====
+    @PreAuthorize("hasAnyRole('CISO', 'ISSA')")
     @PostMapping("/employees/seed")
     public ResponseEntity<ApiResponse<String>> seedEmployees() {
         authEmpService.seedTestData();
-        return ResponseEntity.ok(ApiResponse.success("已成功帶入測試資料"));
+        return ResponseEntity.ok(ApiResponse.success("已成功帶入資料"));
     }
 }
