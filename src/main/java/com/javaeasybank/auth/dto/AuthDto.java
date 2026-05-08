@@ -34,10 +34,11 @@ public class AuthDto {
         private String empName;
         private String deptId;
         private String roleId;
-        private String roleCode;    // 新增：角色代碼 (如 CISO)
-        private String permScope;   // 新增：權限範圍 (如 SYS)
+        private String roleCode;    // 角色代碼 (如 CISO)
+        private String permScope;   // 權限範圍 (如 SYS)
         private String email;
         private String status;
+        private Integer permLevel;  // 權限等級 (0-4)
         private LocalDateTime contractEndDate;
         private LocalDateTime permissionExpire;
         private LocalDateTime lastLoginDate;

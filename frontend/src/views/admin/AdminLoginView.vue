@@ -1,16 +1,14 @@
 <template>
   <div class="login-wrapper">
     <div class="login-card">
-      <!-- Logo 區 -->
       <div class="login-header">
-        <div class="logo-icon">
-          <BankOutlined style="font-size: 36px; color: #1677ff" />
+        <div class="logo-placeholder">
+          待銀行主視覺定稿
         </div>
-        <h1 class="login-title">爪哇銀行</h1>
-        <p class="login-subtitle">管理端登入系統</p>
+        <h1 class="login-title">待銀行主要名稱定稿</h1>
+        <p class="login-subtitle">後台管理系統</p>
       </div>
 
-      <!-- 登入表單 -->
       <a-form
         :model="form"
         layout="vertical"
@@ -18,18 +16,21 @@
         autocomplete="off"
       >
         <a-form-item
-          label="電子信箱"
+          label="Email"
           name="email"
-          :rules="[{ required: true, message: '請輸入電子信箱' }, { type: 'email', message: '信箱格式不正確' }]"
+          :rules="[
+            { required: true, message: '請輸入 Email' },
+            { type: 'email', message: '請輸入正確的 Email 格式' }
+          ]"
         >
           <a-input
             v-model:value="form.email"
-            size="large"
-            placeholder="請輸入員工信箱"
+            placeholder="請輸入 Email（如 name@javabank.com）"
+            class="custom-input"
             @press-enter="handleLogin"
           >
             <template #prefix>
-              <MailOutlined style="color: rgba(0, 0, 0, 0.25)" />
+              <MailOutlined style="color: rgba(92, 107, 95, 0.5)" />
             </template>
           </a-input>
         </a-form-item>
@@ -41,12 +42,12 @@
         >
           <a-input-password
             v-model:value="form.password"
-            size="large"
             placeholder="請輸入密碼"
+            class="custom-input"
             @press-enter="handleLogin"
           >
             <template #prefix>
-              <LockOutlined style="color: rgba(0, 0, 0, 0.25)" />
+              <LockOutlined style="color: rgba(92, 107, 95, 0.5)" />
             </template>
           </a-input-password>
         </a-form-item>
@@ -55,8 +56,8 @@
           <a-button
             type="primary"
             html-type="submit"
-            size="large"
             block
+            class="btn-submit-rounded"
             :loading="loading"
           >
             登入
@@ -64,16 +65,14 @@
         </a-form-item>
       </a-form>
 
-      <!-- 快速登入 -->
       <div class="quick-login">
-        <a-divider style="margin: 8px 0 16px">
-          <span style="color: #999; font-size: 12px">快速填入測試帳號</span>
+        <a-divider style="margin: 16px 0 24px">
+          <span style="color: #999; font-size: 13px">快速登入</span>
         </a-divider>
         <div class="quick-btn-grid">
           <a-button
             v-for="acc in testAccounts"
             :key="acc.email"
-            size="small"
             @click="fillAccount(acc)"
             class="quick-btn"
           >
@@ -81,9 +80,6 @@
             <span class="quick-name">{{ acc.name }}</span>
           </a-button>
         </div>
-        <p style="color: #bbb; font-size: 11px; text-align: center; margin-top: 10px">
-          密碼皆為 123456
-        </p>
       </div>
     </div>
   </div>
@@ -93,7 +89,7 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { BankOutlined, MailOutlined, LockOutlined } from '@ant-design/icons-vue'
+import { MailOutlined, LockOutlined } from '@ant-design/icons-vue'
 import { login } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 
@@ -106,16 +102,10 @@ const form = reactive({
   password: '',
 })
 
-// 測試帳號（對應 auth_role 表）
+// 快速登入帳號（直接使用完整 email）
 const testAccounts = [
-  { name: '鄭文華', role: 'CISO',  email: 'wenhua.cheng@javabank.com' },
-  { name: '郭建國', role: 'ISSA',  email: 'chienkuo.kuo@javabank.com' },
-  { name: '林家豪', role: 'CFSO',  email: 'chiahao.lin@javabank.com' },
-  { name: '蔡欣妤', role: 'CFDM',  email: 'xinyu.tsai@javabank.com' },
-  { name: '陳建志', role: 'CSVO',  email: 'chienchi.chen@javabank.com' },
-  { name: '吳承翰', role: 'JCRO',  email: 'chenghan.wu@javabank.com' },
-  { name: '王俊傑', role: 'CRO',   email: 'chunchie.wang@javabank.com' },
-  { name: '許志豪', role: 'COO',   email: 'chihhao.hsu@javabank.com' },
+  { name: '鄭文華', role: 'CISO', email: 'wenhua.cheng@javabank.com' },
+  { name: '林家豪', role: 'CFSO', email: 'chiahao.lin@javabank.com' },
 ]
 
 function fillAccount(acc) {
@@ -125,22 +115,15 @@ function fillAccount(acc) {
 
 async function handleLogin() {
   if (!form.email || !form.password) return
-
   loading.value = true
   try {
-    const res = await login({
-      email: form.email,
-      password: form.password,
-    })
-
-    // res.data = ApiResponse { success, data, message }
+    const res = await login({ email: form.email, password: form.password })
     const userData = res.data.data
     authStore.setUser(userData)
-
     message.success(`歡迎回來，${userData.empName}！`)
     router.push({ name: 'admin-home' })
   } catch (err) {
-    message.error(err.response?.data?.message || '登入失敗，請檢查帳號密碼')
+    message.error(err.response?.data?.message || '登入失敗，請檢查 Email 與密碼')
   } finally {
     loading.value = false
   }
@@ -148,80 +131,149 @@ async function handleLogin() {
 </script>
 
 <style scoped>
+/* =========================================
+   核心佈局與變數
+========================================= */
 .login-wrapper {
+  --primary-color: #5C6B5F;
+  --primary-hover: #4A574D;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f5f6fa;
 }
 
 .login-card {
-  width: 400px;
-  padding: 40px 32px 24px;
+  width: 440px;
+  padding: 48px 40px;
   background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  border-radius: 32px;
+  box-shadow: 0 24px 64px rgba(92, 107, 95, 0.06);
 }
 
 .login-header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 36px;
 }
 
-.logo-icon {
-  width: 72px;
-  height: 72px;
+.logo-placeholder {
+  width: 100px;
+  height: 100px;
   margin: 0 auto 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #e6f4ff;
+  background: rgba(92, 107, 95, 0.08);
+  color: var(--primary-color);
   border-radius: 50%;
+  font-size: 12px;
+  font-weight: bold;
 }
 
 .login-title {
   margin: 0;
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 26px;
+  font-weight: 700;
   color: #1a1a2e;
-  letter-spacing: 2px;
 }
 
 .login-subtitle {
-  margin: 4px 0 0;
-  font-size: 14px;
-  color: #8c8c8c;
+  margin: 8px 0 0;
+  font-size: 15px;
+  color: var(--primary-color);
+  font-weight: 500;
 }
 
-.quick-login {
-  margin-top: 8px;
+/* =========================================
+   解決痛點 1：徹底根除雙層黑框
+========================================= */
+/* 設定外層容器的樣式 */
+.custom-input {
+  border-radius: 12px !important;
+  border: 1px solid #d9d9d9 !important;
+  padding: 6px 14px !important;
+  height: 48px !important; /* 強制加高輸入框 */
+  display: flex;
+  align-items: center;
+  background: #fff !important;
+}
+
+/* 暴力擊破：強制拔除內部所有原生 input 的邊框與背景 */
+.custom-input :deep(input),
+.custom-input :deep(.ant-input) {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  height: 100% !important;
+}
+
+/* Hover 與 Focus 時外框變綠色 */
+.custom-input:hover,
+.custom-input:focus-within,
+.custom-input:deep(.ant-input-affix-wrapper-focused) {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 2px rgba(92, 107, 95, 0.1) !important;
+}
+
+/* =========================================
+   解決痛點 2：登入按鈕與快速登入變高變寬
+========================================= */
+.btn-submit-rounded {
+  height: 52px !important; /* 主要按鈕加高 */
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  border-radius: 26px !important;
+  font-weight: 600;
+  font-size: 16px;
+  margin-top: 12px;
+}
+
+.btn-submit-rounded:hover {
+  background-color: var(--primary-hover) !important;
 }
 
 .quick-btn-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: 16px; /* 增加按鈕之間的空隙 */
 }
 
 .quick-btn {
+  height: 48px !important; /* 強制加高快速登入按鈕！ */
+  padding: 0 16px !important; /* 左右撐開 */
+  border-radius: 12px !important;
   display: flex;
   align-items: center;
-  gap: 6px;
-  text-align: left;
-  padding: 4px 10px;
-  height: auto;
+  justify-content: flex-start;
+  border: 1px solid #e0e0e0 !important; /* 淡淡的實線邊框 */
+  background: transparent !important;
+  transition: all 0.3s ease;
+}
+
+/* Hover 時變墨綠色 */
+.quick-btn:hover {
+  border-color: var(--primary-color) !important;
+  background-color: rgba(92, 107, 95, 0.04) !important;
+}
+
+.quick-btn:hover .quick-name {
+  color: var(--primary-color) !important;
 }
 
 .quick-role {
-  font-size: 11px;
-  color: #1677ff;
-  font-weight: 600;
-  min-width: 36px;
+  font-size: 12px;
+  color: var(--primary-color);
+  font-weight: 700;
+  min-width: 44px; /* 讓前面的英文職稱對齊 */
+  text-align: left;
 }
 
 .quick-name {
-  font-size: 12px;
+  font-size: 14px;
   color: #555;
+  font-weight: 500;
+  transition: color 0.3s ease;
 }
 </style>

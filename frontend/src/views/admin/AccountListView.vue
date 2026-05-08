@@ -1,68 +1,80 @@
 <template>
-  <div style="padding: 24px">
-    <h2>帳戶管理</h2>
+  <div class="page-container">
+    <div class="page-header">
+      <h2 class="page-title">帳戶管理</h2>
+    </div>
 
-    <!-- 查詢區 -->
-    <div style="margin-bottom: 16px; display: flex; gap: 8px; align-items: center">
-      <a-input
-        v-model:value="accountNumberSearch"
-        placeholder="帳號"
-        style="width: 150px"
-        allow-clear
-      />
-      <a-input
-        v-model:value="customerId"
-        placeholder="客戶 ID"
-        style="width: 150px"
-        allow-clear
-      />
+    <!-- 頂部 F 橫劃：搜尋與主操作 -->
+    <div class="action-bar">
+      <!-- 左側搜尋區 -->
+      <div class="search-group" style="flex-wrap: wrap; max-width: 800px;">
+        <a-input
+          v-model:value="accountNumberSearch"
+          placeholder="搜尋帳號..."
+          class="rounded-input"
+          style="width: 150px"
+          allow-clear
+        />
+        <a-input
+          v-model:value="customerId"
+          placeholder="客戶 ID..."
+          class="rounded-input"
+          style="width: 150px"
+          allow-clear
+        />
 
-      <a-select
-        v-model:value="statusFilter"
-        placeholder="帳戶狀態"
-        style="width: 150px"
-        allow-clear
-      >
-        <a-select-option value="PENDING">待啟用</a-select-option>
-        <a-select-option value="ACTIVE">正常</a-select-option>
-        <a-select-option value="FROZEN">凍結</a-select-option>
-        <a-select-option value="DORMANT">靜止戶</a-select-option>
-        <a-select-option value="CLOSED">已銷戶</a-select-option>
-      </a-select>
+        <a-select
+          v-model:value="statusFilter"
+          placeholder="帳戶狀態"
+          style="width: 120px"
+          allow-clear
+        >
+          <a-select-option value="PENDING">待啟用</a-select-option>
+          <a-select-option value="ACTIVE">正常</a-select-option>
+          <a-select-option value="FROZEN">凍結</a-select-option>
+          <a-select-option value="DORMANT">靜止戶</a-select-option>
+          <a-select-option value="CLOSED">已銷戶</a-select-option>
+        </a-select>
 
-      <a-select
-        v-model:value="typeFilter"
-        placeholder="帳戶型別"
-        style="width: 150px"
-        allow-clear
-      >
-        <a-select-option value="CHECKING">活存</a-select-option>
-        <a-select-option value="TIME_DEPOSIT">定存</a-select-option>
-        <a-select-option value="LOAN">貸款</a-select-option>
-        <a-select-option value="SUB_ACCOUNT">子帳戶</a-select-option>
-      </a-select>
+        <a-select
+          v-model:value="typeFilter"
+          placeholder="帳戶型別"
+          style="width: 120px"
+          allow-clear
+        >
+          <a-select-option value="CHECKING">活存</a-select-option>
+          <a-select-option value="TIME_DEPOSIT">定存</a-select-option>
+          <a-select-option value="LOAN">貸款</a-select-option>
+          <a-select-option value="SUB_ACCOUNT">子帳戶</a-select-option>
+        </a-select>
 
-      <a-select
-        v-model:value="currencyFilter"
-        placeholder="幣別"
-        style="width: 150px"
-        allow-clear
-      >
-        <a-select-option value="TWD">TWD</a-select-option>
-        <a-select-option value="USD">USD</a-select-option>
-        <a-select-option value="EUR">EUR</a-select-option>
-        <a-select-option value="JPY">JPY</a-select-option>
-        <a-select-option value="GBP">GBP</a-select-option>
-        <a-select-option value="CNY">CNY</a-select-option>
-        <a-select-option value="AUD">AUD</a-select-option>
-        <a-select-option value="CAD">CAD 加幣</a-select-option>
-        <a-select-option value="CHF">CHF 瑞士法郎</a-select-option>
-        <a-select-option value="HKD">HKD 港幣</a-select-option>
-      </a-select>
+        <a-select
+          v-model:value="currencyFilter"
+          placeholder="幣別"
+          style="width: 100px"
+          allow-clear
+        >
+          <a-select-option value="TWD">TWD</a-select-option>
+          <a-select-option value="USD">USD</a-select-option>
+          <a-select-option value="EUR">EUR</a-select-option>
+          <a-select-option value="JPY">JPY</a-select-option>
+          <a-select-option value="GBP">GBP</a-select-option>
+        </a-select>
 
-      <a-button type="primary" @click="handleSearch">查詢</a-button>
-      <a-button @click="showCreateModal = true">建立帳戶</a-button>
-      <a-button danger @click="handleClear">清除</a-button>
+        <a-button type="primary" class="rounded-btn" @click="handleSearch">
+          <template #icon><SearchOutlined /></template>
+          查詢
+        </a-button>
+        <a-button class="rounded-btn btn-ghost" @click="handleClear">清除</a-button>
+      </div>
+
+      <!-- 右側全域操作區 -->
+      <div class="global-actions">
+        <a-button type="primary" class="rounded-btn" @click="showCreateModal = true">
+          <template #icon><PlusOutlined /></template>
+          建立帳戶
+        </a-button>
+      </div>
     </div>
 
     <!-- 表格 -->
@@ -70,8 +82,9 @@
       :columns="columns"
       :data-source="accounts"
       :loading="loading"
-      :scroll="{ x: 800 }"
+      :scroll="{ x: 1000 }"
       row-key="accountNumber"
+      class="custom-table"
       :pagination="{
         current: currentPage,
         pageSize: pageSize,
@@ -81,7 +94,47 @@
       }"
       @change="handleTableChange"
       @resizeColumn="handleResizeColumn"
-    />
+    >
+      <template #bodyCell="{ column, record }">
+        <!-- F 主幹：最強烈的視覺辨識 (帳號與客戶資訊) -->
+        <template v-if="column.key === 'customer'">
+          <div class="emp-name-cell">
+            <div class="emp-avatar">{{ record.customerName ? record.customerName.charAt(0) : '?' }}</div>
+            <div class="emp-info">
+              <span class="emp-name-text">{{ record.customerName || '未知客戶' }}</span>
+              <span class="emp-id-text">{{ record.customerId }}</span>
+            </div>
+          </div>
+        </template>
+        
+        <template v-else-if="column.key === 'accountNumber'">
+          <span style="font-weight: 600; color: #1a1a2e;">{{ record.accountNumber }}</span>
+        </template>
+
+        <!-- 狀態顯示 -->
+        <template v-else-if="column.key === 'status'">
+          <div :class="['status-tag', `status-${record.status.toLowerCase()}`]">
+            <span class="status-dot"></span>
+            {{ statusMap[record.status] || record.status }}
+          </div>
+        </template>
+
+        <!-- F 終點：行動按鈕 -->
+        <template v-else-if="column.key === 'action'">
+          <div class="action-cell">
+            <a-button 
+              v-if="record.status !== 'CLOSED'"
+              type="link" 
+              class="action-btn edit-btn" 
+              @click="openStatusModal(record)"
+            >
+              變更狀態
+            </a-button>
+            <span v-else style="color: #999; padding-right: 16px;">不可操作</span>
+          </div>
+        </template>
+      </template>
+    </a-table>
 
     <!-- 建立帳戶 Modal -->
     <a-modal
@@ -200,8 +253,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, h } from 'vue'
+import { ref, reactive } from 'vue'
 import { message } from 'ant-design-vue'
+import { SearchOutlined, PlusOutlined } from '@ant-design/icons-vue'
 import { getErrorMessage } from '@/utils/errorMessages'
 import {
   getAccountsByCustomerId,
@@ -256,53 +310,33 @@ const total = ref(0)
 const lastSearchType = ref('')
 
 const columns = ref([
-  { title: '帳號', dataIndex: 'accountNumber', key: 'accountNumber', width: 150, resizable: true },
-  { title: '客戶 ID', dataIndex: 'customerId', key: 'customerId', width: 100, resizable: true },
-  { title: '客戶姓名', dataIndex: 'customerName', key: 'customerName', width: 100, resizable: true },
+  { title: '客戶資訊', dataIndex: 'customerName', key: 'customer', width: 160, fixed: 'left' },
+  { title: '帳號', dataIndex: 'accountNumber', key: 'accountNumber', width: 150 },
   {
     title: '型別',
     dataIndex: 'accountType',
     key: 'accountType',
     width: 100,
-    resizable: true,
     customRender: ({ text }) => typeMap[text] || text,
   },
-  { title: '幣別', dataIndex: 'currency', key: 'currency', width: 80, resizable: true },
+  { title: '幣別', dataIndex: 'currency', key: 'currency', width: 80 },
   {
     title: '餘額',
     dataIndex: 'balance',
     key: 'balance',
-    width: 120,
-    resizable: true,
+    width: 130,
     align: 'right',
     customRender: ({ text }) => formatAmount(text),
   },
-  {
-    title: '狀態',
-    dataIndex: 'status',
-    key: 'status',
-    width: 100,
-    resizable: true,
-    customRender: ({ text }) => statusMap[text] || text,
-  },
+  { title: '狀態', dataIndex: 'status', key: 'status', width: 100 },
   {
     title: '建立時間',
     dataIndex: 'createdAt',
     key: 'createdAt',
-    width: 180,
-    resizable: true,
+    width: 160,
     customRender: ({ text }) => formatTime(text),
   },
-  {
-    title: '操作',
-    key: 'action',
-    width: 100,
-    fixed: 'right',
-    customRender: ({ record }) => {
-      if (record.status === 'CLOSED') return '-'
-      return h('a', { onClick: () => openStatusModal(record) }, '變更狀態')
-    },
-  },
+  { title: '操作', key: 'action', width: 120, fixed: 'right' },
 ])
 
 function handleResizeColumn(w, col) {
@@ -542,4 +576,73 @@ async function handleStatusChange() {
   border-radius: 6px;
   border: 1px dashed #d9d9d9;
 }
+
+/* F-Pattern 專用組件 */
+.emp-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.emp-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: rgba(92, 107, 95, 0.1);
+  color: #5C6B5F;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.emp-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.emp-name-text {
+  font-weight: 600;
+  color: #1a1a2e;
+  font-size: 14px;
+}
+
+.emp-id-text {
+  font-size: 11px;
+  color: #8c8c8c;
+  margin-top: 2px;
+}
+
+/* 狀態標籤 */
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status-active { background-color: rgba(82, 196, 26, 0.1); color: #389e0d; }
+.status-active .status-dot { background-color: #52c41a; }
+
+.status-frozen { background-color: rgba(255, 77, 79, 0.1); color: #d9363e; }
+.status-frozen .status-dot { background-color: #ff4d4f; }
+
+.status-dormant { background-color: rgba(250, 140, 22, 0.1); color: #fa8c16; }
+.status-dormant .status-dot { background-color: #fa8c16; }
+
+.status-pending { background-color: rgba(22, 119, 255, 0.1); color: #1677ff; }
+.status-pending .status-dot { background-color: #1677ff; }
+
+.status-closed { background-color: #f5f5f5; color: #8c8c8c; border: 1px solid #d9d9d9;}
+.status-closed .status-dot { background-color: #bfbfbf; }
 </style>

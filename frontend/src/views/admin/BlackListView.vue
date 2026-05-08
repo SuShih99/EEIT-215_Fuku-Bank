@@ -1,10 +1,17 @@
 <template>
-  <div class="container">
-    <h2>風險管理 - 黑名單系統</h2>
+  <div class="page-container">
+    <div class="page-header">
+      <h2 class="page-title">風險管理 - 黑名單系統</h2>
+    </div>
 
     <!-- 功能列 -->
-    <div style="margin-bottom: 16px">
-      <a-button type="primary" @click="openModal('create')"> 新增黑名單 </a-button>
+    <div class="action-bar" style="justify-content: flex-end;">
+      <div class="global-actions">
+        <a-button type="primary" class="rounded-btn" @click="openModal('create')">
+          <template #icon><PlusOutlined /></template>
+          新增黑名單
+        </a-button>
+      </div>
     </div>
 
     <!-- 數據表格 -->
@@ -15,10 +22,15 @@
       :loading="loading"
       @change="handleTableChange"
       row-key="id"
+      class="custom-table"
     >
       <!-- 狀態欄位插槽 -->
       <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'status'">
+        <template v-if="column.key === 'listType'">
+          <a-tag color="blue">{{ typeMap[record.listType] || record.listType }}</a-tag>
+        </template>
+        
+        <template v-else-if="column.key === 'status'">
           <a-switch
             v-model:checked="record.status"
             @change="(checked) => handleStatusChange(record, checked)"
@@ -26,8 +38,10 @@
         </template>
 
         <!-- 操作欄位 -->
-        <template v-if="column.key === 'action'">
-          <a @click="openModal('edit', record)">編輯</a>
+        <template v-else-if="column.key === 'action'">
+          <div class="action-cell">
+            <a-button type="link" class="action-btn edit-btn" @click="openModal('edit', record)">編輯</a-button>
+          </div>
         </template>
       </template>
     </a-table>
@@ -62,6 +76,7 @@
 <script setup>
 import { ref, onMounted, reactive } from 'vue'
 import { message } from 'ant-design-vue'
+import { PlusOutlined } from '@ant-design/icons-vue'
 import api from '@/api/axios'
 
 // --- 資料定義 ---
@@ -82,13 +97,20 @@ const pagination = reactive({
   total: 0,
 })
 
+const typeMap = {
+  ID_CARD: '身份證字號',
+  ACCOUNT_NO: '帳戶',
+  EMAIL: '電子郵件',
+  PHONE: '電話',
+}
+
 const columns = [
-  { title: '類型', dataIndex: 'listType', key: 'listType' },
-  { title: '數值', dataIndex: 'listValue', key: 'listValue' },
+  { title: '類型', dataIndex: 'listType', key: 'listType', width: 120 },
+  { title: '數值', dataIndex: 'listValue', key: 'listValue', width: 180 },
   { title: '原因', dataIndex: 'reason', key: 'reason' },
-  { title: '狀態', dataIndex: 'status', key: 'status' },
-  { title: '建立時間', dataIndex: 'createdAt', key: 'createdAt' },
-  { title: '操作', key: 'action' },
+  { title: '狀態', dataIndex: 'status', key: 'status', width: 100 },
+  { title: '建立時間', dataIndex: 'createdAt', key: 'createdAt', width: 180 },
+  { title: '操作', key: 'action', width: 100, align: 'right', fixed: 'right' },
 ]
 
 // --- 邏輯處理 ---

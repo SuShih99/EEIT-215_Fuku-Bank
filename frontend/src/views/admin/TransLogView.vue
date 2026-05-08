@@ -1,9 +1,8 @@
 <template>
-  <div style="padding: 24px">
-    <h2>交易紀錄查詢</h2>
-
-    <!-- 查詢方式切換 -->
-    <div style="margin-bottom: 16px">
+  <div class="page-container">
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <h2 class="page-title">交易紀錄查詢</h2>
+      <!-- 查詢方式切換置於右上角 -->
       <a-radio-group v-model:value="searchType" button-style="solid" @change="handleSearchTypeChange">
         <a-radio-button value="referenceId">依交易編號</a-radio-button>
         <a-radio-button value="accountNumber">依帳號</a-radio-button>
@@ -12,48 +11,58 @@
       </a-radio-group>
     </div>
 
-    <!-- 查詢區 -->
-    <div style="margin-bottom: 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap">
-      <a-input
-        v-model:value="searchValue"
-        :placeholder="placeholderText"
-        style="width: 300px"
-        allow-clear
-      />
-
-      <template v-if="searchType === 'customerIdDateRange'">
-        <a-date-picker
-          v-model:value="startDate"
-          show-time
-          placeholder="開始時間"
-          format="YYYY-MM-DD HH:mm:ss"
-          style="width: 200px"
+    <!-- 頂部 F 橫劃：搜尋與主操作 -->
+    <div class="action-bar">
+      <!-- 左側搜尋區 -->
+      <div class="search-group">
+        <a-input
+          v-model:value="searchValue"
+          :placeholder="placeholderText"
+          class="rounded-input search-input"
+          style="width: 280px;"
+          allow-clear
+          @press-enter="handleSearch"
         />
-        <a-date-picker
-          v-model:value="endDate"
-          show-time
-          placeholder="結束時間"
-          format="YYYY-MM-DD HH:mm:ss"
-          style="width: 200px"
-        />
-      </template>
 
-      <a-button type="primary" @click="handleSearch">查詢</a-button>
-      <a-button danger @click="handleClear">清除</a-button>
-
-      <!-- 匯出按鈕 -->
-      <a-dropdown v-if="logs.length > 0">
-        <a-button>
-          匯出 <DownOutlined />
-        </a-button>
-        <template #overlay>
-          <a-menu @click="handleExport">
-            <a-menu-item key="excel">Excel (.xlsx)</a-menu-item>
-            <a-menu-item key="json">JSON (.json)</a-menu-item>
-            <a-menu-item key="xml">XML (.xml)</a-menu-item>
-          </a-menu>
+        <template v-if="searchType === 'customerIdDateRange'">
+          <a-date-picker
+            v-model:value="startDate"
+            show-time
+            placeholder="開始時間"
+            format="YYYY-MM-DD HH:mm:ss"
+            style="width: 180px"
+          />
+          <a-date-picker
+            v-model:value="endDate"
+            show-time
+            placeholder="結束時間"
+            format="YYYY-MM-DD HH:mm:ss"
+            style="width: 180px"
+          />
         </template>
-      </a-dropdown>
+
+        <a-button type="primary" class="rounded-btn" @click="handleSearch">
+          <template #icon><SearchOutlined /></template>
+          查詢
+        </a-button>
+        <a-button class="rounded-btn btn-ghost" @click="handleClear">清除</a-button>
+      </div>
+
+      <!-- 右側全域操作區 -->
+      <div class="global-actions">
+        <a-dropdown v-if="logs.length > 0">
+          <a-button class="rounded-btn btn-ghost">
+            匯出 <DownOutlined />
+          </a-button>
+          <template #overlay>
+            <a-menu @click="handleExport">
+              <a-menu-item key="excel">Excel (.xlsx)</a-menu-item>
+              <a-menu-item key="json">JSON (.json)</a-menu-item>
+              <a-menu-item key="xml">XML (.xml)</a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
+      </div>
     </div>
 
     <!-- 表格 -->
@@ -63,6 +72,7 @@
       :loading="loading"
       :scroll="{ x: 1200 }"
       row-key="transactionId"
+      class="custom-table"
       :pagination="searchType === 'referenceId' ? false : {
         current: currentPage,
         pageSize: pageSize,
@@ -72,7 +82,26 @@
       }"
       @change="handleTableChange"
       @resizeColumn="handleResizeColumn"
-    />
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'entryType'">
+          <div :class="['status-tag', `entry-${record.entryType.toLowerCase()}`]">
+            <span class="status-dot"></span>
+            {{ entryTypeMap[record.entryType] || record.entryType }}
+          </div>
+        </template>
+        <template v-else-if="column.key === 'transactionType'">
+          <a-tag color="blue">{{ transactionTypeMap[record.transactionType] || record.transactionType }}</a-tag>
+        </template>
+        <template v-else-if="column.key === 'accountNumber'">
+          <a @click="handleClickAccount(record.accountNumber)" style="font-weight:600">{{ record.accountNumber }}</a>
+        </template>
+        <template v-else-if="column.key === 'counterpartAccount'">
+          <a v-if="record.counterpartAccount" @click="handleClickAccount(record.counterpartAccount)">{{ record.counterpartAccount }}</a>
+          <span v-else>-</span>
+        </template>
+      </template>
+    </a-table>
 
     <!-- 帳戶詳情彈窗 -->
     <a-modal
@@ -108,7 +137,7 @@
 <script setup>
 import { ref, computed, h} from 'vue'
 import { message } from 'ant-design-vue'
-import { DownOutlined } from '@ant-design/icons-vue'
+import { DownOutlined, SearchOutlined } from '@ant-design/icons-vue'
 import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
 import {
@@ -211,9 +240,8 @@ const columns = ref([
     title: '方向',
     dataIndex: 'entryType',
     key: 'entryType',
-    width: 80,
+    width: 90,
     resizable: true,
-    customRender: ({ text }) => entryTypeMap[text] || text,
   },
   {
     title: '類型',
@@ -221,7 +249,6 @@ const columns = ref([
     key: 'transactionType',
     width: 100,
     resizable: true,
-    customRender: ({ text }) => transactionTypeMap[text] || text,
   },
   {
     title: '金額',
@@ -407,3 +434,28 @@ async function handleClickAccount(accountNumber) {
   }
 }
 </script>
+
+<style scoped>
+/* 狀態標籤 */
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.entry-credit { background-color: rgba(82, 196, 26, 0.1); color: #389e0d; }
+.entry-credit .status-dot { background-color: #52c41a; }
+
+.entry-debit { background-color: rgba(255, 77, 79, 0.1); color: #d9363e; }
+.entry-debit .status-dot { background-color: #ff4d4f; }
+</style>

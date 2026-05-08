@@ -1,9 +1,11 @@
 <template>
-  <div style="padding: 24px">
-    <h2>交易操作</h2>
+  <div class="page-container">
+    <div class="page-header">
+      <h2 class="page-title">交易操作</h2>
+    </div>
 
     <!-- 交易類型切換 -->
-    <div style="margin-bottom: 16px">
+    <div class="action-bar">
       <a-radio-group v-model:value="txType" button-style="solid" @change="handleClear">
         <a-radio-button value="transfer">轉帳</a-radio-button>
         <a-radio-button value="deposit">存款</a-radio-button>
@@ -12,17 +14,18 @@
       </a-radio-group>
     </div>
 
-    <a-card style="width: 100%; max-width: 600px">
-      <!-- Demo 快速帶入 -->
-      <div v-if="txType !== 'reversal'" class="demo-fill-section">
+    <a-card class="gutenberg-card" style="width: 100%; max-width: 800px">
+      <!-- Top Right: Strong Fallow Area (Demo 快速帶入) -->
+      <div v-if="txType !== 'reversal'" class="demo-fill-section" style="position: absolute; top: 24px; right: 24px;">
         <span style="font-size: 12px; color: #999; margin-right: 8px">Demo 帶入：</span>
-        <a-button size="small" :loading="demoLoading" @click="fillDemoData">
+        <a-button size="small" :loading="demoLoading" @click="fillDemoData" class="rounded-btn">
           自動帶入帳號 + 金額
         </a-button>
-        <span v-if="demoHint" style="font-size: 12px; color: #52c41a; margin-left: 8px">{{ demoHint }}</span>
+        <div v-if="demoHint" style="font-size: 12px; color: #52c41a; margin-top: 4px; text-align: right;">{{ demoHint }}</div>
       </div>
 
-      <a-form layout="vertical">
+      <!-- Top Left: Primary Optical Area (Form Fields) -->
+      <a-form layout="vertical" class="gutenberg-form" style="margin-top: 16px;">
         <!-- 轉帳：來源 + 目的帳號 -->
         <template v-if="txType === 'transfer'">
           <a-form-item label="來源帳號">
@@ -57,15 +60,17 @@
           />
         </a-form-item>
 
+        <!-- Bottom Left: Weak Fallow Area -->
         <a-form-item :label="txType === 'reversal' ? '沖正原因' : '備註'">
-          <a-input v-model:value="form.note" placeholder="選填" allow-clear />
+          <a-input v-model:value="form.note" placeholder="選填" class="rounded-input" allow-clear />
         </a-form-item>
 
-        <div style="display: flex; gap: 8px">
-          <a-button type="primary" :loading="loading" @click="handleSubmit" :danger="txType === 'reversal'">
+        <!-- Bottom Right: Terminal Area (Action Buttons) -->
+        <div class="terminal-area" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px;">
+          <a-button class="rounded-btn btn-ghost" @click="handleClear">清除</a-button>
+          <a-button type="primary" class="rounded-btn" :loading="loading" @click="handleSubmit" :danger="txType === 'reversal'">
             {{ txType === 'transfer' ? '確認轉帳' : txType === 'deposit' ? '確認存款' : txType === 'withdraw' ? '確認提款' : '確認沖正' }}
           </a-button>
-          <a-button danger @click="handleClear">清除</a-button>
         </div>
       </a-form>
     </a-card>

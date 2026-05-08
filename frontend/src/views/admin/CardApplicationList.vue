@@ -9,7 +9,7 @@ import {
 } from '@/api/cardApplication'
 import { useRouter } from 'vue-router'
 import dayjs from 'dayjs'
-import { DownOutlined } from '@ant-design/icons-vue'
+import { DownOutlined, SearchOutlined } from '@ant-design/icons-vue'
 
 const router = useRouter()
 
@@ -61,19 +61,20 @@ const handleUpdateRemark = async () => {
 
 // 表格欄位
 const columns = [
-  { title: 'ID', dataIndex: 'applicationId', key: 'applicationId' },
+  { title: 'ID', dataIndex: 'applicationId', key: 'applicationId', width: 80 },
+  { title: '使用者', dataIndex: 'customerName', key: 'customerName', width: 150 },
   {
     title: '申請日期',
     dataIndex: 'applyDate',
     key: 'applyDate',
+    width: 180,
     customRender: (record) => {
       return dayjs(record.applyDate).format('YYYY-MM-DD HH:mm')
     },
   },
-  { title: '使用者', dataIndex: 'customerName', key: 'customerName' },
+  { title: '狀態', dataIndex: 'status', key: 'status', width: 120 },
   { title: '備註', dataIndex: 'remark', key: 'remark' },
-  { title: '狀態', dataIndex: 'status', key: 'status' },
-  { title: '操作', key: 'action' },
+  { title: '操作', key: 'action', width: 120, fixed: 'right' },
 ]
 //取得資料
 const fetchData = async () => {
@@ -143,40 +144,49 @@ onMounted(() => {
 })
 </script>
 <template>
-  <div>
-    <h2>信用卡申請管理</h2>
-    <a-space style="margin-bottom: 20px">
-      <!-- 關鍵字搜尋 -->
-      <a-input
-        v-model:value="keyword"
-        placeholder="搜尋使用者 / 備註"
-        style="width: 240px"
-        allow-clear
-        @pressEnter="fetchData"
-      />
+  <div class="page-container">
+    <div class="page-header">
+      <h2 class="page-title">信用卡申請管理</h2>
+    </div>
 
-      <!-- 狀態篩選 -->
-      <a-select
-        v-model:value="status"
-        :options="statusOptions"
-        placeholder="狀態"
-        style="width: 140px"
-        allow-clear
-      />
+    <!-- 頂部 F 橫劃：搜尋與主操作 -->
+    <div class="action-bar">
+      <!-- 左側搜尋區 -->
+      <div class="search-group">
+        <a-input
+          v-model:value="keyword"
+          placeholder="搜尋使用者 / 備註"
+          class="rounded-input search-input"
+          allow-clear
+          @pressEnter="fetchData"
+        >
+          <template #prefix><SearchOutlined style="color: #bfbfbf" /></template>
+        </a-input>
 
-      <!-- 搜尋按鈕 -->
-      <a-button
-        type="primary"
-        @click="
-          () => {
-            pagination.current = 1
-            fetchData()
-          }
-        "
-      >
-        搜尋
-      </a-button>
-    </a-space>
+        <!-- 狀態篩選 -->
+        <a-select
+          v-model:value="status"
+          :options="statusOptions"
+          placeholder="狀態"
+          style="width: 140px"
+          allow-clear
+        />
+
+        <a-button
+          type="primary"
+          class="rounded-btn"
+          @click="
+            () => {
+              pagination.current = 1
+              fetchData()
+            }
+          "
+        >
+          <template #icon><SearchOutlined /></template>
+          搜尋
+        </a-button>
+      </div>
+    </div>
 
     <!-- 表格 -->
 
@@ -186,29 +196,44 @@ onMounted(() => {
       :loading="loading"
       :pagination="pagination"
       row-key="applicationId"
-      @change="handlePageChange"
+      class="custom-table"
+      :scroll="{ x: 800 }"
     >
       <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'action'">
-          <a-dropdown>
-            <a-button>
-              操作
-              <DownOutlined />
-            </a-button>
+        <template v-if="column.key === 'customerName'">
+          <div class="emp-name-cell">
+            <div class="emp-avatar">{{ record.customerName ? record.customerName.charAt(0) : '?' }}</div>
+            <div class="emp-info">
+              <span class="emp-name-text">{{ record.customerName }}</span>
+              <span class="emp-id-text">{{ record.applicationId }}</span>
+            </div>
+          </div>
+        </template>
 
-            <template #overlay>
-              <a-menu>
-                <a-menu-item @click="handleApprove(record)"> 核准 </a-menu-item>
+        <template v-else-if="column.key === 'status'">
+          <div :class="['status-tag', `status-${record.status.toLowerCase()}`]">
+            <span class="status-dot"></span>
+            {{ statusOptions.find(opt => opt.value === record.status)?.label || record.status }}
+          </div>
+        </template>
 
-                <a-menu-item @click="handleReject(record)"> 拒絕 </a-menu-item>
-                <a-menu-item @click="openRemarkModal(record)"> 修改備註 </a-menu-item>
-
-                <a-menu-item danger @click="handleDelete(record)"> 刪除 </a-menu-item>
-
-                <a-menu-item @click="goDetail(record)"> 查看明細 </a-menu-item>
-              </a-menu>
-            </template>
-          </a-dropdown>
+        <template v-else-if="column.key === 'action'">
+          <div class="action-cell">
+            <a-dropdown>
+              <a-button type="link" class="action-btn">
+                操作 <DownOutlined />
+              </a-button>
+              <template #overlay>
+                <a-menu>
+                  <a-menu-item @click="handleApprove(record)">核准</a-menu-item>
+                  <a-menu-item @click="handleReject(record)">拒絕</a-menu-item>
+                  <a-menu-item @click="openRemarkModal(record)">修改備註</a-menu-item>
+                  <a-menu-item danger @click="handleDelete(record)">刪除</a-menu-item>
+                  <a-menu-item @click="goDetail(record)">查看明細</a-menu-item>
+                </a-menu>
+              </template>
+            </a-dropdown>
+          </div>
         </template>
       </template>
     </a-table>
@@ -223,3 +248,68 @@ onMounted(() => {
     </a-modal>
   </div>
 </template>
+
+<style scoped>
+/* F-Pattern 專用組件 */
+.emp-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.emp-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: rgba(92, 107, 95, 0.1);
+  color: #5C6B5F;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.emp-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.emp-name-text {
+  font-weight: 600;
+  color: #1a1a2e;
+  font-size: 14px;
+}
+
+.emp-id-text {
+  font-size: 11px;
+  color: #8c8c8c;
+  margin-top: 2px;
+}
+
+/* 狀態標籤 */
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status-approved { background-color: rgba(82, 196, 26, 0.1); color: #389e0d; }
+.status-approved .status-dot { background-color: #52c41a; }
+
+.status-rejected { background-color: rgba(255, 77, 79, 0.1); color: #d9363e; }
+.status-rejected .status-dot { background-color: #ff4d4f; }
+
+.status-pending { background-color: rgba(250, 140, 22, 0.1); color: #fa8c16; }
+.status-pending .status-dot { background-color: #fa8c16; }
+</style>

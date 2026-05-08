@@ -256,11 +256,12 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
-  padding: 28px 32px;
+  background: linear-gradient(135deg, #5C6B5F 0%, #7A8C7E 100%);
+  border-radius: 24px;
+  padding: 32px;
   margin-bottom: 24px;
   color: #fff;
+  box-shadow: 0 10px 30px rgba(92, 107, 95, 0.2);
 }
 
 .welcome-text h1 {

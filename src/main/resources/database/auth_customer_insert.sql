@@ -25,7 +25,9 @@ INSERT INTO auth_role (role_id, dept_id, role_code, role_name, perm_level, perm_
 ('R008', 'DPT004', 'OPS_PA', N'營運企劃專員',   3, 'RO'),
 ('R009', 'DPT004', 'COO',    N'營運長',         4, 'BIZ'),
 ('R010', 'DPT005', 'ISSA',   N'資安監控分析師', 3, NULL),
-('R011', 'DPT005', 'CISO',   N'資安長',         4, 'SYS');
+('R011', 'DPT005', 'CISO',   N'資安長',         4, 'SYS'),
+('R012', 'DPT005', 'SYS_STAFF', N'職員',           0, NULL),
+('R013', 'DPT005', 'SYS_SUPER', N'超級管理員',     1, NULL);
 GO
 
 -- 寫入 11 位擬真員工帳號（密碼皆為 123456）
@@ -45,7 +47,9 @@ INSERT INTO auth_emp (emp_id, emp_name, dept_id, role_id, email, password_hash, 
 ('E26009', N'黃志成', 'DPT004', 'R009', 'chihcheng.huang@javabank.com', '$2a$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36Fy0dS8qWOdLAyFwPiyMCu', 'ACTIVE', NULL, '2026-12-31'),
 -- 資訊安全部
 ('E26010', N'蔡宗翰', 'DPT005', 'R010', 'tsunghan.tsai@javabank.com', '$2a$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36Fy0dS8qWOdLAyFwPiyMCu', 'LOCKED', NULL, '2026-12-31'), -- 密碼鎖定
-('E26011', N'鄭文華', 'DPT005', 'R011', 'wenhua.cheng@javabank.com','$2a$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36Fy0dS8qWOdLAyFwPiyMCu', 'ACTIVE', NULL, '2026-12-31');
+('E26011', N'鄭文華', 'DPT005', 'R011', 'wenhua.cheng@javabank.com','$2a$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36Fy0dS8qWOdLAyFwPiyMCu', 'ACTIVE', NULL, '2026-12-31'),
+('E26012', N'管理員甲', 'DPT005', 'R012', 'admin.a@javabank.com', '$2a$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36Fy0dS8qWOdLAyFwPiyMCu', 'ACTIVE', NULL, '2026-12-31'),
+('E26013', N'管理員乙', 'DPT005', 'R013', 'admin.b@javabank.com', '$2a$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36Fy0dS8qWOdLAyFwPiyMCu', 'ACTIVE', NULL, '2026-12-31');
 GO
 
 -- 寫入登入日誌模擬資料

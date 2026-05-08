@@ -59,6 +59,12 @@ public class CustomerServiceImpl implements CustomerService {
         if (customerProfileRepository.findByIdNumber(request.getIdNumber()).isPresent()) {
             throw new BusinessException("身分證字號已存在");
         }
+        if (customerProfileRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new BusinessException("Email 已被使用");
+        }
+        if (customerProfileRepository.findByPhone(request.getPhone()).isPresent()) {
+            throw new BusinessException("電話號碼已被使用");
+        }
 
         CustomerProfile profile = new CustomerProfile();
         BeanUtils.copyProperties(request, profile);
@@ -72,8 +78,8 @@ public class CustomerServiceImpl implements CustomerService {
         String yymm = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMM"));
         profile.setCif(yymm + "-" + generateAlphanumeric(8));
 
-        if(blackListService.isBlacklisted(BlacklistType.PHONE,request.getPhone())){
-            throw new BusinessException("電話");
+        if(blackListService.isBlacklisted(BlacklistType.PHONE, request.getPhone())){
+            throw new BusinessException("此電話號碼已在黑名單中，無法新增");
         }
 
         profile.setStatus("ACTIVE");
@@ -87,9 +93,21 @@ public class CustomerServiceImpl implements CustomerService {
         CustomerProfile profile = customerProfileRepository.findById(customerId)
                 .orElseThrow(() -> new BusinessException("查無此客戶"));
 
+        // 檢查 Email 與 Phone 是否被他人使用
+        customerProfileRepository.findByEmail(request.getEmail()).ifPresent(p -> {
+            if (!p.getCustomerId().equals(customerId)) throw new BusinessException("Email 已被他人使用");
+        });
+        customerProfileRepository.findByPhone(request.getPhone()).ifPresent(p -> {
+            if (!p.getCustomerId().equals(customerId)) throw new BusinessException("電話號碼已被他人使用");
+        });
+
+        profile.setName(request.getName());
         profile.setPhone(request.getPhone());
         profile.setAddress(request.getAddress());
         profile.setEmail(request.getEmail());
+        if (request.getBirthday() != null) {
+            profile.setBirthday(request.getBirthday());
+        }
 
         CustomerProfile saved = customerProfileRepository.save(profile);
         return convertToResponse(saved);
@@ -100,6 +118,14 @@ public class CustomerServiceImpl implements CustomerService {
         CustomerProfile profile = customerProfileRepository.findById(customerId)
                 .orElseThrow(() -> new BusinessException("查無此客戶"));
         profile.setStatus("INACTIVE");
+        customerProfileRepository.save(profile);
+    }
+
+    @Override
+    public void activateCustomer(String customerId) {
+        CustomerProfile profile = customerProfileRepository.findById(customerId)
+                .orElseThrow(() -> new BusinessException("查無此客戶"));
+        profile.setStatus("ACTIVE");
         customerProfileRepository.save(profile);
     }
 

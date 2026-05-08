@@ -41,7 +41,27 @@ export function suspendEmployee(empId) {
   return api.delete(`/api/auth/employees/${empId}/suspend`)
 }
 
+// 重新啟用員工
+export function resumeEmployee(empId) {
+  return api.put(`/api/auth/employees/${empId}/resume`)
+}
+
 // 一鍵帶入測試資料
 export function seedEmployees() {
   return api.post('/api/auth/employees/seed')
+}
+
+// 查詢系統日誌
+export function getActionLogs() {
+  return api.get('/api/auth/logs')
+}
+
+// 匯出系統日誌 CSV
+export function exportLogsCsv() {
+  return api.get('/api/auth/logs/export/csv', { responseType: 'blob' })
+}
+
+// 匯出系統日誌 PDF
+export function exportLogsPdf() {
+  return api.get('/api/auth/logs/export/pdf', { responseType: 'blob' })
 }

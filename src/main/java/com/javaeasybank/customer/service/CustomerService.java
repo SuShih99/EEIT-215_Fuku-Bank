@@ -11,6 +11,7 @@ public interface CustomerService {
     CustomerDto.CustomerResponse createCustomer(CustomerDto.CustomerRequest request);
     CustomerDto.CustomerResponse updateCustomer(String customerId, CustomerDto.CustomerRequest request);
     void deactivateCustomer(String customerId);
+    void activateCustomer(String customerId);
 
     // === 一鍵帶入測試資料 ===
     void seedTestData();

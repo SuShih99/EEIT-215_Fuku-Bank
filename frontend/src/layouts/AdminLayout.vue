@@ -1,94 +1,111 @@
 <template>
-  <a-layout style="min-height: 100vh">
-    <a-layout-sider
-      v-model:collapsed="collapsed"
-      collapsible
-      :width="200"
-      :collapsed-width="80"
-      style="position: fixed; left: 0; top: 0; bottom: 0; z-index: 100"
-    >
-      <div style="height: 32px; margin: 16px; color: white; text-align: center; font-size: 18px">
-        {{ collapsed ? '爪哇' : '爪哇銀行' }}
+  <a-layout class="admin-layout">
+    <a-layout-sider width="260" theme="light" style="position: fixed; left: 0; top: 0; bottom: 0; z-index: 100">
+      <div class="sider-content">
+        <div class="logo-container">
+          <BankFilled class="logo-icon" />
+          <span class="logo-text">爪哇銀行</span>
+        </div>
+
+        <a-menu v-model:selectedKeys="selectedKeys" mode="inline">
+          
+          <a-menu-item key="admin-home" @click="$router.push({ name: 'admin-home' })">
+            <template #icon><HomeOutlined /></template>
+            <span>首頁</span>
+          </a-menu-item>
+
+          <template v-if="!isCISO">
+            <a-menu-item-group title="客戶管理">
+              <a-menu-item key="admin-customers" @click="$router.push({ name: 'admin-customers' })">
+                <template #icon><UserOutlined /></template>
+                <span>客戶管理</span>
+              </a-menu-item>
+            </a-menu-item-group>
+
+            <a-menu-item-group title="帳戶管理">
+              <a-menu-item key="admin-accounts" @click="$router.push({ name: 'admin-accounts' })">
+                <template #icon><BankOutlined /></template>
+                <span>帳戶管理</span>
+              </a-menu-item>
+              <a-menu-item key="admin-transfers" @click="$router.push({ name: 'admin-transfers' })">
+                <template #icon><SwapOutlined /></template>
+                <span>交易操作</span>
+              </a-menu-item>
+              <a-menu-item key="admin-trans-logs" @click="$router.push({ name: 'admin-trans-logs' })">
+                <template #icon><ProfileOutlined /></template>
+                <span>交易紀錄</span>
+              </a-menu-item>
+            </a-menu-item-group>
+
+            <a-menu-item-group title="消金貸款業務">
+              <a-menu-item key="loan-apply" @click="$router.push({ name: 'loan-apply' })">
+                <template #icon><FileAddOutlined /></template>
+                <span>貸款進件申請</span>
+              </a-menu-item>
+              <a-menu-item key="loan-applications" @click="$router.push({ name: 'loan-applications' })">
+                <template #icon><AuditOutlined /></template>
+                <span>貸款申請管理</span>
+              </a-menu-item>
+              <a-menu-item key="admin-card-types" @click="$router.push({ name: 'admin-card-types' })">
+                <template #icon><AppstoreAddOutlined /></template>
+                <span>信用卡卡別管理</span>
+              </a-menu-item>
+              <a-menu-item key="admin-card-applications" @click="$router.push({ name: 'admin-card-applications' })">
+                <template #icon><SolutionOutlined /></template>
+                <span>信用卡開卡審核</span>
+              </a-menu-item>
+              <a-menu-item key="admin-cards" @click="$router.push({ name: 'admin-cards' })">
+                <template #icon><CreditCardOutlined /></template>
+                <span>信用卡卡片管理</span>
+              </a-menu-item>
+            </a-menu-item-group>
+
+            <a-menu-item-group title="風險管理">
+              <a-menu-item key="admin-risk-events" @click="$router.push({ name: 'admin-risk-events' })">
+                <template #icon><AlertOutlined /></template>
+                <span>風險事件</span>
+              </a-menu-item>
+              <a-menu-item key="admin-blacklist" @click="$router.push({ name: 'admin-blacklist' })">
+                <template #icon><StopOutlined /></template>
+                <span>黑名單</span>
+              </a-menu-item>
+            </a-menu-item-group>
+          </template>
+
+          <template v-if="isAdmin || isCISO">
+            <a-menu-item-group title="系統管理">
+              <a-menu-item key="admin-employees" @click="$router.push({ name: 'admin-employees' })">
+                <template #icon><TeamOutlined /></template>
+                <span>員工管理</span>
+              </a-menu-item>
+              <a-menu-item key="admin-logs" @click="$router.push({ name: 'admin-logs' })">
+                <template #icon><SettingOutlined /></template>
+                <span>系統日誌</span>
+              </a-menu-item>
+            </a-menu-item-group>
+          </template>
+
+        </a-menu>
       </div>
-      <a-menu theme="dark" mode="inline" :selected-keys="selectedKeys">
-        <a-menu-item key="admin-home" @click="$router.push('/admin')">
-          <HomeOutlined />
-          <span>首頁</span>
-        </a-menu-item>
-        <a-menu-item key="admin-accounts" @click="$router.push('/admin/accounts')">
-          <BankOutlined />
-          <span>帳戶管理</span>
-        </a-menu-item>
-        <a-menu-item key="admin-transfers" @click="$router.push('/admin/transfers')">
-          <SwapOutlined />
-          <span>交易操作</span>
-        </a-menu-item>
-        <a-menu-item key="admin-trans-logs" @click="$router.push('/admin/trans-logs')">
-          <FileTextOutlined />
-          <span>交易紀錄</span>
-        </a-menu-item>
-        <a-menu-item key="admin-loan-apply" @click="$router.push('/admin/loan-apply')">
-          <FileTextOutlined />
-          <span>貸款申請(測試用)</span>
-        </a-menu-item>
-        <a-menu-item
-          key="admin-loan-applications"
-          @click="$router.push('/admin/loan-applications')"
-        >
-          <FileTextOutlined />
-          <span>貸款申請管理</span>
-        </a-menu-item>
-        <a-menu-item key="admin-employees" @click="$router.push('/admin/employees')">
-          <TeamOutlined />
-          <span>員工管理</span>
-        </a-menu-item>
-        <a-menu-item key="admin-customers" @click="$router.push('/admin/customers')">
-          <UserOutlined />
-          <span>客戶管理</span>
-        </a-menu-item>
-        <a-menu-item key="admin-risk-events" @click="$router.push('/admin/risk-events')">
-          <FileTextOutlined />
-          <span>風險事件</span>
-        </a-menu-item>
-        <a-menu-item key="admin-blacklist" @click="$router.push('/admin/blacklist')">
-          <FileTextOutlined />
-          <span>黑名單</span>
-        </a-menu-item>
-        <a-menu-item key="admin-card-types" @click="$router.push('/admin/card-types')">
-          <FileTextOutlined />
-          <span>卡別管理</span>
-        </a-menu-item>
-        <a-menu-item key="admin-card-applications" @click="$router.push('/admin/card-applications')">
-          <FileTextOutlined />
-          <span>信用卡申請管理</span>
-        </a-menu-item>
-        <a-menu-item key="admin-cards" @click="$router.push('/admin/cards')">
-          <FileTextOutlined />
-          <span>卡片管理</span>
-        </a-menu-item>
-        <a-menu-item key="admin-card-txn" @click="$router.push('/admin/card-txns')">
-          <FileTextOutlined />
-          <span>信用卡交易管理</span>
-        </a-menu-item>
-
-
-      </a-menu>
     </a-layout-sider>
 
-    <a-layout :style="{ marginLeft: collapsed ? '80px' : '200px', transition: 'margin-left 0.2s' }">
-      <a-layout-header style="background: #fff; padding: 0 24px; display: flex; align-items: center; justify-content: space-between">
-        <span style="font-size: 16px">管理端</span>
-        <!-- 使用者資訊 & 登出 -->
-        <div v-if="authStore.isLoggedIn" style="display: flex; align-items: center; gap: 12px">
-          <a-tag color="blue">{{ authStore.user?.roleCode }}</a-tag>
-          <span style="font-size: 14px; color: #333">{{ authStore.user?.empName }}</span>
-          <a-button size="small" @click="handleLogout">
-            <LogoutOutlined />
-            登出
+    <a-layout :style="{ marginLeft: '260px' }">
+      <a-layout-header class="custom-header">
+        <div class="header-search">
+        </div>
+        
+        <div class="header-right">
+          <a-tag class="custom-role-tag">
+            {{ authStore.user?.roleCode || 'ROLE' }}
+          </a-tag>
+          <span class="user-name">{{ authStore.user?.empName || '員工姓名' }}</span>
+          <a-button shape="round" class="logout-btn" @click="handleLogout">
+            <LogoutOutlined /> 登出
           </a-button>
         </div>
       </a-layout-header>
-      <a-layout-content style="margin: 16px">
+
+      <a-layout-content class="admin-content">
         <router-view />
       </a-layout-content>
     </a-layout>
@@ -96,36 +113,205 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { message } from 'ant-design-vue'
-import {
-  HomeOutlined,
-  BankOutlined,
-  SwapOutlined,
-  FileTextOutlined,
-  TeamOutlined,
-  UserOutlined,
-  LogoutOutlined,
-} from '@ant-design/icons-vue'
-import { logout } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
+import { logout } from '@/api/auth'
+import { 
+  HomeOutlined, TeamOutlined, UserOutlined, SettingOutlined, BankFilled, LogoutOutlined,
+  BankOutlined, SwapOutlined, ProfileOutlined, FileAddOutlined, AuditOutlined, 
+  AppstoreAddOutlined, SolutionOutlined, CreditCardOutlined, AlertOutlined, StopOutlined
+} from '@ant-design/icons-vue'
 
-const collapsed = ref(false)
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
-const selectedKeys = computed(() => [route.name])
+const isCISO = computed(() => authStore.user?.roleCode === 'CISO')
+// 排除 CISO 讓其走獨立邏輯，其他需看到系統管理的管理員可在此定義
+const isAdmin = computed(() => {
+  const adminRoles = ['ISSA', 'SYS_SUPER', 'SYS_STAFF'] 
+  return adminRoles.includes(authStore.user?.roleCode) && !isCISO.value
+})
+
+const selectedKeys = ref([route.name])
+
+watch(() => route.name, (val) => {
+  selectedKeys.value = [val]
+})
 
 async function handleLogout() {
   try {
     await logout()
-  } catch {
-    // 即使後端登出失敗，前端也要清除狀態
+  } catch (err) {
+    console.error('Logout error:', err)
+  } finally {
+    authStore.clearUser()
+    router.push('/admin/login')
   }
-  authStore.clearUser()
-  message.success('已登出')
-  router.push({ name: 'admin-login' })
 }
 </script>
+
+<style scoped>
+.admin-layout {
+  min-height: 100vh;
+}
+
+:deep(.ant-layout-sider) {
+  background-color: #f1f3f0 !important;
+}
+
+.sider-content {
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px 15px 60px;
+}
+
+.sider-content::-webkit-scrollbar {
+  width: 6px;
+}
+.sider-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+.sider-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.logo-container {
+  padding: 0 16px 32px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  font-size: 24px;
+  color: #5C6B5F; 
+}
+
+.logo-text {
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+  color: #4A574D;
+}
+
+:deep(.ant-menu) {
+  background: transparent !important;
+  border-inline-end: none !important;
+}
+
+:deep(.ant-menu-item) {
+  height: 48px !important;
+  line-height: 48px !important;
+  margin-bottom: 8px !important;
+  color: #4a4a4a !important;
+  font-weight: 500;
+  border-radius: 24px !important;
+  transition: all 0.3s ease;
+}
+
+:deep(.ant-menu-item-group-title) {
+  color: #8c9891 !important;
+  font-size: 12px !important;
+  font-weight: 600;
+  margin-top: 16px;
+  padding-left: 24px !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+  padding-top: 16px;
+}
+
+:deep(.ant-menu-item-group:first-of-type .ant-menu-item-group-title) {
+  border-top: none;
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+:deep(.ant-menu-item-selected) {
+  background-color: #5C6B5F !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(92, 107, 95, 0.2) !important;
+}
+
+:deep(.ant-menu-item-selected .anticon) {
+  color: #ffffff !important;
+}
+
+:deep(.ant-menu-title-content) {
+  margin-inline-start: 12px !important;
+  font-size: 15px;
+}
+
+:deep(.ant-menu-item:focus-visible),
+:deep(.ant-menu-item:focus) {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.custom-header {
+  height: 80px !important; 
+  line-height: 80px !important;
+  padding: 0 32px !important;
+  background: transparent !important;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.custom-header a:hover,
+.custom-header .anticon:hover {
+  color: #5C6B5F !important;
+}
+
+.custom-header *:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-style: solid !important;
+  border-color: transparent !important;
+}
+
+.custom-role-tag {
+  background-color: rgba(92, 107, 95, 0.1) !important;
+  color: #5C6B5F !important;
+  border: 1px solid rgba(92, 107, 95, 0.3) !important;
+  font-size: 14px !important;
+  font-weight: 600;
+  padding: 4px 12px !important;
+  border-radius: 6px !important;
+  margin: 0;
+}
+
+.user-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
+.logout-btn {
+  height: 38px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.admin-content {
+  padding: 0 32px 32px;
+  overflow-y: auto;
+}
+
+.fade-enter-active, .fade-leave-active { 
+  transition: opacity 0.2s ease; 
+}
+.fade-enter-from, .fade-leave-to { 
+  opacity: 0; 
+}
+</style>

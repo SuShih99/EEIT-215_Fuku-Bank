@@ -5,8 +5,9 @@ import java.util.List;
 
 public interface AuthEmpService {
 
-    // === 登入 ===
-    AuthDto.AuthEmpResponse login(AuthDto.LoginRequest request);
+    // === 登入 / 登出 ===
+    AuthDto.AuthEmpResponse login(AuthDto.LoginRequest request, String ipAddress);
+    void logout(String email, String ipAddress);
 
     // === 員工 CRUD ===
     List<AuthDto.AuthEmpResponse> getAllEmps();
@@ -14,6 +15,7 @@ public interface AuthEmpService {
     AuthDto.AuthEmpResponse createEmp(AuthDto.AuthEmpRequest request);
     AuthDto.AuthEmpResponse updateEmp(String empId, AuthDto.AuthEmpRequest request);
     void suspendEmp(String empId);
+    void resumeEmp(String empId);
 
     // === 一鍵帶入測試資料 ===
     void seedTestData();

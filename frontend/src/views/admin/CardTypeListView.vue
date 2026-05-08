@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import api from '@/api/axios'
 import { getCardTypes,createCardType, uploadImage,  deleteCardType,updateCardType } from '@/api/cardtype'
+import { PlusOutlined, SyncOutlined } from '@ant-design/icons-vue'
 
 const cardTypes = ref([])
 const loading = ref(true)
@@ -49,7 +50,7 @@ const columns = [
     align: 'center',
   },
   { title: '回饋率(%)', dataIndex: 'cashbackRate', key: 'cashbackRate' },
-  { title: '操作', key: 'action', width: 200, align: 'center' },
+  { title: '操作', key: 'action', width: 140, align: 'right', fixed: 'right' },
 ]
 
 // 取得資料
@@ -163,19 +164,22 @@ onMounted(() => {
 </script>
 
 <template>
-  <div style="padding: 24px">
-    <div
-      style="
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 16px;
-      "
-    >
-      <h2>卡別管理</h2>
-      <div style="display: flex; gap: 8px">
-        <a-button type="primary" @click="open = true">新增卡別</a-button>
-        <a-button @click="fetchCardTypes">重新整理</a-button>
+  <div class="page-container">
+    <div class="page-header">
+      <h2 class="page-title">卡別管理</h2>
+    </div>
+
+    <!-- 頂部 F 橫劃：主操作 -->
+    <div class="action-bar" style="justify-content: flex-end;">
+      <div class="global-actions">
+        <a-button class="rounded-btn btn-ghost" @click="fetchCardTypes">
+          <template #icon><SyncOutlined /></template>
+          重新整理
+        </a-button>
+        <a-button type="primary" class="rounded-btn" @click="open = true">
+          <template #icon><PlusOutlined /></template>
+          新增卡別
+        </a-button>
       </div>
     </div>
 
@@ -184,7 +188,7 @@ onMounted(() => {
       :data-source="cardTypes"
       :loading="loading"
       row-key="cardTypeId"
-      bordered
+      class="custom-table"
     >
       <template #bodyCell="{ column, record }">
         <!-- 圖片顯示處理 -->
@@ -200,11 +204,11 @@ onMounted(() => {
 
         <!-- 操作按鈕處理 -->
         <template v-else-if="column.key === 'action'">
-          <a-space>
-            <a-button size="small" @click="handleEdit(record)">編輯</a-button
-            >
-            <a-button size="small" danger @click="handleDelete(record.cardTypeId)">刪除</a-button>
-          </a-space>
+          <div class="action-cell">
+            <a-button type="link" class="action-btn edit-btn" @click="handleEdit(record)">編輯</a-button>
+            <a-divider type="vertical" />
+            <a-button type="link" class="action-btn suspend-btn" @click="handleDelete(record.cardTypeId)">刪除</a-button>
+          </div>
         </template>
       </template>
     </a-table>
@@ -225,3 +229,13 @@ onMounted(() => {
     </a-modal>
   </div>
 </template>
+
+<style scoped>
+.suspend-btn {
+  color: #ff4d4f;
+}
+.suspend-btn:hover {
+  color: #d9363e;
+  background-color: rgba(255, 77, 79, 0.05);
+}
+</style>

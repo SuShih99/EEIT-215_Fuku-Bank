@@ -101,26 +101,33 @@ const router = createRouter({
         {
           path: 'employees',
           name: 'admin-employees',
-          //http://localhost:5173/admin/employees
+          meta: { requiresAdmin: true },
           component: () => import('../views/admin/EmployeeListView.vue'),
+        },
+        {
+          path: 'employees/create',
+          name: 'admin-employees-create',
+          meta: { requiresAdmin: true },
+          component: () => import('../views/admin/EmployeeCreateView.vue'),
         },
         {
           path: 'customers',
           name: 'admin-customers',
-          //http://localhost:5173/admin/customers
           component: () => import('../views/admin/CustomerListView.vue'),
+        },
+        {
+          path: 'customers/create',
+          name: 'admin-customers-create',
+          component: () => import('../views/admin/CustomerCreateView.vue'),
         },
         {
           path: 'card-types',
           name: 'admin-card-types',
-          //http://localhost:5173/admin/card-types
           component: () => import('../views/admin/CardTypeListView.vue'),
-
         },
         {
           path:'card-applications',
           name:'admin-card-applications',
-          //http://localhost:5173/admin/card-applications
           component: () => import('../views/admin/CardApplicationList.vue'),
         },
         {
@@ -133,7 +140,6 @@ const router = createRouter({
         {
           path: 'risk-events',
           name: 'admin-risk-events',
-          //http://localhost:5173/admin/risk-events
           component: () => import('../views/admin/RiskEventView.vue'),
         },
         {
@@ -148,23 +154,25 @@ const router = createRouter({
         },
         // 貸款功能相關
         {
-          // 客戶端申請功能測試
           path: 'loan-apply',
           name: 'loan-apply',
-          //http://localhost:5173/admin/loan-apply
           component: () => import('../views/user/LoanApplyView.vue'),
         },
         {
           path: 'loan-applications',
           name: 'loan-applications',
-          //http://localhost:5173/admin/loan-applications
           component: () => import('../views/admin/LoanApplicationView.vue'),
         },
         {
           path: 'blacklist',
           name: 'admin-blacklist',
-          //http://localhost:5173/admin/blacklist
           component: () => import('../views/admin/BlackListView.vue'),
+        },
+        {
+          path: 'logs',
+          name: 'admin-logs',
+          meta: { requiresAdmin: true },
+          component: () => import('../views/admin/SystemLogView.vue'),
         },
       ],
     },
@@ -196,34 +204,43 @@ router.beforeEach(async (to) => {
     if (!customerToken) {
       return { name: 'user-login' }
     }
-    // Token 存在 → 放行（JWT 過期由後端 401 處理）
   }
 
   // --- 管理端路由守衛 ---
   if (to.matched.some((record) => record.meta.requiresAuth)) {
     const authUser = localStorage.getItem('auth_user')
     if (!authUser) {
-      // localStorage 沒資料 → 一定沒登入
       return { name: 'admin-login' }
     }
 
-    // 檢查是否為 CUSTOMER 角色越權存取管理端
+    let parsedUser = null
     try {
-      const parsed = JSON.parse(authUser)
-      if (parsed.role === 'CUSTOMER') {
+      parsedUser = JSON.parse(authUser)
+      if (parsedUser.role === 'CUSTOMER') {
         return { name: 'forbidden' }
       }
     } catch {
       // ignore parse error
     }
 
-    // localStorage 有資料 → 再跟後端確認 Session 是否還活著
+    // --- 檢查系統管理員權限 (僅系統與日誌需要) ---
+    if (to.matched.some((record) => record.meta.requiresAdmin)) {
+      if (parsedUser) {
+        // 放寬後的業務模組已拔除 requiresAdmin
+        // 所以會進入這裡的只剩 employees 跟 logs，這些保留給資安與系統管理員
+        const systemAdminRoles = ['ISSA', 'CISO', 'SYS_SUPER', 'SYS_STAFF']
+        if (!systemAdminRoles.includes(parsedUser.roleCode)) {
+          return { name: 'forbidden' } 
+        }
+      } else {
+        return { name: 'admin-login' }
+      }
+    }
+
     try {
       const { checkAuth } = await import('@/api/auth')
       await checkAuth()
-      // Session 有效 → 放行
     } catch {
-      // Session 過期或無效 → 清掉 localStorage，導回登入頁
       localStorage.removeItem('auth_user')
       return { name: 'admin-login' }
     }

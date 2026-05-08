@@ -26,6 +26,11 @@ export function deactivateCustomer(customerId) {
   return api.put(`/api/customers/${customerId}/deactivate`)
 }
 
+// 重新啟用客戶
+export function activateCustomer(customerId) {
+  return api.put(`/api/customers/${customerId}/activate`)
+}
+
 // 一鍵帶入測試資料
 export function seedCustomers() {
   return api.post('/api/customers/seed')

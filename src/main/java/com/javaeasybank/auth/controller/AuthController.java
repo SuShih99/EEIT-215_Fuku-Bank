@@ -3,6 +3,7 @@ package com.javaeasybank.auth.controller;
 import com.javaeasybank.auth.dto.AuthDto;
 import com.javaeasybank.auth.service.AuthEmpService;
 import com.javaeasybank.common.dto.response.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,43 +32,47 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthDto.AuthEmpResponse>> login(
             @RequestBody AuthDto.LoginRequest request,
-            HttpSession session) {
+            HttpSession session,
+            HttpServletRequest httpRequest) {
 
-        // 1. 透過 Spring Security 的 AuthenticationManager 做驗證
-        //    會呼叫 CustomUserDetailsService.loadUserByUsername()
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
-        // 2. 把驗證結果放進 SecurityContext → 存入 Session
-        //    後續 API 呼叫時 Spring Security 會自動從 Session 讀取，就不會 403
         SecurityContextHolder.getContext().setAuthentication(authentication);
         session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
 
-        // 3. 呼叫業務邏輯取得完整的員工資訊回傳給前端
-        AuthDto.AuthEmpResponse response = authEmpService.login(request);
+        // 擷取來源 IP
+        String ipAddress = getClientIp(httpRequest);
+        AuthDto.AuthEmpResponse response = authEmpService.login(request, ipAddress);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     // ===== 確認登入狀態（給前端路由守衛用）=====
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<Void>> me() {
-        // 如果 Session 有效 → Spring Security 放行 → 回 200
-        // 如果 Session 過期 → Spring Security 攔截 → 回 401（不會進到這裡）
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     // ===== 登出 =====
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(HttpSession session) {
+    public ResponseEntity<ApiResponse<Void>> logout(HttpSession session,
+                                                     HttpServletRequest httpRequest) {
+        // 取得當前登入者 email，記錄登出日誌
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = (auth != null && auth.isAuthenticated()
+                && !"anonymousUser".equals(auth.getPrincipal()))
+                ? auth.getName() : null;
+
+        String ipAddress = getClientIp(httpRequest);
+        authEmpService.logout(email, ipAddress);
+
         SecurityContextHolder.clearContext();
         session.invalidate();
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     // ===== 查詢員工（支援模糊搜尋）=====
-    // GET /api/auth/employees          → 全部
-    // GET /api/auth/employees?keyword=林 → 姓名含「林」的
     @PreAuthorize("hasAnyRole('CISO', 'ISSA')")
     @GetMapping("/employees")
     public ResponseEntity<ApiResponse<List<AuthDto.AuthEmpResponse>>> getEmps(
@@ -81,16 +86,16 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
-    // ===== 新增員工：僅 CISO =====
-    @PreAuthorize("hasRole('CISO')")
+    // ===== 新增員工 =====
+    @PreAuthorize("hasAnyRole('CISO', 'ISSA')")
     @PostMapping("/employees")
     public ResponseEntity<ApiResponse<AuthDto.AuthEmpResponse>> createEmp(
             @RequestBody AuthDto.AuthEmpRequest request) {
         return ResponseEntity.ok(ApiResponse.success(authEmpService.createEmp(request)));
     }
 
-    // ===== 修改員工：僅 CISO =====
-    @PreAuthorize("hasRole('CISO')")
+    // ===== 修改員工 =====
+    @PreAuthorize("hasAnyRole('CISO', 'ISSA')")
     @PutMapping("/employees/{empId}")
     public ResponseEntity<ApiResponse<AuthDto.AuthEmpResponse>> updateEmp(
             @PathVariable String empId,
@@ -98,18 +103,40 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(authEmpService.updateEmp(empId, request)));
     }
 
-    // ===== 停用員工（軟刪除）：僅 CISO =====
-    @PreAuthorize("hasRole('CISO')")
+    // ===== 停用員工（軟刪除） =====
+    @PreAuthorize("hasAnyRole('CISO', 'ISSA')")
     @DeleteMapping("/employees/{empId}/suspend")
     public ResponseEntity<ApiResponse<Void>> suspendEmp(@PathVariable String empId) {
         authEmpService.suspendEmp(empId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    // ===== 一鍵帶入測試資料：僅 CISO =====
+    // ===== 重新啟用員工 =====
+    @PreAuthorize("hasAnyRole('CISO', 'ISSA')")
+    @PutMapping("/employees/{empId}/resume")
+    public ResponseEntity<ApiResponse<Void>> resumeEmp(@PathVariable String empId) {
+        authEmpService.resumeEmp(empId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    // ===== 一鍵帶入資料 =====
+    @PreAuthorize("hasAnyRole('CISO', 'ISSA')")
     @PostMapping("/employees/seed")
     public ResponseEntity<ApiResponse<String>> seedEmployees() {
         authEmpService.seedTestData();
-        return ResponseEntity.ok(ApiResponse.success("已成功帶入測試資料"));
+        return ResponseEntity.ok(ApiResponse.success("已成功帶入資料"));
+    }
+
+    // ===== 工具方法：取得真實 IP =====
+    private String getClientIp(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+        String xRealIp = request.getHeader("X-Real-IP");
+        if (xRealIp != null && !xRealIp.isEmpty()) {
+            return xRealIp;
+        }
+        return request.getRemoteAddr();
     }
 }
