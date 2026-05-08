@@ -12,12 +12,12 @@ import com.javaeasybank.common.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -36,6 +36,7 @@ import java.util.List;
  *   PATCH  /api/admin/account-applications/{id}/approve 核准
  *   PATCH  /api/admin/account-applications/{id}/reject  駁回
  */
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class AccountApplicationController {
@@ -53,7 +54,6 @@ public class AccountApplicationController {
     /**
      * 提交開戶申請（含三張證件圖片上傳）
      */
-    @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping(value = "/api/customer/account-applications",
                  consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<AccountApplicationResponse>> submit(
@@ -81,7 +81,6 @@ public class AccountApplicationController {
     /**
      * 查詢我的開戶申請
      */
-    @PreAuthorize("hasRole('CUSTOMER')")
     @GetMapping("/api/customer/account-applications")
     public ResponseEntity<ApiResponse<List<AccountApplicationResponse>>> getMyApplications(
             HttpServletRequest httpRequest) {
@@ -98,7 +97,6 @@ public class AccountApplicationController {
     /**
      * 查詢申請列表（可選狀態篩選，分頁）
      */
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     @GetMapping("/api/admin/account-applications")
     public ResponseEntity<ApiResponse<PageResponse<AccountApplicationResponse>>> listApplications(
             @RequestParam(required = false) ApplicationStatus status,
@@ -120,7 +118,6 @@ public class AccountApplicationController {
     /**
      * 查詢單筆申請詳情
      */
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     @GetMapping("/api/admin/account-applications/{id}")
     public ResponseEntity<ApiResponse<AccountApplicationResponse>> getApplication(
             @PathVariable Long id) {
@@ -132,7 +129,6 @@ public class AccountApplicationController {
     /**
      * 核准開戶申請（自動建立帳戶）
      */
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     @PatchMapping("/api/admin/account-applications/{id}/approve")
     public ResponseEntity<ApiResponse<AccountApplicationResponse>> approve(
             @PathVariable Long id,
@@ -147,7 +143,6 @@ public class AccountApplicationController {
     /**
      * 駁回開戶申請
      */
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     @PatchMapping("/api/admin/account-applications/{id}/reject")
     public ResponseEntity<ApiResponse<AccountApplicationResponse>> reject(
             @PathVariable Long id,

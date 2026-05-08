@@ -1,4 +1,50 @@
 -- ============================================================
+-- 0. ACCOUNT_APPLICATION 開戶申請
+-- ============================================================
+IF OBJECT_ID('account_application', 'U') IS NOT NULL
+    DROP TABLE account_application;
+GO
+
+CREATE TABLE account_application (
+    id                     BIGINT IDENTITY(1,1) PRIMARY KEY,
+    customer_id            VARCHAR(20)    NOT NULL,
+    account_type           VARCHAR(20)    NOT NULL,
+    currency               VARCHAR(3),
+    customer_name          NVARCHAR(50)   NOT NULL,
+    id_number              VARCHAR(20)    NOT NULL,
+    birthday               DATE           NOT NULL,
+    nationality            VARCHAR(10)    NOT NULL,
+    phone                  VARCHAR(20)    NOT NULL,
+    registered_address     NVARCHAR(255)  NOT NULL,
+    current_address        NVARCHAR(255)  NOT NULL,
+    occupation             NVARCHAR(50),
+    employer               NVARCHAR(100),
+    estimated_monthly_tx   INT,
+    account_purpose        VARCHAR(30),
+    fund_source            VARCHAR(30),
+    tax_residency          VARCHAR(10),
+    is_pep                 BIT            NOT NULL DEFAULT 0,
+    id_front_url           VARCHAR(255)   NOT NULL,
+    id_back_url            VARCHAR(255)   NOT NULL,
+    second_id_url          VARCHAR(255)   NOT NULL,
+    risk_flag              VARCHAR(30)    NOT NULL DEFAULT 'NORMAL',
+    apply_ip               VARCHAR(45),
+    status                 VARCHAR(20)    NOT NULL DEFAULT 'PENDING',
+    reject_reason          NVARCHAR(500),
+    reviewed_at            DATETIME2,
+    reviewed_by            VARCHAR(50),
+    created_account_number VARCHAR(12),
+    created_at             DATETIME2      NOT NULL,
+    updated_at             DATETIME2      NOT NULL
+);
+GO
+
+-- ACCOUNT_APPLICATION INDEX
+CREATE INDEX idx_aa_customer ON account_application(customer_id);
+CREATE INDEX idx_aa_status ON account_application(status);
+GO
+
+-- ============================================================
 -- 1. ACCOUNT 帳戶
 -- ============================================================
 CREATE TABLE [ACCOUNT] (

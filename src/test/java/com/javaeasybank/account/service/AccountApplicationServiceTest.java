@@ -45,7 +45,7 @@ class AccountApplicationServiceTest {
     void setUp() {
         baseRequest = new AccountApplicationRequest();
         baseRequest.setAccountType(AccountType.CHECKING);
-        baseRequest.setName("王小明");
+        baseRequest.setCustomerName("王小明");
         baseRequest.setIdNumber("A123456789");
         baseRequest.setBirthday(LocalDate.of(1990, 1, 15));
         baseRequest.setNationality("TW");

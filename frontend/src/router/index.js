@@ -89,6 +89,11 @@ const router = createRouter({
           component: () => import('../views/admin/AccountListView.vue'),
         },
         {
+          path: 'account-applications',
+          name: 'admin-account-applications',
+          component: () => import('../views/admin/AccountApplicationListView.vue'),
+        },
+        {
           path: 'transfers',
           name: 'admin-transfers',
           component: () => import('../views/admin/TransferView.vue'),

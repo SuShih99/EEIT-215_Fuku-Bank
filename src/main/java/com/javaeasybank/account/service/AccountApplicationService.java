@@ -98,7 +98,7 @@ public class AccountApplicationService {
         app.setCurrency(resolveCurrency(request));
 
         // KYC
-        app.setName(request.getName());
+        app.setName(request.getCustomerName());
         app.setIdNumber(request.getIdNumber());
         app.setBirthday(request.getBirthday());
         app.setNationality(request.getNationality());

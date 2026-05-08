@@ -45,7 +45,7 @@ public class AccountApplication {
 
     // ===== KYC 個人資料（部分可從 CustomerProfile 帶入） =====
 
-    @Column(nullable = false, length = 50)
+    @Column(name = "customer_name", nullable = false, length = 50)
     private String name;
 
     @Column(name = "id_number", nullable = false, length = 20)

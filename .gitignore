@@ -67,3 +67,6 @@ frontend/.vite/
 # Log files
 *.log
 logs/
+
+# Uploads
+/uploads/
