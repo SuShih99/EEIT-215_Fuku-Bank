@@ -7,7 +7,7 @@
       <!-- 左側裝飾 -->
       <aside class="login-deco" aria-hidden="true">
         <div class="deco-ink"></div>
-        <div class="deco-brand">
+        <div class="deco-brand" @click="router.push('/')" style="cursor: pointer;">
           <JbLogo size="lg" />
         </div>
         <p class="deco-tagline">靜心理財<br/>安穩致遠</p>

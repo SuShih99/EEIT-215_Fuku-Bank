@@ -12,28 +12,24 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 轉帳操作的 REST 控制器。
- * 處理來自客戶端的轉帳相關請求。
+ * 轉帳與沖正操作的 REST 控制器。
+ * - 轉帳：客戶端操作 (/api/customer/transfers)
+ * - 沖正：管理端操作 (/api/admin/transfers/reversal)
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/transfers")
 @RequiredArgsConstructor
 public class TransferController {
 
     private final TransferService transferService;
 
     /**
-     * 處理轉帳請求。
-     *
-     * @param request 轉帳請求 DTO。
-     * @return 包含轉帳響應的 ResponseEntity。
+     * 客戶端：處理轉帳請求。
      */
-    @PostMapping
+    @PostMapping("/api/customer/transfers")
     public ResponseEntity<ApiResponse<TransferResponse>> transfer(@Valid @RequestBody TransferRequest request) {
         log.info("Received transfer request from account: {} to account: {}", request.getFromAccountNumber(), request.getToAccountNumber());
         TransferResponse response = transferService.transfer(request);
@@ -41,13 +37,10 @@ public class TransferController {
     }
 
     /**
-     * 處理沖正請求。
+     * 管理端：處理沖正請求。
      * 根據原始交易編號反向沖正所有相關帳戶餘額，並寫入新的沖正交易紀錄。
-     *
-     * @param request 沖正請求 DTO（含原始交易編號）。
-     * @return 包含沖正響應的 ResponseEntity。
      */
-    @PostMapping("/reversal")
+    @PostMapping("/api/admin/transfers/reversal")
     public ResponseEntity<ApiResponse<ReversalResponse>> reversal(@Valid @RequestBody ReversalRequest request) {
         log.info("Received reversal request for original referenceId: {}", request.getOriginalReferenceId());
         ReversalResponse response = transferService.reversal(request);

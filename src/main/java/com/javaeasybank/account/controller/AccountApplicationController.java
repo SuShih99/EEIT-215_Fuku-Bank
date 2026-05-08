@@ -141,6 +141,21 @@ public class AccountApplicationController {
     }
 
     /**
+     * 要求補件
+     */
+    @PatchMapping("/api/admin/account-applications/{id}/supplement")
+    public ResponseEntity<ApiResponse<AccountApplicationResponse>> requestSupplement(
+            @PathVariable Long id,
+            @RequestBody RejectRequest rejectRequest,
+            HttpServletRequest httpRequest) {
+
+        String reviewedBy = getAdminUsername(httpRequest);
+        AccountApplicationResponse response =
+                applicationService.requestSupplement(id, rejectRequest.reason(), reviewedBy);
+        return ResponseEntity.ok(ApiResponse.success("已通知客戶補件", response));
+    }
+
+    /**
      * 駁回開戶申請
      */
     @PatchMapping("/api/admin/account-applications/{id}/reject")

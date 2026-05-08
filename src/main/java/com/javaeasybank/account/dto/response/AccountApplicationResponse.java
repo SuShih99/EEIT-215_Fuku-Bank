@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 public class AccountApplicationResponse {
 
     private Long id;
+    private String applicationNo;
     private String customerId;
 
     // 帳戶
@@ -69,6 +70,7 @@ public class AccountApplicationResponse {
     public static AccountApplicationResponse fromEntity(AccountApplication app) {
         return AccountApplicationResponse.builder()
                 .id(app.getId())
+                .applicationNo(app.getApplicationNo())
                 .customerId(app.getCustomerId())
                 .accountType(app.getAccountType())
                 .currency(app.getCurrency())
@@ -106,6 +108,7 @@ public class AccountApplicationResponse {
     public static AccountApplicationResponse fromEntityForAdmin(AccountApplication app) {
         return AccountApplicationResponse.builder()
                 .id(app.getId())
+                .applicationNo(app.getApplicationNo())
                 .customerId(app.getCustomerId())
                 .accountType(app.getAccountType())
                 .currency(app.getCurrency())

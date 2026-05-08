@@ -1,12 +1,20 @@
 -- ============================================================
--- 0. ACCOUNT_APPLICATION 開戶申請
+-- DROP ALL TABLES (依 FK 相依性反向刪除)
 -- ============================================================
-IF OBJECT_ID('account_application', 'U') IS NOT NULL
-    DROP TABLE account_application;
+IF OBJECT_ID('TRANS_LOG', 'U') IS NOT NULL DROP TABLE TRANS_LOG;
+IF OBJECT_ID('ACCOUNT_DAILY_SNAPSHOTS', 'U') IS NOT NULL DROP TABLE ACCOUNT_DAILY_SNAPSHOTS;
+IF OBJECT_ID('ACCOUNT_STATUS_HISTORY', 'U') IS NOT NULL DROP TABLE ACCOUNT_STATUS_HISTORY;
+IF OBJECT_ID('ACCOUNT', 'U') IS NOT NULL DROP TABLE ACCOUNT;
+IF OBJECT_ID('account_application', 'U') IS NOT NULL DROP TABLE account_application;
 GO
 
+-- ============================================================
+-- 0. ACCOUNT_APPLICATION 開戶申請
+-- ============================================================
+
 CREATE TABLE account_application (
-    id                     BIGINT IDENTITY(1,1) PRIMARY KEY,
+    id                     BIGINT IDENTITY(10001,1) PRIMARY KEY,
+    application_no         VARCHAR(30)    NOT NULL UNIQUE,
     customer_id            VARCHAR(20)    NOT NULL,
     account_type           VARCHAR(20)    NOT NULL,
     currency               VARCHAR(3),
@@ -175,9 +183,9 @@ CREATE TABLE [TRANS_LOG] (
     GO
 
 -- TRANSACTION INDEX
-CREATE INDEX idx_tx_reference ON [TRANSACTION]([reference_id]);
-CREATE INDEX idx_tx_account_time ON [TRANSACTION]([account_number], [created_at]);
-CREATE INDEX idx_tx_counterpart ON [TRANSACTION]([counterpart_account]);
+CREATE INDEX idx_tx_reference ON [TRANS_LOG]([reference_id]);
+CREATE INDEX idx_tx_account_time ON [TRANS_LOG]([account_number], [created_at]);
+CREATE INDEX idx_tx_counterpart ON [TRANS_LOG]([counterpart_account]);
 GO
 
 -- TRANSACTION 欄位註解

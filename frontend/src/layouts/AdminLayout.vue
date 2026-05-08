@@ -3,8 +3,7 @@
     <a-layout-sider width="260" theme="light" style="position: fixed; left: 0; top: 0; bottom: 0; z-index: 100">
       <div class="sider-content">
         <div class="logo-container">
-          <BankFilled class="logo-icon" />
-          <span class="logo-text">爪哇銀行</span>
+          <img src="/logo.png" alt="JavaBank" class="logo-img" @click="$router.push({ name: 'admin-home' })" style="cursor: pointer;" />
         </div>
 
         <a-menu v-model:selectedKeys="selectedKeys" mode="inline">
@@ -30,10 +29,6 @@
               <a-menu-item key="admin-accounts" @click="$router.push({ name: 'admin-accounts' })">
                 <template #icon><BankOutlined /></template>
                 <span>帳戶管理</span>
-              </a-menu-item>
-              <a-menu-item key="admin-transfers" @click="$router.push({ name: 'admin-transfers' })">
-                <template #icon><SwapOutlined /></template>
-                <span>交易操作</span>
               </a-menu-item>
               <a-menu-item key="admin-trans-logs" @click="$router.push({ name: 'admin-trans-logs' })">
                 <template #icon><ProfileOutlined /></template>
@@ -122,8 +117,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { logout } from '@/api/auth'
 import { 
-  HomeOutlined, TeamOutlined, UserOutlined, SettingOutlined, BankFilled, LogoutOutlined,
-  BankOutlined, SwapOutlined, ProfileOutlined, FileAddOutlined, AuditOutlined, 
+  HomeOutlined, TeamOutlined, UserOutlined, SettingOutlined, LogoutOutlined,
+  BankOutlined, ProfileOutlined, FileAddOutlined, AuditOutlined,
   AppstoreAddOutlined, SolutionOutlined, CreditCardOutlined, AlertOutlined, StopOutlined
 } from '@ant-design/icons-vue'
 
@@ -184,15 +179,15 @@ async function handleLogout() {
 }
 
 .logo-container {
-  padding: 0 16px 32px;
+  padding: 8px 16px 24px;
   display: flex;
-  align-items: center;
-  gap: 10px;
+  justify-content: center;
 }
 
-.logo-icon {
-  font-size: 24px;
-  color: #5C6B5F; 
+.logo-img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
 }
 
 .logo-text {
@@ -241,6 +236,10 @@ async function handleLogout() {
 
 :deep(.ant-menu-item-selected .anticon) {
   color: #ffffff !important;
+}
+
+:deep(.ant-menu-item .anticon) {
+  font-size: 20px !important;
 }
 
 :deep(.ant-menu-title-content) {

@@ -3,12 +3,18 @@
     <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
       <h2 class="page-title">交易紀錄查詢</h2>
       <!-- 查詢方式切換置於右上角 -->
-      <a-radio-group v-model:value="searchType" button-style="solid" @change="handleSearchTypeChange">
-        <a-radio-button value="referenceId">依交易編號</a-radio-button>
-        <a-radio-button value="accountNumber">依帳號</a-radio-button>
-        <a-radio-button value="customerId">依客戶 ID</a-radio-button>
-        <a-radio-button value="customerIdDateRange">依客戶 ID + 日期</a-radio-button>
-      </a-radio-group>
+      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 10px;">
+        <a-radio-group v-model:value="searchType" button-style="solid" @change="handleSearchTypeChange">
+          <a-radio-button value="referenceId">依交易編號</a-radio-button>
+          <a-radio-button value="accountNumber">依帳號</a-radio-button>
+          <a-radio-button value="customerId">依客戶 ID</a-radio-button>
+          <a-radio-button value="customerIdDateRange">依客戶 ID + 日期</a-radio-button>
+        </a-radio-group>
+        <a-button danger class="rounded-btn" @click="showReversalModal = true">
+          <template #icon><RollbackOutlined /></template>
+          沖正
+        </a-button>
+      </div>
     </div>
 
     <!-- 頂部 F 橫劃：搜尋與主操作 -->
@@ -109,6 +115,7 @@
       title="帳戶詳情"
       :footer="null"
       width="500px"
+      :z-index="1100"
     >
       <a-spin v-if="accountLoading" style="display: block; text-align: center; padding: 24px" />
       <a-descriptions
@@ -131,13 +138,53 @@
       </a-descriptions>
       <div v-else style="text-align: center; padding: 24px; color: #999">查無資料</div>
     </a-modal>
+
+    <!-- 沖正彈窗 -->
+    <a-modal
+      v-model:open="showReversalModal"
+      title="交易沖正"
+      :footer="null"
+      width="500px"
+      @cancel="handleReversalClear"
+    >
+      <a-form layout="vertical" style="margin-top: 16px;">
+        <a-form-item label="原始交易編號">
+          <a-input v-model:value="reversalForm.originalReferenceId" placeholder="請輸入要沖正的交易編號 (TXN-...)" allow-clear />
+        </a-form-item>
+        <a-form-item label="沖正原因">
+          <a-input v-model:value="reversalForm.reason" placeholder="選填" allow-clear />
+        </a-form-item>
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px;">
+          <a-button class="rounded-btn btn-ghost" @click="handleReversalClear">取消</a-button>
+          <a-button type="primary" danger class="rounded-btn" :loading="reversalLoading" @click="handleReversalSubmit">確認沖正</a-button>
+        </div>
+      </a-form>
+
+      <!-- 沖正結果 -->
+      <div v-if="reversalResult" style="margin-top: 24px; border-top: 1px solid #f0f0f0; padding-top: 16px;">
+        <h4 style="margin-bottom: 12px;">沖正結果</h4>
+        <p>
+          沖正交易編號: <a @click="lookupReferenceId(reversalResult.reversalReferenceId)">{{ reversalResult.reversalReferenceId }}</a>
+          <a-button size="small" style="margin-left: 8px" @click="copyText(reversalResult.reversalReferenceId)">複製</a-button>
+        </p>
+        <p>被沖正的原始編號: <a @click="lookupReferenceId(reversalResult.originalReferenceId)">{{ reversalResult.originalReferenceId }}</a></p>
+        <p>沖正時間: {{ formatTime(reversalResult.reversedAt) }}</p>
+        <a-divider style="margin: 12px 0" />
+        <p style="font-weight: bold; margin-bottom: 8px">沖正明細：</p>
+        <div v-for="(detail, index) in reversalResult.details" :key="index" style="margin-bottom: 8px; padding: 8px; background: #fafafa; border-radius: 4px">
+          <p>帳號: <a @click="handleClickAccount(detail.accountNumber)">{{ detail.accountNumber }}</a></p>
+          <p>沖正金額: {{ formatAmount(detail.reversedAmount) }}</p>
+          <p>沖正後餘額: {{ formatAmount(detail.balanceAfter) }}</p>
+        </div>
+      </div>
+    </a-modal>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, h} from 'vue'
+import { ref, reactive, computed, h } from 'vue'
 import { message } from 'ant-design-vue'
-import { DownOutlined, SearchOutlined } from '@ant-design/icons-vue'
+import { DownOutlined, SearchOutlined, RollbackOutlined } from '@ant-design/icons-vue'
 import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
 import {
@@ -147,6 +194,7 @@ import {
   getTransLogsByCustomerIdAndDateRange,
   getLatestTransLogs,
   getAccount,
+  reversal,
 } from '@/api/account'
 
 const searchType = ref('referenceId')
@@ -213,13 +261,14 @@ function formatTime(value) {
 }
 
 const columns = ref([
-  { title: '交易編號', dataIndex: 'referenceId', key: 'referenceId', width: 260, resizable: true },
+  { title: '交易編號', dataIndex: 'referenceId', key: 'referenceId', width: 260, resizable: true, sorter: (a, b) => (a.referenceId || '').localeCompare(b.referenceId || '') },
   {
     title: '帳號',
     dataIndex: 'accountNumber',
     key: 'accountNumber',
     width: 260,
     resizable: true,
+    sorter: (a, b) => (a.accountNumber || '').localeCompare(b.accountNumber || ''),
     customRender: ({ text }) => {
       if (!text) return '-'
       return h('a', { onClick: () => handleClickAccount(text) }, text)
@@ -231,6 +280,7 @@ const columns = ref([
     key: 'counterpartAccount',
     width: 140,
     resizable: true,
+    sorter: (a, b) => (a.counterpartAccount || '').localeCompare(b.counterpartAccount || ''),
     customRender: ({ text }) => {
       if (!text) return '-'
       return h('a', { onClick: () => handleClickAccount(text) }, text)
@@ -242,6 +292,7 @@ const columns = ref([
     key: 'entryType',
     width: 90,
     resizable: true,
+    sorter: (a, b) => (a.entryType || '').localeCompare(b.entryType || ''),
   },
   {
     title: '類型',
@@ -249,6 +300,7 @@ const columns = ref([
     key: 'transactionType',
     width: 100,
     resizable: true,
+    sorter: (a, b) => (a.transactionType || '').localeCompare(b.transactionType || ''),
   },
   {
     title: '金額',
@@ -257,6 +309,7 @@ const columns = ref([
     width: 120,
     resizable: true,
     align: 'right',
+    sorter: (a, b) => (a.amount || 0) - (b.amount || 0),
     customRender: ({ text }) => formatAmount(text),
   },
   {
@@ -266,6 +319,7 @@ const columns = ref([
     width: 120,
     resizable: true,
     align: 'right',
+    sorter: (a, b) => (a.balanceBefore || 0) - (b.balanceBefore || 0),
     customRender: ({ text }) => formatAmount(text),
   },
   {
@@ -275,15 +329,17 @@ const columns = ref([
     width: 120,
     resizable: true,
     align: 'right',
+    sorter: (a, b) => (a.balanceAfter || 0) - (b.balanceAfter || 0),
     customRender: ({ text }) => formatAmount(text),
   },
-  { title: '幣別', dataIndex: 'currency', key: 'currency', width: 60, resizable: true },
+  { title: '幣別', dataIndex: 'currency', key: 'currency', width: 60, resizable: true, sorter: (a, b) => (a.currency || '').localeCompare(b.currency || '') },
   { title: '備註', dataIndex: 'note', key: 'note', width: 120, resizable: true },
   {
     title: '時間',
     dataIndex: 'createdAt',
     key: 'createdAt',
     width: 180,
+    sorter: (a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''),
     customRender: ({ text }) => formatTime(text),
   },
 ])
@@ -417,6 +473,56 @@ function exportXml() {
   const blob = new Blob([xml], { type: 'application/xml' })
   saveAs(blob, '交易紀錄.xml')
   message.success('XML 匯出成功')
+}
+
+// === 沖正功能 ===
+const showReversalModal = ref(false)
+const reversalLoading = ref(false)
+const reversalResult = ref(null)
+const reversalForm = reactive({
+  originalReferenceId: '',
+  reason: '',
+})
+
+function handleReversalClear() {
+  reversalForm.originalReferenceId = ''
+  reversalForm.reason = ''
+  reversalResult.value = null
+  showReversalModal.value = false
+}
+
+async function handleReversalSubmit() {
+  if (!reversalForm.originalReferenceId) {
+    message.warning('請填寫原始交易編號')
+    return
+  }
+  reversalLoading.value = true
+  reversalResult.value = null
+  try {
+    const res = await reversal({
+      originalReferenceId: reversalForm.originalReferenceId,
+      reason: reversalForm.reason || null,
+    })
+    reversalResult.value = res.data.data
+    message.success('沖正成功')
+  } catch (err) {
+    message.error(err.response?.data?.message || '沖正失敗')
+  } finally {
+    reversalLoading.value = false
+  }
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    message.success('已複製')
+  })
+}
+
+function lookupReferenceId(refId) {
+  showReversalModal.value = false
+  searchType.value = 'referenceId'
+  searchValue.value = refId
+  handleSearch()
 }
 
 async function handleClickAccount(accountNumber) {

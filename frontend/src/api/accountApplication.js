@@ -47,6 +47,14 @@ export function approveAccountApplication(id) {
 }
 
 /**
+ * 管理端：要求補件
+ */
+export function supplementAccountApplication(id, reason) {
+  return api.patch(`/api/admin/account-applications/${id}/supplement`, { reason })
+    .then(res => res.data.data)
+}
+
+/**
  * 管理端：駁回開戶申請
  */
 export function rejectAccountApplication(id, reason) {

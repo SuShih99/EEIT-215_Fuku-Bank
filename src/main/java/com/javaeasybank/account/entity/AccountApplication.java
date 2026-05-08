@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 
 /**
  * 開戶申請實體 — 儲存客戶的開戶申請資料，含 KYC 欄位與風控標記。
- * 狀態流程：PENDING → APPROVED / REJECTED / CANCELLED
+ * 狀態流程：PENDING → APPROVED / REJECTED / SUPPLEMENT_REQUIRED / CANCELLED
  * 審核通過後由 Service 層自動建立 Account。
  */
 @Entity
@@ -24,6 +24,10 @@ public class AccountApplication {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    /** 業務申請編號（對外顯示用，格式：APP-yyyyMMdd-HHmmss-8hex） */
+    @Column(name = "application_no", nullable = false, unique = true, length = 30)
+    private String applicationNo;
 
     // ===== 關聯 =====
 

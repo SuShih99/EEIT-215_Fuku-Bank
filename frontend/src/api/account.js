@@ -42,7 +42,7 @@ export function getLatestAccounts(page = 0, size = 10) {
 
 // 轉帳
 export function transfer(data) {
-  return api.post('/api/transfers', data)
+  return api.post('/api/customer/transfers', data)
 }
 
 // 依 referenceId 查詢交易紀錄
@@ -87,15 +87,15 @@ export function updateAccountStatus(accountNumber, newStatus) {
 
 // 存款
 export function deposit(data) {
-  return api.post('/api/cash/deposit', data)
+  return api.post('/api/customer/cash/deposit', data)
 }
 
 // 提款
 export function withdraw(data) {
-  return api.post('/api/cash/withdraw', data)
+  return api.post('/api/customer/cash/withdraw', data)
 }
 
 // 沖正
 export function reversal(data) {
-  return api.post('/api/transfers/reversal', data)
+  return api.post('/api/admin/transfers/reversal', data)
 }

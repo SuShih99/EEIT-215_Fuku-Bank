@@ -7,6 +7,7 @@ import {
   getAccountApplications,
   approveAccountApplication,
   rejectAccountApplication,
+  supplementAccountApplication,
 } from '@/api/accountApplication'
 import dayjs from 'dayjs'
 
@@ -18,6 +19,7 @@ const status = ref(null)
 const statusOptions = [
   { label: '全部', value: null },
   { label: '審核中', value: 'PENDING' },
+  { label: '需補件', value: 'SUPPLEMENT_REQUIRED' },
   { label: '已核准', value: 'APPROVED' },
   { label: '已駁回', value: 'REJECTED' },
 ]
@@ -42,19 +44,20 @@ const pagination = ref({
 
 // === 表格欄位 ===
 const columns = [
-  { title: 'ID', dataIndex: 'id', key: 'id', width: 70 },
-  { title: '申請人', dataIndex: 'name', key: 'name', width: 140 },
-  { title: '帳戶類型', dataIndex: 'accountType', key: 'accountType', width: 110 },
-  { title: '身分證字號', dataIndex: 'idNumber', key: 'idNumber', width: 140 },
-  { title: '風險標記', dataIndex: 'riskFlag', key: 'riskFlag', width: 110 },
+  { title: '申請編號', dataIndex: 'applicationNo', key: 'applicationNo', width: 240, sorter: (a, b) => (a.applicationNo || '').localeCompare(b.applicationNo || '') },
+  { title: '申請人', dataIndex: 'name', key: 'name', width: 140, sorter: (a, b) => (a.name || '').localeCompare(b.name || '') },
+  { title: '帳戶類型', dataIndex: 'accountType', key: 'accountType', width: 110, sorter: (a, b) => (a.accountType || '').localeCompare(b.accountType || '') },
+  { title: '身分證字號', dataIndex: 'idNumber', key: 'idNumber', width: 140, sorter: (a, b) => (a.idNumber || '').localeCompare(b.idNumber || '') },
+  { title: '風險標記', dataIndex: 'riskFlag', key: 'riskFlag', width: 110, sorter: (a, b) => (a.riskFlag || '').localeCompare(b.riskFlag || '') },
   {
     title: '申請時間',
     dataIndex: 'createdAt',
     key: 'createdAt',
     width: 170,
+    sorter: (a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''),
   },
-  { title: '狀態', dataIndex: 'status', key: 'status', width: 110 },
-  { title: '操作', key: 'action', width: 120, fixed: 'right' },
+  { title: '狀態', dataIndex: 'status', key: 'status', width: 110, sorter: (a, b) => (a.status || '').localeCompare(b.status || '') },
+  { title: '操作', key: 'action', width: 150, fixed: 'right' },
 ]
 
 // === 展開列 ===
@@ -96,6 +99,41 @@ const handleApprove = (record) => {
         await fetchData()
       } catch (error) {
         message.error(error.response?.data?.message || '核准失敗')
+      }
+    },
+  })
+}
+
+// === 要求補件 ===
+const handleSupplement = (record) => {
+  let reason = ''
+  Modal.confirm({
+    title: '要求補件',
+    content: h('div', [
+      h('p', { style: 'margin-bottom: 8px; color: #666;' }, `申請人：${record.name}`),
+      h('textarea', {
+        placeholder: '請輸入需補件原因（必填）',
+        rows: 3,
+        style: 'width: 100%; border: 1px solid #d9d9d9; border-radius: 6px; padding: 8px; resize: vertical;',
+        onInput: (e) => { reason = e.target.value },
+      }),
+    ]),
+    okText: '確認補件',
+    cancelText: '取消',
+    async onOk() {
+      if (!reason.trim()) {
+        message.warning('請輸入補件原因')
+        throw new Error('empty reason')
+      }
+      try {
+        await supplementAccountApplication(record.id, reason)
+        message.success('已通知客戶補件')
+        await fetchData()
+      } catch (error) {
+        if (error.message !== 'empty reason') {
+          message.error(error.response?.data?.message || '操作失敗')
+        }
+        throw error
       }
     },
   })
@@ -263,6 +301,12 @@ onMounted(fetchData)
                     核准
                   </a-menu-item>
                   <a-menu-item
+                    @click="handleSupplement(record)"
+                    :disabled="record.status !== 'PENDING'"
+                  >
+                    要求補件
+                  </a-menu-item>
+                  <a-menu-item
                     danger
                     @click="handleReject(record)"
                     :disabled="record.status !== 'PENDING'"
@@ -428,6 +472,8 @@ onMounted(fetchData)
 .status-rejected .status-dot { background-color: #ff4d4f; }
 .status-pending { background-color: rgba(250, 140, 22, 0.1); color: #fa8c16; }
 .status-pending .status-dot { background-color: #fa8c16; }
+.status-supplement_required { background-color: rgba(114, 46, 209, 0.1); color: #722ed1; }
+.status-supplement_required .status-dot { background-color: #722ed1; }
 
 /* 展開列 */
 .expand-grid {

@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/cash")
+@RequestMapping("/api/customer/cash")
 @RequiredArgsConstructor
 public class CashController {
 

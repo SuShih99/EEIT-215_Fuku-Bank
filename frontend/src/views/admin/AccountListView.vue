@@ -310,30 +310,33 @@ const total = ref(0)
 const lastSearchType = ref('')
 
 const columns = ref([
-  { title: '客戶資訊', dataIndex: 'customerName', key: 'customer', width: 160, fixed: 'left' },
-  { title: '帳號', dataIndex: 'accountNumber', key: 'accountNumber', width: 150 },
+  { title: '客戶資訊', dataIndex: 'customerName', key: 'customer', width: 160, fixed: 'left', sorter: (a, b) => (a.customerName || '').localeCompare(b.customerName || '') },
+  { title: '帳號', dataIndex: 'accountNumber', key: 'accountNumber', width: 150, sorter: (a, b) => (a.accountNumber || '').localeCompare(b.accountNumber || '') },
   {
     title: '型別',
     dataIndex: 'accountType',
     key: 'accountType',
     width: 100,
+    sorter: (a, b) => (a.accountType || '').localeCompare(b.accountType || ''),
     customRender: ({ text }) => typeMap[text] || text,
   },
-  { title: '幣別', dataIndex: 'currency', key: 'currency', width: 80 },
+  { title: '幣別', dataIndex: 'currency', key: 'currency', width: 80, sorter: (a, b) => (a.currency || '').localeCompare(b.currency || '') },
   {
     title: '餘額',
     dataIndex: 'balance',
     key: 'balance',
     width: 130,
     align: 'right',
+    sorter: (a, b) => (a.balance || 0) - (b.balance || 0),
     customRender: ({ text }) => formatAmount(text),
   },
-  { title: '狀態', dataIndex: 'status', key: 'status', width: 100 },
+  { title: '狀態', dataIndex: 'status', key: 'status', width: 100, sorter: (a, b) => (a.status || '').localeCompare(b.status || '') },
   {
     title: '建立時間',
     dataIndex: 'createdAt',
     key: 'createdAt',
     width: 160,
+    sorter: (a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''),
     customRender: ({ text }) => formatTime(text),
   },
   { title: '操作', key: 'action', width: 120, fixed: 'right' },

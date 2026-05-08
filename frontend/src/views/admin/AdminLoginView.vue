@@ -2,10 +2,7 @@
   <div class="login-wrapper">
     <div class="login-card">
       <div class="login-header">
-        <div class="logo-placeholder">
-          待銀行主視覺定稿
-        </div>
-        <h1 class="login-title">待銀行主要名稱定稿</h1>
+        <img src="/logo.png" alt="JavaBank" class="login-logo" />
         <p class="login-subtitle">後台管理系統</p>
       </div>
 
@@ -157,32 +154,19 @@ async function handleLogin() {
   margin-bottom: 36px;
 }
 
-.logo-placeholder {
-  width: 100px;
-  height: 100px;
-  margin: 0 auto 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(92, 107, 95, 0.08);
-  color: var(--primary-color);
-  border-radius: 50%;
-  font-size: 12px;
-  font-weight: bold;
-}
-
-.login-title {
-  margin: 0;
-  font-size: 26px;
-  font-weight: 700;
-  color: #1a1a2e;
+.login-logo {
+  width: 160px;
+  height: 160px;
+  margin: 0 auto 20px;
+  object-fit: contain;
 }
 
 .login-subtitle {
-  margin: 8px 0 0;
-  font-size: 15px;
-  color: var(--primary-color);
-  font-weight: 500;
+  margin: 0;
+  font-size: 22px;
+  color: #1a1a2e;
+  font-weight: 700;
+  letter-spacing: 2px;
 }
 
 /* =========================================

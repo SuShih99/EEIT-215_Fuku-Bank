@@ -8,6 +8,7 @@ import com.javaeasybank.account.enums.*;
 import com.javaeasybank.account.repository.AccountApplicationRepository;
 import com.javaeasybank.account.repository.AccountRepository;
 import com.javaeasybank.account.utils.AccountNumberGenerator;
+import com.javaeasybank.account.utils.ApplicationNoGenerator;
 import com.javaeasybank.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -91,6 +92,7 @@ public class AccountApplicationService {
 
         // 4. 組裝 Entity
         AccountApplication app = new AccountApplication();
+        app.setApplicationNo(ApplicationNoGenerator.generate());
         app.setCustomerId(customerId);
 
         // 帳戶資訊
@@ -214,6 +216,29 @@ public class AccountApplicationService {
         app.setCreatedAccountNumber(savedAccount.getAccountNumber());
 
         AccountApplication updated = applicationRepository.save(app);
+        return AccountApplicationResponse.fromEntityForAdmin(updated);
+    }
+
+    // =========================================================
+    // 管理端：審核 — 需補件
+    // =========================================================
+
+    @Transactional
+    public AccountApplicationResponse requestSupplement(Long applicationId, String reason, String reviewedBy) {
+        AccountApplication app = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new BusinessException("找不到申請紀錄：" + applicationId));
+
+        if (app.getStatus() != ApplicationStatus.PENDING) {
+            throw new BusinessException("此申請已非待審核狀態，無法要求補件");
+        }
+
+        app.setStatus(ApplicationStatus.SUPPLEMENT_REQUIRED);
+        app.setRejectReason(reason);  // 複用此欄位記錄補件原因
+        app.setReviewedAt(LocalDateTime.now());
+        app.setReviewedBy(reviewedBy);
+
+        AccountApplication updated = applicationRepository.save(app);
+        log.info("Account application supplement requested: id={}, reason={}", applicationId, reason);
         return AccountApplicationResponse.fromEntityForAdmin(updated);
     }
 
