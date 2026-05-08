@@ -59,6 +59,11 @@ const router = createRouter({
           path:'card-txns',
           name:'user-card-txns',
           component: () => import('../views/user/CardTxnView.vue'),
+        },
+        {
+          path: 'card-bills',
+          name: 'user-card-bills',
+          component: () => import('../views/user/CardBillView.vue'),
         }
         ,
         {
@@ -146,8 +151,13 @@ const router = createRouter({
           name:'admin-card-txns',
           //http://localhost:5173/admin/card-txns
           component: () => import('../views/admin/CardTxnView.vue'),
-        }
-        ,
+        },
+        {
+          path: 'card-bills',
+          name: 'admin-card-bills',
+          //http://localhost:5173/admin/card-bills
+          component: () => import('../views/admin/CardBillView.vue'),
+        },
         {
           path: 'risk-events',
           name: 'admin-risk-events',

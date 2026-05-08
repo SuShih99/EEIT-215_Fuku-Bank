@@ -2,6 +2,8 @@ package com.javaeasybank.creditcard.service;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,7 +21,8 @@ public class BillService {
 	private final CardBillRepository cardBillRepository;
 	private final CardBillMapper cardBillMapper;
 	
-	public List<CardBillResponseDto> findAll() {
-		return cardBillMapper.toDtoList(cardBillRepository.findAll());
+	public Page<CardBillResponseDto> findAll(Pageable pageable) {
+		
+		return cardBillRepository.findAll(pageable).map(cardBillMapper::toDto);
 	}
 }
