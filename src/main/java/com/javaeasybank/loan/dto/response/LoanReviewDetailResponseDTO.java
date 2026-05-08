@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 public class LoanReviewDetailResponseDTO {
     private String reviewId;
     private String applicationId;
-    private Long confirmedAmount;
+    private BigDecimal confirmedAmount;
     private Integer confirmedPeriod;
     private BigDecimal confirmedRate;
     private String collateralNote;

@@ -68,4 +68,11 @@ public class LoanAdminController {
             @PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.success(loanApplicationService.getReviewDetail(id)));
     }
+
+    // 置頂：最近被風控或帳戶模組異動的申請
+    @GetMapping("/recent-updates")
+    public ResponseEntity<ApiResponse<List<LoanApplicationResponseDTO>>> getRecentlyUpdated() {
+        return ResponseEntity.ok(ApiResponse.success(
+                loanApplicationService.getRecentlyUpdated()));
+    }
 }

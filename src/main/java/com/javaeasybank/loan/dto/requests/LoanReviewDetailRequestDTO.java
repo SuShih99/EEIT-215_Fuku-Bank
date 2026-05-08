@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 public class LoanReviewDetailRequestDTO {
-    private Long confirmedAmount;
+    private BigDecimal confirmedAmount;
     private Integer confirmedPeriod;
     private BigDecimal confirmedRate;
     private String collateralNote;

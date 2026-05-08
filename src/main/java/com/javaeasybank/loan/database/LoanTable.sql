@@ -1,32 +1,102 @@
--- ===建表===
+-- ══════════════════════════════════════════
+--  1. LOAN_APPLICATION  貸款申請主表
+-- ══════════════════════════════════════════
 CREATE TABLE LOAN_APPLICATION (
-    application_id      NVARCHAR(50)    NOT NULL PRIMARY KEY,
-    customer_id         NVARCHAR(50)    NULL,
-    applicant_name      NVARCHAR(50)    NULL,
-    applicant_phone     NVARCHAR(20)    NULL,
-    applicant_email     NVARCHAR(100)   NULL,
-    apply_type          NVARCHAR(20)    NOT NULL,
-    apply_amount        BIGINT          NOT NULL,
-    apply_period        INT             NOT NULL,
-    rate                DECIMAL(15,2)   NOT NULL,
-    application_status  NVARCHAR(20)    NOT NULL,
-    create_time         DATETIME2       NOT NULL,
-    latest_contact_status NVARCHAR(20)  NULL,
-    latest_contact_time   DATETIME2     NULL
+                                  application_id        NVARCHAR(50)    NOT NULL,
+                                  customer_id           NVARCHAR(50)    NOT NULL,
+                                  apply_type            NVARCHAR(50)    NULL,
+                                  apply_amount          DECIMAL(18, 2)  NULL,
+                                  apply_period          INT             NULL,
+                                  rate                  DECIMAL(10, 6)  NULL,
+                                  application_status    NVARCHAR(30)    NOT NULL,   -- LoanApplicationStatus enum
+                                  create_time           DATETIME2       NOT NULL,
+                                  latest_contact_status NVARCHAR(30)    NULL,       -- LoanContactStatus enum
+                                  latest_contact_time   DATETIME2       NULL,
+                                  update_time           DATETIME2       NULL,
+                                  CONSTRAINT PK_LOAN_APPLICATION PRIMARY KEY (application_id)
 );
 
--- ===測試資料（全部 PENDING_CONTACT）===
-INSERT INTO LOAN_APPLICATION (
-    application_id, customer_id,
-    applicant_name, applicant_phone, applicant_email,
-    apply_type, apply_amount, apply_period, rate,
-    application_status, create_time,
-    latest_contact_status, latest_contact_time
-) VALUES
+-- ══════════════════════════════════════════
+--  2. LOAN_CONTACT_LOG  聯繫紀錄子表（只寫不改）
+-- ══════════════════════════════════════════
+CREATE TABLE LOAN_CONTACT_LOG (
+                                  log_id             NVARCHAR(50)    NOT NULL,
+                                  application_id     NVARCHAR(50)    NOT NULL,
+                                  emp_id             NVARCHAR(50)    NULL,
+                                  contact_status     NVARCHAR(30)    NULL,           -- LoanContactStatus enum
+                                  contact_channel    NVARCHAR(20)    NULL,           -- LoanContactChannel enum
+                                  contact_time       DATETIME2       NULL,
+                                  note               NVARCHAR(1000)  NULL,
+                                  CONSTRAINT PK_LOAN_CONTACT_LOG PRIMARY KEY (log_id),
+                                  CONSTRAINT FK_CONTACT_LOG_APPLICATION
+                                      FOREIGN KEY (application_id)
+                                          REFERENCES LOAN_APPLICATION (application_id)
+);
 
--- 1. 會員 | 個人信貸 36期 | rate = 0.04 + 0.005 = 0.045
-('LA202504201031000001', 'C10001',
- NULL, NULL, NULL,
- 'PERSONAL', 500000, 36, 0.04500,
- 'PENDING_CONTACT', '2025-04-20 10:31:00',
- NULL, NULL),
+-- ══════════════════════════════════════════
+--  3. LOAN_REVIEW_DETAIL  二次填單子表
+-- ══════════════════════════════════════════
+CREATE TABLE LOAN_REVIEW_DETAIL (
+                                    review_id          NVARCHAR(50)    NOT NULL,
+                                    application_id     NVARCHAR(50)    NOT NULL,
+                                    confirmed_amount   DECIMAL(18, 2)  NULL,
+                                    confirmed_period   INT             NULL,
+                                    confirmed_rate     DECIMAL(10, 6)  NULL,
+                                    collateral_note    NVARCHAR(2000)  NULL,
+                                    emp_id             NVARCHAR(50)    NULL,
+                                    review_time        DATETIME2       NULL,
+                                    review_status      NVARCHAR(20)    NULL,           -- LoanReviewStatus enum
+                                    submitted_time     DATETIME2       NULL,
+                                    review_note        NVARCHAR(2000)  NULL,
+                                    CONSTRAINT PK_LOAN_REVIEW_DETAIL PRIMARY KEY (review_id),
+                                    CONSTRAINT FK_REVIEW_DETAIL_APPLICATION
+                                        FOREIGN KEY (application_id)
+                                            REFERENCES LOAN_APPLICATION (application_id)
+);
+
+-- ══════════════════════════════════════════
+--  4. LOAN_ACCOUNT  貸款帳戶主表
+-- ══════════════════════════════════════════
+CREATE TABLE LOAN_ACCOUNT (
+                              account_id            NVARCHAR(50)    NOT NULL,
+                              application_id        NVARCHAR(50)    NOT NULL,
+                              customer_id           NVARCHAR(50)    NOT NULL,
+                              apply_type            NVARCHAR(50)    NULL,
+                              principal_amount      BIGINT          NULL,
+                              period                INT             NULL,
+                              rate                  DECIMAL(10, 6)  NULL,
+                              monthly_payment       DECIMAL(18, 2)  NULL,
+                              paid_periods          INT             NOT NULL  DEFAULT 0,
+                              remaining_principal   DECIMAL(18, 2)  NULL,
+                              start_date            DATE            NULL,
+                              next_payment_date     DATE            NULL,
+                              account_status        NVARCHAR(20)    NOT NULL,   -- LoanAccountStatus enum
+                              create_time           DATETIME2       NOT NULL,
+                              update_time           DATETIME2       NULL,
+                              CONSTRAINT PK_LOAN_ACCOUNT PRIMARY KEY (account_id),
+                              CONSTRAINT FK_LOAN_ACCOUNT_APPLICATION
+                                  FOREIGN KEY (application_id)
+                                      REFERENCES LOAN_APPLICATION (application_id)
+);
+
+-- ══════════════════════════════════════════
+--  5. LOAN_REPAYMENT  每期還款紀錄
+-- ══════════════════════════════════════════
+CREATE TABLE LOAN_REPAYMENT (
+                                repayment_id        NVARCHAR(50)    NOT NULL,
+                                account_id          NVARCHAR(50)    NOT NULL,
+                                period_index        INT             NOT NULL,
+                                scheduled_date      DATE            NOT NULL,
+                                paid_date           DATE            NULL,
+                                total_amount        DECIMAL(18, 2)  NOT NULL,
+                                principal_portion   DECIMAL(18, 2)  NOT NULL,
+                                interest_portion    DECIMAL(18, 2)  NOT NULL,
+                                remaining_after     DECIMAL(18, 2)  NULL,
+                                repayment_status    NVARCHAR(20)    NOT NULL,     -- LoanRepaymentStatus enum
+                                create_time         DATETIME2       NOT NULL,
+                                update_time         DATETIME2       NULL,
+                                CONSTRAINT PK_LOAN_REPAYMENT PRIMARY KEY (repayment_id),
+                                CONSTRAINT FK_REPAYMENT_ACCOUNT
+                                    FOREIGN KEY (account_id)
+                                        REFERENCES LOAN_ACCOUNT (account_id)
+);

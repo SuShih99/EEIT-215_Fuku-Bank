@@ -3,6 +3,7 @@
     <transition name="modal-fade">
       <div v-if="modelValue" class="modal-overlay" @click.self="close">
         <div class="modal" @click.stop>
+
           <!-- ── Header ── -->
           <div class="modal-header">
             <div class="header-left">
@@ -25,8 +26,10 @@
 
           <div class="modal-body">
             <div class="modal-columns">
+
               <!-- ── 左欄：申請資訊 + 現有填單摘要 ── -->
               <div class="info-panel">
+
                 <!-- 申請資訊 -->
                 <div class="section-title">申請資訊</div>
                 <div class="info-grid">
@@ -51,9 +54,7 @@
                   <div class="info-row">
                     <span class="info-label">申請人</span>
                     <span class="info-val">
-                      {{
-                        app?.applicantName || (app?.customerId ? `會員 #${app.customerId}` : '—')
-                      }}
+                      {{ app?.applicantName || (app?.customerId ? `會員 #${app.customerId}` : '—') }}
                     </span>
                   </div>
                   <div class="info-row" v-if="app?.applicantPhone">
@@ -72,7 +73,7 @@
 
                 <!-- 現有填單摘要 -->
                 <template v-if="reviewLoading">
-                  <div class="section-title" style="margin-top: 20px">現有填單</div>
+                  <div class="section-title" style="margin-top:20px">現有填單</div>
                   <div class="review-skel">
                     <div v-for="i in 4" :key="i" class="sk-row">
                       <div class="sk sk-label"></div>
@@ -90,9 +91,7 @@
                   <div class="info-grid">
                     <div class="info-row">
                       <span class="info-label">確認金額</span>
-                      <span class="info-val amount">{{
-                        formatAmount(review.confirmedAmount)
-                      }}</span>
+                      <span class="info-val amount">{{ formatAmount(review.confirmedAmount) }}</span>
                     </div>
                     <div class="info-row">
                       <span class="info-label">確認期數</span>
@@ -112,15 +111,11 @@
                     </div>
                     <div class="info-row">
                       <span class="info-label">填單時間</span>
-                      <span class="info-val mono small">{{
-                        formatDateTime(review.reviewTime)
-                      }}</span>
+                      <span class="info-val mono small">{{ formatDateTime(review.reviewTime) }}</span>
                     </div>
                     <div class="info-row" v-if="review.submittedTime">
                       <span class="info-label">送審時間</span>
-                      <span class="info-val mono small">{{
-                        formatDateTime(review.submittedTime)
-                      }}</span>
+                      <span class="info-val mono small">{{ formatDateTime(review.submittedTime) }}</span>
                     </div>
                     <div class="info-row" v-if="review.reviewNote">
                       <span class="info-label">審核備注</span>
@@ -136,6 +131,7 @@
                     <span>尚未建立填單草稿</span>
                   </div>
                 </template>
+
               </div>
 
               <!-- ── 右欄：填單表單 ── -->
@@ -163,6 +159,7 @@
 
                 <!-- Form -->
                 <fieldset class="form-fields" :disabled="isSubmitted">
+
                   <div class="field-row">
                     <div class="field">
                       <label class="field-label">確認金額（TWD）<span class="req">*</span></label>
@@ -254,6 +251,7 @@
                       </span>
                     </div>
                   </div>
+
                 </fieldset>
 
                 <!-- 驗證錯誤提示 -->
@@ -263,18 +261,10 @@
 
                 <!-- Action buttons -->
                 <div class="form-actions" v-if="!isSubmitted">
-                  <button
-                    class="btn btn-ghost"
-                    @click="resetForm"
-                    :disabled="saveLoading || submitLoading"
-                  >
+                  <button class="btn btn-ghost" @click="resetForm" :disabled="saveLoading || submitLoading">
                     重置
                   </button>
-                  <button
-                    class="btn btn-draft"
-                    @click="saveDraft"
-                    :disabled="saveLoading || submitLoading"
-                  >
+                  <button class="btn btn-draft" @click="saveDraft" :disabled="saveLoading || submitLoading">
                     <span v-if="saveLoading" class="spin">⟳</span>
                     <span v-else>💾</span>
                     儲存草稿
@@ -294,9 +284,11 @@
                 <div class="form-hint-row" v-if="!review && !isSubmitted">
                   <span class="hint-icon">ℹ️</span> 請先儲存草稿，才能執行送審
                 </div>
+
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </transition>
@@ -305,8 +297,7 @@
 
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
-import api from '@/api/axios'
-import { BASE_URL } from '@/api/axios'
+import axios from 'axios'
 
 // ── Props / Emits ──
 const props = defineProps({
@@ -316,30 +307,26 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'review-updated'])
 
 // ── Constants ──
+const BASE_URL = 'http://localhost:8080'
 
 const LOAN_TYPE_NAME = {
-  PERSONAL: '個人信貸',
-  CAR: '汽車貸款',
-  MOTOR: '機車貸款',
-  STUDENT: '學貸',
-  BUSINESS: '創業貸款',
-  HOUSE: '房屋貸款',
-  LAND: '土地貸款',
+  PERSONAL: '個人信貸', CAR: '汽車貸款', MOTOR: '機車貸款', STUDENT: '學貸',
+  BUSINESS: '創業貸款', HOUSE: '房屋貸款', LAND: '土地貸款',
 }
 
 // ── State ──
-const review = ref(null)
+const review       = ref(null)
 const reviewLoading = ref(false)
-const saveLoading = ref(false)
+const saveLoading  = ref(false)
 const submitLoading = ref(false)
-const submitted = ref(false)
+const submitted    = ref(false)
 
 const form = reactive({
   confirmedAmount: null,
   confirmedPeriod: null,
-  confirmedRate: null,
-  collateralNote: '',
-  empId: '',
+  confirmedRate:   null,
+  collateralNote:  '',
+  empId:           '',
 })
 
 const alert = reactive({ show: false, type: 'success', msg: '' })
@@ -347,28 +334,22 @@ const alert = reactive({ show: false, type: 'success', msg: '' })
 // ── Computed ──
 const isSubmitted = computed(() => review.value?.reviewStatus === 'SUBMITTED')
 
-const reviewStatusLabel = computed(
-  () =>
-    ({
-      DRAFT: '草稿',
-      SUBMITTED: '已送審',
-    })[review.value?.reviewStatus] || review.value?.reviewStatus,
-)
+const reviewStatusLabel = computed(() => ({
+  DRAFT:     '草稿',
+  SUBMITTED: '已送審',
+}[review.value?.reviewStatus] || review.value?.reviewStatus))
 
-const reviewStatusClass = computed(
-  () =>
-    ({
-      DRAFT: 'rs-draft',
-      SUBMITTED: 'rs-submitted',
-    })[review.value?.reviewStatus] || '',
-)
+const reviewStatusClass = computed(() => ({
+  DRAFT:     'rs-draft',
+  SUBMITTED: 'rs-submitted',
+}[review.value?.reviewStatus] || ''))
 
 // 驗證
 const v$ = computed(() => ({
   confirmedAmount: submitted.value && !form.confirmedAmount,
   confirmedPeriod: submitted.value && !form.confirmedPeriod,
-  confirmedRate: submitted.value && form.confirmedRate == null,
-  empId: submitted.value && !form.empId,
+  confirmedRate:   submitted.value && form.confirmedRate == null,
+  empId:           submitted.value && !form.empId,
 }))
 const hasValidateErr = computed(() => Object.values(v$.value).some(Boolean))
 
@@ -388,27 +369,24 @@ const rateDiff = computed(() => {
   const d = parseFloat((form.confirmedRate - parseFloat(props.app.rate)).toFixed(6))
   return d !== 0 ? d : null
 })
-const hasDiff = computed(
-  () => amountDiff.value !== null || periodDiff.value !== null || rateDiff.value !== null,
+const hasDiff = computed(() =>
+  amountDiff.value !== null || periodDiff.value !== null || rateDiff.value !== null
 )
 
 // ── Watch：開啟時載入 ──
-watch(
-  () => props.modelValue,
-  async (open) => {
-    if (open && props.app?.applicationId) {
-      await fetchReview()
-    }
-  },
-)
+watch(() => props.modelValue, async (open) => {
+  if (open && props.app?.applicationId) {
+    await fetchReview()
+  }
+})
 
 // ── Methods ──
 async function fetchReview() {
   reviewLoading.value = true
   review.value = null
   try {
-    const res = await api.get(
-      `${BASE_URL}/api/admin/loan-applications/${props.app.applicationId}/review`,
+    const res = await axios.get(
+      `${BASE_URL}/api/admin/loan-applications/${props.app.applicationId}/review`
     )
     if (res.data.success && res.data.data) {
       review.value = res.data.data
@@ -425,22 +403,16 @@ async function fetchReview() {
 function prefillForm(r) {
   form.confirmedAmount = r.confirmedAmount ?? null
   form.confirmedPeriod = r.confirmedPeriod ?? null
-  form.confirmedRate = r.confirmedRate != null ? parseFloat(r.confirmedRate) : null
-  form.collateralNote = r.collateralNote ?? ''
-  form.empId = r.empId ?? ''
+  form.confirmedRate   = r.confirmedRate   != null ? parseFloat(r.confirmedRate) : null
+  form.collateralNote  = r.collateralNote  ?? ''
+  form.empId           = r.empId           ?? ''
 }
 
 function resetForm() {
   if (review.value) {
     prefillForm(review.value)
   } else {
-    Object.assign(form, {
-      confirmedAmount: null,
-      confirmedPeriod: null,
-      confirmedRate: null,
-      collateralNote: '',
-      empId: '',
-    })
+    Object.assign(form, { confirmedAmount: null, confirmedPeriod: null, confirmedRate: null, collateralNote: '', empId: '' })
   }
   submitted.value = false
   alert.show = false
@@ -453,13 +425,16 @@ async function saveDraft() {
   saveLoading.value = true
   alert.show = false
   try {
-    await api.post(`${BASE_URL}/api/admin/loan-applications/${props.app.applicationId}/review`, {
-      confirmedAmount: form.confirmedAmount,
-      confirmedPeriod: form.confirmedPeriod,
-      confirmedRate: form.confirmedRate,
-      collateralNote: form.collateralNote,
-      empId: form.empId,
-    })
+    await axios.post(
+      `${BASE_URL}/api/admin/loan-applications/${props.app.applicationId}/review`,
+      {
+        confirmedAmount: form.confirmedAmount,
+        confirmedPeriod: form.confirmedPeriod,
+        confirmedRate:   form.confirmedRate,
+        collateralNote:  form.collateralNote,
+        empId:           form.empId,
+      }
+    )
     showAlert('success', '草稿已儲存')
     submitted.value = false
     await fetchReview()
@@ -476,8 +451,8 @@ async function submitReview() {
   submitLoading.value = true
   alert.show = false
   try {
-    await api.patch(
-      `${BASE_URL}/api/admin/loan-applications/${props.app.applicationId}/review/submit`,
+    await axios.patch(
+      `${BASE_URL}/api/admin/loan-applications/${props.app.applicationId}/review/submit`
     )
     showAlert('success', '已成功送審！')
     await fetchReview()
@@ -491,10 +466,7 @@ async function submitReview() {
 
 function showAlert(type, msg) {
   Object.assign(alert, { show: true, type, msg })
-  if (type === 'success')
-    setTimeout(() => {
-      alert.show = false
-    }, 4000)
+  if (type === 'success') setTimeout(() => { alert.show = false }, 4000)
 }
 
 function close() {
@@ -502,47 +474,38 @@ function close() {
 }
 
 // ── Formatters ──
-function formatAmount(n) {
-  return n ? '$ ' + Number(n).toLocaleString('zh-TW') : '—'
-}
-function formatRate(r) {
-  return r != null ? (parseFloat(r) * 100).toFixed(2) + '%' : '—'
-}
-function formatDateTime(d) {
-  return d ? d.replace('T', ' ').substring(0, 16) : '—'
-}
+function formatAmount(n)   { return n ? '$ ' + Number(n).toLocaleString('zh-TW') : '—' }
+function formatRate(r)     { return r != null ? (parseFloat(r) * 100).toFixed(2) + '%' : '—' }
+function formatDateTime(d) { return d ? d.replace('T', ' ').substring(0, 16) : '—' }
 </script>
 
 <style scoped>
 /* ── Variables ── */
 .modal-overlay {
-  --accent: #2563eb;
-  --accent-dim: rgba(37, 99, 235, 0.08);
-  --accent-lt: rgba(37, 99, 235, 0.15);
-  --surface: #ffffff;
-  --surface-2: #f1f5f9;
-  --border: #e2e8f0;
-  --border-2: #cbd5e1;
-  --ink: #0f172a;
-  --ink-2: #1e293b;
-  --muted: #94a3b8;
-  --muted-2: #64748b;
-  --red: #dc2626;
-  --green: #16a34a;
-  --blue: #2563eb;
-  --gold: #d97706;
+  --accent:     #A65A4D;
+  --accent-dim: rgba(166, 90, 77, 0.10);
+  --accent-lt:  rgba(166, 90, 77, 0.20);
+  --surface:    #FDFAF6;
+  --surface-2:  #EAE4DA;
+  --border:     #D6CEC3;
+  --border-2:   #C4BBB0;
+  --ink:        #2B2B2B;
+  --ink-2:      #3D3530;
+  --muted:      #A89A8E;
+  --muted-2:    #6E6259;
+  --primary:    #5C6B5F;
+  --primary-dk: #3F4A42;
+  --red:        #A65A4D;
+  --green:      #5C6B5F;
+  --gold:       #8C7355;
 }
 
 /* ── Overlay ── */
 .modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 500;
+  position: fixed; inset: 0; z-index: 500;
   background: rgba(15, 23, 42, 0.45);
   backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   padding: 24px;
 }
 
@@ -551,123 +514,58 @@ function formatDateTime(d) {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
-  width: 100%;
-  max-width: 900px;
+  width: 100%; max-width: 900px;
   max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
+  display: flex; flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.18);
   overflow: hidden;
 }
 
 /* Transitions */
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition:
-    opacity 0.2s,
-    transform 0.2s;
-}
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
-  transform: scale(0.97) translateY(8px);
-}
-.alert-fade-enter-active,
-.alert-fade-leave-active {
-  transition: opacity 0.2s;
-}
-.alert-fade-enter-from,
-.alert-fade-leave-to {
-  opacity: 0;
-}
+.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.2s, transform 0.2s; }
+.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; transform: scale(0.97) translateY(8px); }
+.alert-fade-enter-active, .alert-fade-leave-active { transition: opacity 0.2s; }
+.alert-fade-enter-from, .alert-fade-leave-to { opacity: 0; }
 
 /* ── Header ── */
 .modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: flex; align-items: center; justify-content: space-between;
   padding: 18px 22px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.modal-icon {
-  font-size: 22px;
-}
+.header-left { display: flex; align-items: center; gap: 12px; }
+.modal-icon  { font-size: 22px; }
 .modal-title {
   font-family: 'Noto Serif TC', serif;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--ink);
+  font-size: 16px; font-weight: 700; color: var(--ink);
 }
-.modal-sub {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-  flex-wrap: wrap;
-}
+.modal-sub { display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
 .id-chip {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  color: var(--accent);
-  background: var(--accent-dim);
-  border: 1px solid var(--accent-lt);
-  padding: 2px 8px;
-  border-radius: 4px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  color: var(--accent); background: var(--accent-dim);
+  border: 1px solid var(--accent-lt); padding: 2px 8px; border-radius: 4px;
 }
-.applicant-hint {
-  font-size: 12px;
-  color: var(--muted-2);
-}
+.applicant-hint { font-size: 12px; color: var(--muted-2); }
 
 .review-status-badge {
-  font-size: 10px;
-  font-family: 'IBM Plex Mono', monospace;
-  padding: 2px 8px;
-  border-radius: 20px;
-  border: 1px solid;
-  font-weight: 600;
+  font-size: 10px; font-family: 'IBM Plex Mono', monospace;
+  padding: 2px 8px; border-radius: 20px; border: 1px solid; font-weight: 600;
 }
-.rs-draft {
-  color: var(--gold);
-  border-color: #fcd34d;
-  background: #fffbeb;
-}
-.rs-submitted {
-  color: #166534;
-  border-color: #86efac;
-  background: #f0fdf4;
-}
+.rs-draft     { color: var(--gold); border-color: #C4B090; background: #F5EFE6; }
+.rs-submitted { color: var(--primary-dk); border-color: #A5B8A9; background: #ECF0EC; }
 
 .close-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: transparent;
-  cursor: pointer;
-  color: var(--muted-2);
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 30px; height: 30px; border-radius: 8px;
+  border: 1px solid var(--border); background: transparent;
+  cursor: pointer; color: var(--muted-2); font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
   transition: all 0.15s;
 }
-.close-btn:hover {
-  background: var(--surface-2);
-  color: var(--ink);
-}
+.close-btn:hover { background: var(--surface-2); color: var(--ink); }
 
 /* ── Body ── */
-.modal-body {
-  flex: 1;
-  overflow: hidden;
-}
+.modal-body { flex: 1; overflow: hidden; }
 .modal-columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -677,434 +575,183 @@ function formatDateTime(d) {
 /* ── Left Panel ── */
 .info-panel {
   border-right: 1px solid var(--border);
-  overflow-y: auto;
-  max-height: 80vh;
+  overflow-y: auto; max-height: 80vh;
   padding: 18px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+  display: flex; flex-direction: column; gap: 0;
 }
 .section-title {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--muted-2);
+  font-size: 11px; font-weight: 600; color: var(--muted-2);
   font-family: 'IBM Plex Mono', monospace;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0.1em; text-transform: uppercase;
   margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: flex; align-items: center; gap: 10px;
 }
-.review-id {
-  font-size: 10px;
-  color: var(--muted);
-  font-weight: 400;
-}
-.section-divider {
-  border: none;
-  border-top: 1px solid var(--border);
-  margin: 18px 0;
-}
+.review-id { font-size: 10px; color: var(--muted); font-weight: 400; }
+.section-divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
 
-.info-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
+.info-grid { display: flex; flex-direction: column; gap: 9px; }
 .info-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
 }
 .info-label {
-  font-size: 12px;
-  color: var(--muted-2);
-  white-space: nowrap;
-  flex-shrink: 0;
+  font-size: 12px; color: var(--muted-2); white-space: nowrap; flex-shrink: 0;
   font-family: 'IBM Plex Mono', monospace;
 }
 .info-val {
-  font-size: 13px;
-  color: var(--ink-2);
-  text-align: right;
+  font-size: 13px; color: var(--ink-2); text-align: right;
   word-break: break-all;
 }
-.info-val.amount {
-  font-family: 'IBM Plex Mono', monospace;
-  font-weight: 600;
-  color: var(--ink);
-}
-.info-val.rate {
-  font-family: 'IBM Plex Mono', monospace;
-  color: var(--green);
-  font-weight: 500;
-}
-.info-val.mono {
-  font-family: 'IBM Plex Mono', monospace;
-}
-.info-val.small {
-  font-size: 11px;
-  color: var(--muted-2);
-}
+.info-val.amount { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--ink); }
+.info-val.rate   { font-family: 'IBM Plex Mono', monospace; color: var(--green); font-weight: 500; }
+.info-val.mono   { font-family: 'IBM Plex Mono', monospace; }
+.info-val.small  { font-size: 11px; color: var(--muted-2); }
 
 /* Type badge */
 .type-badge {
-  font-size: 11px;
-  font-family: 'IBM Plex Mono', monospace;
-  padding: 2px 8px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--muted-2);
-  display: inline-block;
+  font-size: 11px; font-family: 'IBM Plex Mono', monospace;
+  padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border);
+  background: var(--surface-2); color: var(--muted-2); display: inline-block;
 }
-.type-PERSONAL {
-  color: #b45309;
-  border-color: #fde68a;
-  background: #fffbeb;
-}
-.type-CAR {
-  color: #1d4ed8;
-  border-color: #bfdbfe;
-  background: #eff6ff;
-}
-.type-MOTOR {
-  color: #c2410c;
-  border-color: #fed7aa;
-  background: #fff7ed;
-}
-.type-STUDENT {
-  color: #15803d;
-  border-color: #bbf7d0;
-  background: #f0fdf4;
-}
-.type-BUSINESS {
-  color: #6d28d9;
-  border-color: #ddd6fe;
-  background: #f5f3ff;
-}
-.type-HOUSE {
-  color: #0f766e;
-  border-color: #99f6e4;
-  background: #f0fdfa;
-}
-.type-LAND {
-  color: #78716c;
-  border-color: #e7e5e4;
-  background: #fafaf9;
-}
+.type-PERSONAL { color: #7A5C3A; border-color: #D6CEC3; background: #F5F1EA; }
+.type-CAR      { color: #3F5F5A; border-color: #B5CECA; background: #EEF3F2; }
+.type-MOTOR    { color: #7A4A38; border-color: #D4B8AE; background: #F5EDE9; }
+.type-STUDENT  { color: #4A6B5C; border-color: #B5CCBF; background: #EEF3EF; }
+.type-BUSINESS { color: #5C5074; border-color: #C4BCDA; background: #F0EEF5; }
+.type-HOUSE    { color: #3D5C58; border-color: #AECBC7; background: #EBF2F1; }
+.type-LAND     { color: #6E6259; border-color: #D6CEC3; background: #EAE4DA; }
 
 /* Skeleton */
-.review-skel {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 4px;
-}
-.sk-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+.review-skel { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.sk-row { display: flex; justify-content: space-between; align-items: center; }
 .sk {
-  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s infinite;
+  background: linear-gradient(90deg, #EAE4DA 25%, #D6CEC3 50%, #EAE4DA 75%);
+  background-size: 200% 100%; animation: shimmer 1.4s infinite;
   border-radius: 4px;
 }
-.sk-label {
-  width: 60px;
-  height: 12px;
-}
-.sk-val {
-  width: 100px;
-  height: 12px;
-}
-@keyframes shimmer {
-  to {
-    background-position: -200% 0;
-  }
-}
+.sk-label { width: 60px; height: 12px; }
+.sk-val   { width: 100px; height: 12px; }
+@keyframes shimmer { to { background-position: -200% 0; } }
 
 /* No review */
 .no-review {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--muted);
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--muted);
   padding: 14px 0;
 }
-.no-review-icon {
-  font-size: 18px;
-  opacity: 0.5;
-}
+.no-review-icon { font-size: 18px; opacity: 0.5; }
 
 /* ── Right Panel ── */
 .form-panel {
-  overflow-y: auto;
-  max-height: 80vh;
+  overflow-y: auto; max-height: 80vh;
   padding: 18px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: flex; flex-direction: column; gap: 16px;
 }
 
 /* Fields */
-.form-fields {
-  border: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-.form-fields:disabled {
-  opacity: 0.6;
-  pointer-events: none;
-}
+.form-fields { border: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 14px; }
+.form-fields:disabled { opacity: 0.6; pointer-events: none; }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-.field-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .field-label {
-  font-size: 12px;
-  color: var(--muted-2);
-  font-family: 'IBM Plex Mono', monospace;
-  letter-spacing: 0.04em;
+  font-size: 12px; color: var(--muted-2);
+  font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.04em;
 }
-.req {
-  color: var(--red);
-  margin-left: 2px;
-}
-.field-input,
-.field-textarea {
+.req { color: var(--red); margin-left: 2px; }
+.field-input, .field-textarea {
   background: var(--surface);
   border: 1px solid var(--border-2);
-  border-radius: 8px;
-  color: var(--ink);
-  font-family: 'Noto Sans TC', sans-serif;
-  font-size: 13px;
-  padding: 9px 12px;
-  outline: none;
-  width: 100%;
-  transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
+  border-radius: 8px; color: var(--ink);
+  font-family: 'Noto Sans TC', sans-serif; font-size: 13px;
+  padding: 9px 12px; outline: none; width: 100%;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-.field-input:focus,
-.field-textarea:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-dim);
+.field-input:focus, .field-textarea:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim);
 }
-.field-input.error {
-  border-color: var(--red);
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
-}
-.field-textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-.field-hint {
-  font-size: 11px;
-  color: var(--muted);
-  font-family: 'IBM Plex Mono', monospace;
-}
+.field-input.error { border-color: var(--red); box-shadow: 0 0 0 3px rgba(166,90,77,0.12); }
+.field-textarea { resize: vertical; min-height: 80px; }
+.field-hint { font-size: 11px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
 
-.rate-input-wrap {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.rate-input-wrap .field-input {
-  flex: 1;
-}
+.rate-input-wrap { display: flex; align-items: center; gap: 10px; }
+.rate-input-wrap .field-input { flex: 1; }
 .rate-preview {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--green);
-  white-space: nowrap;
+  font-family: 'IBM Plex Mono', monospace; font-size: 15px;
+  font-weight: 600; color: var(--green); white-space: nowrap;
 }
 
 /* Diff hints */
 .diff-hints {
-  padding: 12px 14px;
-  border-radius: 8px;
-  background: #fffbeb;
-  border: 1px solid #fcd34d;
+  padding: 12px 14px; border-radius: 8px;
+  background: #F5EFE6; border: 1px solid #C4B090;
 }
-.diff-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: #92400e;
-  margin-bottom: 8px;
-}
-.diff-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 4px;
-}
-.diff-label {
-  font-size: 12px;
-  color: #92400e;
-  font-family: 'IBM Plex Mono', monospace;
-}
-.diff-val {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 12px;
-  font-weight: 600;
-}
-.diff-val.up {
-  color: var(--red);
-}
-.diff-val.down {
-  color: var(--green);
-}
+.diff-title { font-size: 12px; font-weight: 600; color: var(--gold); margin-bottom: 8px; }
+.diff-row { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+.diff-label { font-size: 12px; color: var(--gold); font-family: 'IBM Plex Mono', monospace; }
+.diff-val { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; }
+.diff-val.up   { color: var(--red);   }
+.diff-val.down { color: var(--green); }
 
 /* Submitted banner */
 .submitted-banner {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
-  border-radius: 8px;
-  background: #f0fdf4;
-  border: 1px solid #86efac;
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 16px; border-radius: 8px;
+  background: #ECF0EC; border: 1px solid #A5B8A9;
 }
-.submitted-icon {
-  font-size: 20px;
-  flex-shrink: 0;
-}
-.submitted-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #166534;
-  margin-bottom: 2px;
-}
-.submitted-sub {
-  font-size: 12px;
-  color: #16a34a;
-}
+.submitted-icon { font-size: 20px; flex-shrink: 0; }
+.submitted-title { font-size: 14px; font-weight: 600; color: var(--primary-dk); margin-bottom: 2px; }
+.submitted-sub   { font-size: 12px; color: var(--primary); }
 
 /* Alert */
 .form-alert {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-size: 13px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; border-radius: 8px; font-size: 13px;
 }
-.alert-success {
-  background: #f0fdf4;
-  border: 1px solid #86efac;
-  color: #166534;
-}
-.alert-error {
-  background: #fef2f2;
-  border: 1px solid #fca5a5;
-  color: #991b1b;
-}
+.alert-success { background: rgba(92,107,95,0.08); border: 1px solid rgba(92,107,95,0.3); color: var(--primary-dk); }
+.alert-error   { background: rgba(166,90,77,0.08); border: 1px solid rgba(166,90,77,0.3); color: var(--accent); }
 
 /* Validate error */
 .validate-err {
-  font-size: 12px;
-  color: var(--red);
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  font-size: 12px; color: var(--red);
+  display: flex; align-items: center; gap: 4px;
 }
 
 /* Form hint row */
 .form-hint-row {
-  font-size: 12px;
-  color: var(--muted-2);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  font-size: 12px; color: var(--muted-2);
+  display: flex; align-items: center; gap: 6px;
 }
-.hint-icon {
-  font-size: 14px;
-}
+.hint-icon { font-size: 14px; }
 
 /* Action buttons */
-.form-actions {
-  display: flex;
-  gap: 8px;
-  padding-top: 4px;
-}
+.form-actions { display: flex; gap: 8px; padding-top: 4px; }
 .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: none;
-  border-radius: 8px;
+  display: inline-flex; align-items: center; gap: 6px;
+  border: none; border-radius: 8px;
   font-family: 'Noto Sans TC', sans-serif;
-  cursor: pointer;
-  transition: all 0.15s;
-  font-weight: 500;
-  font-size: 13px;
+  cursor: pointer; transition: all 0.15s; font-weight: 500; font-size: 13px;
   padding: 9px 16px;
 }
 .btn-ghost {
-  background: var(--surface-2);
-  color: var(--muted-2);
-  border: 1px solid var(--border);
+  background: var(--surface-2); color: var(--muted-2); border: 1px solid var(--border);
 }
-.btn-ghost:hover {
-  border-color: var(--border-2);
-  color: var(--ink);
-}
-.btn-ghost:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
+.btn-ghost:hover    { border-color: var(--border-2); color: var(--ink); }
+.btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
 .btn-draft {
   flex: 1;
-  background: #fffbeb;
-  color: #92400e;
-  border: 1px solid #fcd34d;
+  background: #F5EFE6; color: var(--gold);
+  border: 1px solid #C4B090;
 }
-.btn-draft:hover:not(:disabled) {
-  background: #fef3c7;
-  border-color: var(--gold);
-}
-.btn-draft:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
+.btn-draft:hover:not(:disabled) { background: #EAE0D0; border-color: var(--gold); }
+.btn-draft:disabled { opacity: 0.4; cursor: not-allowed; }
 .btn-submit {
   flex: 1;
-  background: var(--accent);
-  color: #fff;
+  background: var(--accent); color: #fff;
 }
-.btn-submit:hover:not(:disabled) {
-  background: #1d4ed8;
-}
-.btn-submit:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
+.btn-submit:hover:not(:disabled) { background: var(--primary-dk); }
+.btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* Misc */
-.spin {
-  animation: spin 0.8s linear infinite;
-  display: inline-block;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+.spin { animation: spin 0.8s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>

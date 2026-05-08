@@ -22,27 +22,24 @@ import java.time.LocalDateTime;
 public class LoanApplication {
 
     @Id
-    private String applicationId;          // application_id (PK)
+    private String applicationId;           // 申請編號
 
-    private String customerId;            // customer_id（會員 NULL）
+    private String customerId;              // 用戶ID
 
-    // 非會員另填
-    private String applicantName;          // applicant_name
-    private String applicantPhone;         // applicant_phone
-    private String applicantEmail;         // applicant_email
-
-    private String applyType;              // apply_type（貸款類型）
-    private Long applyAmount;              // apply_amount
-    private Integer applyPeriod;           // apply_period
-    private BigDecimal rate;               // 系統計算利率
+    private String applyType;               // 種類
+    private BigDecimal applyAmount;         // 金額
+    private Integer applyPeriod;            // 期數
+    private BigDecimal rate;                // 系統計算利率
 
     @Enumerated(EnumType.STRING)
-    private LoanApplicationStatus applicationStatus; // application_status
+    private LoanApplicationStatus applicationStatus;    // 申請狀態
 
-    private LocalDateTime createTime;      // create_time
+    private LocalDateTime createTime;                   // 申請時間
 
     @Enumerated(EnumType.STRING)
-    private LoanContactStatus latestContactStatus;   // latest_contact_status
+    private LoanContactStatus latestContactStatus;      // 最新聯絡狀態
 
-    private LocalDateTime latestContactTime;         // latest_contact_time
+    private LocalDateTime latestContactTime;            // 最後聯絡時間
+
+    private LocalDateTime updateTime;                   // 外部模組更新狀態時間
 }

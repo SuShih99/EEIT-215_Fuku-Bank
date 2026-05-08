@@ -3,6 +3,7 @@
     <transition name="modal-fade">
       <div v-if="modelValue" class="modal-overlay" @click.self="close">
         <div class="modal" @click.stop>
+
           <!-- ── Header ── -->
           <div class="modal-header">
             <div class="header-left">
@@ -22,6 +23,7 @@
 
           <div class="modal-body">
             <div class="modal-columns">
+
               <!-- ── 左欄：歷史紀錄 ── -->
               <div class="log-panel">
                 <div class="panel-title">
@@ -110,15 +112,11 @@
                             v-for="s in CONTACT_STATUS_OPTIONS"
                             :key="s.value"
                             :value="s.value"
-                          >
-                            {{ s.label }}
-                          </option>
+                          >{{ s.label }}</option>
                         </select>
                         <span class="select-caret">▾</span>
                       </div>
-                      <span class="field-err" v-if="submitted && !form.contactStatus"
-                        >請選擇聯繫狀態</span
-                      >
+                      <span class="field-err" v-if="submitted && !form.contactStatus">請選擇聯繫狀態</span>
                     </div>
 
                     <div class="field">
@@ -135,9 +133,7 @@
                           {{ ch.icon }} {{ ch.label }}
                         </button>
                       </div>
-                      <span class="field-err" v-if="submitted && !form.contactChannel"
-                        >請選擇聯繫管道</span
-                      >
+                      <span class="field-err" v-if="submitted && !form.contactChannel">請選擇聯繫管道</span>
                     </div>
                   </div>
 
@@ -159,15 +155,21 @@
                     </span>
                   </div>
 
-                  <button class="submit-btn" @click="submitLog" :disabled="submitLoading">
+                  <button
+                    class="submit-btn"
+                    @click="submitLog"
+                    :disabled="submitLoading"
+                  >
                     <span v-if="submitLoading" class="spin">⟳</span>
                     <span v-else>＋</span>
                     新增聯繫紀錄
                   </button>
                 </div>
               </div>
+
             </div>
           </div>
+
         </div>
       </div>
     </transition>
@@ -176,51 +178,51 @@
 
 <script setup>
 import { ref, watch, reactive } from 'vue'
-import api from '@/api/axios'
-import { BASE_URL } from '@/api/axios'
+import axios from 'axios'
 
 // ── Props / Emits ──
 const props = defineProps({
-  modelValue: Boolean, // v-model 控制開關
-  app: Object, // 傳入的申請資料
+  modelValue: Boolean,   // v-model 控制開關
+  app: Object,           // 傳入的申請資料
 })
 const emit = defineEmits(['update:modelValue', 'log-added'])
 
 // ── Constants ──
+const BASE_URL = 'http://localhost:8080'
 
 const STATUS_LABEL = {
   NOT_CONTACTED: '未聯繫',
-  ATTEMPTED: '嘗試中',
-  REACHED: '已接通',
-  CONFIRMED: '已確認',
-  DECLINED: '已放棄',
+  ATTEMPTED:     '嘗試中',
+  REACHED:       '已接通',
+  CONFIRMED:     '已確認',
+  DECLINED:      '已放棄',
 }
 const STATUS_CLASS = {
   NOT_CONTACTED: 'badge-gray',
-  ATTEMPTED: 'badge-blue',
-  REACHED: 'badge-green',
-  CONFIRMED: 'badge-gold',
-  DECLINED: 'badge-red',
+  ATTEMPTED:     'badge-blue',
+  REACHED:       'badge-green',
+  CONFIRMED:     'badge-gold',
+  DECLINED:      'badge-red',
 }
 const CONTACT_STATUS_OPTIONS = [
-  { value: 'NOT_CONTACTED', label: '未聯繫' },
-  { value: 'ATTEMPTED', label: '嘗試中' },
-  { value: 'REACHED', label: '已接通' },
-  { value: 'CONFIRMED', label: '已確認' },
-  { value: 'DECLINED', label: '已放棄' },
+  { value: 'NOT_CONTACTED', label: '未聯繫'  },
+  { value: 'ATTEMPTED',     label: '嘗試中'  },
+  { value: 'REACHED',       label: '已接通'  },
+  { value: 'CONFIRMED',     label: '已確認'  },
+  { value: 'DECLINED',      label: '已放棄'  },
 ]
 const CHANNEL_OPTIONS = [
   { value: 'PHONE', label: '電話', icon: '📞' },
   { value: 'EMAIL', label: 'Email', icon: '✉️' },
-  { value: 'SMS', label: 'SMS', icon: '💬' },
+  { value: 'SMS',   label: 'SMS',  icon: '💬' },
 ]
 const CHANNEL_ICON = { PHONE: '📞', EMAIL: '✉️', SMS: '💬' }
 
 // ── State ──
-const logs = ref([])
+const logs        = ref([])
 const logsLoading = ref(false)
 const submitLoading = ref(false)
-const submitted = ref(false)
+const submitted   = ref(false)
 
 const form = reactive({
   empId: '',
@@ -231,22 +233,19 @@ const form = reactive({
 const formAlert = reactive({ show: false, type: 'success', msg: '' })
 
 // ── Watch：開啟 modal 時載入紀錄 ──
-watch(
-  () => props.modelValue,
-  (open) => {
-    if (open && props.app?.applicationId) {
-      fetchLogs()
-      resetForm()
-    }
-  },
-)
+watch(() => props.modelValue, (open) => {
+  if (open && props.app?.applicationId) {
+    fetchLogs()
+    resetForm()
+  }
+})
 
 // ── Methods ──
 async function fetchLogs() {
   logsLoading.value = true
   try {
-    const res = await api.get(
-      `${BASE_URL}/api/admin/loan-applications/${props.app.applicationId}/contact-logs`,
+    const res = await axios.get(
+      `${BASE_URL}/api/admin/loan-applications/${props.app.applicationId}/contact-logs`
     )
     logs.value = res.data.success ? res.data.data : []
   } catch (e) {
@@ -265,19 +264,19 @@ async function submitLog() {
   submitLoading.value = true
   formAlert.show = false
   try {
-    await api.post(
+    await axios.post(
       `${BASE_URL}/api/admin/loan-applications/${props.app.applicationId}/contact-logs`,
       {
-        empId: form.empId,
-        contactStatus: form.contactStatus,
+        empId:          form.empId,
+        contactStatus:  form.contactStatus,
         contactChannel: form.contactChannel,
-        note: form.note,
-      },
+        note:           form.note,
+      }
     )
     showAlert('success', '聯繫紀錄新增成功')
     resetForm()
-    await fetchLogs() // 重新載入紀錄
-    emit('log-added', props.app) // 通知父元件刷新列表
+    await fetchLogs()                   // 重新載入紀錄
+    emit('log-added', props.app)        // 通知父元件刷新列表
   } catch (e) {
     showAlert('error', e.response?.data?.message || '新增失敗，請稍後再試')
   } finally {
@@ -292,9 +291,7 @@ function resetForm() {
 
 function showAlert(type, msg) {
   Object.assign(formAlert, { show: true, type, msg })
-  setTimeout(() => {
-    formAlert.show = false
-  }, 4000)
+  setTimeout(() => { formAlert.show = false }, 4000)
 }
 
 function close() {
@@ -311,33 +308,30 @@ function formatDateTime(d) {
 <style scoped>
 /* ── Variables ── */
 .modal-overlay {
-  --accent: #2563eb;
-  --accent-dim: rgba(37, 99, 235, 0.08);
-  --accent-lt: rgba(37, 99, 235, 0.15);
-  --surface: #ffffff;
-  --surface-2: #f1f5f9;
-  --border: #e2e8f0;
-  --border-2: #cbd5e1;
-  --ink: #0f172a;
-  --ink-2: #1e293b;
-  --muted: #94a3b8;
-  --muted-2: #64748b;
-  --red: #dc2626;
-  --green: #16a34a;
-  --blue: #2563eb;
-  --gold: #d97706;
+  --accent:     #A65A4D;
+  --accent-dim: rgba(166, 90, 77, 0.10);
+  --accent-lt:  rgba(166, 90, 77, 0.20);
+  --surface:    #FDFAF6;
+  --surface-2:  #EAE4DA;
+  --border:     #D6CEC3;
+  --border-2:   #C4BBB0;
+  --ink:        #2B2B2B;
+  --ink-2:      #3D3530;
+  --muted:      #A89A8E;
+  --muted-2:    #6E6259;
+  --primary:    #5C6B5F;
+  --primary-dk: #3F4A42;
+  --red:        #A65A4D;
+  --green:      #5C6B5F;
+  --gold:       #8C7355;
 }
 
 /* ── Overlay ── */
 .modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 500;
+  position: fixed; inset: 0; z-index: 500;
   background: rgba(15, 23, 42, 0.45);
   backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   padding: 24px;
 }
 
@@ -346,514 +340,224 @@ function formatDateTime(d) {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
-  width: 100%;
-  max-width: 860px;
+  width: 100%; max-width: 860px;
   max-height: 88vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
+  display: flex; flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.18);
   overflow: hidden;
 }
 
 /* Transitions */
-.modal-fade-enter-active,
-.modal-fade-leave-active {
-  transition:
-    opacity 0.2s,
-    transform 0.2s;
+.modal-fade-enter-active, .modal-fade-leave-active {
+  transition: opacity 0.2s, transform 0.2s;
 }
-.modal-fade-enter-from,
-.modal-fade-leave-to {
-  opacity: 0;
-  transform: scale(0.97) translateY(8px);
+.modal-fade-enter-from, .modal-fade-leave-to {
+  opacity: 0; transform: scale(0.97) translateY(8px);
 }
-.alert-fade-enter-active,
-.alert-fade-leave-active {
-  transition:
-    opacity 0.2s,
-    max-height 0.3s;
-}
-.alert-fade-enter-from,
-.alert-fade-leave-to {
-  opacity: 0;
-  max-height: 0;
-}
+.alert-fade-enter-active, .alert-fade-leave-active { transition: opacity 0.2s, max-height 0.3s; }
+.alert-fade-enter-from, .alert-fade-leave-to { opacity: 0; max-height: 0; }
 
 /* ── Header ── */
 .modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: flex; align-items: center; justify-content: space-between;
   padding: 18px 22px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
   flex-shrink: 0;
 }
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.modal-icon {
-  font-size: 22px;
-}
+.header-left { display: flex; align-items: center; gap: 12px; }
+.modal-icon  { font-size: 22px; }
 .modal-title {
   font-family: 'Noto Serif TC', serif;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--ink);
+  font-size: 16px; font-weight: 700; color: var(--ink);
 }
-.modal-sub {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 3px;
-}
+.modal-sub { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
 .id-chip {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  color: var(--accent);
-  background: var(--accent-dim);
-  border: 1px solid var(--accent-lt);
-  padding: 2px 8px;
-  border-radius: 4px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  color: var(--accent); background: var(--accent-dim);
+  border: 1px solid var(--accent-lt); padding: 2px 8px; border-radius: 4px;
 }
-.applicant-hint {
-  font-size: 12px;
-  color: var(--muted-2);
-}
+.applicant-hint { font-size: 12px; color: var(--muted-2); }
 .close-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: transparent;
-  cursor: pointer;
-  color: var(--muted-2);
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 30px; height: 30px; border-radius: 8px;
+  border: 1px solid var(--border); background: transparent;
+  cursor: pointer; color: var(--muted-2); font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
   transition: all 0.15s;
 }
-.close-btn:hover {
-  background: var(--surface-2);
-  color: var(--ink);
-  border-color: var(--border-2);
-}
+.close-btn:hover { background: var(--surface-2); color: var(--ink); border-color: var(--border-2); }
 
 /* ── Body ── */
-.modal-body {
-  flex: 1;
-  overflow: hidden;
-}
+.modal-body { flex: 1; overflow: hidden; }
 .modal-columns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  height: 100%;
-  min-height: 0;
+  display: grid; grid-template-columns: 1fr 1fr;
+  height: 100%; min-height: 0;
 }
 
 /* ── Left Panel ── */
 .log-panel {
   border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  max-height: 75vh;
+  display: flex; flex-direction: column;
+  overflow: hidden; max-height: 75vh;
 }
 .panel-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: flex; align-items: center; justify-content: space-between;
   padding: 14px 18px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted-2);
+  font-size: 12px; font-weight: 600; color: var(--muted-2);
   font-family: 'IBM Plex Mono', monospace;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0.1em; text-transform: uppercase;
   border-bottom: 1px solid var(--border);
-  background: var(--surface-2);
-  flex-shrink: 0;
+  background: var(--surface-2); flex-shrink: 0;
 }
 .log-count {
-  font-size: 11px;
-  color: var(--muted);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 1px 8px;
-  border-radius: 10px;
+  font-size: 11px; color: var(--muted);
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 1px 8px; border-radius: 10px;
 }
 
 /* Loading skeleton */
-.log-loading {
-  padding: 14px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.log-skel {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+.log-loading { padding: 14px 18px; display: flex; flex-direction: column; gap: 12px; }
+.log-skel    { display: flex; flex-direction: column; gap: 6px; }
 .sk {
-  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s infinite;
-  border-radius: 4px;
-  flex-shrink: 0;
+  background: linear-gradient(90deg, #EAE4DA 25%, #D6CEC3 50%, #EAE4DA 75%);
+  background-size: 200% 100%; animation: shimmer 1.4s infinite;
+  border-radius: 4px; flex-shrink: 0;
 }
-.sk-tag {
-  height: 20px;
-  width: 72px;
-}
-.sk-line {
-  height: 13px;
-  width: 100%;
-}
-.sk-short {
-  height: 11px;
-  width: 60%;
-}
-@keyframes shimmer {
-  to {
-    background-position: -200% 0;
-  }
-}
+.sk-tag   { height: 20px; width: 72px; }
+.sk-line  { height: 13px; width: 100%; }
+.sk-short { height: 11px; width: 60%; }
+@keyframes shimmer { to { background-position: -200% 0; } }
 
 /* Empty */
-.log-empty {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  color: var(--muted);
-}
-.empty-icon {
-  font-size: 32px;
-  margin-bottom: 8px;
-  opacity: 0.4;
-}
-.log-empty p {
-  font-size: 13px;
-}
+.log-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; color: var(--muted); }
+.empty-icon { font-size: 32px; margin-bottom: 8px; opacity: 0.4; }
+.log-empty p { font-size: 13px; }
 
 /* Log list */
-.log-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
+.log-list { flex: 1; overflow-y: auto; padding: 12px 18px; display: flex; flex-direction: column; gap: 10px; }
 .log-item {
-  border-radius: 8px;
-  padding: 12px 14px;
+  border-radius: 8px; padding: 12px 14px;
   border: 1px solid var(--border);
   background: var(--surface);
   border-left: 3px solid var(--border-2);
   animation: logIn 0.2s both;
 }
-@keyframes logIn {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.item-REACHED {
-  border-left-color: var(--green);
-}
-.item-CONFIRMED {
-  border-left-color: var(--gold);
-}
-.item-ATTEMPTED {
-  border-left-color: var(--blue);
-}
-.item-DECLINED {
-  border-left-color: var(--red);
-}
-.item-NOT_CONTACTED {
-  border-left-color: var(--muted);
-}
+@keyframes logIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.item-REACHED   { border-left-color: var(--green); }
+.item-CONFIRMED { border-left-color: var(--gold);  }
+.item-ATTEMPTED { border-left-color: var(--blue);  }
+.item-DECLINED  { border-left-color: var(--red);   }
+.item-NOT_CONTACTED { border-left-color: var(--muted); }
 
-.log-item-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
+.log-item-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 
 .log-status-badge {
-  font-size: 11px;
-  font-family: 'IBM Plex Mono', monospace;
-  padding: 3px 9px;
-  border-radius: 20px;
-  border: 1px solid;
-  font-weight: 500;
-  display: inline-block;
+  font-size: 11px; font-family: 'IBM Plex Mono', monospace;
+  padding: 3px 9px; border-radius: 20px; border: 1px solid;
+  font-weight: 500; display: inline-block;
 }
-.badge-gray {
-  color: var(--muted-2);
-  border-color: var(--border-2);
-  background: var(--surface-2);
-}
-.badge-blue {
-  color: #1e40af;
-  border-color: #93c5fd;
-  background: #eff6ff;
-}
-.badge-green {
-  color: #166534;
-  border-color: #86efac;
-  background: #f0fdf4;
-}
-.badge-gold {
-  color: #92400e;
-  border-color: #fcd34d;
-  background: #fffbeb;
-}
-.badge-red {
-  color: #991b1b;
-  border-color: #fca5a5;
-  background: #fef2f2;
-}
+.badge-gray  { color: var(--muted-2); border-color: var(--border-2); background: var(--surface-2); }
+.badge-blue  { color: #3F5F5A; border-color: #9BBAB6; background: #EEF3F2; }
+.badge-green { color: var(--primary-dk); border-color: #A5B8A9; background: #ECF0EC; }
+.badge-gold  { color: var(--gold); border-color: #C4B090; background: #F5EFE6; }
+.badge-red   { color: var(--accent); border-color: rgba(166,90,77,0.4); background: rgba(166,90,77,0.08); }
 
 .log-channel {
-  font-size: 11px;
-  font-family: 'IBM Plex Mono', monospace;
-  color: var(--muted-2);
-  background: var(--surface-2);
-  padding: 2px 8px;
-  border-radius: 4px;
+  font-size: 11px; font-family: 'IBM Plex Mono', monospace;
+  color: var(--muted-2); background: var(--surface-2);
+  padding: 2px 8px; border-radius: 4px;
   border: 1px solid var(--border);
 }
-.log-note {
-  font-size: 13px;
-  color: var(--ink-2);
-  line-height: 1.5;
-  margin-bottom: 8px;
-  white-space: pre-wrap;
-}
-.empty-note {
-  color: var(--muted);
-  font-style: italic;
-}
-.log-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.log-emp {
-  font-size: 11px;
-  color: var(--muted-2);
-  font-family: 'IBM Plex Mono', monospace;
-}
-.log-time {
-  font-size: 11px;
-  color: var(--muted);
-  font-family: 'IBM Plex Mono', monospace;
-}
+.log-note { font-size: 13px; color: var(--ink-2); line-height: 1.5; margin-bottom: 8px; white-space: pre-wrap; }
+.empty-note { color: var(--muted); font-style: italic; }
+.log-meta { display: flex; align-items: center; justify-content: space-between; }
+.log-emp  { font-size: 11px; color: var(--muted-2); font-family: 'IBM Plex Mono', monospace; }
+.log-time { font-size: 11px; color: var(--muted);   font-family: 'IBM Plex Mono', monospace; }
 
 /* ── Right Panel ── */
 .form-panel {
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  max-height: 75vh;
+  display: flex; flex-direction: column;
+  overflow-y: auto; max-height: 75vh;
 }
 .form-panel .panel-title {
   border-right: none;
 }
-.form-body {
-  padding: 16px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
+.form-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; }
 
 /* Fields */
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
+.field { display: flex; flex-direction: column; gap: 5px; }
 .field-label {
-  font-size: 12px;
-  color: var(--muted-2);
-  font-family: 'IBM Plex Mono', monospace;
-  letter-spacing: 0.04em;
+  font-size: 12px; color: var(--muted-2);
+  font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.04em;
 }
-.req {
-  color: var(--red);
-  margin-left: 2px;
-}
-.field-input,
-.field-select,
-.field-textarea {
+.req { color: var(--red); margin-left: 2px; }
+.field-input, .field-select, .field-textarea {
   background: var(--surface);
   border: 1px solid var(--border-2);
-  border-radius: 8px;
-  color: var(--ink);
+  border-radius: 8px; color: var(--ink);
   font-family: 'Noto Sans TC', sans-serif;
-  font-size: 13px;
-  padding: 9px 12px;
-  outline: none;
-  transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
+  font-size: 13px; padding: 9px 12px; outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
   width: 100%;
 }
-.field-input:focus,
-.field-select:focus,
-.field-textarea:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-dim);
+.field-input:focus, .field-select:focus, .field-textarea:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim);
 }
-.field-input.error,
-.field-select.error {
-  border-color: var(--red);
-}
-.field-textarea {
-  resize: vertical;
-  min-height: 90px;
-}
-.field-err {
-  font-size: 11px;
-  color: var(--red);
-}
+.field-input.error, .field-select.error { border-color: var(--red); }
+.field-textarea { resize: vertical; min-height: 90px; }
+.field-err { font-size: 11px; color: var(--red); }
 
-.field-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-.styled-select-wrap {
-  position: relative;
-}
-.field-select {
-  appearance: none;
-  cursor: pointer;
-}
+.styled-select-wrap { position: relative; }
+.field-select { appearance: none; cursor: pointer; }
 .select-caret {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 10px;
-  color: var(--muted-2);
-  pointer-events: none;
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  font-size: 10px; color: var(--muted-2); pointer-events: none;
 }
 
 /* Channel buttons */
-.channel-btns {
-  display: flex;
-  gap: 6px;
-}
+.channel-btns { display: flex; gap: 6px; }
 .ch-btn {
-  flex: 1;
-  padding: 7px 6px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-family: 'Noto Sans TC', sans-serif;
-  cursor: pointer;
-  border: 1px solid var(--border-2);
-  background: var(--surface);
-  color: var(--muted-2);
-  transition: all 0.15s;
-  white-space: nowrap;
+  flex: 1; padding: 7px 6px; border-radius: 8px;
+  font-size: 12px; font-family: 'Noto Sans TC', sans-serif;
+  cursor: pointer; border: 1px solid var(--border-2);
+  background: var(--surface); color: var(--muted-2);
+  transition: all 0.15s; white-space: nowrap;
 }
-.ch-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.ch-btn.active {
-  border-color: var(--accent);
-  background: var(--accent-dim);
-  color: var(--accent);
-  font-weight: 600;
-}
+.ch-btn:hover  { border-color: var(--accent); color: var(--accent); }
+.ch-btn.active { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); font-weight: 600; }
 
 /* Status preview */
 .status-preview {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 8px;
+  background: var(--surface-2); border: 1px solid var(--border);
 }
-.preview-label {
-  font-size: 12px;
-  color: var(--muted-2);
-  font-family: 'IBM Plex Mono', monospace;
-}
+.preview-label { font-size: 12px; color: var(--muted-2); font-family: 'IBM Plex Mono', monospace; }
 
 /* Alert */
 .form-alert {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  font-size: 13px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; border-radius: 8px; font-size: 13px;
   overflow: hidden;
 }
-.alert-success {
-  background: #f0fdf4;
-  border: 1px solid #86efac;
-  color: #166534;
-}
-.alert-error {
-  background: #fef2f2;
-  border: 1px solid #fca5a5;
-  color: #991b1b;
-}
+.alert-success { background: rgba(92,107,95,0.08); border: 1px solid rgba(92,107,95,0.3); color: var(--primary-dk); }
+.alert-error   { background: rgba(166,90,77,0.08); border: 1px solid rgba(166,90,77,0.3); color: var(--accent); }
 
 /* Submit */
 .submit-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  padding: 10px;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: 'Noto Sans TC', sans-serif;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: 10px;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 8px;
+  font-size: 14px; font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 600; cursor: pointer; transition: all 0.15s;
 }
-.submit-btn:hover:not(:disabled) {
-  background: #1d4ed8;
-}
-.submit-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
+.submit-btn:hover:not(:disabled) { background: var(--primary-dk); }
+.submit-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* Misc */
-.spin {
-  animation: spin 0.8s linear infinite;
-  display: inline-block;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+.spin { animation: spin 0.8s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>

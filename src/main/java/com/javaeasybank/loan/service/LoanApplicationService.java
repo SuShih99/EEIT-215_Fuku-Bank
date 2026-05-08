@@ -1,12 +1,10 @@
 package com.javaeasybank.loan.service;
 
 import com.javaeasybank.common.exception.BusinessException;
-import com.javaeasybank.loan.dto.requests.LoanMemberRequestDTO;
+import com.javaeasybank.loan.client.LoanRiskClient;
+import com.javaeasybank.loan.dto.requests.*;
 import com.javaeasybank.loan.dto.response.LoanApplicationResponseDTO;
-import com.javaeasybank.loan.dto.requests.LoanContactLogRequestDTO;
 import com.javaeasybank.loan.dto.response.LoanContactLogResponseDTO;
-import com.javaeasybank.loan.dto.requests.LoanNonMemberRequestDTO;
-import com.javaeasybank.loan.dto.requests.LoanReviewDetailRequestDTO;
 import com.javaeasybank.loan.dto.response.LoanReviewDetailResponseDTO;
 import com.javaeasybank.loan.entity.LoanApplication;
 import com.javaeasybank.loan.entity.LoanContactLog;
@@ -51,6 +49,8 @@ public class LoanApplicationService {
 
     @Autowired
     private LoanReviewDetailRepository reviewDetailRepo;
+    @Autowired
+    private LoanRiskClient loanRiskClient;
 
     // ===查詢功能===
     // 依狀態顯示
@@ -61,35 +61,36 @@ public class LoanApplicationService {
                 .collect(Collectors.toList());
     }
 
+    // 查詢當前登入客戶所有申請
+    public List<LoanApplicationResponseDTO> getMyApplications(String customerId) {
+        return laRepo.findByCustomerIdOrderByCreateTimeDesc(customerId)
+                .stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
     // ===新增功能===
     /// 會員申請
-    public String insertMember(LoanMemberRequestDTO dto) {
+    public String insertMember(String customerId, LoanMemberRequestDTO dto) {
         LoanApplication loan = buildBaseLoan();
-        loan.setCustomerId(dto.getCustomerId());
+        loan.setCustomerId(customerId);
         fillLoanContent(loan, dto.getApplyType(), dto.getApplyAmount(),
                 dto.getApplyPeriod(), dto.getRate());
         laRepo.save(loan);
         return loan.getApplicationId();
     }
 
-    // 非會員申請
-    public String insertNonMember(LoanNonMemberRequestDTO dto) {
-        LoanApplication loan = buildBaseLoan();
-        loan.setApplicantName(dto.getApplicantName());
-        loan.setApplicantPhone(dto.getApplicantPhone());
-        loan.setApplicantEmail(dto.getApplicantEmail());
-        fillLoanContent(loan, dto.getApplyType(), dto.getApplyAmount(),
-                dto.getApplyPeriod(), dto.getRate());
-        laRepo.save(loan);
-        return loan.getApplicationId();
-    }
-
-    // 共用：產生 ID + 預設狀態
-    private LoanApplication buildBaseLoan() {
-        LoanApplication loan = new LoanApplication();
+    // 共用：產生格式化 ID（前綴 + yyyyMMddHHmmss + 4 位亂數）
+    private String generateId(String prefix) {
         String timeStr = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         String randomSuffix = String.format("%04d", (int) (Math.random() * 10000));
-        loan.setApplicationId("LA" + timeStr + randomSuffix);
+        return prefix + timeStr + randomSuffix;
+    }
+
+    // 產生貸款申請物件 + 預設狀態
+    private LoanApplication buildBaseLoan() {
+        LoanApplication loan = new LoanApplication();
+        loan.setApplicationId(generateId("LA"));
         loan.setApplicationStatus(LoanApplicationStatus.PENDING_CONTACT);
         loan.setCreateTime(LocalDateTime.now());
         return loan;
@@ -97,7 +98,7 @@ public class LoanApplicationService {
 
     // 共用：填申請內容
     private void fillLoanContent(LoanApplication loan, String applyType,
-                                 Long applyAmount, Integer applyPeriod,
+                                 BigDecimal applyAmount, Integer applyPeriod,
                                  BigDecimal rate) {
         loan.setApplyType(applyType);
         loan.setApplyAmount(applyAmount);
@@ -114,9 +115,7 @@ public class LoanApplicationService {
 
         // 寫入聯繫紀錄
         LoanContactLog log = new LoanContactLog();
-        String timeStr = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        String randomSuffix = String.format("%04d", (int) (Math.random() * 10000));
-        log.setLogId("CL" + timeStr + randomSuffix);
+        log.setLogId(generateId("CL"));
         log.setApplicationId(applicationId);
         log.setEmpId(dto.getEmpId());
         log.setContactStatus(dto.getContactStatus());
@@ -171,9 +170,7 @@ public class LoanApplicationService {
 
         // 若是全新的，產生 PK 並綁定 applicationId
         if (detail.getReviewId() == null) {
-            String timeStr = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-            String randomSuffix = String.format("%04d", (int) (Math.random() * 10000));
-            detail.setReviewId("RD" + timeStr + randomSuffix);
+            detail.setReviewId(generateId("RD"));
             detail.setApplicationId(applicationId);
         }
 
@@ -218,6 +215,54 @@ public class LoanApplicationService {
         // 同步更新主表狀態
         loan.setApplicationStatus(LoanApplicationStatus.PENDING_REVIEW);
         laRepo.save(loan);
+
+        // 送交資料給風控
+        // 失敗呼叫BusinessException
+        loanRiskClient.submitForReview(buildRiskRequest(loan, detail));
+    }
+
+    // 送風控的DTO (申請資料+二次填單)
+    private LoanRiskRequestDTO buildRiskRequest(LoanApplication loan, LoanReviewDetail detail) {
+        LoanRiskRequestDTO dto = new LoanRiskRequestDTO();
+        dto.setApplicationId(loan.getApplicationId());
+        dto.setCustomerId(loan.getCustomerId());
+        dto.setApplyType(loan.getApplyType());
+        dto.setConfirmedAmount(detail.getConfirmedAmount());
+        dto.setConfirmedPeriod(detail.getConfirmedPeriod());
+        dto.setConfirmedRate(detail.getConfirmedRate());
+        dto.setCollateralNote(detail.getCollateralNote());
+        dto.setEmpId(detail.getEmpId());
+        dto.setSubmittedTime(detail.getSubmittedTime());
+        return dto;
+    }
+
+    // 風控審核完成後傳回，更新主表狀態為 APPROVED 或 REJECTED
+    // callerModule 必須是 "RISK"；可接受的目標狀態只有 APPROVED / REJECTED
+    public void handleStatusCallback(String applicationId, LoanStatusCallbackRequestDTO dto) {
+
+        LoanApplication loan = laRepo.findById(applicationId)
+                .orElseThrow(() -> new BusinessException("找不到申請編號：" + applicationId));
+
+        // 來源模組驗證
+        if (!"RISK".equals(dto.getCallerModule())) {
+            throw new BusinessException("此 callback 僅接受 RISK 模組呼叫");
+        }
+
+        // 狀態合法性驗證：當前必須是 PENDING_REVIEW
+        if (loan.getApplicationStatus() != LoanApplicationStatus.PENDING_REVIEW) {
+            throw new BusinessException(
+                    "申請目前狀態為 " + loan.getApplicationStatus() + "，無法套用風控回調");
+        }
+
+        // 目標狀態只允許 APPROVED / REJECTED
+        if (dto.getNewStatus() != LoanApplicationStatus.APPROVED
+                && dto.getNewStatus() != LoanApplicationStatus.REJECTED) {
+            throw new BusinessException("風控回調目標狀態不合法：" + dto.getNewStatus());
+        }
+
+        loan.setApplicationStatus(dto.getNewStatus());
+        loan.setUpdateTime(LocalDateTime.now());
+        laRepo.save(loan);
     }
 
     // 查填單內容
@@ -225,6 +270,14 @@ public class LoanApplicationService {
         LoanReviewDetail detail = reviewDetailRepo.findByApplicationId(applicationId)
                 .orElseThrow(() -> new BusinessException("尚未建立二次填單：" + applicationId));
         return toReviewDetailResponseDTO(detail);
+    }
+
+    // 置頂查詢：曾被外部模組（風控、帳戶）異動過狀態的申請，依更新時間降序
+    public List<LoanApplicationResponseDTO> getRecentlyUpdated() {
+        return laRepo.findByUpdateTimeIsNotNullOrderByUpdateTimeDesc()
+                .stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
     }
 
     // ===利率規則===
@@ -295,9 +348,6 @@ public class LoanApplicationService {
         LoanApplicationResponseDTO dto = new LoanApplicationResponseDTO();
         dto.setApplicationId(loan.getApplicationId());
         dto.setCustomerId(loan.getCustomerId());
-        dto.setApplicantName(loan.getApplicantName());
-        dto.setApplicantPhone(loan.getApplicantPhone());
-        dto.setApplicantEmail(loan.getApplicantEmail());
         dto.setApplyType(loan.getApplyType());
         dto.setApplyAmount(loan.getApplyAmount());
         dto.setApplyPeriod(loan.getApplyPeriod());

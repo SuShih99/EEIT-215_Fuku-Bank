@@ -21,7 +21,7 @@ public class LoanReviewDetail {
 
     private String applicationId;          // application_id (FK)
 
-    private Long confirmedAmount;
+    private BigDecimal confirmedAmount;
     private Integer confirmedPeriod;
     private BigDecimal confirmedRate;
     private String collateralNote;         // 擔保品資料
