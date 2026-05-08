@@ -23,6 +23,10 @@
             </a-menu-item-group>
 
             <a-menu-item-group title="帳戶管理">
+              <a-menu-item key="admin-account-applications" @click="$router.push({ name: 'admin-account-applications' })">
+                <template #icon><SolutionOutlined /></template>
+                <span>開戶申請審核</span>
+              </a-menu-item>
               <a-menu-item key="admin-accounts" @click="$router.push({ name: 'admin-accounts' })">
                 <template #icon><BankOutlined /></template>
                 <span>帳戶管理</span>

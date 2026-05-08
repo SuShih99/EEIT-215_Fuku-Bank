@@ -109,8 +109,44 @@ function syncAddress() {
   }
 }
 
+// ===== 圖片壓縮 =====
+function compressImage(file, maxWidth = 1200, quality = 0.8) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      let w = img.width
+      let h = img.height
+
+      // 等比例縮小
+      if (w > maxWidth) {
+        h = Math.round((h * maxWidth) / w)
+        w = maxWidth
+      }
+
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, w, h)
+
+      canvas.toBlob(
+        (blob) => {
+          const compressed = new File([blob], file.name, {
+            type: 'image/jpeg',
+            lastModified: Date.now(),
+          })
+          resolve(compressed)
+        },
+        'image/jpeg',
+        quality
+      )
+    }
+    img.src = URL.createObjectURL(file)
+  })
+}
+
 // ===== 檔案處理 =====
-function handleFile(field, event) {
+async function handleFile(field, event) {
   const file = event.target.files[0]
   if (!file) return
 
@@ -125,7 +161,10 @@ function handleFile(field, event) {
   }
 
   delete errors[field]
-  form[field] = file
+
+  // 壓縮圖片（2.8MB → ~200KB）
+  const compressed = await compressImage(file)
+  form[field] = compressed
 
   // 產生預覽
   const reader = new FileReader()
@@ -134,7 +173,7 @@ function handleFile(field, event) {
     else if (field === 'idBack') idBackPreview.value = e.target.result
     else if (field === 'secondId') secondIdPreview.value = e.target.result
   }
-  reader.readAsDataURL(file)
+  reader.readAsDataURL(compressed)
 }
 
 // ===== 帳戶類型選項 =====
@@ -189,7 +228,7 @@ async function handleSubmit() {
     // 文字欄位
     formData.append('accountType', form.accountType)
     if (form.currency) formData.append('currency', form.currency)
-    formData.append('name', form.name)
+    formData.append('customerName', form.name)
     formData.append('idNumber', form.idNumber)
     formData.append('birthday', form.birthday)
     formData.append('nationality', form.nationality)

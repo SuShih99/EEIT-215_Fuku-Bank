@@ -27,7 +27,7 @@ public class AccountApplicationRequest {
 
     // KYC
     @NotBlank(message = "姓名不可為空")
-    private String name;
+    private String customerName;
 
     @NotBlank(message = "身分證字號不可為空")
     private String idNumber;
