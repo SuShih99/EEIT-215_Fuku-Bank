@@ -88,8 +88,7 @@
     <!-- 底部 -->
     <footer class="landing-footer">
       <JbLogo size="sm" />
-      <p class="footer-text">&copy; 2025 Java Easy Bank. All rights reserved.</p>
-      <router-link to="/admin/login" class="admin-entry">管理員入口</router-link>
+      <p class="footer-text">&copy; 2026 Java Easy Bank. All rights reserved.</p>
     </footer>
   </div>
 </template>
