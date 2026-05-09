@@ -42,7 +42,7 @@ public class RiskEventLog {
     @Enumerated(EnumType.STRING)
     @Column(name = "action_taken", nullable = false, length = 50)
     // 儲存 "PASS", "REJECT" 或 "MANUAL_REVIEW"
-    private Disposition actionTaken;
+    private Disposition disposition;
 
     //描述原因
     @Column(name = "trigger_reason", length = 500)
@@ -51,9 +51,6 @@ public class RiskEventLog {
     //元參考數據(信用分數 收入
     @Column(name = "meta_data")
     private String metaData;
-
-    @CreatedDate
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 
     @Column(name = "transaction_amount", precision = 18, scale = 4)
     private BigDecimal transactionAmount;

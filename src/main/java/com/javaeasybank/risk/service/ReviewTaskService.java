@@ -1,8 +1,8 @@
 package com.javaeasybank.risk.service;
 
-import com.javaeasybank.risk.dto.ManualReviewEvent;
+import com.javaeasybank.risk.core.enums.BusinessScene;
+import com.javaeasybank.risk.core.enums.RiskLevel;
 import com.javaeasybank.risk.entity.ReviewTask;
-import com.javaeasybank.risk.entity.RiskEventLog;
 import com.javaeasybank.risk.repository.ReviewTaskRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,14 +24,13 @@ public class ReviewTaskService {
     }
 
     @Transactional
-    public void createTask(RiskEventLog savedLog, ManualReviewEvent event) {
+    public void createTask(String businessId, BusinessScene scene, RiskLevel riskLevel) {
         ReviewTask task = new ReviewTask();
-        task.setRiskEventLog(savedLog);
-        task.setBusinessId(event.businessId());
-        task.setScene(event.scene());
-        task.setStatus("PENDING");
+        task.setBusinessId(businessId);
+        task.setScene(scene);
+        task.setStatus("PENDING"); // 初始狀態為待處理
 
-        Integer priority = switch (event.level()) {
+        Integer priority = switch (riskLevel) {
             case HIGH -> 1;
             case MEDIUM -> 5;
             case LOW -> 10;
@@ -40,7 +39,8 @@ public class ReviewTaskService {
         task.setPriority(priority);
 
         rtRepos.save(task);
-        log.info("已成功建立人工審核任務，BusinessID: {}", event.businessId());
+        log.info("[ReviewTask] 建立人工審核任務成功 | BusinessID: {} | Scene: {} | Priority: {}",
+                businessId, scene, priority);
     }
 
 }

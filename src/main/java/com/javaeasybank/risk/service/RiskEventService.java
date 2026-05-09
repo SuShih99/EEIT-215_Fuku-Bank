@@ -1,7 +1,9 @@
 package com.javaeasybank.risk.service;
 
-import com.javaeasybank.risk.dto.ManualReviewEvent;
-import com.javaeasybank.risk.dto.RiskEventResponse;
+import com.javaeasybank.risk.core.enums.Disposition;
+import com.javaeasybank.risk.core.enums.RiskLevel;
+import com.javaeasybank.risk.dto.request.RiskReviewRequest;
+import com.javaeasybank.risk.dto.response.RiskEventResponse;
 import com.javaeasybank.risk.entity.RiskEventLog;
 import com.javaeasybank.risk.repository.RiskEventLogRepository;
 import jakarta.persistence.criteria.Predicate;
@@ -9,13 +11,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,40 +53,46 @@ public class RiskEventService {
     }
 
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
-    public RiskEventLog recordEvent(ManualReviewEvent event) {
-        RiskEventLog eventLog = new RiskEventLog();
-        eventLog.setEventType(event.scene().name());
-        // 業務ID例貸款申請單 ID，若為 null 使用預設值，避免 DB NOT NULL 拋例外
-        eventLog.setBusinessId(event.businessId() != null ? event.businessId() : "UNKNOWN");
-        // target identifier 若為 null 使用預設值
-        String targetId = (event.target() != null && event.target().getTargetIdentifier() != null)
-                ? event.target().getTargetIdentifier()
-                : "UNKNOWN";
-        eventLog.setTargetIdentifier(targetId); // 身分證或帳號
-        eventLog.setRiskLevel(event.level()); // LOW, MEDIUM, HIGH
-        eventLog.setActionTaken(event.disposition()); // PASS, REJECT, MANUAL_REVIEW
-        eventLog.setTriggerReason(event.reason());
-
-        // 關鍵：將 Metadata Map 轉換為 JSON 存入 nvarchar(max)
-        try {
-            String metadataJson = objectMapper.writeValueAsString(event.target().getRiskMetadata());
-            eventLog.setMetaData(metadataJson);
-        } catch (JacksonException e) {
-            log.error("Metadata 轉換 JSON 失敗", e);
-            eventLog.setMetaData("{}");
-        }
-        // 若 createdAt 尚未由 JPA Auditing 設定，則在此手動設定，避免 DB 不接受 NULL
-        if (eventLog.getCreatedAt() == null) {
-            eventLog.setCreatedAt(LocalDateTime.now());
-        }
+    @Async
+    public void recordEvent(RiskReviewRequest request) {
+        log.info("[RiskEvent] 異步開始記錄風險事件: businessId={}, type={}",
+                request.getBusinessId(), request.getBusinessType());
 
         try {
-            relRepos.save(eventLog);
+            RiskEventLog logEntry = new RiskEventLog();
+
+            // 1. 映射基礎欄位
+            logEntry.setBusinessId(request.getBusinessId());
+            logEntry.setTargetIdentifier(request.getCustomerId());
+            logEntry.setEventType(request.getBusinessType() + "_SUBMIT");
+
+            // 2. 設定初始風控狀態
+            logEntry.setRiskLevel(RiskLevel.LOW); // 預設等級
+            logEntry.setDisposition(Disposition.MANUAL_REVIEW); // 預設進入人工審核
+            logEntry.setTriggerReason("系統接收 " + request.getBusinessType() + " 送審請求");
+
+            // 3. 處理 Map 資料存入 metaData (JSON)
+            if (request.getBusinessDetails() != null) {
+                // 將 businessDetails Map 序列化為 JSON 字串
+                String jsonDetails = objectMapper.writeValueAsString(request.getBusinessDetails());
+                logEntry.setMetaData(jsonDetails);
+
+                // 嘗試抓取金額 (自動從 details 裡找 common keys)
+                Object amountObj = request.getBusinessDetails().getOrDefault("confirmedAmount",
+                        request.getBusinessDetails().get("amount"));
+                if (amountObj != null) {
+                    logEntry.setTransactionAmount(new java.math.BigDecimal(amountObj.toString()));
+                }
+            }
+
+            // 存檔
+            relRepos.save(logEntry);
+            log.info("[RiskEvent] 日誌記錄成功: logId={}", logEntry.getLogId());
+
         } catch (Exception e) {
-            log.error("寫入 RiskEventLog 失敗：event={}", event, e);
-            throw e;
+            log.error("[RiskEvent] 記錄失敗，原因: {}", e.getMessage(), e);
+            // 異步方法內的異常不會拋回給呼叫方，所以這裡要記錄清楚
         }
-        return eventLog;
     }
 
     private RiskEventResponse toDto(RiskEventLog rel) {
@@ -94,7 +101,7 @@ public class RiskEventService {
         response.setEventType(rel.getEventType());
         response.setRiskLevel(rel.getRiskLevel());
         response.setTargetIdentifier(rel.getTargetIdentifier());
-        response.setActionTaken(rel.getActionTaken());
+        response.setActionTaken(rel.getDisposition());
         response.setTriggerReason(rel.getTriggerReason());
         response.setTransactionAmount(rel.getTransactionAmount());
         response.setCreatedAt(rel.getCreatedAt());

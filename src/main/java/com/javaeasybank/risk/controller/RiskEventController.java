@@ -1,7 +1,7 @@
 package com.javaeasybank.risk.controller;
 
 import com.javaeasybank.common.dto.response.ApiResponse;
-import com.javaeasybank.risk.dto.RiskEventResponse;
+import com.javaeasybank.risk.dto.response.RiskEventResponse;
 import com.javaeasybank.risk.service.RiskEventService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

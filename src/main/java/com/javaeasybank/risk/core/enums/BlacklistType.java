@@ -14,7 +14,6 @@ public enum BlacklistType {
         this.description = description;
     }
 
-    // 這就是你呼叫的 getDescription()
     public String getDescription() {
         return description;
     }

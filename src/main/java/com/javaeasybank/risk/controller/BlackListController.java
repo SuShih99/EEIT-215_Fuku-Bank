@@ -3,7 +3,7 @@ package com.javaeasybank.risk.controller;
 import com.javaeasybank.common.dto.response.ApiResponse;
 import com.javaeasybank.risk.core.enums.BlacklistType;
 import com.javaeasybank.risk.dto.request.BlackListRequest;
-import com.javaeasybank.risk.dto.BlackListResponse;
+import com.javaeasybank.risk.dto.response.BlackListResponse;
 import com.javaeasybank.risk.service.BlackListService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

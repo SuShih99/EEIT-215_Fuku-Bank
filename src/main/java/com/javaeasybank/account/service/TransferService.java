@@ -15,8 +15,6 @@ import com.javaeasybank.account.exception.TransferException;
 import com.javaeasybank.account.repository.AccountRepository;
 import com.javaeasybank.account.repository.TransLogRepository;
 import com.javaeasybank.account.utils.ReferenceIdGenerator;
-import com.javaeasybank.risk.core.annotation.RiskCheck;
-import com.javaeasybank.risk.core.enums.BusinessScene;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -46,7 +44,7 @@ public class TransferService {
      * @return 轉帳響應，包含參考 ID、轉出轉入帳戶餘額及轉帳時間。
      * @throws TransferException 如果轉帳驗證失敗（例如帳戶不存在、餘額不足、幣別不符等）。
      */
-    @RiskCheck(scene = BusinessScene.TRANSFER)//風控
+
     @Transactional
     public TransferResponse transfer(TransferRequest request) {
         String fromAccNum = request.getFromAccountNumber();
