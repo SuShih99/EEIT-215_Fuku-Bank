@@ -1,7 +1,7 @@
 # Java Easy Bank 專案理解文件
 
-> 本文件依照目前程式碼靜態閱讀整理，時間點：2026-05-10。
-> 目的：作為新成員交接、後續開發定位、API 對接與模組責任切分的總覽文件。
+> 本文件依照目前程式碼靜態閱讀整理，時間點：2026-05-09。  
+> 目的：作為資訊交接、後續開發定位、API 對接與模組責任切分的總覽文件。  
 > 範圍：後端 Spring Boot、前端 Vue、資料庫初始化腳本、目前可觀察到的業務流程與注意事項。
 
 ---
@@ -18,12 +18,12 @@ Java Easy Bank 是一套銀行業務系統，提供兩個主要使用端：
 目前業務模組涵蓋：
 
 - Auth：員工登入、員工管理、系統操作日誌。
-- Customer：客戶資料、註冊驗證信、客戶登入、個人資料、密碼重設、大頭照。
+- Customer：客戶資料、客戶註冊登入、個人資料、密碼重設、大頭照。
 - Account：帳戶、開戶申請、轉帳、存提款、交易紀錄、沖正、常用帳號、預約轉帳。
 - Loan：貸款申請、聯繫紀錄、二次填單、送審、利率規則。
-- Credit Card：信用卡卡別、申請、申請明細審核、發卡、交易、刷退、帳單查詢。
+- Credit Card：信用卡卡別、申請、申請明細審核、發卡、交易、刷退。
 - Risk：黑名單、風險事件、AOP 風控檢查框架。
-- Common：共用回應格式、例外處理、安全設定、JWT、CORS、檔案上傳、Email、匯率 API 等。
+- Common：共用回應格式、例外處理、安全設定、JWT、CORS、檔案上傳等。
 
 ---
 
@@ -38,7 +38,6 @@ Java Easy Bank 是一套銀行業務系統，提供兩個主要使用端：
 | Web | Spring Web |
 | ORM | Spring Data JPA / Hibernate |
 | Security | Spring Security |
-| Runtime Support | Spring Boot Actuator, DevTools |
 | Validation | Spring Validation |
 | AOP | Spring Boot Starter AspectJ |
 | DB Driver | Microsoft SQL Server JDBC |
@@ -47,7 +46,6 @@ Java Easy Bank 是一套銀行業務系統，提供兩個主要使用端：
 | JWT | jjwt 0.12.6 |
 | Export | OpenCSV, OpenPDF |
 | Mail | Spring Boot Starter Mail |
-| Template | Thymeleaf |
 | Build | Maven |
 
 ### 前端
@@ -69,7 +67,7 @@ Java Easy Bank 是一套銀行業務系統，提供兩個主要使用端：
 - 目標資料庫：MS SQL Server。
 - `src/main/resources/application.properties` 僅匯入本機設定：
   - `spring.config.import=optional:classpath:application-local.properties`
-- DB、SMTP、JWT secret、上傳目錄與前端 URL 預期放在本機 `application-local.properties`，不應提交。
+- DB 連線資訊預期放在本機 `application-local.properties`，不應提交。
 - 初始化與 mock data 位於 `src/main/resources/database/`。
 
 ---
@@ -135,14 +133,9 @@ README 建議流程：
 後端預設設定：
 
 - Server：通常使用 `8080`。
-- `application.properties`：只匯入 `optional:classpath:application-local.properties`，檔案註解也明確要求不要更動。
 - DB：由 `application-local.properties` 補上。
-- SMTP：由 `spring.mail.*` 補上；`EmailService` 會讀 `spring.mail.username` 作為寄件者。
-- App 設定：`app.frontend-url` 供驗證信與密碼重設連結使用，`app.jwt.secret` / `app.jwt.expiration-ms` 供 JWT 使用，`app.upload.dir` 供檔案上傳使用。
 - Jackson 時區建議：`Asia/Taipei`。
 - JPA 建議本機可用 `ddl-auto=update`，依 README 範例設定。
-
-目前 `JavaEasyBankApplication` 有 `@EnableAsync`，Email 寄送透過 `EmailService.sendEmail` 的 `@Async` 非同步執行。
 
 ### 前端
 
@@ -194,19 +187,15 @@ npm run dev
 
 ### 客戶端 JWT 流程
 
-0. 客戶註冊時會建立 `CustomerProfile` 與 `CustomerAuth`，但 `CustomerAuth.status` 初始為 `PENDING`，並寄出 email 驗證信。
-1. 客戶點擊驗證連結後，`GET /api/customer/auth/verify-email?token=` 將狀態改為 `ACTIVE`。
-2. 前端呼叫 `POST /api/customer/auth/login`。
-3. 後端驗證 `CUSTOMER_AUTH` 帳密、狀態與可選的身分證字號。
-4. `JwtUtil` 產生 JWT，claim 包含：
+1. 前端呼叫 `POST /api/customer/auth/login`。
+2. 後端驗證 `CUSTOMER_AUTH` 帳密與狀態。
+3. `JwtUtil` 產生 JWT，claim 包含：
    - subject：username
    - `role`
    - `customerId`
-5. 前端儲存 token 至 `customer_token`。
-6. axios request interceptor 自動加上 `Authorization: Bearer <token>`。
-7. `JwtAuthenticationFilter` 驗證 token 後把 `ROLE_CUSTOMER` 放入 Spring Security context。
-
-登入成功、密碼錯誤或身分證字號錯誤時，`CustomerAuthServiceImpl` 會呼叫 `EmailService.sendLoginNotification` 寄送登入通知。
+4. 前端儲存 token 至 `customer_token`。
+5. axios request interceptor 自動加上 `Authorization: Bearer <token>`。
+6. `JwtAuthenticationFilter` 驗證 token 後把 `ROLE_CUSTOMER` 放入 Spring Security context。
 
 相關檔案：
 
@@ -311,32 +300,6 @@ npm run dev
 - 開戶證件：`/uploads/id-cards/**`
 - 信用卡卡別圖片：部分 controller 直接寫到 `uploads/`
 
-### EmailService
-
-`common/service/EmailService.java`
-
-- 使用 `JavaMailSender` 寄送純文字信件。
-- `@Async` 非同步寄信，失敗時寫 log，不中斷主要交易流程。
-- `app.frontend-url` 預設為 `http://localhost:5173`，用來組驗證信與密碼重設連結。
-- `spring.mail.username` 作為寄件者，需在 `application-local.properties` 設定。
-
-目前使用場景：
-
-- 客戶註冊後寄送 email 驗證信。
-- 客戶登入成功 / 失敗通知。
-- 客戶密碼重設連結。
-- 帳戶轉帳成功通知。
-
-### 公開匯率 API
-
-`common/controller/ExchangeRateController.java`
-
-| Method | Path | 說明 |
-|---|---|---|
-| GET | `/api/public/exchange-rates` | 透過 `RestTemplate` 呼叫 `https://api.exchangerate-api.com/v4/latest/TWD` 取得匯率 |
-
-注意：雖然 controller 路徑命名為 `/api/public/**`，目前 `SecurityConfig` 尚未對 `/api/public/**` 設 `permitAll`，因此在現行 security chain 下仍會被 `.anyRequest().authenticated()` 攔住。
-
 ### SessionUtil
 
 `common/util/SessionUtil.java` 是早期手動 session 驗證工具，註解顯示屬於「階段一」設計。現在主要驗證已轉向 Spring Security + JWT，但此工具仍留在 common。
@@ -361,7 +324,7 @@ npm run dev
 | `AuthEmp` | `AUTH_EMP` | 員工帳號、密碼 hash、角色、狀態 |
 | `AuthRole` | `AUTH_ROLE` | 角色代碼與角色資料 |
 | `AuthDept` | `AUTH_DEPT` | 部門 |
-| `AuthLoginLog` | `AUTH_LOGIN_LOG` | 登入嘗試紀錄表；目前程式內未看到 repository / service 寫入流程 |
+| `AuthLoginLog` | `AUTH_LOGIN_LOG` | 登入登出紀錄 |
 | `AuthActionLog` | `AUTH_ACTION_LOG` | 系統操作日誌 |
 
 ### API
@@ -382,8 +345,6 @@ npm run dev
 | GET | `/api/auth/logs/export/csv` | 匯出 CSV |
 | GET | `/api/auth/logs/export/pdf` | 匯出 PDF |
 
-目前 `AuthEmpServiceImpl` 會把 LOGIN、LOGOUT、員工新增、修改、停用、啟用與 seed 等操作寫入 `AUTH_ACTION_LOG`。`AUTH_LOGIN_LOG` table 與 entity 存在，但目前閱讀到的程式未看到實際寫入它的流程。
-
 ---
 
 ## 7.2 Customer 模組
@@ -391,11 +352,10 @@ npm run dev
 ### 職責
 
 - 客戶資料管理。
-- 客戶註冊、email 驗證、登入 / JWT 發放。
+- 客戶註冊 / 登入 / JWT 發放。
 - 客戶個人資料維護。
 - 大頭照上傳。
-- 密碼重設 token 產生、Email 寄送與重設。
-- 登入成功 / 失敗通知信。
+- 密碼重設 token 產生與重設。
 - 提供 `syncAccountApplicationProfile`，讓帳戶模組同步開戶申請與審核結果。
 
 ### 主要 Entity
@@ -445,9 +405,8 @@ npm run dev
 
 | Method | Path | 說明 |
 |---|---|---|
-| POST | `/api/customer/auth/register` | 客戶註冊，建立 profile + auth，auth 狀態為 `PENDING`，寄送驗證信 |
+| POST | `/api/customer/auth/register` | 客戶註冊，建立 profile + auth，回傳 JWT |
 | POST | `/api/customer/auth/login` | 客戶登入，回傳 JWT |
-| GET | `/api/customer/auth/verify-email?token=` | 驗證 email，成功後 auth 狀態改為 `ACTIVE` |
 | GET | `/api/customer/auth/me` | 取得目前客戶資料 |
 | PUT | `/api/customer/auth/profile` | 修改個人資料 |
 | POST | `/api/customer/auth/avatar` | 上傳大頭照 |
@@ -472,15 +431,12 @@ npm run dev
 2. 檢查身分證字號是否重複。
 3. 產生 `customerId` 與 CIF。
 4. 建立 `CustomerProfile`。
-5. 建立 email verification token。
-6. 使用 BCrypt hash 建立 `CustomerAuth`，初始狀態為 `PENDING`。
-7. 呼叫 `EmailService.sendVerificationEmail` 寄出驗證信。
-8. 客戶點擊 `/api/customer/auth/verify-email?token=` 後，狀態改為 `ACTIVE`。
-9. 客戶登入成功時才產生 JWT；登入成功或密碼 / 身分證驗證失敗時會寄登入通知信。
+5. 使用 BCrypt hash 建立 `CustomerAuth`。
+6. 產生 JWT 並回傳登入資料。
 
 ### 密碼重設現況
 
-目前 `requestPasswordReset` 會用 email、身分證字號、生日比對 `CustomerProfile`，成功後產生 30 分鐘效期 reset token，組成 `${app.frontend-url}/reset-password?token=...`，並透過 `EmailService.sendPasswordResetEmail` 寄出連結。
+目前 `requestPasswordReset` 會產生 reset token，效期 30 分鐘，並將連結印到 console。SMTP 寄信仍是 TODO。
 
 ---
 
@@ -506,8 +462,6 @@ npm run dev
 | `AccountApplication` | `ACCOUNT_APPLICATION` | 開戶申請、KYC、證件、風險標記、審核狀態 |
 | `FavoriteAccount` | `FAVORITE_ACCOUNT` | 客戶常用收款帳號 |
 | `ScheduledTransfer` | `SCHEDULED_TRANSFER` | 預約轉帳 |
-
-SQL 腳本另外建立 `ACCOUNT_STATUS_HISTORY` 與 `ACCOUNT_DAILY_SNAPSHOTS`，目前專案內尚未看到對應 Java Entity / Service 寫入流程，因此它們目前屬於資料庫設計預留或 mock data 用表。
 
 ### 主要 Enum
 
@@ -546,7 +500,7 @@ SQL 腳本另外建立 `ACCOUNT_STATUS_HISTORY` 與 `ACCOUNT_DAILY_SNAPSHOTS`，
 - `DORMANT` -> `ACTIVE`, `CLOSED`
 - `CLOSED` 不可再轉換
 
-若將某帳戶改為 `FROZEN`，目前會連動凍結同一 customer 其他 `ACTIVE` 帳戶。`ACCOUNT_STATUS_HISTORY` 表已在 SQL 腳本存在，但目前狀態異動 Service 尚未寫入歷史紀錄。
+若將某帳戶改為 `FROZEN`，目前會連動凍結同一 customer 其他 `ACTIVE` 帳戶。狀態歷史表仍未落地。
 
 ### 帳戶管理 API
 
@@ -670,8 +624,7 @@ SQL 腳本另外建立 `ACCOUNT_STATUS_HISTORY` 與 `ACCOUNT_DAILY_SNAPSHOTS`，
 11. 寫兩筆 `TransLog`：
     - 來源帳戶：`DEBIT` + `TRANSFER`
     - 目的帳戶：`CREDIT` + `TRANSFER`
-12. 查來源帳戶 customer email，透過 `EmailService.sendTransferNotification` 寄送轉帳通知。
-13. 回傳 referenceId、雙方餘額與時間。
+12. 回傳 referenceId、雙方餘額與時間。
 
 注意：雖然轉帳 API 位於 `/api/customer/transfers`，目前 `TransferController` 沒有從 JWT 取出 `customerId` 驗證 `fromAccountNumber` 是否屬於目前登入客戶；實際 ownership check 需要後續補強。`CashController` 的存提款 API 也同樣未驗證帳戶歸屬。
 
@@ -773,7 +726,6 @@ SQL 腳本另外建立 `ACCOUNT_STATUS_HISTORY` 與 `ACCOUNT_DAILY_SNAPSHOTS`，
 - 審核通過後發卡。
 - 卡片管理。
 - 信用卡交易、額度檢查、刷退。
-- 管理端帳單查詢。
 
 ### 主要 Entity
 
@@ -864,14 +816,6 @@ SQL 腳本另外建立 `ACCOUNT_STATUS_HISTORY` 與 `ACCOUNT_DAILY_SNAPSHOTS`，
 | PUT | `/api/admin/card-txns/{id}` | 管理端更新交易 |
 | POST | `/api/admin/card-txns/{id}/refund` | 刷退 |
 | DELETE | `/api/admin/card-txns/{id}` | 刪除交易 |
-
-### 信用卡帳單 API
-
-| Method | Path | 說明 |
-|---|---|---|
-| GET | `/api/admin/card-bills?page=&size=` | 管理端查帳單列表，回傳 `PageResponse<CardBillResponseDto>` |
-
-目前前端已有 `/admin/card-bills` 與 `/user/card-bills` route，但兩個 view 仍是簡易標題 / placeholder；後端目前只有管理端帳單查詢 API。
 
 ### 信用卡申請與發卡流程
 
@@ -1020,9 +964,7 @@ SQL 腳本另外建立 `ACCOUNT_STATUS_HISTORY` 與 `ACCOUNT_DAILY_SNAPSHOTS`，
 | `api/cardtype.js` | 信用卡卡別 |
 | `api/cardApplication.js` | 信用卡申請與明細審核 |
 | `api/card.js` | 信用卡卡片 |
-| `api/cardTxn.js` | 管理端信用卡交易 |
-| `api/userCardTxn.js` | 客戶端信用卡交易 |
-| `api/cardBill.js` | 管理端信用卡帳單 |
+| `api/cardTxn.js` | 信用卡交易 |
 
 ### 客戶端路由
 
@@ -1036,8 +978,6 @@ SQL 腳本另外建立 `ACCOUNT_STATUS_HISTORY` 與 `ACCOUNT_DAILY_SNAPSHOTS`，
 | `/user/profile` | `user-profile` | `UserProfileView.vue` |
 | `/user/card-types` | `user-card-types` | `CardTypeListView.vue` |
 | `/user/card-applications` | `user-card-applications` | `CardApplicationForm.vue` |
-| `/user/card-txns` | `user-card-txns` | `CardTxnView.vue` |
-| `/user/card-bills` | `user-card-bills` | `CardBillView.vue` |
 | `/user/account-application` | `user-account-application` | `AccountApplicationView.vue` |
 | `/user/accounts` | `user-accounts` | `UserAccountsView.vue` |
 | `/user/transactions` | `user-transactions` | `UserTransactionsView.vue` |
@@ -1062,7 +1002,6 @@ SQL 腳本另外建立 `ACCOUNT_STATUS_HISTORY` 與 `ACCOUNT_DAILY_SNAPSHOTS`，
 | `/admin/card-applications` | `admin-card-applications` | `CardApplicationList.vue` |
 | `/admin/card-applications/:id` | `admin-card-application-detail` | `CardApplicationDetailView.vue` |
 | `/admin/card-txns` | `admin-card-txns` | `CardTxnView.vue` |
-| `/admin/card-bills` | `admin-card-bills` | `CardBillView.vue` |
 | `/admin/risk-events` | `admin-risk-events` | `RiskEventView.vue` |
 | `/admin/cards` | `admin-cards` | `CardView.vue` |
 | `/admin/loan-apply` | `loan-apply` | `LoanApplyView.vue` |
@@ -1139,17 +1078,6 @@ Customer 腳本重點：
 - `customer_init.sql` 的 `CUSTOMER_PROFILE` 已包含開戶申請同步欄位。
 - `CUSTOMER_AUTH` 目前仍放在 customer 腳本，因為它是客戶端登入帳密表，與管理端 Auth 模組的 `AUTH_EMP`、`AUTH_ROLE` 不同。
 - `customer_insert.sql` 會以既有 KYC / Risk seed 資料補齊新版 profile 欄位，例如職業、任職機構、年收入、稅務居民、PEP、風險等級與同步時間。
-
-Account 腳本重點：
-
-- `account_init.sql` 會先 drop 再建立 `ACCOUNT_APPLICATION`、`ACCOUNT`、`ACCOUNT_STATUS_HISTORY`、`ACCOUNT_DAILY_SNAPSHOTS`、`TRANS_LOG`、`FAVORITE_ACCOUNT`、`SCHEDULED_TRANSFER`。
-- `account_mockdata.sql` 包含大量開戶申請、帳戶、交易紀錄與每日快照 mock data。
-- `ACCOUNT_STATUS_HISTORY` 與 `ACCOUNT_DAILY_SNAPSHOTS` 目前在 SQL / mock data 層存在，但 Java 端尚未看到對應 entity 與寫入流程。
-
-Credit Card 腳本重點：
-
-- `card_init.sql` 建立 `CARD_TYPE`、`MERCHANT`、`CARD_APPLICATION`、`CARD_APPLICATION_ITEM`、`CREDIT_CARD`、`CARD_BILL`、`CARD_TRANSACTION`。
-- `card_mockdata.sql` 包含卡別、商家、信用卡申請、申請明細、已發卡、交易與帳單資料。
 
 其他 SQL：
 
@@ -1230,22 +1158,18 @@ npm run build
 
 1. `TransferRiskHandler` 目前看起來尚未實作檢查邏輯，且未標註 Spring component，風控 AOP 對轉帳可能尚未真正生效。
 2. `TransferService` 留有大額、高頻、24 小時累計金額風控 TODO。
-3. `EmailService` 已接 SMTP 與 `@Async`，但 `spring.mail.username` 沒有預設值；本機 `application-local.properties` 缺 SMTP 設定時，Email 相關 bean 可能無法正常啟動或寄信。
-4. `EmailService.sendVerificationEmail` 產生的是前端 `/verify-email?token=...` 連結，但目前 Vue router 尚未看到 `/verify-email` route；後端驗證 API 則是 `/api/customer/auth/verify-email?token=...`。
-5. `SessionUtil` 是舊式 session 工具，註解顯示已被 Spring Security 方案取代，但檔案仍存在。
-6. `/api/public/exchange-rates` controller 已存在，但 `SecurityConfig` 尚未對 `/api/public/**` 設定 `permitAll`。
-7. 信用卡客戶端 API 使用 `/user/card-*`，沒有 `/api` 前綴；目前 axios 使用完整 `BASE_URL` 可正常打到後端，但與多數 API 命名風格不同。
-8. 部分 Controller 直接回傳 Spring Data `Page`，部分轉成 `PageResponse`；前端解包時要注意格式不完全一致。
-9. 信用卡交易的更新 / 刪除 API 存在，但交易類資料通常應避免物理刪除；程式註解也寫「不可刪除交易」，後續可確認是否只保留查詢與刷退。
-10. `CardTxnService.update` 目前只更新描述、卡片與商家，交易金額與交易類型更新被註解掉；若未來開放改金額，需同步處理 `currentBalance`。
-11. `CardController.getMyCards` 目前呼叫 `findAll()`，名稱像客戶查自己的卡，但實際上可能回傳全部卡片。
-12. `CardTxnController` 的 `/user/card-txns` 目前也是查全部交易，尚未從 JWT 限縮為目前客戶的卡片交易。
-13. `SecurityConfig` 目前 permit seed endpoints，適合開發期；正式環境需確認是否關閉。
-14. JWT secret 有預設值，正式部署應以環境設定覆蓋。
-15. `GlobalExceptionHandler` 對 `AccountException` 會保留 errorCode，但 `TransferException` 繼承 `BusinessException`，若前端需要轉帳錯誤碼，需要確認是否有專用 handler。
-16. `TransferController` 與 `CashController` 位於 customer API 路徑，但目前沒有檢查操作帳戶是否屬於 JWT 中的 customerId。
-17. `ScheduledTransferService.executeDueTransfers` 目前尚未接 `@Scheduled`，且到期執行只更新狀態，未真正執行轉帳。
-18. `/admin/card-bills` 後端 API 已存在，但前端 `CardBillView.vue` 仍是 placeholder。
+3. `CustomerAuthServiceImpl.requestPasswordReset` 目前只在 console 印出重設連結，尚未接 SMTP。
+4. `SessionUtil` 是舊式 session 工具，註解顯示已被 Spring Security 方案取代，但檔案仍存在。
+5. 信用卡客戶端 API 使用 `/user/card-*`，沒有 `/api` 前綴；目前 axios 使用完整 `BASE_URL` 可正常打到後端，但與多數 API 命名風格不同。
+6. 部分 Controller 直接回傳 Spring Data `Page`，部分轉成 `PageResponse`；前端解包時要注意格式不完全一致。
+7. 信用卡交易的更新 / 刪除 API 存在，但交易類資料通常應避免物理刪除；程式註解也寫「不可刪除交易」，後續可確認是否只保留查詢與刷退。
+8. `CardTxnService.update` 更新交易金額時未同步調整信用卡 `currentBalance`，若此 API 真的會被使用，需要確認業務規則。
+9. `CardController.getMyCards` 目前呼叫 `findAll()`，名稱像客戶查自己的卡，但實際上可能回傳全部卡片。
+10. `SecurityConfig` 目前 permit seed endpoints，適合開發期；正式環境需確認是否關閉。
+11. JWT secret 有預設值，正式部署應以環境設定覆蓋。
+12. `GlobalExceptionHandler` 對 `AccountException` 會保留 errorCode，但 `TransferException` 繼承 `BusinessException`，若前端需要轉帳錯誤碼，需要確認是否有專用 handler。
+13. `TransferController` 與 `CashController` 位於 customer API 路徑，但目前沒有檢查操作帳戶是否屬於 JWT 中的 customerId。
+14. `ScheduledTransferService.executeDueTransfers` 目前尚未接 `@Scheduled`，且到期執行只更新狀態，未真正執行轉帳。
 
 ---
 
