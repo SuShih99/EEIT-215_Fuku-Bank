@@ -171,7 +171,7 @@
           <button class="block-action-btn" @click="comingSoon">立即換匯</button>
         </div>
         <div class="section-rule"></div>
-        <table class="exchange-table">
+        <table class="exchange-table" :class="{ 'is-updating': isUpdatingRates }">
           <thead>
             <tr>
               <th></th>
@@ -189,7 +189,7 @@
             </tr>
           </tbody>
         </table>
-        <p class="exchange-time">資料時間：{{ exchangeTime }} <button class="refresh-btn" @click="fetchExchangeRates">↻ 更新</button></p>
+        <p class="exchange-time">資料時間：{{ exchangeTime }} <button class="refresh-btn" @click="fetchExchangeRates"><span :class="{ 'spin-anim': isUpdatingRates }" style="display:inline-block;">↻</span> 更新</button></p>
       </section>
 
       <!-- 歷史水位圖 -->
@@ -469,8 +469,11 @@ const exchangeRates = ref([
 ])
 
 const exchangeTime = ref('2026/05/08 14:30')
+const isUpdatingRates = ref(false)
 
 async function fetchExchangeRates() {
+  if (isUpdatingRates.value) return
+  isUpdatingRates.value = true
   try {
     const res = await api.get('/api/public/exchange-rates')
     const rates = res.data.data.rates
@@ -492,6 +495,11 @@ async function fetchExchangeRates() {
     })
   } catch (e) {
     console.error('Failed to fetch exchange rates', e)
+  } finally {
+    // 確保動畫至少顯示 500ms，讓使用者有感
+    setTimeout(() => {
+      isUpdatingRates.value = false
+    }, 500)
   }
 }
 
@@ -754,11 +762,11 @@ onMounted(async () => {
 }
 
 .asset-total {
-  font-family: var(--font-display);
+  font-family: 'Inter', 'Noto Sans TC', var(--font-body);
   font-size: 36px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: 1px;
+  letter-spacing: -0.02em;
 }
 
 .asset-grid {
@@ -786,12 +794,12 @@ onMounted(async () => {
 }
 
 .asset-block-amount {
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 600;
+  font-family: 'Inter', 'Noto Sans TC', var(--font-body);
+  font-size: 26px;
+  font-weight: 700;
   color: var(--text-primary);
   margin-bottom: var(--space-3);
-  letter-spacing: 0.5px;
+  letter-spacing: -0.02em;
 }
 
 .asset-block-amount--muted {
@@ -919,9 +927,9 @@ onMounted(async () => {
 }
 
 .legend-value {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
-  font-family: var(--font-display);
+  font-family: 'Inter', 'Noto Sans TC', var(--font-body);
 }
 
 /* === 匯率 === */
@@ -936,7 +944,12 @@ onMounted(async () => {
 .exchange-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--text-sm);
+  font-size: var(--text-body); /* 放大字體從 13px 到 15px */
+  transition: opacity 0.3s var(--ease);
+}
+
+.exchange-table.is-updating {
+  opacity: 0.4;
 }
 
 .exchange-table th {
@@ -960,15 +973,17 @@ onMounted(async () => {
 
 .exchange-name {
   color: var(--text-primary);
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 15px; /* 放大幣別名稱 */
 }
 
 .exchange-rate {
-  font-family: var(--font-display);
-  font-weight: 600;
+  font-family: 'Inter', 'Noto Sans TC', var(--font-body);
+  font-size: 16px; /* 放大匯率數字 */
+  font-weight: 700;
   color: var(--text-primary);
   text-align: right;
-  letter-spacing: 0.5px;
+  letter-spacing: -0.02em;
 }
 
 .exchange-time {
@@ -992,6 +1007,14 @@ onMounted(async () => {
 
 .refresh-btn:hover {
   color: var(--primary-dark);
+}
+
+.spin-anim {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
 }
 
 /* === 歷史水位圖 === */

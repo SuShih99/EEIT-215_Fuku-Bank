@@ -9,7 +9,7 @@
           {{ a.accountNumber }} ({{ a.currency }})
         </a-select-option>
       </a-select>
-      <a-range-picker v-model:value="dateRange" style="width: 260px" @change="fetchTransactions" />
+      <a-range-picker v-model:value="dateRange" style="width: 260px" :placeholder="['開始日期', '結束日期']" @change="fetchTransactions" />
       <a-select v-model:value="txType" placeholder="交易類型" style="width: 140px" allowClear @change="fetchTransactions">
         <a-select-option value="TRANSFER">轉帳</a-select-option>
         <a-select-option value="DEPOSIT">存款</a-select-option>
@@ -26,8 +26,12 @@
       :pagination="{ pageSize: 20, showSizeChanger: true, showTotal: (t) => `共 ${t} 筆` }"
       row-key="transactionId"
       size="small"
+      @resizeColumn="handleResizeColumn"
     >
       <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'createdAt'">
+          {{ formatDate(record.createdAt) }}
+        </template>
         <template v-if="column.key === 'entryType'">
           <a-tag :color="record.entryType === 'CREDIT' ? 'green' : 'red'">
             {{ record.entryType === 'CREDIT' ? '入帳' : '扣款' }}
@@ -62,17 +66,26 @@ const selectedAccount = ref(undefined)
 const dateRange = ref(null)
 const txType = ref(undefined)
 
-const columns = [
-  { title: '日期', dataIndex: 'createdAt', key: 'createdAt', width: 160, sorter: (a, b) => a.createdAt?.localeCompare(b.createdAt) },
-  { title: '交易編號', dataIndex: 'referenceId', key: 'referenceId', width: 220, ellipsis: true },
-  { title: '帳號', dataIndex: 'accountNumber', key: 'accountNumber', width: 140 },
-  { title: '類型', dataIndex: 'transactionType', key: 'transactionType', width: 80 },
-  { title: '方向', key: 'entryType', width: 70 },
-  { title: '金額', key: 'amount', width: 120, align: 'right', sorter: (a, b) => a.amount - b.amount },
-  { title: '交易後餘額', key: 'balanceAfter', width: 120, align: 'right' },
-  { title: '幣別', dataIndex: 'currency', key: 'currency', width: 60 },
-  { title: '備註', dataIndex: 'note', key: 'note', ellipsis: true },
-]
+const columns = ref([
+  { title: '日期', dataIndex: 'createdAt', key: 'createdAt', width: 170, resizable: true, sorter: (a, b) => a.createdAt?.localeCompare(b.createdAt) },
+  { title: '交易編號', dataIndex: 'referenceId', key: 'referenceId', width: 220, resizable: true, ellipsis: true },
+  { title: '帳號', dataIndex: 'accountNumber', key: 'accountNumber', width: 140, resizable: true },
+  { title: '類型', dataIndex: 'transactionType', key: 'transactionType', width: 80, resizable: true },
+  { title: '方向', key: 'entryType', width: 70, resizable: true },
+  { title: '金額', key: 'amount', width: 120, align: 'right', resizable: true, sorter: (a, b) => a.amount - b.amount },
+  { title: '交易後餘額', key: 'balanceAfter', width: 120, align: 'right', resizable: true },
+  { title: '幣別', dataIndex: 'currency', key: 'currency', width: 60, resizable: true },
+  { title: '備註', dataIndex: 'note', key: 'note', resizable: true, ellipsis: true },
+])
+
+function handleResizeColumn(w, col) {
+  col.width = w
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return ''
+  return dateStr.replace('T', ' ').split('.')[0]
+}
 
 onMounted(async () => {
   try {
