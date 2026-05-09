@@ -1,4 +1,4 @@
-# Hank Development Notes (for 專三)
+# Hank Development Notes
 
 | 項目 | 內容 |
 | --- | --- |
@@ -1224,6 +1224,13 @@ flowchart TD
 | `ScheduledTransfer` | `SCHEDULED_TRANSFER` | 已實作 | 客戶預約轉帳設定 |
 | `ACCOUNT_STATUS_HISTORY` | 尚無 entity | 未落地 | 舊文件規劃，現版本尚未寫入狀態歷史 |
 | `ACCOUNT_DAILY_SNAPSHOTS` | 尚無 entity | 未落地 | 舊文件規劃，現版本尚未做每日快照 / 結息批次 |
+
+開戶申請與 Customer 模組的同步邊界：
+
+- `AccountApplicationService.submit(...)` 送出申請後，會將最新申請資料以 `PENDING` 狀態同步到 Customer Profile。
+- 管理端 `approve(...)`、`requestSupplement(...)`、`reject(...)` 完成審核後，都會再次呼叫 `CustomerService.syncAccountApplicationProfile(...)`。
+- 同步內容包含 KYC 個資、地址、職業財務、開戶目的、資金來源、法遵聲明、證件圖路徑，以及最近一次開戶申請的審核狀態、審核人、審核時間、原因與建帳帳號。
+- Account 模組只依賴 Customer 對外 service / DTO，不直接操作 `CUSTOMER_PROFILE`。
 
 目前資料庫初始化主要參考：
 

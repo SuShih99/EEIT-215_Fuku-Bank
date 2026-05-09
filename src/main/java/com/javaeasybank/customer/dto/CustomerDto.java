@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class CustomerDto {
 
@@ -19,6 +20,30 @@ public class CustomerDto {
         private String email;
         private String phone;
         private String address;
+        private String nationality;
+        private String registeredAddress;
+        private String currentAddress;
+        private String occupation;
+        private String employer;
+        private Integer estimatedMonthlyTx;
+        private String accountPurpose;
+        private String fundSource;
+        private String taxResidency;
+        private Boolean isPep;
+        private String idFrontUrl;
+        private String idBackUrl;
+        private String secondIdUrl;
+        private Long latestAccountApplicationId;
+        private String latestAccountApplicationNo;
+        private String latestAppliedAccountType;
+        private String latestAppliedCurrency;
+        private String latestAccountApplicationStatus;
+        private String latestAccountApplicationRiskFlag;
+        private LocalDateTime latestAccountApplicationReviewedAt;
+        private String latestAccountApplicationReviewedBy;
+        private String latestAccountApplicationRejectReason;
+        private String createdAccountNumber;
+        private LocalDateTime accountApplicationSyncedAt;
     }
 
     // ===== 管理端：回傳客戶資訊 =====
@@ -37,6 +62,63 @@ public class CustomerDto {
         private String status;
         private String avatarUrl;
         private String username;
+        private String nationality;
+        private String registeredAddress;
+        private String currentAddress;
+        private String occupation;
+        private String employer;
+        private Integer estimatedMonthlyTx;
+        private String accountPurpose;
+        private String fundSource;
+        private String taxResidency;
+        private Boolean isPep;
+        private String idFrontUrl;
+        private String idBackUrl;
+        private String secondIdUrl;
+        private Long latestAccountApplicationId;
+        private String latestAccountApplicationNo;
+        private String latestAppliedAccountType;
+        private String latestAppliedCurrency;
+        private String latestAccountApplicationStatus;
+        private String latestAccountApplicationRiskFlag;
+        private LocalDateTime latestAccountApplicationReviewedAt;
+        private String latestAccountApplicationReviewedBy;
+        private String latestAccountApplicationRejectReason;
+        private String createdAccountNumber;
+        private LocalDateTime accountApplicationSyncedAt;
+    }
+
+    // ===== 帳戶模組：開戶申請資料同步 =====
+    @Getter
+    @Setter
+    public static class AccountApplicationProfileSyncRequest {
+        private String name;
+        private String idNumber;
+        private LocalDate birthday;
+        private String nationality;
+        private String phone;
+        private String registeredAddress;
+        private String currentAddress;
+        private String occupation;
+        private String employer;
+        private Integer estimatedMonthlyTx;
+        private String accountPurpose;
+        private String fundSource;
+        private String taxResidency;
+        private Boolean isPep;
+        private String idFrontUrl;
+        private String idBackUrl;
+        private String secondIdUrl;
+        private Long latestAccountApplicationId;
+        private String latestAccountApplicationNo;
+        private String latestAppliedAccountType;
+        private String latestAppliedCurrency;
+        private String latestAccountApplicationStatus;
+        private String latestAccountApplicationRiskFlag;
+        private LocalDateTime latestAccountApplicationReviewedAt;
+        private String latestAccountApplicationReviewedBy;
+        private String latestAccountApplicationRejectReason;
+        private String createdAccountNumber;
     }
 
     // ===== 客戶端：註冊 =====

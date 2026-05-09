@@ -352,12 +352,13 @@ npm run dev
 - 客戶個人資料維護。
 - 大頭照上傳。
 - 密碼重設 token 產生與重設。
+- 提供 `syncAccountApplicationProfile`，讓帳戶模組同步開戶申請與審核結果。
 
 ### 主要 Entity
 
 | Entity | Table | 用途 |
 |---|---|---|
-| `CustomerProfile` | `CUSTOMER_PROFILE` | 客戶 KYC / 基本資料 / CIF / 聯絡方式 |
+| `CustomerProfile` | `CUSTOMER_PROFILE` | 客戶 KYC / 基本資料 / CIF / 聯絡方式 / 最近一次開戶申請同步資料 |
 | `CustomerAuth` | `CUSTOMER_AUTH` | 客戶登入帳號、密碼 hash、角色、狀態、reset token |
 
 ### 客戶認證 API
@@ -542,8 +543,9 @@ npm run dev
    - PEP 聲明。
 5. 依風險情境設定 `RiskFlag`。
 6. 儲存 `AccountApplication`，狀態為 `PENDING`。
-7. 管理端可核准、補件、駁回。
-8. 核准時自動建立 `Account`：
+7. 送件後同步申請資料至 `CustomerProfile`，最近一次開戶申請狀態為 `PENDING`。
+8. 管理端可核准、補件、駁回；每次審核完成都會再次同步結果至 `CustomerProfile`。
+9. 核准時自動建立 `Account`：
    - 帳號由 `AccountNumberGenerator` 產生。
    - 狀態設為 `ACTIVE`。
    - 活存 `CHECKING` 會給初始餘額 1000 與利率 0.0015。
@@ -962,9 +964,12 @@ npm run dev
 
 | 檔案 | 推測用途 |
 |---|---|
-| `auth_customer_init.sql` | Auth / Customer 初始化 |
-| `auth_customer_insert.sql` | Auth / Customer seed |
-| `auth_customer_drop.sql` | Auth / Customer drop |
+| `auth_init.sql` | Auth 初始化 |
+| `auth_insert.sql` | Auth seed |
+| `auth_drop.sql` | Auth drop |
+| `customer_init.sql` | Customer 初始化，含開戶申請同步欄位 |
+| `customer_insert.sql` | Customer seed，會補齊新版 Customer Profile 基礎欄位 |
+| `customer_drop.sql` | Customer drop |
 | `account_init.sql` | Account 初始化 |
 | `account_mockdata.sql` | Account mock data |
 | `loan_init.sql` | Loan 初始化 |
