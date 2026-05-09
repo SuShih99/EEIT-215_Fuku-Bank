@@ -106,6 +106,13 @@
         </div>
         
         <div class="header-right">
+          <div class="admin-timer">
+            <span class="timer-text">剩餘登出時間: {{ formatTime(countdown) }}</span>
+            <a-button size="small" :type="isTimerPaused ? 'primary' : 'default'" @click="isTimerPaused = !isTimerPaused">
+              {{ isTimerPaused ? '繼續' : '暫停' }}
+            </a-button>
+            <a-button size="small" @click="triggerIdleAlert">Demo Alert</a-button>
+          </div>
           <a-tag class="custom-role-tag">
             {{ authStore.user?.roleCode || 'ROLE' }}
           </a-tag>
@@ -128,6 +135,8 @@ import { ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { logout } from '@/api/auth'
+import { Modal } from 'ant-design-vue'
+import { onMounted, onUnmounted } from 'vue'
 import { 
   HomeOutlined, TeamOutlined, UserOutlined, SettingOutlined, LogoutOutlined,
   BankOutlined, ProfileOutlined, FileAddOutlined, AuditOutlined,
@@ -146,10 +155,31 @@ const isAdmin = computed(() => {
 })
 
 const selectedKeys = ref([route.name])
+const countdown = ref(300)
+const isTimerPaused = ref(false)
 
 watch(() => route.name, (val) => {
   selectedKeys.value = [val]
 })
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+
+function triggerIdleAlert() {
+  Modal.info({
+    title: '您還在線嗎？',
+    content: '系統偵測到您已登入一段時間，請確認是否繼續使用。',
+    okText: '還在，繼續使用',
+    centered: true,
+    maskClosable: false,
+    onOk: () => {
+      countdown.value = 300 // 重設倒數
+    }
+  })
+}
 
 async function handleLogout() {
   try {
@@ -161,6 +191,26 @@ async function handleLogout() {
     router.push('/admin/login')
   }
 }
+
+let idleTimer = null
+
+onMounted(() => {
+  // 每 1 秒更新倒數
+  idleTimer = setInterval(() => {
+    if (isTimerPaused.value) return
+    
+    if (countdown.value > 0) {
+      countdown.value--
+    } else {
+      triggerIdleAlert()
+      countdown.value = 300
+    }
+  }, 1000)
+})
+
+onUnmounted(() => {
+  if (idleTimer) clearInterval(idleTimer)
+})
 </script>
 
 <style scoped>
@@ -288,9 +338,28 @@ async function handleLogout() {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   border-style: solid !important;
   border-color: transparent !important;
+}
+
+.admin-timer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(92, 107, 95, 0.05);
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: 1px solid rgba(92, 107, 95, 0.3);
+  line-height: normal;
+}
+
+.timer-text {
+  font-size: 14px;
+  color: #5C6B5F;
+  font-weight: 600;
+  min-width: 100px;
+  white-space: nowrap;
 }
 
 .custom-role-tag {
@@ -319,7 +388,7 @@ async function handleLogout() {
 }
 
 .admin-content {
-  padding: 0 32px 32px;
+  padding: 24px 32px 32px;
   overflow-y: auto;
 }
 

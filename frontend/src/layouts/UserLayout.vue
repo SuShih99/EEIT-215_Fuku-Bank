@@ -6,18 +6,27 @@
       <div class="header-top">
         <div class="header-top-inner">
           <JbLogo size="sm" clickable @navigate="$router.push({ name: 'user-home' })" />
-          <div class="header-user">
-            <button
-              class="avatar-btn"
-              aria-label="前往會員中心"
-              @click="$router.push({ name: 'user-profile' })"
-            >
-              <img v-if="avatarSrc" :src="avatarSrc" class="user-avatar" alt="使用者大頭照" />
-              <span v-else class="user-avatar avatar-placeholder" aria-hidden="true">{{ customerInitial }}</span>
-            </button>
-            <span class="welcome-text">{{ customerName }}</span>
-            <button class="jb-btn jb-btn-secondary jb-btn-sm" @click="handleLogout">登出</button>
-          </div>
+            <div class="header-user">
+              <!-- Countdown and Demo Button -->
+              <div class="session-timer">
+                <span class="session-timer-text">自動登出倒數: {{ formatTime(countdown) }}</span>
+                <button class="session-continue-btn" @click="isTimerPaused = !isTimerPaused">
+                  {{ isTimerPaused ? '保持登入' : '暫停計時' }}
+                </button>
+                <button class="demo-mode-badge" @click="triggerIdleAlert">Demo 模式</button>
+              </div>
+              
+              <button
+                class="avatar-btn"
+                aria-label="前往會員中心"
+                @click="$router.push({ name: 'user-profile' })"
+              >
+                <img v-if="avatarSrc" :src="avatarSrc" class="user-avatar" alt="使用者大頭照" />
+                <span v-else class="user-avatar avatar-placeholder" aria-hidden="true">{{ customerInitial }}</span>
+              </button>
+              <span class="user-name">{{ customerName }}</span>
+              <button class="logout-btn" @click="handleLogout">登出</button>
+            </div>
         </div>
       </div>
 
@@ -71,11 +80,24 @@
     <main class="user-content">
       <router-view />
     </main>
+
+    <!-- Idle Reminder Modal -->
+    <transition name="modal-fade">
+      <div v-if="idleModal.visible" class="jb-modal-overlay">
+        <div class="jb-modal jb-card">
+          <h3 class="jb-modal-title">您還在線嗎？</h3>
+          <p class="jb-modal-content">系統偵測到您已登入一段時間，請確認是否繼續使用。</p>
+          <div class="jb-modal-actions">
+            <button class="jb-btn jb-btn-primary" style="width: 100%" @click="handleStillHere">還在，繼續使用</button>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCustomerAuthStore } from '@/stores/customerAuth'
 import { BASE_URL } from '@/api/axios'
@@ -188,8 +210,51 @@ function closeOnOutsideClick(e) {
   }
 }
 
-onMounted(() => document.addEventListener('click', closeOnOutsideClick))
-onUnmounted(() => document.removeEventListener('click', closeOnOutsideClick))
+const idleModal = reactive({
+  visible: false
+})
+
+const countdown = ref(300) // 5 分鐘 = 300 秒
+const isTimerPaused = ref(false)
+let idleTimer = null
+let secondTimer = null
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+
+function triggerIdleAlert() {
+  idleModal.visible = true
+}
+
+function handleStillHere() {
+  idleModal.visible = false
+  countdown.value = 300 // 重設倒數
+}
+
+onMounted(() => {
+  document.addEventListener('click', closeOnOutsideClick)
+  
+  // 每 1 秒更新倒數
+  secondTimer = setInterval(() => {
+    if (isTimerPaused.value) return // 暫停時不動作
+    
+    if (countdown.value > 0) {
+      countdown.value--
+    } else {
+      triggerIdleAlert()
+      countdown.value = 300 // 彈出後重設
+    }
+  }, 1000)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeOnOutsideClick)
+  if (idleTimer) clearInterval(idleTimer)
+  if (secondTimer) clearInterval(secondTimer)
+})
 
 function handleLogout() {
   customerAuthStore.clearCustomer()
@@ -230,7 +295,90 @@ function handleLogout() {
 .header-user {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-4);
+}
+
+.welcome-text {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.user-name {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.session-timer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background-color: rgba(234, 228, 218, 0.72);
+  border: 1px solid rgba(214, 206, 195, 0.9);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  box-shadow: 0 4px 14px rgba(63, 74, 66, 0.05);
+}
+
+.session-timer-text {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.session-continue-btn {
+  padding: 4px 14px;
+  color: var(--primary-dark);
+  background-color: rgba(255, 249, 239, 0.55);
+  border: 1px solid rgba(92, 107, 95, 0.28);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.session-continue-btn:hover {
+  color: var(--bg-primary);
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+.demo-mode-badge {
+  padding: 4px 12px;
+  color: var(--accent);
+  background-color: rgba(166, 90, 77, 0.06);
+  border: 1px solid rgba(166, 90, 77, 0.26);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.demo-mode-badge:hover {
+  background-color: rgba(166, 90, 77, 0.12);
+  border-color: rgba(166, 90, 77, 0.42);
+}
+
+.logout-btn {
+  padding: 9px 18px;
+  color: var(--text-secondary);
+  background-color: rgba(255, 249, 239, 0.55);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  color: var(--accent);
+  background-color: rgba(166, 90, 77, 0.06);
+  border-color: rgba(166, 90, 77, 0.32);
 }
 
 .avatar-btn {
@@ -249,7 +397,7 @@ function handleLogout() {
   height: 36px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid var(--border);
+  border: 1px solid var(--border);
   display: block;
 }
 
@@ -257,16 +405,15 @@ function handleLogout() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-secondary);
-  color: var(--primary);
+  background-color: rgba(234, 228, 218, 0.75);
+  border: 1px solid var(--border);
+  color: var(--primary-dark);
   font-family: var(--font-heading);
   font-size: var(--text-sm);
   font-weight: 600;
-}
-
-.welcome-text {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
 }
 
 /* === Mega Nav Bar === */
@@ -311,9 +458,10 @@ function handleLogout() {
 
 .mega-nav-trigger:hover,
 .mega-nav-trigger.active {
-  color: var(--primary);
-  background: var(--primary-light);
-  border-bottom-color: var(--primary);
+  color: var(--primary-dark);
+  background: rgba(92, 107, 95, 0.06);
+  border-radius: 8px;
+  border-bottom-color: transparent;
 }
 
 .mega-nav-icon {
@@ -453,4 +601,49 @@ function handleLogout() {
     border-radius: var(--radius-md);
   }
 }
+
+/* === Modal Styles (Consistent with Profile) === */
+.jb-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(43, 43, 43, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.jb-modal {
+  width: 90%;
+  max-width: 400px;
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xl);
+  text-align: center;
+}
+.jb-modal-title {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  color: var(--text-primary);
+  margin: 0;
+}
+.jb-modal-content {
+  font-size: 16px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+.jb-modal-actions {
+  margin-top: var(--space-2);
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+}
+.modal-fade-enter-active, .modal-fade-leave-active { transition: all 0.4s var(--ease); }
+.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; transform: scale(0.95); }
 </style>
