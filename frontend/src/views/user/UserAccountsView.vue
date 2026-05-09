@@ -81,7 +81,7 @@ const loading = ref(false)
 const accounts = ref([])
 const activeCurrency = ref('ALL')
 
-const currencyPriority = { TWD: 0, USD: 1, JPY: 2 }
+const currencyPriority = { TWD: 0, USD: 1, JPY: 2, EUR: 3, GBP: 4 }
 const currencyOrder = (c) => currencyPriority[c] ?? 99
 
 const currencies = computed(() => {

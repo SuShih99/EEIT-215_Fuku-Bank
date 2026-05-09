@@ -189,7 +189,7 @@
             </tr>
           </tbody>
         </table>
-        <p class="exchange-time">資料時間：2026/05/08 14:30 <button class="refresh-btn" @click="comingSoon">↻ 更新</button></p>
+        <p class="exchange-time">資料時間：{{ exchangeTime }} <button class="refresh-btn" @click="fetchExchangeRates">↻ 更新</button></p>
       </section>
 
       <!-- 歷史水位圖 -->
@@ -229,7 +229,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCustomerAuthStore } from '@/stores/customerAuth'
-import { BASE_URL } from '@/api/axios'
+import api, { BASE_URL } from '@/api/axios'
 import { Chart, registerables } from 'chart.js'
 import { getMyAccountApplications } from '@/api/accountApplication'
 import { getMyAccounts } from '@/api/customerAccount'
@@ -460,14 +460,40 @@ function drawLine() {
   })
 }
 
-// === 匯率假資料 ===
-const exchangeRates = [
-  { flag: '🇺🇸', name: '美元', code: 'USD', sell: '31.45', buy: '31.51' },
-  { flag: '🇨🇳', name: '人民幣', code: 'CNY', sell: '4.592', buy: '4.647' },
-  { flag: '🇯🇵', name: '日幣', code: 'JPY', sell: '0.2004', buy: '0.2034' },
-  { flag: '🇪🇺', name: '歐元', code: 'EUR', sell: '36.88', buy: '37.26' },
-  { flag: '🇦🇺', name: '澳幣', code: 'AUD', sell: '22.75', buy: '22.95' },
-]
+const exchangeRates = ref([
+  { flag: '🇺🇸', name: '美元', code: 'USD', sell: '-', buy: '-' },
+  { flag: '🇨🇳', name: '人民幣', code: 'CNY', sell: '-', buy: '-' },
+  { flag: '🇯🇵', name: '日幣', code: 'JPY', sell: '-', buy: '-' },
+  { flag: '🇪🇺', name: '歐元', code: 'EUR', sell: '-', buy: '-' },
+  { flag: '🇦🇺', name: '澳幣', code: 'AUD', sell: '-', buy: '-' },
+])
+
+const exchangeTime = ref('2026/05/08 14:30')
+
+async function fetchExchangeRates() {
+  try {
+    const res = await api.get('/api/public/exchange-rates')
+    const rates = res.data.data.rates
+    
+    // Update timestamp
+    const d = new Date()
+    exchangeTime.value = `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+    
+    // Convert base 1 TWD = X currency to 1 currency = Y TWD
+    exchangeRates.value = exchangeRates.value.map(currency => {
+      const rateToTwd = rates[currency.code]
+      if (!rateToTwd) return currency
+      
+      const midRate = 1 / rateToTwd
+      const sell = (midRate * 0.995).toFixed(4)
+      const buy = (midRate * 1.005).toFixed(4)
+      
+      return { ...currency, sell, buy }
+    })
+  } catch (e) {
+    console.error('Failed to fetch exchange rates', e)
+  }
+}
 
 watch(activePeriod, () => drawLine())
 
@@ -476,6 +502,7 @@ onMounted(async () => {
   if (hasAccount.value) {
     drawDonut()
     drawLine()
+    fetchExchangeRates()
   }
 })
 </script>

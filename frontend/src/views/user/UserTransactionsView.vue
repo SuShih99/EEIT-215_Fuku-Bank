@@ -77,7 +77,12 @@ const columns = [
 onMounted(async () => {
   try {
     const res = await getMyAccounts()
-    accounts.value = res
+    const currencyPriority = { TWD: 0, USD: 1, JPY: 2, EUR: 3, GBP: 4 }
+    accounts.value = res.sort((a, b) => {
+      const pA = currencyPriority[a.currency] ?? 99
+      const pB = currencyPriority[b.currency] ?? 99
+      return pA - pB || a.currency.localeCompare(b.currency)
+    })
     if (route.query.account) {
       selectedAccount.value = route.query.account
     }
