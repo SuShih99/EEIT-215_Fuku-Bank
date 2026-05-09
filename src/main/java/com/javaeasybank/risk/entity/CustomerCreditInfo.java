@@ -1,6 +1,5 @@
 package com.javaeasybank.risk.entity;
 
-import com.javaeasybank.customer.entity.CustomerProfile;
 import com.javaeasybank.risk.core.enums.Occupation;
 import com.javaeasybank.risk.core.enums.RiskLevel;
 import jakarta.persistence.*;
@@ -21,7 +20,7 @@ public class CustomerCreditInfo {
     private String customerId;
 
     // --- 財務維度 (模擬外部輸入) ---
-    @Column(name = "annual_income", columnDefinition = "DECIMAL(15,2) DEFAULT 0.00")
+    @Column(name = "annual_income", precision = 15, scale = 2)
     private BigDecimal annualIncome = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)

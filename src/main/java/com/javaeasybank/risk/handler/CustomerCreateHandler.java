@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.javaeasybank.risk.utils.MaskSensitiveUtils.maskSensitive;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -62,13 +64,6 @@ public class CustomerCreateHandler extends BaseRiskHandler {
             // 阻斷業務流程：回傳統一錯誤碼與訊息，避免外露敏感資訊
             throw new BusinessException("E_RISK_REJECT: 系統核對資訊異常，請洽客服人員。");
         }
-    }
-
-    private static String maskSensitive(String v) {
-        if (v == null) return "****";
-        String s = v.trim();
-        if (s.length() <= 4) return "****";
-        return "****" + s.substring(s.length() - 4);
     }
 
     private void putIfPresent(Map<BlacklistType, String> map, BlacklistType type, Object value) {

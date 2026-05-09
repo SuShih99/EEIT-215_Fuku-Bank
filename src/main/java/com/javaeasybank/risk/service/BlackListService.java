@@ -1,7 +1,7 @@
 package com.javaeasybank.risk.service;
 
 import com.javaeasybank.risk.core.enums.BlacklistType;
-import com.javaeasybank.risk.dto.BlackListRequest;
+import com.javaeasybank.risk.dto.request.BlackListRequest;
 import com.javaeasybank.risk.dto.BlackListResponse;
 import com.javaeasybank.risk.entity.Blacklist;
 import com.javaeasybank.risk.repository.BlackListRepository;
@@ -12,10 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -90,21 +87,11 @@ public class BlackListService {
 
     //批次檢查所有資料
     public List<BlacklistType> checkAll(Map<BlacklistType, String> map) {
-        if (map == null || map.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<BlacklistType> result = new ArrayList<>();
-        // 嚴格校驗邏輯：逐一比對生效中的黑名單
-        map.forEach((type, value) -> {
-            if (StringUtils.hasText(value)) {
-                // 調用現有的 findActiveBlacklist 邏輯
-                if (blRepos.findActiveBlacklist(type, value).isPresent()) {
-                    result.add(type);
-                }
-            }
-        });
-        return result;
+        return blRepos.findHitTypes(
+                map.get(BlacklistType.ID_CARD),
+                map.get(BlacklistType.PHONE),
+                map.get(BlacklistType.EMAIL)
+        );
     }
 
 

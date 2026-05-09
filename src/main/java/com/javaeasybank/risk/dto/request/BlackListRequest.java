@@ -1,4 +1,4 @@
-package com.javaeasybank.risk.dto;
+package com.javaeasybank.risk.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.javaeasybank.risk.core.enums.BlacklistType;

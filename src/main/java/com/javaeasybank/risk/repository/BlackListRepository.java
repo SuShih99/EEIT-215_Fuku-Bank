@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface BlackListRepository extends JpaRepository<Blacklist, Long> {
@@ -28,4 +29,20 @@ public interface BlackListRepository extends JpaRepository<Blacklist, Long> {
 
     @Query("SELECT b FROM Blacklist b WHERE b.listType = :type AND b.listValue = :value")
     Optional<Blacklist> findByBusinessKey(BlacklistType type, String value);
+
+    @Query("""
+    SELECT b.listType FROM Blacklist b 
+    WHERE b.status = true 
+    AND (b.expireAt IS NULL OR b.expireAt > CURRENT_TIMESTAMP)
+    AND (
+        (b.listType = 'ID_CARD' AND b.listValue = :idCard) OR
+        (b.listType = 'PHONE' AND b.listValue = :phone) OR
+        (b.listType = 'EMAIL' AND b.listValue = :email)
+    )
+""")
+    List<BlacklistType> findHitTypes(
+            @Param("idCard") String idCard,
+            @Param("phone") String phone,
+            @Param("email") String email
+    );
 }

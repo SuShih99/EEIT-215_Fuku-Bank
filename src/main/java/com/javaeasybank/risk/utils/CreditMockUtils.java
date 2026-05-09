@@ -1,4 +1,4 @@
-package com.javaeasybank.risk;
+package com.javaeasybank.risk.utils;
 
 import com.javaeasybank.risk.core.enums.Occupation;
 import com.javaeasybank.risk.entity.CustomerCreditInfo;
@@ -97,79 +97,45 @@ public class CreditMockUtils {
      */
     private static BigDecimal generateIncome(Occupation occupation, int age) {
         var random = ThreadLocalRandom.current();
-        double base;
-        double seniorityBonus;
 
-        switch (occupation) {
+        record Income(double base, double bonus) {}
 
-            // --- 穩定受僱 ---
-            case OFFICE_WORKER -> {
-                // 一般上班族：40萬~80萬，25歲後每年 +8,000
-                base = 400_000 + random.nextInt(400_000);
-                seniorityBonus = Math.max(0, age - 25) * 8_000.0;
-            }
-            case GOVERNMENT_EMPLOYEE -> {
-                // 公務員：穩定但天花板低，區間窄，年資加成也較低
-                base = 500_000 + random.nextInt(200_000); // 50萬~70萬
-                seniorityBonus = Math.max(0, age - 25) * 6_000.0;
-            }
-            case PROFESSIONAL -> {
-                // 醫師/律師/會計師：入行晚，但起薪高
-                base = 1_500_000 + random.nextInt(500_000); // 150萬~200萬
-                seniorityBonus = Math.max(0, age - 30) * 30_000.0;
-            }
-            case MANAGER -> {
-                // 管理職：需資歷，35歲後加成明顯
-                base = 1_000_000 + random.nextInt(500_000); // 100萬~150萬
-                seniorityBonus = Math.max(0, age - 35) * 20_000.0;
-            }
-            case MANUFACTURING -> {
-                // 製造業勞工：收入偏低，天花板有限
-                base = 350_000 + random.nextInt(150_000); // 35萬~50萬
-                seniorityBonus = Math.max(0, age - 22) * 3_000.0;
-            }
-            case SERVICE_INDUSTRY -> {
-                // 服務業：收入偏低且波動大，年資加成幾乎沒有
-                base = 300_000 + random.nextInt(200_000); // 30萬~50萬
-                seniorityBonus = Math.max(0, age - 22) * 2_000.0;
-            }
+        Income inc = switch (occupation) {
+            case OFFICE_WORKER ->
+                    new Income(400_000 + random.nextInt(400_000),
+                            Math.max(0, age - 25) * 8_000.0);
+            case GOVERNMENT_EMPLOYEE ->
+                    new Income(500_000 + random.nextInt(200_000),
+                            Math.max(0, age - 25) * 6_000.0);
+            case PROFESSIONAL ->
+                    new Income(1_500_000 + random.nextInt(500_000),
+                            Math.max(0, age - 30) * 30_000.0);
+            case MANAGER ->
+                    new Income(1_000_000 + random.nextInt(500_000),
+                            Math.max(0, age - 35) * 20_000.0);
+            case MANUFACTURING ->
+                    new Income(350_000 + random.nextInt(150_000),
+                            Math.max(0, age - 22) * 3_000.0);
+            case SERVICE_INDUSTRY ->
+                    new Income(300_000 + random.nextInt(200_000),
+                            Math.max(0, age - 22) * 2_000.0);
+            case SELF_EMPLOYED ->
+                    new Income(500_000 + random.nextInt(1_000_000),
+                            Math.max(0, age - 30) * 15_000.0);
+            case FREELANCER ->
+                    new Income(400_000 + random.nextInt(800_000),
+                            Math.max(0, age - 28) * 10_000.0);
+            case STUDENT ->
+                    new Income(50_000 + random.nextInt(100_000), 0);
+            case RETIRED ->
+                    new Income(200_000 + random.nextInt(200_000), 0);
+            case HOUSEWIFE ->
+                    new Income(random.nextInt(100_000), 0);
+            case UNEMPLOYED ->
+                    new Income(random.nextInt(50_000), 0);
+        };
 
-            // --- 自主經營/自由業 ---
-            case SELF_EMPLOYED -> {
-                // 自營業者：波動大，但資深者收入可觀
-                base = 500_000 + random.nextInt(1_000_000); // 50萬~150萬
-                seniorityBonus = Math.max(0, age - 30) * 15_000.0;
-            }
-            case FREELANCER -> {
-                // 自由業：波動最大，年資加成中等
-                base = 400_000 + random.nextInt(800_000); // 40萬~120萬
-                seniorityBonus = Math.max(0, age - 28) * 10_000.0;
-            }
-
-            // --- 非在職狀態 ---
-            case STUDENT -> {
-                // 學生：打工收入，無年資加成
-                base = 50_000 + random.nextInt(100_000); // 5萬~15萬
-                seniorityBonus = 0;
-            }
-            case RETIRED -> {
-                // 退休：退休金/勞保，固定且偏低
-                base = 200_000 + random.nextInt(200_000); // 20萬~40萬
-                seniorityBonus = 0; // 退休後無年資加成
-            }
-            case HOUSEWIFE -> {
-                // 家庭主婦/主夫：無固定收入，偶有兼職
-                base = random.nextInt(100_000); // 0~10萬
-                seniorityBonus = 0;
-            }
-            case UNEMPLOYED -> {
-                // 待業者：無收入或極低（政府補助）
-                base = random.nextInt(50_000); // 0~5萬
-                seniorityBonus = 0;
-            }
-        }
-
-        return BigDecimal.valueOf(base + seniorityBonus)
+        return BigDecimal.valueOf(inc.base() + inc.bonus())
                 .setScale(2, RoundingMode.HALF_UP);
     }
 

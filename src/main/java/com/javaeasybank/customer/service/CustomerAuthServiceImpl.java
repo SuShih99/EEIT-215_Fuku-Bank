@@ -7,6 +7,7 @@ import com.javaeasybank.customer.entity.CustomerAuth;
 import com.javaeasybank.customer.entity.CustomerProfile;
 import com.javaeasybank.customer.repository.CustomerAuthRepository;
 import com.javaeasybank.customer.repository.CustomerProfileRepository;
+import com.javaeasybank.risk.service.CreditSCoreService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,8 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
 
     private final CustomerAuthRepository customerAuthRepository;
     private final CustomerProfileRepository customerProfileRepository;
+    //測試用
+    private final CreditSCoreService ccService;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
@@ -41,11 +44,15 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
     public CustomerAuthServiceImpl(CustomerAuthRepository customerAuthRepository,
                                    CustomerProfileRepository customerProfileRepository,
                                    PasswordEncoder passwordEncoder,
-                                   JwtUtil jwtUtil) {
+                                   JwtUtil jwtUtil,
+                                   //測試用
+                                   CreditSCoreService ccService) {
         this.customerAuthRepository = customerAuthRepository;
         this.customerProfileRepository = customerProfileRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        //測試用
+        this.ccService = ccService;
     }
 
     // ===========================
@@ -89,6 +96,9 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
         auth.setRole("CUSTOMER");
         auth.setStatus("ACTIVE");
         customerAuthRepository.save(auth);
+
+        // 初始化信用評分（Mock 資料 + 評分寫入 DB）
+        ccService.initializeCreditInfo(customerId, request.getBirthday());
 
         // 4. 產生 JWT 並回傳
         String token = jwtUtil.generateToken(request.getUsername(), "CUSTOMER", customerId);
@@ -254,11 +264,11 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
     public void seedAuthTestData() {
         // 為已有的 seed 客戶資料建立對應的 customer_auth
         String[][] data = {
-            {"X7K9P2M4", "mingwang85"},
-            {"V4L6T1Y8", "hualin90"},
-            {"D3H8F5G2", "chienchen78"},
-            {"B9W1C7R5", "yachang95"},
-            {"P6M4N2Q8", "chihlee82"},
+                {"X7K9P2M4", "mingwang85"},
+                {"V4L6T1Y8", "hualin90"},
+                {"D3H8F5G2", "chienchen78"},
+                {"B9W1C7R5", "yachang95"},
+                {"P6M4N2Q8", "chihlee82"},
         };
 
         for (String[] d : data) {

@@ -36,16 +36,6 @@ public class LoanApplyHandler implements RiskHandler {
     @Override
     public void handle(RiskTarget target) {
 
-
-        /*Account entity
-        accountType
-        balance
-        liability
-        interestRate
-
-        TransLog entity
-        account_number, transaction_type, amount, created_at
-        */
     }
 
     @Override
