@@ -8,6 +8,8 @@ import com.javaeasybank.account.enums.*;
 import com.javaeasybank.account.repository.AccountApplicationRepository;
 import com.javaeasybank.account.repository.AccountRepository;
 import com.javaeasybank.common.exception.BusinessException;
+import com.javaeasybank.customer.dto.CustomerDto;
+import com.javaeasybank.customer.service.CustomerService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -35,6 +37,9 @@ class AccountApplicationServiceTest {
 
     @Mock
     private AccountRepository accountRepository;
+
+    @Mock
+    private CustomerService customerService;
 
     @InjectMocks
     private AccountApplicationService service;
@@ -105,6 +110,9 @@ class AccountApplicationServiceTest {
 
             // 驗證 save 被呼叫一次
             verify(applicationRepository, times(1)).save(any(AccountApplication.class));
+            verify(customerService).syncAccountApplicationProfile(
+                    eq(customerId),
+                    any(CustomerDto.AccountApplicationProfileSyncRequest.class));
         }
 
         @Test
@@ -330,6 +338,9 @@ class AccountApplicationServiceTest {
             assertEquals(AccountStatus.ACTIVE, created.getStatus());
             assertNotNull(created.getAccountNumber());
             assertEquals(12, created.getAccountNumber().length());
+            verify(customerService).syncAccountApplicationProfile(
+                    eq("C001"),
+                    any(CustomerDto.AccountApplicationProfileSyncRequest.class));
         }
 
         @Test
@@ -445,6 +456,9 @@ class AccountApplicationServiceTest {
 
             // 不應建立帳戶
             verify(accountRepository, never()).save(any());
+            verify(customerService).syncAccountApplicationProfile(
+                    eq("C010"),
+                    any(CustomerDto.AccountApplicationProfileSyncRequest.class));
         }
 
         @Test

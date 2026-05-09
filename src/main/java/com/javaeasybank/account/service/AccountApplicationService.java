@@ -10,6 +10,8 @@ import com.javaeasybank.account.repository.AccountRepository;
 import com.javaeasybank.account.utils.AccountNumberGenerator;
 import com.javaeasybank.account.utils.ApplicationNoGenerator;
 import com.javaeasybank.common.exception.BusinessException;
+import com.javaeasybank.customer.dto.CustomerDto;
+import com.javaeasybank.customer.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -37,6 +39,7 @@ public class AccountApplicationService {
 
     private final AccountApplicationRepository applicationRepository;
     private final AccountRepository accountRepository;
+    private final CustomerService customerService;
 
     // =========================================================
     // 客戶端：提交申請
@@ -134,6 +137,7 @@ public class AccountApplicationService {
         app.setStatus(ApplicationStatus.PENDING);
 
         AccountApplication saved = applicationRepository.save(app);
+        syncCustomerProfileFromApplication(saved);
         log.info("Account application submitted: id={}, customer={}, riskFlag={}",
                 saved.getId(), customerId, riskFlag);
 
@@ -216,6 +220,7 @@ public class AccountApplicationService {
         app.setCreatedAccountNumber(savedAccount.getAccountNumber());
 
         AccountApplication updated = applicationRepository.save(app);
+        syncCustomerProfileFromApplication(updated);
         return AccountApplicationResponse.fromEntityForAdmin(updated);
     }
 
@@ -238,6 +243,7 @@ public class AccountApplicationService {
         app.setReviewedBy(reviewedBy);
 
         AccountApplication updated = applicationRepository.save(app);
+        syncCustomerProfileFromApplication(updated);
         log.info("Account application supplement requested: id={}, reason={}", applicationId, reason);
         return AccountApplicationResponse.fromEntityForAdmin(updated);
     }
@@ -261,6 +267,7 @@ public class AccountApplicationService {
         app.setReviewedBy(reviewedBy);
 
         AccountApplication updated = applicationRepository.save(app);
+        syncCustomerProfileFromApplication(updated);
         log.info("Account application rejected: id={}, reason={}", applicationId, rejectReason);
         return AccountApplicationResponse.fromEntityForAdmin(updated);
     }
@@ -278,5 +285,44 @@ public class AccountApplicationService {
         }
         // 預設 TWD
         return Currency.TWD;
+    }
+
+    private void syncCustomerProfileFromApplication(AccountApplication app) {
+        CustomerDto.AccountApplicationProfileSyncRequest request =
+                new CustomerDto.AccountApplicationProfileSyncRequest();
+
+        request.setName(app.getName());
+        request.setIdNumber(app.getIdNumber());
+        request.setBirthday(app.getBirthday());
+        request.setNationality(app.getNationality());
+        request.setPhone(app.getPhone());
+        request.setRegisteredAddress(app.getRegisteredAddress());
+        request.setCurrentAddress(app.getCurrentAddress());
+        request.setOccupation(app.getOccupation());
+        request.setEmployer(app.getEmployer());
+        request.setEstimatedMonthlyTx(app.getEstimatedMonthlyTx());
+        request.setAccountPurpose(enumName(app.getAccountPurpose()));
+        request.setFundSource(enumName(app.getFundSource()));
+        request.setTaxResidency(app.getTaxResidency());
+        request.setIsPep(app.getIsPep());
+        request.setIdFrontUrl(app.getIdFrontUrl());
+        request.setIdBackUrl(app.getIdBackUrl());
+        request.setSecondIdUrl(app.getSecondIdUrl());
+        request.setLatestAccountApplicationId(app.getId());
+        request.setLatestAccountApplicationNo(app.getApplicationNo());
+        request.setLatestAppliedAccountType(enumName(app.getAccountType()));
+        request.setLatestAppliedCurrency(enumName(app.getCurrency()));
+        request.setLatestAccountApplicationStatus(enumName(app.getStatus()));
+        request.setLatestAccountApplicationRiskFlag(enumName(app.getRiskFlag()));
+        request.setLatestAccountApplicationReviewedAt(app.getReviewedAt());
+        request.setLatestAccountApplicationReviewedBy(app.getReviewedBy());
+        request.setLatestAccountApplicationRejectReason(app.getRejectReason());
+        request.setCreatedAccountNumber(app.getCreatedAccountNumber());
+
+        customerService.syncAccountApplicationProfile(app.getCustomerId(), request);
+    }
+
+    private String enumName(Enum<?> value) {
+        return value == null ? null : value.name();
     }
 }

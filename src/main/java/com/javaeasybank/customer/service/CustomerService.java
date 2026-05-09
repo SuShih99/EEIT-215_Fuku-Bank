@@ -20,4 +20,7 @@ public interface CustomerService {
     CustomerDto.CustomerResponse findByCustomerId(String customerId);
     CustomerDto.CustomerResponse findByIdNumber(String idNumber);
     CustomerDto.CustomerResponse findByCif(String cif);
+    CustomerDto.CustomerResponse syncAccountApplicationProfile(
+            String customerId,
+            CustomerDto.AccountApplicationProfileSyncRequest request);
 }

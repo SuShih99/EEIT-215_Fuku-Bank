@@ -22,7 +22,12 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+
+import jakarta.persistence.criteria.Predicate;
+import org.springframework.data.jpa.domain.Specification;
+import com.javaeasybank.account.enums.TransactionType;
 
 /**
  * 客戶端帳戶與交易查詢 Controller
@@ -68,29 +73,49 @@ public class CustomerAccountController {
             @RequestParam(required = false) String accountNumber,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) TransactionType transactionType,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
         String customerId = extractCustomerId(request);
         Page<TransLog> result;
 
-        if (accountNumber != null && !accountNumber.isBlank()) {
-            // 驗證帳號屬於該客戶
-            Account account = accountRepository.findById(accountNumber).orElse(null);
-            if (account == null || !account.getCustomerId().equals(customerId)) {
-                throw new BusinessException("帳戶不存在或不屬於您");
-            }
-            result = transLogRepository.findByAccountInvolved(accountNumber,
-                    PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
-        } else if (startDate != null && endDate != null) {
-            LocalDateTime start = LocalDate.parse(startDate).atStartOfDay();
-            LocalDateTime end = LocalDate.parse(endDate).atTime(23, 59, 59);
-            result = transLogRepository.findByCustomerIdAndDateRange(customerId, start, end,
-                    PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
-        } else {
-            result = transLogRepository.findByCustomerId(customerId,
-                    PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+        List<String> ownedAccounts = accountRepository.findAllByCustomerId(customerId).stream()
+                .map(Account::getAccountNumber).toList();
+
+        if (ownedAccounts.isEmpty()) {
+            return ResponseEntity.ok(ApiResponse.success(PageResponse.of(List.of(), page, size, 0)));
         }
+
+        Specification<TransLog> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (accountNumber != null && !accountNumber.isBlank()) {
+                if (!ownedAccounts.contains(accountNumber)) {
+                    throw new BusinessException("帳戶不存在或不屬於您");
+                }
+                predicates.add(cb.or(
+                        cb.equal(root.get("accountNumber"), accountNumber),
+                        cb.equal(root.get("counterpartAccount"), accountNumber)
+                ));
+            } else {
+                predicates.add(root.get("accountNumber").in(ownedAccounts));
+            }
+
+            if (startDate != null && endDate != null) {
+                LocalDateTime start = LocalDate.parse(startDate).atStartOfDay();
+                LocalDateTime end = LocalDate.parse(endDate).atTime(23, 59, 59);
+                predicates.add(cb.between(root.get("createdAt"), start, end));
+            }
+
+            if (transactionType != null) {
+                predicates.add(cb.equal(root.get("transactionType"), transactionType));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        result = transLogRepository.findAll(spec, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
 
         List<TransLogResponse> content = result.getContent().stream()
                 .map(TransLogResponse::fromEntity)

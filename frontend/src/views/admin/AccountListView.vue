@@ -92,6 +92,7 @@
         showSizeChanger: true,
         showTotal: (t) => `共 ${t} 筆`,
       }"
+      :locale="{ triggerDesc: '點擊降冪排序', triggerAsc: '點擊升冪排序', cancelSort: '取消排序' }"
       @change="handleTableChange"
       @resizeColumn="handleResizeColumn"
     >
@@ -310,32 +311,35 @@ const total = ref(0)
 const lastSearchType = ref('')
 
 const columns = ref([
-  { title: '客戶資訊', dataIndex: 'customerName', key: 'customer', width: 160, fixed: 'left', sorter: (a, b) => (a.customerName || '').localeCompare(b.customerName || '') },
-  { title: '帳號', dataIndex: 'accountNumber', key: 'accountNumber', width: 150, sorter: (a, b) => (a.accountNumber || '').localeCompare(b.accountNumber || '') },
+  { title: '客戶資訊', dataIndex: 'customerName', key: 'customer', width: 160, fixed: 'left', resizable: true, sorter: (a, b) => (a.customerName || '').localeCompare(b.customerName || '') },
+  { title: '帳號', dataIndex: 'accountNumber', key: 'accountNumber', width: 150, resizable: true, sorter: (a, b) => (a.accountNumber || '').localeCompare(b.accountNumber || '') },
   {
     title: '型別',
     dataIndex: 'accountType',
     key: 'accountType',
     width: 100,
+    resizable: true,
     sorter: (a, b) => (a.accountType || '').localeCompare(b.accountType || ''),
     customRender: ({ text }) => typeMap[text] || text,
   },
-  { title: '幣別', dataIndex: 'currency', key: 'currency', width: 80, sorter: (a, b) => (a.currency || '').localeCompare(b.currency || '') },
+  { title: '幣別', dataIndex: 'currency', key: 'currency', width: 80, resizable: true, sorter: (a, b) => (a.currency || '').localeCompare(b.currency || '') },
   {
     title: '餘額',
     dataIndex: 'balance',
     key: 'balance',
     width: 130,
+    resizable: true,
     align: 'right',
     sorter: (a, b) => (a.balance || 0) - (b.balance || 0),
     customRender: ({ text }) => formatAmount(text),
   },
-  { title: '狀態', dataIndex: 'status', key: 'status', width: 100, sorter: (a, b) => (a.status || '').localeCompare(b.status || '') },
+  { title: '狀態', dataIndex: 'status', key: 'status', width: 100, resizable: true, sorter: (a, b) => (a.status || '').localeCompare(b.status || '') },
   {
     title: '建立時間',
     dataIndex: 'createdAt',
     key: 'createdAt',
     width: 160,
+    resizable: true,
     sorter: (a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''),
     customRender: ({ text }) => formatTime(text),
   },

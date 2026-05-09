@@ -22,18 +22,24 @@ const statusOptions = [
   { label: '需補件', value: 'SUPPLEMENT_REQUIRED' },
   { label: '已核准', value: 'APPROVED' },
   { label: '已駁回', value: 'REJECTED' },
+  { label: '已取消', value: 'CANCELLED' },
 ]
 
 const riskFlagMap = {
   NORMAL: { label: '正常', color: 'green' },
+  WATCH: { label: '觀察中', color: 'gold' },
   PEP: { label: 'PEP', color: 'orange' },
+  HIGH_RISK: { label: '高風險', color: 'red' },
   HIGH_FREQUENCY: { label: '高頻', color: 'red' },
   PEP_HIGH_FREQUENCY: { label: 'PEP+高頻', color: 'red' },
 }
 
 const accountTypeMap = {
-  CHECKING: '台幣活存',
+  CHECKING: '活期帳戶',
+  SAVINGS: '儲蓄帳戶',
   TIME_DEPOSIT: '定期存款',
+  LOAN: '貸款帳戶',
+  SUB_ACCOUNT: '子帳戶',
 }
 
 const pagination = ref({
@@ -43,22 +49,27 @@ const pagination = ref({
 })
 
 // === 表格欄位 ===
-const columns = [
-  { title: '申請編號', dataIndex: 'applicationNo', key: 'applicationNo', width: 240, sorter: (a, b) => (a.applicationNo || '').localeCompare(b.applicationNo || '') },
-  { title: '申請人', dataIndex: 'name', key: 'name', width: 140, sorter: (a, b) => (a.name || '').localeCompare(b.name || '') },
-  { title: '帳戶類型', dataIndex: 'accountType', key: 'accountType', width: 110, sorter: (a, b) => (a.accountType || '').localeCompare(b.accountType || '') },
-  { title: '身分證字號', dataIndex: 'idNumber', key: 'idNumber', width: 140, sorter: (a, b) => (a.idNumber || '').localeCompare(b.idNumber || '') },
-  { title: '風險標記', dataIndex: 'riskFlag', key: 'riskFlag', width: 110, sorter: (a, b) => (a.riskFlag || '').localeCompare(b.riskFlag || '') },
+const columns = ref([
+  { title: '申請編號', dataIndex: 'applicationNo', key: 'applicationNo', width: 240, resizable: true, sorter: (a, b) => (a.applicationNo || '').localeCompare(b.applicationNo || '') },
+  { title: '申請人', dataIndex: 'name', key: 'name', width: 140, resizable: true, sorter: (a, b) => (a.name || '').localeCompare(b.name || '') },
+  { title: '帳戶類型', dataIndex: 'accountType', key: 'accountType', width: 110, resizable: true, sorter: (a, b) => (a.accountType || '').localeCompare(b.accountType || '') },
+  { title: '身分證字號', dataIndex: 'idNumber', key: 'idNumber', width: 140, resizable: true, sorter: (a, b) => (a.idNumber || '').localeCompare(b.idNumber || '') },
+  { title: '風險標記', dataIndex: 'riskFlag', key: 'riskFlag', width: 110, resizable: true, sorter: (a, b) => (a.riskFlag || '').localeCompare(b.riskFlag || '') },
   {
     title: '申請時間',
     dataIndex: 'createdAt',
     key: 'createdAt',
     width: 170,
+    resizable: true,
     sorter: (a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''),
   },
-  { title: '狀態', dataIndex: 'status', key: 'status', width: 110, sorter: (a, b) => (a.status || '').localeCompare(b.status || '') },
+  { title: '狀態', dataIndex: 'status', key: 'status', width: 110, resizable: true, sorter: (a, b) => (a.status || '').localeCompare(b.status || '') },
   { title: '操作', key: 'action', width: 150, fixed: 'right' },
-]
+])
+
+function handleResizeColumn(w, col) {
+  col.width = w
+}
 
 // === 展開列 ===
 const expandedRowKeys = ref([])
@@ -238,7 +249,9 @@ onMounted(fetchData)
       class="custom-table"
       :scroll="{ x: 1000 }"
       :expandedRowKeys="expandedRowKeys"
+      :locale="{ triggerDesc: '點擊降冪排序', triggerAsc: '點擊升冪排序', cancelSort: '取消排序' }"
       @change="handlePageChange"
+      @resizeColumn="handleResizeColumn"
       @expand="(expanded, record) => {
         expandedRowKeys = expanded ? [record.id] : []
       }"
@@ -474,6 +487,8 @@ onMounted(fetchData)
 .status-pending .status-dot { background-color: #fa8c16; }
 .status-supplement_required { background-color: rgba(114, 46, 209, 0.1); color: #722ed1; }
 .status-supplement_required .status-dot { background-color: #722ed1; }
+.status-cancelled { background-color: #f5f5f5; color: #8c8c8c; border: 1px solid #d9d9d9; }
+.status-cancelled .status-dot { background-color: #bfbfbf; }
 
 /* 展開列 */
 .expand-grid {

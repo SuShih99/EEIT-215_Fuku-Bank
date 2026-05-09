@@ -50,6 +50,35 @@ body {
 }
 
 /* =========================================
+   修正 fixed 欄位水平滾動時 header 重疊問題
+   ========================================= */
+/* 固定欄的 header 要有實色背景 + 更高 z-index，避免其他 header 捲過時文字重疊 */
+.ant-table-thead > tr > th.ant-table-cell-fix-left,
+.ant-table-thead > tr > th.ant-table-cell-fix-right {
+  background-color: #f6f7f6 !important; /* 對應 rgba(92,107,95,0.05) on white 的實色等值 */
+  z-index: 3 !important;
+}
+
+/* 固定欄的 body cell 也要實色背景，避免資料列捲動時文字穿透 */
+.ant-table-tbody > tr > td.ant-table-cell-fix-left,
+.ant-table-tbody > tr > td.ant-table-cell-fix-right {
+  background-color: #ffffff !important;
+  z-index: 2 !important;
+}
+
+/* hover 行固定欄保持 hover 背景色 */
+.ant-table-tbody > tr:hover > td.ant-table-cell-fix-left,
+.ant-table-tbody > tr:hover > td.ant-table-cell-fix-right {
+  background-color: #fafafa !important;
+}
+
+/* 移除固定欄的陰影分隔線 */
+.ant-table-cell-fix-left-last::after,
+.ant-table-cell-fix-right-first::after {
+  box-shadow: none !important;
+}
+
+/* =========================================
    全域按鈕 (Button) 變色與圓弧
 ========================================= */
 .ant-btn {

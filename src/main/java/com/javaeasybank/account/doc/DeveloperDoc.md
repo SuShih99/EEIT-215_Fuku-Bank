@@ -1,4 +1,4 @@
-# Hank Development Notes (for 專三)
+# Hank Development Notes
 
 | 項目 | 內容 |
 | --- | --- |
@@ -9,9 +9,24 @@
 
 ---
 
+## 文件現況說明
+
+本文件原本是帳戶模組早期開發筆記，內容包含需求拆解、資料庫設計草案、後端設計思考與前端規劃。  
+以下已依目前程式碼現況補上「現版本對齊摘要」，舊章節中仍保留大量設計背景與未來規劃；若章節內容與本摘要衝突，請以本摘要與現行程式碼為準。
+
+| 項目 | 現況 |
+| --- | --- |
+| 對齊日期 | 2026-05-09 |
+| 對齊依據 | `src/main/java/com/javaeasybank/account/**`、`frontend/src/router/index.js`、`frontend/src/api/**`、`common/doc/ProjectOverview.md` |
+| 模組現況 | 帳戶管理、客戶帳戶查詢、開戶申請、轉帳、存提款、沖正、交易紀錄、常用帳號、預約轉帳皆已有程式碼 |
+| 仍屬未落地設計 | 跨行轉帳、跨幣別換匯、每日快照、正式利息批次、帳戶狀態歷史表、完整風控攔截、預約轉帳實際排程執行 |
+
+---
+
 ## 📑 目錄
 
-- [一、功能需求(管理端)](#一功能需求管理端)
+- [零、現版本對齊摘要](#零現版本對齊摘要)
+- [一、功能需求(現版本：管理端 + 客戶端)](#一功能需求現版本管理端--客戶端)
     - [1. 帳戶](#1-帳戶)
     - [2. 交易紀錄](#2-交易紀錄)
 - [二、Database Schema](#二database-schema)
@@ -30,7 +45,205 @@
 
 ---
 
-# 一、功能需求(管理端)
+# 零、現版本對齊摘要
+
+## 0.1 帳戶模組目前範圍
+
+目前 `account` 模組已不只是管理端帳戶與交易紀錄，實際範圍如下：
+
+| 子功能 | 現況 | 主要檔案 |
+| --- | --- | --- |
+| 帳戶建立 / 查詢 / 狀態變更 | 已實作 | `AccountController`, `AccountService`, `Account`, `AccountRepository` |
+| 客戶查自己的帳戶與交易 | 已實作 | `CustomerAccountController` |
+| 開戶申請 / 審核 / 自動建帳 | 已實作 | `AccountApplicationController`, `AccountApplicationService`, `AccountApplication` |
+| 轉帳 | 已實作行內同幣別轉帳 | `TransferController`, `TransferService`, `TransferRequest`, `TransferResponse` |
+| 存款 / 提款 | 已實作 | `CashController`, `TransferService.deposit`, `TransferService.withdraw` |
+| 沖正 | 已實作 | `TransferService.reversal`, `ReversalRequest`, `ReversalResponse` |
+| 交易紀錄查詢 | 已實作 | `TransLogController`, `TransLogService`, `TransLogRepository` |
+| 常用帳號 | 已實作 | `FavoriteAccountController`, `FavoriteAccountService`, `FavoriteAccount` |
+| 預約轉帳 | 可建立 / 查詢 / 取消；到期執行仍是占位 | `ScheduledTransferController`, `ScheduledTransferService`, `ScheduledTransfer` |
+| 風控整合 | 有 AOP 標註與查詢方法；實際 handler 尚未完成 | `@RiskCheck`, `TransferRiskHandler`, `TransLogRepository` |
+
+---
+
+## 0.2 舊設計與目前版本差異
+
+| 主題 | 舊文件設計 | 目前版本 |
+| --- | --- | --- |
+| 使用端範圍 | 主要寫「管理端」帳戶與交易 | 已擴充到客戶端：我的帳戶、交易紀錄、轉帳、常用帳號、預約轉帳、開戶申請 |
+| 建立帳戶 | 管理端直接建立帳戶為主 | 仍有 `POST /api/accounts` 直接建立；另新增客戶端開戶申請，管理端核准後自動建立帳戶 |
+| 直接建立帳戶狀態 | 預設 `PENDING` | `AccountService.createAccount` 仍預設 `PENDING` |
+| 申請核准建帳狀態 | 舊文件尚未涵蓋 | `AccountApplicationService.approve` 會建立 `ACTIVE` 帳戶 |
+| KYC 驗證 | 規劃 KYC，早期偏 mock | 直接建帳只驗證 customer 是否存在；開戶申請已收 KYC 欄位、證件圖、PEP、資金來源、開戶目的 |
+| 帳戶型別規則 | 活存唯一、子帳戶依附台幣活存 | 已實作：`CHECKING` 同客戶同幣別唯一；`SUB_ACCOUNT` 限 TWD、需 ACTIVE TWD checking、需 parent account 且同 customer |
+| 初始餘額 | 活存強制 1000 | 直接建帳與申請核准建帳都對 `CHECKING` 設 1000；直接建立為 `PENDING`，申請核准為 `ACTIVE` |
+| 利率 | 活存 0.15%，外幣 day count 規劃 | `CHECKING_INTEREST_RATE=0.0015` 已寫入；正式利息批次尚未實作 |
+| 狀態流轉 | PENDING / ACTIVE / FROZEN / DORMANT / CLOSED 狀態機 | 已實作狀態轉換檢查；凍結一個帳戶時會連動凍結同客戶其他 ACTIVE 帳戶 |
+| 狀態歷史 | 規劃 `ACCOUNT_STATUS_HISTORY` | 尚未實作 entity / repository / table 操作 |
+| 每日快照 | 規劃 `ACCOUNT_DAILY_SNAPSHOTS` | 尚未實作 |
+| 轉帳類型 | 行內優先，跨行 / 跨幣別為未來 | 目前只實作行內同幣別轉帳；跨行與換匯未實作 |
+| 轉帳入口 | 管理端 / 客戶端皆可規劃 | 目前後端正式入口是客戶端 `POST /api/customer/transfers`；管理端有沖正入口 |
+| 交易紀錄 | 雙邊記帳、不可竄改、沖正 | 已實作雙邊 `TransLog`、同 referenceId、沖正新增反向紀錄 |
+| 交易表欄位 | 舊文件含 `counterpart_bank_code` 等未來欄位 | 現行 `TransLog` 無 `counterpart_bank_code`，只有 `counterpart_account` |
+| 風控 | A1/B1/B2 等規則規劃 | `TransferService` 有 TODO；`TransLogRepository` 已有 B1/B2 查詢方法；風控 handler 尚未完成 |
+| 常用帳號 | 舊文件未涵蓋 | 已新增 `FavoriteAccount` 與 `/api/customer/favorite-accounts` |
+| 預約轉帳 | 舊文件列為遠期 | 已新增建立 / 查詢 / 取消；`executeDueTransfers` 目前只改狀態，沒有實際呼叫轉帳，也未看到 `@Scheduled` 入口 |
+| 前端管理端 | 舊文件提到 `/admin/transfers` | 目前 router 沒有 `/admin/transfers`；`TransferView.vue` 存在但未掛路由 |
+| 前端客戶端 | 舊文件標示待實作 | 已有 `/user/accounts`, `/user/transactions`, `/user/transfer`, `/user/scheduled-transfer`, `/user/favorite-accounts`, `/user/account-application` |
+
+---
+
+## 0.3 目前後端 API 清單
+
+### 帳戶管理
+
+| Method | Path | 說明 |
+| --- | --- | --- |
+| POST | `/api/accounts` | 建立帳戶 |
+| GET | `/api/accounts/{accountNumber}` | 查單一帳戶 |
+| GET | `/api/accounts?customerId=&page=&size=` | 依客戶 ID 分頁查帳戶 |
+| GET | `/api/accounts/status/{status}` | 依狀態分頁查帳戶 |
+| GET | `/api/accounts/filter?type=&currency=` | 依帳戶型別與幣別分頁查帳戶 |
+| GET | `/api/accounts/latest` | 查最新帳戶 |
+| PATCH | `/api/accounts/{accountNumber}/status?newStatus=` | 變更帳戶狀態 |
+
+### 客戶端帳戶與交易
+
+| Method | Path | 說明 |
+| --- | --- | --- |
+| GET | `/api/customer/accounts` | 目前登入客戶查自己的帳戶 |
+| GET | `/api/customer/transactions?accountNumber=&startDate=&endDate=&page=&size=` | 目前登入客戶查自己的交易 |
+
+### 開戶申請
+
+| Method | Path | 說明 |
+| --- | --- | --- |
+| POST | `/api/customer/account-applications` | 客戶提交開戶申請，multipart，含 `idFront`, `idBack`, `secondId` |
+| GET | `/api/customer/account-applications` | 客戶查自己的開戶申請 |
+| GET | `/api/admin/account-applications?status=&page=&size=` | 管理端查申請列表 |
+| GET | `/api/admin/account-applications/{id}` | 管理端查申請詳情 |
+| PATCH | `/api/admin/account-applications/{id}/approve` | 核准並自動建帳 |
+| PATCH | `/api/admin/account-applications/{id}/supplement` | 要求補件 |
+| PATCH | `/api/admin/account-applications/{id}/reject` | 駁回 |
+
+### 交易操作
+
+| Method | Path | 說明 |
+| --- | --- | --- |
+| POST | `/api/customer/transfers` | 客戶端轉帳 |
+| POST | `/api/customer/cash/deposit` | 存款 |
+| POST | `/api/customer/cash/withdraw` | 提款 |
+| POST | `/api/admin/transfers/reversal` | 管理端沖正 |
+
+### 交易紀錄查詢
+
+| Method | Path | 說明 |
+| --- | --- | --- |
+| GET | `/api/trans-logs/reference/{referenceId}` | 依 referenceId 查交易 |
+| GET | `/api/trans-logs/account/{accountNumber}` | 依帳號查交易 |
+| GET | `/api/trans-logs/customer/{customerId}` | 依客戶 ID 查交易 |
+| GET | `/api/trans-logs/customer/{customerId}/range?startDate=&endDate=` | 依客戶 ID + 日期區間查交易 |
+| GET | `/api/trans-logs/latest` | 查最新交易 |
+
+### 常用帳號
+
+| Method | Path | 說明 |
+| --- | --- | --- |
+| GET | `/api/customer/favorite-accounts` | 查常用帳號 |
+| POST | `/api/customer/favorite-accounts` | 新增常用帳號 |
+| PUT | `/api/customer/favorite-accounts/{id}` | 修改常用帳號別名 / 銀行名稱 |
+| DELETE | `/api/customer/favorite-accounts/{id}` | 刪除常用帳號 |
+
+### 預約轉帳
+
+| Method | Path | 說明 |
+| --- | --- | --- |
+| GET | `/api/customer/scheduled-transfers` | 查預約轉帳 |
+| POST | `/api/customer/scheduled-transfers` | 建立預約轉帳 |
+| PATCH | `/api/customer/scheduled-transfers/{id}/cancel` | 取消預約轉帳 |
+
+---
+
+## 0.4 目前資料模型補充
+
+舊文件主要寫 `ACCOUNT`、`TRANS_LOG`，現版本另外新增：
+
+| Entity / Table | 用途 | 重要欄位 |
+| --- | --- | --- |
+| `AccountApplication` / `ACCOUNT_APPLICATION` | 開戶申請 | `applicationNo`, `customerId`, KYC 欄位, `riskFlag`, `status`, `createdAccountNumber` |
+| `FavoriteAccount` / `FAVORITE_ACCOUNT` | 常用帳號 | `customerId`, `accountNumber`, `alias`, `bankName` |
+| `ScheduledTransfer` / `SCHEDULED_TRANSFER` | 預約轉帳 | `customerId`, `fromAccountNumber`, `toAccountNumber`, `amount`, `scheduledDate`, `status`, `executedAt`, `failReason` |
+
+現行 `ACCOUNT` entity 欄位：
+
+- `accountNumber`
+- `customerId`
+- `accountType`
+- `currency`
+- `balance`
+- `liability`
+- `interestRate`
+- `status`
+- `parentAccountNumber`
+- `createdAt`
+- `createdBy`
+- `changedAt`
+- `changedBy`
+
+現行 `TRANS_LOG` entity 欄位：
+
+- `transactionId`
+- `referenceId`
+- `accountNumber`
+- `counterpartAccount`
+- `entryType`
+- `transactionType`
+- `amount`
+- `balanceBefore`
+- `balanceAfter`
+- `currency`
+- `note`
+- `createdAt`
+
+---
+
+## 0.5 目前前端對齊
+
+### 客戶端帳戶相關路由
+
+| Path | View | 說明 |
+| --- | --- | --- |
+| `/user/account-application` | `AccountApplicationView.vue` | 開戶申請 |
+| `/user/accounts` | `UserAccountsView.vue` | 我的帳戶 |
+| `/user/transactions` | `UserTransactionsView.vue` | 我的交易 |
+| `/user/transfer` | `TransferView.vue` | 客戶端轉帳 |
+| `/user/scheduled-transfer` | `ScheduledTransferView.vue` | 預約轉帳 |
+| `/user/favorite-accounts` | `FavoriteAccountsView.vue` | 常用帳號 |
+
+### 管理端帳戶相關路由
+
+| Path | View | 說明 |
+| --- | --- | --- |
+| `/admin/accounts` | `AccountListView.vue` | 帳戶管理 |
+| `/admin/account-applications` | `AccountApplicationListView.vue` | 開戶申請審核 |
+| `/admin/trans-logs` | `TransLogView.vue` | 交易紀錄 |
+
+注意：`frontend/src/views/admin/TransferView.vue` 仍存在，但目前 `frontend/src/router/index.js` 沒有掛 `/admin/transfers`。
+
+---
+
+## 0.6 目前仍需注意的落差
+
+1. `AccountException` 可透過 `GlobalExceptionHandler` 保留 `errorCode`；但 `TransferException` 繼承 `BusinessException`，目前不會走 `AccountException` handler，轉帳錯誤碼可能不會出現在 response。
+2. `ScheduledTransferService.executeDueTransfers` 註解說由 `@Scheduled` 呼叫，但目前專案內沒有找到 `@Scheduled` 設定；且執行時暫時只把狀態改成 `EXECUTED`，沒有真正委託 `TransferService.transfer`。
+3. `TransLogRepository` 已有 `countRecentTransactions` 與 `sumRecentOutflow`，但 `TransferService.transfer` 尚未實際呼叫。
+4. `@RiskCheck(scene = RiskScene.TRANSFER)` 已掛在 `TransferService.transfer`，但 `TransferRiskHandler` 邏輯尚未實作，也尚未看到 Spring component 註解。
+5. `ACCOUNT_STATUS_HISTORY`、`ACCOUNT_DAILY_SNAPSHOTS` 仍屬設計草案。
+6. 跨行轉帳、跨幣別換匯、貸款撥款 / 還款專用 API 尚未在 account 模組落地。
+
+---
+
+# 一、功能需求(現版本：管理端 + 客戶端)
 
 ## 1. 帳戶
 
@@ -62,6 +275,28 @@ mindmap
 ---
 
 ### 1.2 建立帳戶 (優先)
+
+#### 現版本實作補充
+
+目前建立帳戶有兩條路：
+
+| 路徑 | API | 建帳狀態 | 說明 |
+| --- | --- | --- | --- |
+| 管理端 / 內部直接建帳 | `POST /api/accounts` | `PENDING` | 呼叫 `AccountService.createAccount`，會做 customer 存在檢查與帳戶型別規則檢查 |
+| 客戶端開戶申請核准 | `PATCH /api/admin/account-applications/{id}/approve` | `ACTIVE` | 呼叫 `AccountApplicationService.approve`，核准申請後自動建立帳戶，並回寫 `createdAccountNumber` |
+
+直接建帳目前的實作規則：
+
+- `customerId` 必須存在於 `CustomerProfile`。
+- `CHECKING`：同一 customer + 同一 currency 只能有一個。
+- `SUB_ACCOUNT`：
+    - 限定 `TWD`。
+    - 該 customer 必須已有 `ACTIVE` 的 `TWD CHECKING`。
+    - 必須帶 `parentAccountNumber`。
+    - parent account 必須存在，且同屬該 customer。
+- `TIME_DEPOSIT`、`LOAN`：目前不檢查重複，可多開。
+- `CHECKING` 初始餘額為 1000，利率為 0.0015。
+- `SUB_ACCOUNT` 利率比照活存，但不設定初始 1000。
 
 #### 1.2.1 建立流程總覽
 
@@ -384,6 +619,44 @@ flowchart LR
 > 對應帳戶模組核心的「支付便利」特點,提供多元轉帳管道與嚴謹的交易流程。
 >
 > **核心原則:一致性**(原子性操作)、**可追蹤**(完整軌跡)、**安全**(風險檢查)。
+
+#### 現版本實作補充
+
+目前後端正式轉帳入口為：
+
+```http
+POST /api/customer/transfers
+```
+
+Request body：
+
+```json
+{
+  "fromAccountNumber": "123456789012",
+  "toAccountNumber": "210987654321",
+  "amount": 1000,
+  "note": "備註"
+}
+```
+
+目前 `TransferService.transfer` 已實作：
+
+- 來源 / 目的帳號不可為空。
+- 金額必須大於 0。
+- 不可自我轉帳。
+- 來源與目的帳戶都必須存在。
+- 來源與目的帳戶都必須是 `ACTIVE`。
+- 來源與目的帳戶幣別必須一致。
+- 來源餘額必須足夠。
+- 同一個 transaction 內扣款、入帳與寫入兩筆 `TransLog`。
+- 兩筆交易紀錄共用同一個 `referenceId`。
+
+目前尚未實作或需注意：
+
+- 沒有跨行轉帳。
+- 沒有跨幣別換匯。
+- Controller 目前沒有從 JWT 取 `customerId` 驗證 `fromAccountNumber` 是否屬於目前登入客戶；前端會讓使用者選自己的帳戶，但後端尚未做 ownership check。
+- `@RiskCheck(scene = RiskScene.TRANSFER)` 已掛上，但風控 handler 尚未完成。
 
 #### 1.6.1 轉帳類型
 
@@ -722,6 +995,7 @@ mindmap
 | INTEREST | 利息入帳 |
 | LOAN_DISBURSEMENT | 貸款撥款 |
 | LOAN_REPAYMENT | 貸款還款 |
+| REVERSAL | 沖正 |
 
 #### 2.2.2 單筆記錄
 
@@ -742,6 +1016,22 @@ flowchart LR
 ---
 
 ### 2.3 查詢交易紀錄
+
+#### 現版本實作補充
+
+目前交易紀錄查詢有兩組入口：
+
+| 使用端 | API | 說明 |
+| --- | --- | --- |
+| 管理 / 共用 | `/api/trans-logs/**` | 可依 referenceId、accountNumber、customerId、customerId+date range、latest 查詢 |
+| 客戶端 | `/api/customer/transactions` | 從 JWT 取得 customerId，只查目前登入客戶名下帳戶交易 |
+
+目前 `TransLogRepository` 除了查詢 API 所需方法，也已預留風控查詢：
+
+- `countRecentTransactions`：統計某帳戶在某時間後作為 DEBIT 交易的次數，用於 B1 高頻偵測。
+- `sumRecentOutflow`：統計某帳戶在某時間後的轉出 / 提款累積金額，用於 B2 24 小時累積金額。
+
+這兩個方法目前尚未在 `TransferService.transfer` 中實際呼叫。
 
 #### 行員使用
 
@@ -921,6 +1211,39 @@ flowchart TD
     F --> F1[精確度<br/>禁用 FLOAT/DOUBLE<br/>對應 BigDecimal]
 ```
 
+## 現版本資料表 / Entity 對齊
+
+目前 account 模組實際存在的 entity 如下：
+
+| Entity | Table | 狀態 | 說明 |
+| --- | --- | --- | --- |
+| `Account` | `ACCOUNT` | 已實作 | 帳號主檔 |
+| `TransLog` | `TRANS_LOG` | 已實作 | 交易紀錄 |
+| `AccountApplication` | `ACCOUNT_APPLICATION` | 已實作 | 客戶開戶申請與審核 |
+| `FavoriteAccount` | `FAVORITE_ACCOUNT` | 已實作 | 客戶常用帳號 |
+| `ScheduledTransfer` | `SCHEDULED_TRANSFER` | 已實作 | 客戶預約轉帳設定 |
+| `ACCOUNT_STATUS_HISTORY` | 尚無 entity | 未落地 | 舊文件規劃，現版本尚未寫入狀態歷史 |
+| `ACCOUNT_DAILY_SNAPSHOTS` | 尚無 entity | 未落地 | 舊文件規劃，現版本尚未做每日快照 / 結息批次 |
+
+開戶申請與 Customer 模組的同步邊界：
+
+- `AccountApplicationService.submit(...)` 送出申請後，會將最新申請資料以 `PENDING` 狀態同步到 Customer Profile。
+- 管理端 `approve(...)`、`requestSupplement(...)`、`reject(...)` 完成審核後，都會再次呼叫 `CustomerService.syncAccountApplicationProfile(...)`。
+- 同步內容包含 KYC 個資、地址、職業財務、開戶目的、資金來源、法遵聲明、證件圖路徑，以及最近一次開戶申請的審核狀態、審核人、審核時間、原因與建帳帳號。
+- Account 模組只依賴 Customer 對外 service / DTO，不直接操作 `CUSTOMER_PROFILE`。
+
+目前資料庫初始化主要參考：
+
+- `src/main/resources/database/account_init.sql`
+- `src/main/resources/database/account_mockdata.sql`
+
+現版本 `TRANS_LOG` 欄位與舊規劃主要差異：
+
+- 現行沒有 `counterpart_bank_code`，跨行轉帳尚未落地。
+- 現行用 `counterpart_account` 表示對手方帳號。
+- 現行 index：`reference_id`、`account_number, created_at`。
+- 現行 repository 另外用 JPQL 提供「帳號 involved 查詢」與「客戶交易查詢」。
+
 ### 1. 內部主鍵 (Internal PK):使用 `BIGINT`
 
 - **設計原因:** 效能優先
@@ -1038,6 +1361,9 @@ private LocalDateTime createAt;
 
 ## ACCOUNT_STATUS_HISTORY 狀態變更紀錄 (低優先)
 
+> 現況：此表仍是設計草案，現版本沒有對應 Entity / Repository，也沒有在 `updateAccountStatus()` 寫入歷史紀錄。  
+> 目前狀態變更只更新 `ACCOUNT.status`；若要補稽核軌跡，可從此節設計延伸。
+
 | # | 欄位 | 型別 | 限制 | 說明 |
 | --- | --- | --- | --- | --- |
 | 1 | `history_id` | CHAR(36) | PK, NOT NULL | 歷史紀錄 ID(內部 PK),使用 UUID,Java 端生成 |
@@ -1067,6 +1393,9 @@ private LocalDateTime createAt;
 
 ## ACCOUNT_DAILY_SNAPSHOTS 每日快照 (低優先)
 
+> 現況：此表仍是設計草案，現版本沒有對應 Entity / Repository，也沒有利息批次或每日快照排程。  
+> 目前 `Currency` 已有 `dayCountBasis`，但尚未串成正式結息流程。
+>
 > 用於每日結帳點記錄帳戶餘額,作為利息計算憑據。
 >
 > 僅適用於「**活存**」與「**子帳戶**」類型(定存到期才結息,不需要每日快照)。
@@ -1161,6 +1490,8 @@ WHERE account_number = ?
 > 記錄所有帳戶餘額變動的完整軌跡,作為對帳與稽核憑據。
 >
 > **核心原則:** 寫入後禁止修改與刪除,錯帳只能透過「沖正」產生新紀錄抵銷。
+>
+> 現況：現行 `TransLog` entity 沒有 `counterpart_bank_code`，跨行轉帳尚未落地；目前只保留 `counterpart_account`。
 
 ### 欄位定義
 
@@ -1215,6 +1546,7 @@ WHERE account_number = ?
 | `INTEREST` | 利息入帳 | 固定 CREDIT |
 | `LOAN_DISBURSEMENT` | 貸款撥款 | 固定 CREDIT |
 | `LOAN_REPAYMENT` | 貸款還款 | 固定 DEBIT |
+| `REVERSAL` | 沖正 | 依原交易反向，可能 DEBIT 或 CREDIT |
 
 #### `balance_before` / `balance_after`
 
@@ -1887,59 +2219,88 @@ public static String generateReferenceId() {
 
 # 四、Front-End
 
-## 1. 管理端（已完成）
+## 1. 管理端（現版本）
 
-已實作頁面：
+目前 `frontend/src/router/index.js` 已掛上的帳戶相關管理端頁面：
 
 | 頁面 | 路由 | 說明 |
 | --- | --- | --- |
-| `AdminLayout.vue` | `/admin` | 左側固定 Sidebar，含首頁/帳戶管理/轉帳/交易紀錄四個入口 |
+| `AdminLayout.vue` | `/admin` | 左側固定 Sidebar，帳戶管理區目前包含開戶申請審核、帳戶管理、交易紀錄 |
 | `AccountListView.vue` | `/admin/accounts` | 帳戶查詢（依帳號/客戶ID/狀態/型別+幣別/最新）、建立帳戶、狀態變更（含銷戶二次確認）、子帳戶建立流程（查父帳戶 → 確認 → 建立） |
-| `TransferView.vue` | `/admin/transfers` | 行內轉帳、一鍵複製交易序號、一鍵清除 |
+| `AccountApplicationListView.vue` | `/admin/account-applications` | 開戶申請審核：列表、狀態篩選、詳情、核准、補件、駁回 |
 | `TransLogView.vue` | `/admin/trans-logs` | 交易紀錄查詢（依交易編號/帳號/客戶ID/客戶ID+日期）、點擊帳號彈窗顯示帳戶詳情、匯出 Excel/JSON/XML、條件為空顯示最新紀錄 |
+
+> 現況差異：`frontend/src/views/admin/TransferView.vue` 仍存在，但目前 router 沒有 `/admin/transfers`，左側選單也沒有管理端轉帳入口。後端管理端目前保留的是沖正 API：`POST /api/admin/transfers/reversal`。
 
 ---
 
-## 2. 客戶端規劃（待實作）
+## 2. 客戶端（現版本已實作）
 
-> 以下為客戶端畫面的雛形規劃，尚未實作。待風格定案、auth 模組完成後再開始開發。
+客戶端帳戶功能已從「待實作規劃」變成正式頁面，並掛在 `/user/**` 下。客戶端使用 `customer_token` JWT，axios 會自動帶 `Authorization: Bearer <token>`。
 
-### 2.1 預計建立的檔案
+### 2.1 已建立的檔案
 
 | 檔案 | 說明 |
 | --- | --- |
-| `frontend/src/layouts/UserLayout.vue` | 客戶端 Layout（頂部導航列，風格與管理端區分） |
-| `frontend/src/views/user/UserLoginView.vue` | 客戶端登入頁（目前為空殼，未來串接 auth 模組） |
-| `frontend/src/views/user/UserHomeView.vue` | 帳戶總覽：登入後顯示該客戶名下所有帳戶摘要（帳號、型別、餘額、狀態） |
-| `frontend/src/views/user/UserTransferView.vue` | 客戶端轉帳：只能從自己的帳戶轉出 |
-| `frontend/src/views/user/UserTransLogView.vue` | 客戶端交易紀錄：只能查自己的交易紀錄 |
+| `frontend/src/layouts/UserLayout.vue` | 客戶端 Layout，頂部導覽列與 mega nav |
+| `frontend/src/views/user/UserLoginView.vue` | 客戶端登入頁，串接 `customerAuth.js` |
+| `frontend/src/views/user/UserHomeView.vue` | 客戶端首頁 |
+| `frontend/src/views/user/AccountApplicationView.vue` | 開戶申請，multipart 上傳證件 |
+| `frontend/src/views/user/UserAccountsView.vue` | 我的帳戶 |
+| `frontend/src/views/user/UserTransactionsView.vue` | 我的交易紀錄 |
+| `frontend/src/views/user/TransferView.vue` | 客戶端轉帳 |
+| `frontend/src/views/user/ScheduledTransferView.vue` | 預約轉帳 |
+| `frontend/src/views/user/FavoriteAccountsView.vue` | 常用帳號 |
 
-### 2.2 路由規劃
+### 2.2 現行路由
 
-```
-/                  → UserLoginView（客戶端登入）
-/user              → UserLayout
-  /user            → UserHomeView（帳戶總覽）
-  /user/transfer   → UserTransferView（轉帳）
-  /user/trans-logs → UserTransLogView（交易紀錄）
-```
+| 路由 | Route name | 頁面 |
+| --- | --- | --- |
+| `/login` | `user-login` | `UserLoginView.vue` |
+| `/user/home` | `user-home` | `UserHomeView.vue` |
+| `/user/account-application` | `user-account-application` | `AccountApplicationView.vue` |
+| `/user/accounts` | `user-accounts` | `UserAccountsView.vue` |
+| `/user/transactions` | `user-transactions` | `UserTransactionsView.vue` |
+| `/user/transfer` | `user-transfer` | `TransferView.vue` |
+| `/user/scheduled-transfer` | `user-scheduled-transfer` | `ScheduledTransferView.vue` |
+| `/user/favorite-accounts` | `user-favorite-accounts` | `FavoriteAccountsView.vue` |
 
 ### 2.3 與管理端的差異
 
 | 項目 | 管理端 | 客戶端 |
 | --- | --- | --- |
-| Layout | 左側固定 Sidebar | 頂部導航列（風格待定） |
+| Layout | 左側固定 Sidebar | 頂部導覽列 + 下拉 mega nav |
 | 帳戶查詢 | 可查所有客戶的帳戶 | 只能看自己名下的帳戶 |
-| 轉帳 | 可指定任意來源帳戶 | 只能從自己的帳戶轉出 |
+| 轉帳 | 現行 router 未掛管理端轉帳頁；保留沖正 API | 透過 `/api/customer/transfers` 轉帳 |
 | 交易紀錄 | 可查所有紀錄 | 只能查自己的紀錄 |
 | 帳戶狀態變更 | 有 | 無 |
-| 建立帳戶 | 有 | 無（由管理端操作） |
+| 建立帳戶 | 可直接建立帳戶、審核開戶申請 | 客戶提交開戶申請，核准後建帳 |
+| 常用帳號 | 無 | 有 |
+| 預約轉帳 | 無 | 有 |
 
-### 2.4 前置條件
+### 2.4 前端 API 對應
 
-- [ ] auth 模組完成（登入、JWT、角色權限）
-- [ ] 客戶端風格定案（與組員討論）
-- [ ] 確認 API 是否需要新增客戶端專用的端點，或複用管理端 API 加上權限過濾
+| 檔案 | 用途 |
+| --- | --- |
+| `frontend/src/api/account.js` | 管理端帳戶、交易紀錄、存提款、轉帳、沖正 API wrapper |
+| `frontend/src/api/customerAccount.js` | 客戶端我的帳戶、我的交易、轉帳 |
+| `frontend/src/api/accountApplication.js` | 客戶端開戶申請與管理端審核 |
+| `frontend/src/api/favoriteAccount.js` | 客戶端常用帳號 |
+| `frontend/src/api/scheduledTransfer.js` | 客戶端預約轉帳 |
+
+### 2.5 已完成與待補
+
+- [x] 客戶端登入與 JWT 串接
+- [x] 客戶端我的帳戶查詢
+- [x] 客戶端交易紀錄查詢
+- [x] 客戶端轉帳
+- [x] 客戶端開戶申請
+- [x] 管理端開戶申請審核
+- [x] 常用帳號
+- [x] 預約轉帳建立 / 查詢 / 取消
+- [ ] 預約轉帳到期後真正呼叫 `TransferService.transfer`
+- [ ] 管理端轉帳頁若仍需要，需重新掛回 router 並確認權限與入口
+- [ ] 客戶端交易與帳戶頁後續可補更完整的錯誤碼處理
 
 ---
 
@@ -1954,4 +2315,3 @@ public static String generateReferenceId() {
 | `docker compose restart` | 重啟容器 |
 
 ---
-

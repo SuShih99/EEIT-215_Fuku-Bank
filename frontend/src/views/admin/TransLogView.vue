@@ -86,6 +86,7 @@
         showSizeChanger: true,
         showTotal: (t) => `共 ${t} 筆`,
       }"
+      :locale="{ triggerDesc: '點擊降冪排序', triggerAsc: '點擊升冪排序', cancelSort: '取消排序' }"
       @change="handleTableChange"
       @resizeColumn="handleResizeColumn"
     >
@@ -339,6 +340,7 @@ const columns = ref([
     dataIndex: 'createdAt',
     key: 'createdAt',
     width: 180,
+    resizable: true,
     sorter: (a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''),
     customRender: ({ text }) => formatTime(text),
   },

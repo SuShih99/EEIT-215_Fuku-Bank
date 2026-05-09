@@ -77,6 +77,9 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
         profile.setEmail(request.getEmail());
         profile.setPhone(request.getPhone());
         profile.setAddress(request.getAddress());
+        profile.setRegisteredAddress(request.getAddress());
+        profile.setCurrentAddress(request.getAddress());
+        profile.setIsPep(false);
         profile.setStatus("ACTIVE");
         customerProfileRepository.save(profile);
 
@@ -168,7 +171,10 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
 
         if (request.getPhone() != null) profile.setPhone(request.getPhone());
         if (request.getEmail() != null) profile.setEmail(request.getEmail());
-        if (request.getAddress() != null) profile.setAddress(request.getAddress());
+        if (request.getAddress() != null) {
+            profile.setAddress(request.getAddress());
+            profile.setCurrentAddress(request.getAddress());
+        }
 
         customerProfileRepository.save(profile);
 
@@ -280,17 +286,7 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
     // ===========================
     private CustomerDto.CustomerResponse convertToResponse(CustomerProfile profile, CustomerAuth auth) {
         CustomerDto.CustomerResponse res = new CustomerDto.CustomerResponse();
-        res.setCustomerId(profile.getCustomerId());
-        res.setCif(profile.getCif());
-        res.setIdNumber(profile.getIdNumber());
-        res.setName(profile.getName());
-        res.setBirthday(profile.getBirthday());
-        res.setGender(profile.getGender());
-        res.setEmail(profile.getEmail());
-        res.setPhone(profile.getPhone());
-        res.setAddress(profile.getAddress());
-        res.setStatus(profile.getStatus());
-        res.setAvatarUrl(profile.getAvatarUrl());
+        org.springframework.beans.BeanUtils.copyProperties(profile, res);
         res.setUsername(auth.getUsername());
         return res;
     }

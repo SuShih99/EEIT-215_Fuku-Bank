@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -68,6 +69,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         CustomerProfile profile = new CustomerProfile();
         BeanUtils.copyProperties(request, profile);
+        normalizeApplicationDerivedFields(profile);
 
         // 1. customer_id: 8碼大寫英數 (例如：X7K9P2M4)
         if (profile.getCustomerId() == null || profile.getCustomerId().isEmpty()) {
@@ -83,6 +85,7 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
         profile.setStatus("ACTIVE");
+        profile.setIsPep(Boolean.TRUE.equals(profile.getIsPep()));
 
         CustomerProfile saved = customerProfileRepository.save(profile);
         return convertToResponse(saved);
@@ -108,6 +111,7 @@ public class CustomerServiceImpl implements CustomerService {
         if (request.getBirthday() != null) {
             profile.setBirthday(request.getBirthday());
         }
+        applyOptionalApplicationFields(profile, request);
 
         CustomerProfile saved = customerProfileRepository.save(profile);
         return convertToResponse(saved);
@@ -140,6 +144,7 @@ public class CustomerServiceImpl implements CustomerService {
         jdbcTemplate.execute("DELETE FROM customer_application");
         jdbcTemplate.execute("DELETE FROM customer_kyc");
         jdbcTemplate.execute("DELETE FROM customer_risk_tag");
+        jdbcTemplate.execute("DELETE FROM customer_auth");
         jdbcTemplate.execute("DELETE FROM customer_profile");
 
         // 2. 準備 Insert 的 SQL 字串 (將您提供的 SQL 貼入)
@@ -244,6 +249,24 @@ public class CustomerServiceImpl implements CustomerService {
         jdbcTemplate.execute(insertApplication);
         jdbcTemplate.execute(insertKyc);
         jdbcTemplate.execute(insertRiskTag);
+        jdbcTemplate.execute("""
+                UPDATE p
+                SET
+                    p.nationality = COALESCE(p.nationality, 'TW'),
+                    p.registered_address = COALESCE(p.registered_address, p.address),
+                    p.current_address = COALESCE(p.current_address, p.address),
+                    p.occupation = COALESCE(p.occupation, k.occupation_category),
+                    p.job = COALESCE(p.job, k.occupation_category),
+                    p.employer = COALESCE(p.employer, k.company_name),
+                    p.annual_income = COALESCE(p.annual_income, k.annual_income),
+                    p.tax_residency = COALESCE(p.tax_residency, k.tax_residency, 'TW'),
+                    p.is_pep = CASE WHEN r.pep_status = 'Y' THEN 1 ELSE COALESCE(p.is_pep, 0) END,
+                    p.risk_level = COALESCE(p.risk_level, r.aml_risk_level),
+                    p.account_application_synced_at = COALESCE(p.account_application_synced_at, GETDATE())
+                FROM customer_profile p
+                LEFT JOIN customer_kyc k ON p.customer_id = k.customer_id
+                LEFT JOIN customer_risk_tag r ON p.customer_id = r.customer_id
+                """);
     }
 
     // ===========================
@@ -270,6 +293,61 @@ public class CustomerServiceImpl implements CustomerService {
         return convertToResponse(profile);
     }
 
+    @Override
+    @Transactional
+    public CustomerDto.CustomerResponse syncAccountApplicationProfile(
+            String customerId,
+            CustomerDto.AccountApplicationProfileSyncRequest request) {
+        CustomerProfile profile = customerProfileRepository.findById(customerId)
+                .orElseThrow(() -> new BusinessException("查無此客戶"));
+
+        ensureIdNumberAvailable(customerId, request.getIdNumber());
+        ensurePhoneAvailable(customerId, request.getPhone());
+
+        if (request.getName() != null) {
+            profile.setName(request.getName());
+        }
+        if (request.getIdNumber() != null) {
+            profile.setIdNumber(request.getIdNumber());
+        }
+        if (request.getBirthday() != null) {
+            profile.setBirthday(request.getBirthday());
+        }
+        if (request.getPhone() != null) {
+            profile.setPhone(request.getPhone());
+        }
+
+        profile.setNationality(request.getNationality());
+        profile.setRegisteredAddress(request.getRegisteredAddress());
+        profile.setCurrentAddress(request.getCurrentAddress());
+        profile.setAddress(resolveAddress(request.getCurrentAddress(), request.getRegisteredAddress(), profile.getAddress()));
+        profile.setOccupation(request.getOccupation());
+        profile.setJob(request.getOccupation());
+        profile.setEmployer(request.getEmployer());
+        profile.setEstimatedMonthlyTx(request.getEstimatedMonthlyTx());
+        profile.setAccountPurpose(request.getAccountPurpose());
+        profile.setFundSource(request.getFundSource());
+        profile.setTaxResidency(request.getTaxResidency());
+        profile.setIsPep(Boolean.TRUE.equals(request.getIsPep()));
+        profile.setIdFrontUrl(request.getIdFrontUrl());
+        profile.setIdBackUrl(request.getIdBackUrl());
+        profile.setSecondIdUrl(request.getSecondIdUrl());
+        profile.setLatestAccountApplicationId(request.getLatestAccountApplicationId());
+        profile.setLatestAccountApplicationNo(request.getLatestAccountApplicationNo());
+        profile.setLatestAppliedAccountType(request.getLatestAppliedAccountType());
+        profile.setLatestAppliedCurrency(request.getLatestAppliedCurrency());
+        profile.setLatestAccountApplicationStatus(request.getLatestAccountApplicationStatus());
+        profile.setLatestAccountApplicationRiskFlag(request.getLatestAccountApplicationRiskFlag());
+        profile.setLatestAccountApplicationReviewedAt(request.getLatestAccountApplicationReviewedAt());
+        profile.setLatestAccountApplicationReviewedBy(request.getLatestAccountApplicationReviewedBy());
+        profile.setLatestAccountApplicationRejectReason(request.getLatestAccountApplicationRejectReason());
+        profile.setCreatedAccountNumber(request.getCreatedAccountNumber());
+        profile.setAccountApplicationSyncedAt(LocalDateTime.now());
+
+        CustomerProfile saved = customerProfileRepository.save(profile);
+        return convertToResponse(saved);
+    }
+
     // ===========================
     // 私有方法
     // ===========================
@@ -277,6 +355,83 @@ public class CustomerServiceImpl implements CustomerService {
         CustomerDto.CustomerResponse res = new CustomerDto.CustomerResponse();
         BeanUtils.copyProperties(profile, res);
         return res;
+    }
+
+    private void applyOptionalApplicationFields(CustomerProfile profile, CustomerDto.CustomerRequest request) {
+        if (request.getNationality() != null) profile.setNationality(request.getNationality());
+        if (request.getRegisteredAddress() != null) profile.setRegisteredAddress(request.getRegisteredAddress());
+        if (request.getCurrentAddress() != null) profile.setCurrentAddress(request.getCurrentAddress());
+        if (request.getOccupation() != null) {
+            profile.setOccupation(request.getOccupation());
+            profile.setJob(request.getOccupation());
+        }
+        if (request.getEmployer() != null) profile.setEmployer(request.getEmployer());
+        if (request.getEstimatedMonthlyTx() != null) profile.setEstimatedMonthlyTx(request.getEstimatedMonthlyTx());
+        if (request.getAccountPurpose() != null) profile.setAccountPurpose(request.getAccountPurpose());
+        if (request.getFundSource() != null) profile.setFundSource(request.getFundSource());
+        if (request.getTaxResidency() != null) profile.setTaxResidency(request.getTaxResidency());
+        if (request.getIsPep() != null) profile.setIsPep(request.getIsPep());
+        if (request.getIdFrontUrl() != null) profile.setIdFrontUrl(request.getIdFrontUrl());
+        if (request.getIdBackUrl() != null) profile.setIdBackUrl(request.getIdBackUrl());
+        if (request.getSecondIdUrl() != null) profile.setSecondIdUrl(request.getSecondIdUrl());
+        if (request.getLatestAccountApplicationId() != null) profile.setLatestAccountApplicationId(request.getLatestAccountApplicationId());
+        if (request.getLatestAccountApplicationNo() != null) profile.setLatestAccountApplicationNo(request.getLatestAccountApplicationNo());
+        if (request.getLatestAppliedAccountType() != null) profile.setLatestAppliedAccountType(request.getLatestAppliedAccountType());
+        if (request.getLatestAppliedCurrency() != null) profile.setLatestAppliedCurrency(request.getLatestAppliedCurrency());
+        if (request.getLatestAccountApplicationStatus() != null) profile.setLatestAccountApplicationStatus(request.getLatestAccountApplicationStatus());
+        if (request.getLatestAccountApplicationRiskFlag() != null) profile.setLatestAccountApplicationRiskFlag(request.getLatestAccountApplicationRiskFlag());
+        if (request.getLatestAccountApplicationReviewedAt() != null) profile.setLatestAccountApplicationReviewedAt(request.getLatestAccountApplicationReviewedAt());
+        if (request.getLatestAccountApplicationReviewedBy() != null) profile.setLatestAccountApplicationReviewedBy(request.getLatestAccountApplicationReviewedBy());
+        if (request.getLatestAccountApplicationRejectReason() != null) profile.setLatestAccountApplicationRejectReason(request.getLatestAccountApplicationRejectReason());
+        if (request.getCreatedAccountNumber() != null) profile.setCreatedAccountNumber(request.getCreatedAccountNumber());
+        if (request.getAccountApplicationSyncedAt() != null) profile.setAccountApplicationSyncedAt(request.getAccountApplicationSyncedAt());
+    }
+
+    private void normalizeApplicationDerivedFields(CustomerProfile profile) {
+        if (profile.getRegisteredAddress() == null) {
+            profile.setRegisteredAddress(profile.getAddress());
+        }
+        if (profile.getCurrentAddress() == null) {
+            profile.setCurrentAddress(profile.getAddress());
+        }
+        if (profile.getOccupation() != null && profile.getJob() == null) {
+            profile.setJob(profile.getOccupation());
+        }
+        if (profile.getIsPep() == null) {
+            profile.setIsPep(false);
+        }
+    }
+
+    private void ensureIdNumberAvailable(String customerId, String idNumber) {
+        if (idNumber == null) {
+            return;
+        }
+        customerProfileRepository.findByIdNumber(idNumber).ifPresent(profile -> {
+            if (!profile.getCustomerId().equals(customerId)) {
+                throw new BusinessException("身分證字號已被他人使用");
+            }
+        });
+    }
+
+    private void ensurePhoneAvailable(String customerId, String phone) {
+        if (phone == null) {
+            return;
+        }
+        customerProfileRepository.findByPhone(phone).ifPresent(profile -> {
+            if (!profile.getCustomerId().equals(customerId)) {
+                throw new BusinessException("電話號碼已被他人使用");
+            }
+        });
+    }
+
+    private String resolveAddress(String currentAddress, String registeredAddress, String fallback) {
+        if (currentAddress != null && !currentAddress.isBlank()) {
+            return currentAddress;
+        }
+        if (registeredAddress != null && !registeredAddress.isBlank()) {
+            return registeredAddress;
+        }
+        return fallback;
     }
 
     /**
