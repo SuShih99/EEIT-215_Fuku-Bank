@@ -10,6 +10,8 @@ import java.math.BigDecimal;
 
 @Getter
 @Setter
+//********待修正********
+//審核用資料需要調整
 public class RiskReviewRequest {
 
     // ── 路由資訊 ──────────────────────────────────────────
@@ -50,6 +52,10 @@ public class RiskReviewRequest {
     /**
      * 用於黑名單比對（對應 Blacklist listType=EMAIL）
      */
+    @Size(max = 20)
+    private String idCard;
+
+
     @Email
     @Size(max = 100)
     private String email;

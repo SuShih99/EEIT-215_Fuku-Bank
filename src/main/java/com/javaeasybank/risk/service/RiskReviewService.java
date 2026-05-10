@@ -28,26 +28,26 @@ public class RiskReviewService {
     private final RiskEventLogRepository logRepository;
 
     @Transactional
-    public RiskReviewResponse process(RiskReviewRequest dto) {
+    public RiskReviewResponse process(RiskReviewRequest request) {
 
         // 1. 黑名單批次檢查
-        List<BlacklistType> hitTypes = blackListService.checkAll(buildBlacklistMap(dto));
+        List<BlacklistType> hitTypes = blackListService.checkAll(buildBlacklistMap(request));
         if (!hitTypes.isEmpty()) {
             log.info("[RiskReview] 命中黑名單 businessId={} hitTypes={}",
-                    dto.getBusinessId(), hitTypes);
+                    request.getBusinessId(), hitTypes);
             RiskEventLog log = buildAndSaveLog(
-                    dto, null, 0,
+                    request, null, 0,
                     Disposition.REJECT,
                     "命中黑名單：" + hitTypes);
             // 黑名單直接 callback，不需要人審
-            callbackService.notify(dto.getCallbackUrl(), Disposition.REJECT, log);
-            return buildResponse(log, Disposition.REJECT, null);
+            callbackService.notify(request.getCallbackUrl(), Disposition.REJECT, log);
+            return buildResponse(log, Disposition.REJECT, null, 0);
         }
 
         // 2. 同步信用資料並重新評分
         //    - 客戶不存在 → initializeCreditInfo 建立 mock 資料
         //    - 客戶已存在 → 覆蓋選填欄位後 rescore
-        CustomerCreditInfo credit = syncCredit(dto);
+        CustomerCreditInfo credit = syncCredit(request);
 
         // 3. 依 finalScore 決定 Disposition
         //    CreditSCoreService 的 resolveRiskLevel：
@@ -56,11 +56,11 @@ public class RiskReviewService {
         Disposition disposition = resolveDisposition(credit);
 
         log.info("[RiskReview] businessId={} finalScore={} riskLevel={} disposition={}",
-                dto.getBusinessId(), credit.getFinalScore(),
+                request.getBusinessId(), credit.getFinalScore(),
                 credit.getRiskLevel(), disposition);
 
         // 4. 存 RiskEventLog + 後續動作（同一個 @Transactional 保護）
-        return handleDisposition(dto, credit, disposition);
+        return handleDisposition(request, credit, disposition);
     }
 
     // ── 私有方法 ─────────────────────────────────────────────────────────
@@ -77,11 +77,6 @@ public class RiskReviewService {
         return map;
     }
 
-    /**
-     * 信用資料同步：
-     * - 新客戶（無資料）→ initializeCreditInfo 建立並評分
-     * - 舊客戶（有資料）→ 選填欄位有傳就覆蓋，再 rescore
-     */
     private CustomerCreditInfo syncCredit(RiskReviewRequest dto) {
 
         // 不再處理新客戶建立，找不到直接拋例外
@@ -111,7 +106,6 @@ public class RiskReviewService {
      * - PASS / REJECT    → 立刻 callback
      * - MANUAL_REVIEW    → 建 ReviewTask，等人工決策後再 callback
      */
-    @Transactional
     private RiskReviewResponse handleDisposition(
             RiskReviewRequest dto,
             CustomerCreditInfo credit,
@@ -125,11 +119,11 @@ public class RiskReviewService {
         return switch (disposition) {
             case PASS, REJECT -> {
                 callbackService.notify(dto.getCallbackUrl(), disposition, log);
-                yield buildResponse(log, disposition, null);
+                yield buildResponse(log, disposition, null, credit.getFinalScore());
             }
             case MANUAL_REVIEW -> {
-                ReviewTask task = reviewTaskService.create(log, dto);
-                yield buildResponse(log, disposition, task.getTaskId());
+                ReviewTask task = reviewTaskService.createTask(log, dto);
+                yield buildResponse(log, disposition, task.getTaskId(), credit.getFinalScore());
             }
         };
     }
@@ -168,9 +162,9 @@ public class RiskReviewService {
      */
     private String buildMetaData(CustomerCreditInfo credit) {
         return String.format(
-                "{\"externalScore\":%d,\"annualIncome\":%s," +
+                "{\"finalScore\":%d,\"annualIncome\":%s," +
                         "\"otherBankDebt\":%s,\"hasRealEstate\":%b}",
-                credit.getExternalScore(),
+                credit.getFinalScore(),
                 credit.getAnnualIncome(),
                 credit.getOtherBankDebt(),
                 credit.getHasRealEstate());
@@ -179,31 +173,17 @@ public class RiskReviewService {
     private RiskReviewResponse buildResponse(
             RiskEventLog log,
             Disposition disposition,
-            Long reviewTaskId) {
+            Long reviewTaskId, int finalScore) {
 
         return RiskReviewResponse.builder()
                 .logId(log.getLogId())
                 .businessId(log.getBusinessId())
                 .disposition(disposition)
                 .riskLevel(log.getRiskLevel())
-                .finalScore(log.getMetaData() != null
-                        ? extractFinalScore(log) : 0)
+                .finalScore(finalScore)
                 .reason(log.getTriggerReason())
                 .reviewTaskId(reviewTaskId)
                 .build();
     }
 
-    private int extractFinalScore(RiskEventLog log) {
-        // metaData 是 JSON 字串，簡單取值避免引入額外依賴
-        // 正式專案建議改用 ObjectMapper
-        try {
-            String meta = log.getMetaData();
-            // {"externalScore":..., "finalScore":72, ...}
-            // 這裡 finalScore 其實存在 credit 物件，
-            // buildResponse 呼叫鏈有 credit 時可直接傳入，這裡示意
-            return 0;
-        } catch (Exception e) {
-            return 0;
-        }
-    }
 }

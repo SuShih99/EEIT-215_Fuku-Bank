@@ -19,7 +19,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /**
  * Spring Security 設定
- *
+ * <p>
  * 重點：
  * 1. @EnableMethodSecurity → 啟用 @PreAuthorize 註解
  * 2. 管理端：Session-based 認證（/api/auth/**）
@@ -40,46 +40,50 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // 關閉 CSRF 保護
-            // 原因：CSRF 是針對瀏覽器 Cookie 的攻擊，
-            // 我們用 Session + JSON API，前端用 axios 發請求，
-            // 不是傳統的 HTML form submit，不需要這個保護
-            .csrf(csrf -> csrf.disable())
+                // 關閉 CSRF 保護
+                // 原因：CSRF 是針對瀏覽器 Cookie 的攻擊，
+                // 我們用 Session + JSON API，前端用 axios 發請求，
+                // 不是傳統的 HTML form submit，不需要這個保護
+                .csrf(csrf -> csrf.disable())
 
-            // 開啟 CORS，Spring Security 會自動去找底下名為 corsConfigurationSource 的 Bean
-            .cors(cors -> {})
+                // 開啟 CORS，Spring Security 會自動去找底下名為 corsConfigurationSource 的 Bean
+                .cors(cors -> {
+                })
 
-            // 路由權限設定
-            .authorizeHttpRequests(auth -> auth
-                // === 管理端：登入/登出 不需驗證 ===
-                .requestMatchers("/api/auth/login").permitAll()
-                .requestMatchers("/api/auth/logout").permitAll()
+                // 路由權限設定
+                .authorizeHttpRequests(auth -> auth
+                        // === 管理端：登入/登出 不需驗證 ===
+                        .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/logout").permitAll()
 
-                // === 管理端：Seed 測試資料 ===
-                .requestMatchers("/api/auth/employees/seed").permitAll()
-                .requestMatchers("/api/customers/seed").permitAll()
+                        // === 管理端：Seed 測試資料 ===
+                        .requestMatchers("/api/auth/employees/seed").permitAll()
+                        .requestMatchers("/api/customers/seed").permitAll()
 
-                // === 客戶端：註冊、登入、密碼重設 不需驗證 ===
-                .requestMatchers("/api/customer/auth/register").permitAll()
-                .requestMatchers("/api/customer/auth/login").permitAll()
-                .requestMatchers("/api/customer/auth/request-reset").permitAll()
-                .requestMatchers("/api/customer/auth/reset-password").permitAll()
-                .requestMatchers("/api/customer/auth/verify-email").permitAll()
-                .requestMatchers("/api/customer/auth/seed").permitAll()
+                        // === 客戶端：註冊、登入、密碼重設 不需驗證 ===
+                        .requestMatchers("/api/customer/auth/register").permitAll()
+                        .requestMatchers("/api/customer/auth/login").permitAll()
+                        .requestMatchers("/api/customer/auth/request-reset").permitAll()
+                        .requestMatchers("/api/customer/auth/reset-password").permitAll()
+                        .requestMatchers("/api/customer/auth/verify-email").permitAll()
+                        .requestMatchers("/api/customer/auth/seed").permitAll()
 
-                // === 靜態資源：大頭照可公開存取 & 圖片可公開存取 ===
-                .requestMatchers("/uploads/**").permitAll()
-                .requestMatchers("/img/**").permitAll()
+                        // === 靜態資源：大頭照可公開存取 & 圖片可公開存取 ===
+                        .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/img/**").permitAll()
 
-                // === 其餘都要登入 ===
-                .anyRequest().authenticated()
-            )
+                        //風控測試用
+                        .requestMatchers("/api/risk/**").permitAll()
+                        
+                        // === 其餘都要登入 ===
+                        .anyRequest().authenticated()
+                )
 
-            // 在 UsernamePasswordAuthenticationFilter 之前加入 JWT 過濾器
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                // 在 UsernamePasswordAuthenticationFilter 之前加入 JWT 過濾器
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 
-            .formLogin(form -> form.disable())       // 不用 Spring 預設登入頁
-            .httpBasic(basic -> basic.disable());     // 不用 HTTP Basic 認證
+                .formLogin(form -> form.disable())       // 不用 Spring 預設登入頁
+                .httpBasic(basic -> basic.disable());     // 不用 HTTP Basic 認證
 
         return http.build();
     }

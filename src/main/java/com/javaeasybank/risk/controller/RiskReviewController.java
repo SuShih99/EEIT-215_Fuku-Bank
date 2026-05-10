@@ -3,20 +3,18 @@ package com.javaeasybank.risk.controller;
 import com.javaeasybank.common.dto.response.ApiResponse;
 import com.javaeasybank.risk.dto.request.RiskReviewRequest;
 import com.javaeasybank.risk.dto.response.RiskReviewResponse;
-import com.javaeasybank.risk.service.RiskEventService;
 import com.javaeasybank.risk.service.RiskReviewService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/risk/reviews")
+@RequiredArgsConstructor
 public class RiskReviewController {
 
     private final RiskReviewService riskReviewService;
-
-    public RiskReviewController(RiskReviewService riskReviewService) {
-        this.riskReviewService = riskReviewService;
-    }
 
     /**
      * 統一送審入口
@@ -28,7 +26,7 @@ public class RiskReviewController {
      */
     @PostMapping
     public ResponseEntity<ApiResponse<RiskReviewResponse>> submitReview(
-            @RequestBody RiskReviewRequest dto) {
+            @RequestBody @Valid RiskReviewRequest dto) {
         // dto 裡有 scene、businessId、customerId、callbackUrl、amount 等
         RiskReviewResponse result = riskReviewService.process(dto);
         return ResponseEntity.ok(ApiResponse.success(result));

@@ -18,7 +18,9 @@ import org.springframework.util.StringUtils;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -54,9 +56,11 @@ public class RiskEventService {
 
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     @Async
+    //********待修正********
+    //因為requestDTO沒有完善 存入metadata的部分出錯
     public void recordEvent(RiskReviewRequest request) {
         log.info("[RiskEvent] 異步開始記錄風險事件: businessId={}, type={}",
-                request.getBusinessId(), request.getBusinessType());
+                request.getBusinessId(), request.getScene());
 
         try {
             RiskEventLog logEntry = new RiskEventLog();
@@ -64,26 +68,16 @@ public class RiskEventService {
             // 1. 映射基礎欄位
             logEntry.setBusinessId(request.getBusinessId());
             logEntry.setTargetIdentifier(request.getCustomerId());
-            logEntry.setEventType(request.getBusinessType() + "_SUBMIT");
+            logEntry.setEventType(request.getScene() + "_SUBMIT");
 
             // 2. 設定初始風控狀態
             logEntry.setRiskLevel(RiskLevel.LOW); // 預設等級
             logEntry.setDisposition(Disposition.MANUAL_REVIEW); // 預設進入人工審核
-            logEntry.setTriggerReason("系統接收 " + request.getBusinessType() + " 送審請求");
+            logEntry.setTriggerReason("系統接收 " + request.getScene() + " 送審請求");
 
-            // 3. 處理 Map 資料存入 metaData (JSON)
-            if (request.getBusinessDetails() != null) {
-                // 將 businessDetails Map 序列化為 JSON 字串
-                String jsonDetails = objectMapper.writeValueAsString(request.getBusinessDetails());
-                logEntry.setMetaData(jsonDetails);
-
-                // 嘗試抓取金額 (自動從 details 裡找 common keys)
-                Object amountObj = request.getBusinessDetails().getOrDefault("confirmedAmount",
-                        request.getBusinessDetails().get("amount"));
-                if (amountObj != null) {
-                    logEntry.setTransactionAmount(new java.math.BigDecimal(amountObj.toString()));
-                }
-            }
+            // metaData 從現有欄位組 JSON
+            String meta = buildMetaData(request);
+            logEntry.setMetaData(meta);
 
             // 存檔
             relRepos.save(logEntry);
@@ -92,6 +86,21 @@ public class RiskEventService {
         } catch (Exception e) {
             log.error("[RiskEvent] 記錄失敗，原因: {}", e.getMessage(), e);
             // 異步方法內的異常不會拋回給呼叫方，所以這裡要記錄清楚
+        }
+    }
+
+    private String buildMetaData(RiskReviewRequest request) {
+        try {
+            Map<String, Object> meta = new LinkedHashMap<>();
+            meta.put("externalScore", request.getExternalScore());
+            meta.put("annualIncome", request.getAnnualIncome());
+            meta.put("otherBankDebt", request.getOtherBankDebt());
+            meta.put("occupation", request.getOccupation());
+            meta.put("hasRealEstate", request.getHasRealEstate());
+            return objectMapper.writeValueAsString(meta);
+        } catch (Exception e) {
+            log.warn("[RiskEvent] metaData 序列化失敗", e);
+            return null;
         }
     }
 
