@@ -79,6 +79,19 @@
 
 
 /* === 3. 全域 Reset（客戶端頁面）=== */
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 .customer-page {
   font-family: var(--font-body);
   font-size: var(--text-body);
@@ -86,6 +99,9 @@
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .customer-page *,

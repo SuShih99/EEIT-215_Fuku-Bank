@@ -296,6 +296,9 @@ function handleLogout() {
 .user-layout {
   min-height: 100vh;
   background: #f5f1ea url('/java-bank-wabi-bg.webp') center / cover fixed;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* === Header Top (Logo + User) === */
@@ -305,6 +308,8 @@ function handleLogout() {
   z-index: 100;
   background: rgba(245, 241, 234, 0.95);
   backdrop-filter: blur(12px);
+  width: 100%;
+  max-width: 100%;
 }
 
 .header-top {
@@ -313,6 +318,7 @@ function handleLogout() {
 }
 
 .header-top-inner {
+  width: 100%;
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 var(--space-8);
@@ -326,6 +332,7 @@ function handleLogout() {
   display: flex;
   align-items: center;
   gap: var(--space-4);
+  min-width: 0;
 }
 
 .welcome-text {
@@ -450,9 +457,12 @@ function handleLogout() {
 .mega-nav {
   border-bottom: 1px solid var(--border);
   background: rgba(245, 241, 234, 0.98);
+  width: 100%;
+  max-width: 100%;
 }
 
 .mega-nav-inner {
+  width: 100%;
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 var(--space-8);
@@ -463,6 +473,7 @@ function handleLogout() {
 .mega-nav-item {
   position: relative;
   flex: 1;
+  min-width: 0;
 }
 
 .mega-nav-trigger {
@@ -592,37 +603,124 @@ function handleLogout() {
 
 /* === Content === */
 .user-content {
+  width: 100%;
   max-width: 1400px;
   margin: 0 auto;
   padding: var(--space-6) var(--space-8);
+  overflow-x: hidden;
 }
 
 /* === Mobile === */
 @media (max-width: 900px) {
-  .mega-nav-inner {
+  .mega-nav {
     overflow-x: auto;
+    overflow-y: visible;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+  }
+
+  .mega-nav::-webkit-scrollbar { display: none; }
+
+  .mega-nav-inner {
+    width: max-content;
+    min-width: max-content;
+    max-width: none;
+    flex-wrap: nowrap;
     padding: 0 var(--space-3);
   }
-  .mega-nav-inner::-webkit-scrollbar { display: none; }
+
+  .mega-nav-item {
+    flex: 0 0 auto;
+    min-width: auto;
+  }
 
   .mega-nav-trigger {
-    padding: var(--space-2) var(--space-3);
+    width: auto;
+    padding: 12px 14px;
     font-size: var(--text-xs);
   }
 
   .mega-nav-icon { display: none; }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 768px) {
+  .user-header {
+    padding: 0;
+  }
+
+  .header-top {
+    padding: 0 0 10px;
+  }
+
   .header-top-inner {
-    padding: 0 var(--space-3);
-    height: 64px;
+    min-height: 64px;
+    height: auto;
+    padding: 8px 16px 0;
+    align-items: center;
+    gap: 8px 12px;
+    flex-wrap: wrap;
   }
+
+  .header-top-inner :deep(.jb-logo-img) {
+    max-width: 96px;
+    height: auto;
+  }
+
+  .header-user {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    gap: 8px;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .session-timer {
+    order: 2;
+    width: 100%;
+    margin: 4px 0 0;
+    padding: 8px 10px;
+    justify-content: space-between;
+    gap: 8px;
+    border-radius: 14px;
+  }
+
+  .session-timer-text {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .session-continue-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .demo-mode-badge {
+    display: none;
+  }
+
+  .user-name {
+    display: none;
+  }
+
+  .logout-btn {
+    padding: 7px 10px;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .user-avatar,
+  .avatar-placeholder {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+  }
+
   .user-content {
-    padding: var(--space-4) var(--space-3);
+    max-width: 100%;
+    padding: 16px;
   }
+
   .mega-dropdown {
     position: fixed;
     left: var(--space-3);

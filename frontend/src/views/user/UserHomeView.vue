@@ -593,7 +593,9 @@ onMounted(async () => {
 <style scoped>
 .home-page {
   max-width: 100%;
+  width: 100%;
   position: relative;
+  overflow-x: hidden;
 }
 
 .washi-overlay {
@@ -701,6 +703,8 @@ onMounted(async () => {
   grid-template-columns: 320px 1fr;
   gap: 24px;
   margin-bottom: 32px;
+  width: 100%;
+  min-width: 0;
 }
 
 /* === 左側：個人資訊卡片 (Profile Summary) === */
@@ -712,6 +716,8 @@ onMounted(async () => {
   box-shadow: 0 8px 22px rgba(63, 74, 66, 0.05);
   display: flex;
   flex-direction: column;
+  width: 100%;
+  min-width: 0;
 }
 
 .profile-header-wrap {
@@ -812,6 +818,8 @@ onMounted(async () => {
   border-radius: 24px;
   padding: 28px;
   box-shadow: 0 10px 26px rgba(63, 74, 66, 0.06);
+  width: 100%;
+  min-width: 0;
 }
 
 .asset-card-header {
@@ -867,12 +875,16 @@ onMounted(async () => {
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .asset-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;
+  width: 100%;
+  min-width: 0;
 }
 
 .asset-subcard {
@@ -883,6 +895,8 @@ onMounted(async () => {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
   display: flex;
   flex-direction: column;
+  width: 100%;
+  min-width: 0;
 }
 
 .asset-subcard-title {
@@ -959,6 +973,8 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: 280px 1fr 1fr;
   gap: var(--space-5);
+  width: 100%;
+  min-width: 0;
 }
 
 /* === 通用卡片標題 === */
@@ -1016,6 +1032,8 @@ onMounted(async () => {
   border-radius: 20px;
   padding: var(--space-5);
   box-shadow: none;
+  width: 100%;
+  min-width: 0;
 }
 
 .donut-wrap {
@@ -1067,10 +1085,13 @@ onMounted(async () => {
   border-radius: 20px;
   padding: var(--space-5);
   box-shadow: none;
+  width: 100%;
+  min-width: 0;
 }
 
 .exchange-table {
   width: 100%;
+  min-width: 0;
   border-collapse: collapse;
   font-size: var(--text-body); /* 放大字體從 13px 到 15px */
   transition: opacity 0.3s var(--ease);
@@ -1152,6 +1173,8 @@ onMounted(async () => {
   border-radius: 20px;
   padding: var(--space-5);
   box-shadow: none;
+  width: 100%;
+  min-width: 0;
 }
 
 .period-tabs {
@@ -1229,10 +1252,114 @@ onMounted(async () => {
 }
 
 @media (max-width: 768px) {
-  .asset-grid { grid-template-columns: 1fr; }
-  .dashboard-bottom { grid-template-columns: 1fr; }
+  .home-page {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .dashboard-top,
+  .dashboard-bottom,
+  .asset-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .profile-summary-card,
+  .asset-overview-card,
+  .distribution-card,
+  .exchange-card,
+  .watermark-card,
+  .asset-subcard {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .asset-overview-card {
+    padding: 24px 20px;
+    border-radius: 20px;
+  }
+
+  .asset-card-header {
+    gap: 12px;
+  }
+
+  .asset-total-amount {
+    font-size: 36px;
+    line-height: 1.15;
+    word-break: break-word;
+  }
+
+  .asset-main-amount {
+    margin-bottom: 20px;
+  }
+
+  .asset-subcard-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .asset-subcard-actions button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .exchange-card,
+  .watermark-card,
+  .distribution-card {
+    padding: 24px 20px;
+  }
+
+  .exchange-card {
+    overflow-x: hidden;
+  }
+
+  .exchange-table {
+    table-layout: fixed;
+    font-size: 13px;
+  }
+
+  .exchange-flag {
+    width: 24px;
+    font-size: 15px;
+  }
+
+  .exchange-name {
+    font-size: 13px;
+  }
+
+  .exchange-rate {
+    font-size: 13px;
+    word-break: break-word;
+  }
+
+  .exchange-time {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .card-title-row {
+    align-items: center;
+  }
+
+  .block-action-btn {
+    min-width: 96px;
+    height: 38px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+
   .distribution-card {
     grid-template-columns: 1fr;
+  }
+
+  .chart-legend {
+    flex-direction: column;
+    gap: var(--space-2);
+    align-items: center;
   }
 }
 </style>
