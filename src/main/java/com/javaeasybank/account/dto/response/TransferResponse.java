@@ -23,6 +23,30 @@ public class TransferResponse {
      */
     private BigDecimal toAccountBalance;
     /**
+     * 轉帳本金。
+     */
+    private BigDecimal amount;
+    /**
+     * 手續費。
+     */
+    private BigDecimal feeAmount;
+    /**
+     * 本次總扣款金額。
+     */
+    private BigDecimal totalDebitAmount;
+    /**
+     * 是否為跨行交易。
+     */
+    private boolean interbank;
+    /**
+     * 轉入銀行代碼。
+     */
+    private String toBankCode;
+    /**
+     * 轉入銀行名稱。
+     */
+    private String toBankName;
+    /**
      * 轉帳完成的時間。
      */
     private LocalDateTime transferredAt;

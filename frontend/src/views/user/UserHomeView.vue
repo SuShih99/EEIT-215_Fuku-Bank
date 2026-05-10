@@ -184,7 +184,7 @@
       <section class="exchange-card" aria-label="匯率">
         <div class="card-title-row">
           <h3 class="card-title">匯率</h3>
-          <button class="block-action-btn" @click="comingSoon">立即換匯</button>
+          <button class="block-action-btn" @click="$router.push({ name: 'user-exchange' })">立即換匯</button>
         </div>
         <div class="section-rule"></div>
         <table class="exchange-table" :class="{ 'is-updating': isUpdatingRates }">
@@ -974,6 +974,32 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.block-action-btn {
+  min-width: 112px;
+  height: 40px;
+  padding: 0 18px;
+  color: var(--bg-primary);
+  background-color: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  white-space: nowrap;
+}
+
+.block-action-btn:hover {
+  background-color: var(--primary-dark);
+  border-color: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.block-action-btn:active {
+  transform: translateY(0);
 }
 
 .section-rule {

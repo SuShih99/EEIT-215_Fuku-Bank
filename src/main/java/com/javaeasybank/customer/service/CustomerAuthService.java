@@ -10,7 +10,7 @@ public interface CustomerAuthService {
 
     // === 註冊 & 登入 ===
     CustomerRespository.LoginResponse register(CustomerRespository.RegisterRequest request);
-    CustomerRespository.LoginResponse login(CustomerRespository.LoginRequest request);
+    CustomerRespository.LoginResponse login(CustomerRespository.LoginRequest request, String ipAddress, String userAgent);
     void verifyEmail(String token);
 
     // === 個人資料 ===

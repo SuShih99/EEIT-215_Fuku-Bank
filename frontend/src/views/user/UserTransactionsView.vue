@@ -14,6 +14,7 @@
         <a-select-option value="TRANSFER">轉帳</a-select-option>
         <a-select-option value="DEPOSIT">存款</a-select-option>
         <a-select-option value="WITHDRAW">提款</a-select-option>
+        <a-select-option value="EXCHANGE">換匯</a-select-option>
         <a-select-option value="REVERSAL">沖正</a-select-option>
         <a-select-option value="INTEREST">利息</a-select-option>
       </a-select>
@@ -26,6 +27,7 @@
       :pagination="{ pageSize: 20, showSizeChanger: true, showTotal: (t) => `共 ${t} 筆` }"
       row-key="transactionId"
       size="small"
+      :locale="{ emptyText: '目前沒有交易紀錄' }"
       @resizeColumn="handleResizeColumn"
     >
       <template #bodyCell="{ column, record }">
@@ -126,7 +128,7 @@ async function fetchTransactions() {
 }
 
 function txTypeLabel(t) {
-  const map = { TRANSFER: '轉帳', DEPOSIT: '存款', WITHDRAW: '提款', REVERSAL: '沖正', INTEREST: '利息' }
+  const map = { TRANSFER: '轉帳', DEPOSIT: '存款', WITHDRAW: '提款', EXCHANGE: '換匯', REVERSAL: '沖正', INTEREST: '利息' }
   return map[t] || t
 }
 

@@ -45,8 +45,13 @@ public class CustomerAuthController {
     // ===== 客戶登入（所有人都能打）=====
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<CustomerRespository.LoginResponse>> login(
+            HttpServletRequest httpRequest,
             @RequestBody CustomerRespository.LoginRequest request) {
-        return ResponseEntity.ok(ApiResponse.success(customerAuthService.login(request)));
+        return ResponseEntity.ok(ApiResponse.success(customerAuthService.login(
+                request,
+                resolveClientIp(httpRequest),
+                resolveUserAgent(httpRequest)
+        )));
     }
 
     // ===== 電子郵件驗證 =====
@@ -152,5 +157,22 @@ public class CustomerAuthController {
         if (filename == null) return ".jpg";
         int dot = filename.lastIndexOf('.');
         return dot >= 0 ? filename.substring(dot) : ".jpg";
+    }
+
+    private String resolveClientIp(HttpServletRequest request) {
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            return forwardedFor.split(",")[0].trim();
+        }
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) {
+            return realIp.trim();
+        }
+        return request.getRemoteAddr();
+    }
+
+    private String resolveUserAgent(HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent");
+        return userAgent == null || userAgent.isBlank() ? "未知裝置" : userAgent;
     }
 }

@@ -89,7 +89,46 @@ CREATE TABLE CUSTOMER_AUTH (
     CONSTRAINT FK_Auth_Profile FOREIGN KEY (customer_id) REFERENCES CUSTOMER_PROFILE(customer_id)
 );
 
--- [4] KYC 資料表
+-- [4] 客戶登入紀錄
+CREATE TABLE CUSTOMER_LOGIN_LOG (
+    login_log_id BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    customer_id VARCHAR(20) NULL,
+    username VARCHAR(50) NOT NULL,
+    result NVARCHAR(20) NOT NULL,
+    fail_reason NVARCHAR(200) NULL,
+    ip_address VARCHAR(45) NULL,
+    user_agent NVARCHAR(512) NULL,
+    device_name NVARCHAR(120) NULL,
+    login_time DATETIME2 NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_LoginLog_Profile FOREIGN KEY (customer_id) REFERENCES CUSTOMER_PROFILE(customer_id)
+);
+
+CREATE INDEX IDX_LoginLog_Customer_Time
+    ON CUSTOMER_LOGIN_LOG(customer_id, login_time DESC);
+
+-- [5] 客戶授權裝置
+CREATE TABLE CUSTOMER_DEVICE (
+    device_id BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    customer_id VARCHAR(20) NOT NULL,
+    device_fingerprint VARCHAR(64) NOT NULL,
+    device_name NVARCHAR(120) NOT NULL,
+    browser_name NVARCHAR(60) NULL,
+    operating_system NVARCHAR(60) NULL,
+    ip_address VARCHAR(45) NULL,
+    user_agent NVARCHAR(512) NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    trusted BIT NOT NULL DEFAULT 1,
+    first_seen_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    last_seen_at DATETIME2 NOT NULL DEFAULT GETDATE(),
+    revoked_at DATETIME2 NULL,
+    CONSTRAINT FK_Device_Profile FOREIGN KEY (customer_id) REFERENCES CUSTOMER_PROFILE(customer_id),
+    CONSTRAINT UK_CustomerDevice_Fingerprint UNIQUE (customer_id, device_fingerprint)
+);
+
+CREATE INDEX IDX_Device_Customer_LastSeen
+    ON CUSTOMER_DEVICE(customer_id, last_seen_at DESC);
+
+-- [6] KYC 資料表
 CREATE TABLE CUSTOMER_KYC (
     customer_id VARCHAR(20) NOT NULL PRIMARY KEY,
     id_issue_date DATE NOT NULL,
@@ -107,7 +146,7 @@ CREATE TABLE CUSTOMER_KYC (
     CONSTRAINT CHK_Issue_Type CHECK (id_issue_type IN (N'初發', N'補發', N'換發'))
 );
 
--- [5] 風控標籤表
+-- [7] 風控標籤表
 CREATE TABLE CUSTOMER_RISK_TAG (
     customer_id VARCHAR(20) NOT NULL PRIMARY KEY,
     aml_risk_level VARCHAR(10) NOT NULL DEFAULT 'LOW',

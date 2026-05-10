@@ -57,6 +57,7 @@
       :pagination="false"
       size="small"
       row-key="transactionId"
+      :locale="{ emptyText: '目前沒有交易紀錄' }"
     >
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'transactionType'">
@@ -165,6 +166,7 @@ const typeMap = {
   TRANSFER: '轉帳',
   DEPOSIT: '存款',
   WITHDRAW: '提款',
+  EXCHANGE: '換匯',
   INTEREST: '利息',
   LOAN_DISBURSEMENT: '貸款撥款',
   LOAN_REPAYMENT: '貸款還款',
@@ -175,6 +177,7 @@ const typeColorMap = {
   TRANSFER: 'blue',
   DEPOSIT: 'green',
   WITHDRAW: 'orange',
+  EXCHANGE: 'gold',
   INTEREST: 'cyan',
   LOAN_DISBURSEMENT: 'geekblue',
   LOAN_REPAYMENT: 'lime',

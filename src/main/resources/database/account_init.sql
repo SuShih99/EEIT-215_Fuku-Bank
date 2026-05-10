@@ -60,7 +60,7 @@ GO
 CREATE TABLE [ACCOUNT] (
     [account_number]        VARCHAR(12)     PRIMARY KEY,            -- 帳戶號碼 (PK, 業務編號, Java端生成)
     [customer_id]           VARCHAR(20)     NOT NULL,               -- 客戶識別碼 (FK → customer_profile)
-    [account_type]          VARCHAR(20)     NOT NULL,               -- 帳戶型別 (CHECKING/TIME_DEPOSIT/LOAN/SUB_ACCOUNT)
+    [account_type]          VARCHAR(20)     NOT NULL,               -- 帳戶型別 (CHECKING/SAVINGS/TIME_DEPOSIT/LOAN/SUB_ACCOUNT)
     [currency]              CHAR(3)         NOT NULL,               -- 幣別 (ISO 4217, 固定3碼)
     [balance]               DECIMAL(19,4)   NULL DEFAULT 0,         -- 餘額 (活存/定存用, 預設0防止NULL運算錯誤)
     [liability]             DECIMAL(19,4)   NULL DEFAULT 0,         -- 負債 (貸款用, 預設0防止NULL運算錯誤)
@@ -84,7 +84,7 @@ GO
 -- ACCOUNT 欄位註解
 EXEC sp_addextendedproperty @name = N'Column_Description', @value = '帳戶號碼 (PK, 業務編號, 12碼, Java端生成)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'ACCOUNT', @level2type = N'Column', @level2name = 'account_number';
 EXEC sp_addextendedproperty @name = N'Column_Description', @value = '客戶識別碼 (未來補FK至CUSTOMER表)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'ACCOUNT', @level2type = N'Column', @level2name = 'customer_id';
-EXEC sp_addextendedproperty @name = N'Column_Description', @value = '帳戶型別 (CHECKING/TIME_DEPOSIT/LOAN/SUB_ACCOUNT)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'ACCOUNT', @level2type = N'Column', @level2name = 'account_type';
+EXEC sp_addextendedproperty @name = N'Column_Description', @value = '帳戶型別 (CHECKING/SAVINGS/TIME_DEPOSIT/LOAN/SUB_ACCOUNT)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'ACCOUNT', @level2type = N'Column', @level2name = 'account_type';
 EXEC sp_addextendedproperty @name = N'Column_Description', @value = '幣別 (ISO 4217, 如: TWD/USD/JPY)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'ACCOUNT', @level2type = N'Column', @level2name = 'currency';
 EXEC sp_addextendedproperty @name = N'Column_Description', @value = '餘額 (活存/定存適用, 貸款帳戶程式端設NULL, DEFAULT 0防止NULL運算錯誤)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'ACCOUNT', @level2type = N'Column', @level2name = 'balance';
 EXEC sp_addextendedproperty @name = N'Column_Description', @value = '負債 (貸款帳戶適用, 還款時直接扣除, DEFAULT 0防止NULL運算錯誤)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'ACCOUNT', @level2type = N'Column', @level2name = 'liability';
@@ -169,11 +169,17 @@ CREATE TABLE [TRANS_LOG] (
     [transaction_id]        CHAR(36)        PRIMARY KEY,            -- 交易 ID (UUID, Java端生成, 內部用)
     [reference_id]          VARCHAR(30)     NOT NULL,               -- 業務交易編號 (TXN-yyyyMMdd-HHmmss-8碼hex, 對外用)
     [account_number]        VARCHAR(12)     NOT NULL,               -- 影響帳號 (FK)
-    [counterpart_account]   VARCHAR(20)     NULL,                   -- 對手方帳號 (行內12碼/跨行最長16碼, 存提款NULL)
-    [counterpart_bank_code] VARCHAR(10)     NULL,                   -- 對手方銀行代碼 (跨行轉帳用, 行內NULL)
+    [counterpart_account]   VARCHAR(20)     NULL,                   -- 對手方帳號 (行內12碼/跨行最長20碼, 存提款NULL)
+    [bank_code]             VARCHAR(10)     NOT NULL DEFAULT '909', -- 本筆交易所屬銀行代碼 (本行固定909)
+    [bank_name]             NVARCHAR(50)    NOT NULL DEFAULT N'爪哇銀行', -- 本筆交易所屬銀行名稱
+    [counterpart_bank_code] VARCHAR(10)     NULL,                   -- 對手方銀行代碼 (本行909/跨行對方銀行)
+    [counterpart_bank_name] NVARCHAR(50)    NULL,                   -- 對手方銀行名稱
+    [is_interbank]          BIT             NOT NULL DEFAULT 0,     -- 是否跨行交易
     [entry_type]            VARCHAR(10)     NOT NULL,               -- 記帳方向 (DEBIT/CREDIT)
-    [transaction_type]      VARCHAR(25)     NOT NULL,               -- 交易類型 (TRANSFER/DEPOSIT/WITHDRAW/INTEREST/LOAN_DISBURSEMENT/LOAN_REPAYMENT)
+    [transaction_type]      VARCHAR(25)     NOT NULL,               -- 交易類型 (TRANSFER/TRANSFER_FEE/DEPOSIT/WITHDRAW/EXCHANGE/INTEREST/LOAN_DISBURSEMENT/LOAN_REPAYMENT/REVERSAL)
     [amount]                DECIMAL(19,4)   NOT NULL,               -- 交易金額 (永遠正數, 方向由entry_type決定)
+    [fee_amount]            DECIMAL(19,4)   NOT NULL DEFAULT 0,     -- 手續費金額 (跨行轉帳用)
+    [total_debit_amount]    DECIMAL(19,4)   NULL,                   -- 本次業務總扣款金額 (本金+手續費)
     [balance_before]        DECIMAL(19,4)   NOT NULL,               -- 交易前餘額
     [balance_after]         DECIMAL(19,4)   NOT NULL,               -- 交易後餘額
     [currency]              CHAR(3)         NOT NULL,               -- 幣別 (冗餘欄位, 避免每次JOIN帳戶表)
@@ -185,7 +191,7 @@ CREATE TABLE [TRANS_LOG] (
     GO
 
 -- TRANSACTION INDEX
-CREATE INDEX idx_tx_reference ON [TRANS_LOG]([reference_id]);
+CREATE INDEX idx_tx_ref ON [TRANS_LOG]([reference_id]);
 CREATE INDEX idx_tx_account_time ON [TRANS_LOG]([account_number], [created_at]);
 CREATE INDEX idx_tx_counterpart ON [TRANS_LOG]([counterpart_account]);
 GO
@@ -194,11 +200,17 @@ GO
 EXEC sp_addextendedproperty @name = N'Column_Description', @value = '交易 ID (PK, UUID, Java端生成, 內部關聯用)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'TRANS_LOG', @level2type = N'Column', @level2name = 'transaction_id';
 EXEC sp_addextendedproperty @name = N'Column_Description', @value = '業務交易編號 (格式: TXN-yyyyMMdd-HHmmss-8碼hex, 轉帳時兩筆共用同一個)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'TRANS_LOG', @level2type = N'Column', @level2name = 'reference_id';
 EXEC sp_addextendedproperty @name = N'Column_Description', @value = '影響帳號 (FK → ACCOUNT, 這筆交易影響的帳戶)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'TRANS_LOG', @level2type = N'Column', @level2name = 'account_number';
-EXEC sp_addextendedproperty @name = N'Column_Description', @value = '對手方帳號 (行內12碼/跨行最長16碼, 存提款為NULL)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'TRANS_LOG', @level2type = N'Column', @level2name = 'counterpart_account';
-EXEC sp_addextendedproperty @name = N'Column_Description', @value = '對手方銀行代碼 (跨行轉帳用如004台灣銀行, 行內轉帳為NULL)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'TRANS_LOG', @level2type = N'Column', @level2name = 'counterpart_bank_code';
+EXEC sp_addextendedproperty @name = N'Column_Description', @value = '對手方帳號 (行內12碼/跨行最長20碼, 存提款為NULL)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'TRANS_LOG', @level2type = N'Column', @level2name = 'counterpart_account';
+EXEC sp_addextendedproperty @name = N'Column_Description', @value = '本筆交易所屬銀行代碼 (本行固定909)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'TRANS_LOG', @level2type = N'Column', @level2name = 'bank_code';
+EXEC sp_addextendedproperty @name = N'Column_Description', @value = '本筆交易所屬銀行名稱 (本行固定爪哇銀行)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'TRANS_LOG', @level2type = N'Column', @level2name = 'bank_name';
+EXEC sp_addextendedproperty @name = N'Column_Description', @value = '對手方銀行代碼 (本行909/跨行對方銀行)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'TRANS_LOG', @level2type = N'Column', @level2name = 'counterpart_bank_code';
+EXEC sp_addextendedproperty @name = N'Column_Description', @value = '對手方銀行名稱 (前端顯示與跨行對帳用)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'TRANS_LOG', @level2type = N'Column', @level2name = 'counterpart_bank_name';
+EXEC sp_addextendedproperty @name = N'Column_Description', @value = '是否跨行交易 (1=跨行, 0=本行/其他交易)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'TRANS_LOG', @level2type = N'Column', @level2name = 'is_interbank';
 EXEC sp_addextendedproperty @name = N'Column_Description', @value = '記帳方向 (DEBIT=扣款/CREDIT=入帳, 銀行不出現負數)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'TRANS_LOG', @level2type = N'Column', @level2name = 'entry_type';
-EXEC sp_addextendedproperty @name = N'Column_Description', @value = '交易類型 (TRANSFER/DEPOSIT/WITHDRAW/INTEREST/LOAN_DISBURSEMENT/LOAN_REPAYMENT)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'TRANS_LOG', @level2type = N'Column', @level2name = 'transaction_type';
+EXEC sp_addextendedproperty @name = N'Column_Description', @value = '交易類型 (TRANSFER/TRANSFER_FEE/DEPOSIT/WITHDRAW/EXCHANGE/INTEREST/LOAN_DISBURSEMENT/LOAN_REPAYMENT/REVERSAL)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'TRANS_LOG', @level2type = N'Column', @level2name = 'transaction_type';
 EXEC sp_addextendedproperty @name = N'Column_Description', @value = '交易金額 (永遠正數, 正負由entry_type決定)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'TRANS_LOG', @level2type = N'Column', @level2name = 'amount';
+EXEC sp_addextendedproperty @name = N'Column_Description', @value = '手續費金額 (跨行轉帳用, 本行轉帳為0)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'TRANS_LOG', @level2type = N'Column', @level2name = 'fee_amount';
+EXEC sp_addextendedproperty @name = N'Column_Description', @value = '本次業務總扣款金額 (本金+手續費, 同一TXN共用)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'TRANS_LOG', @level2type = N'Column', @level2name = 'total_debit_amount';
 EXEC sp_addextendedproperty @name = N'Column_Description', @value = '交易前餘額 (貸款帳戶存liability值, 由transaction_type判斷語意)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'TRANS_LOG', @level2type = N'Column', @level2name = 'balance_before';
 EXEC sp_addextendedproperty @name = N'Column_Description', @value = '交易後餘額 (像存摺每行印餘額, 對帳用)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'TRANS_LOG', @level2type = N'Column', @level2name = 'balance_after';
 EXEC sp_addextendedproperty @name = N'Column_Description', @value = '幣別 (ISO 4217, 冗餘欄位避免每次JOIN)', @level0type = N'Schema', @level0name = 'dbo', @level1type = N'Table', @level1name = 'TRANS_LOG', @level2type = N'Column', @level2name = 'currency';

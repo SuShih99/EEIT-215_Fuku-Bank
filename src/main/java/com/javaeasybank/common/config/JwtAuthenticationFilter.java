@@ -35,6 +35,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        String requestPath = request.getRequestURI();
+        if (!isCustomerApi(requestPath)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String authHeader = request.getHeader("Authorization");
 
         // 只處理 Bearer Token，其餘放行
@@ -60,5 +66,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isCustomerApi(String requestPath) {
+        return requestPath.startsWith("/api/customer/")
+                || requestPath.startsWith("/user/");
     }
 }

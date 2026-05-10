@@ -86,7 +86,10 @@
       <div v-if="idleModal.visible" class="jb-modal-overlay">
         <div class="jb-modal jb-card">
           <h3 class="jb-modal-title">您還在線嗎？</h3>
-          <p class="jb-modal-content">系統偵測到您已登入一段時間，請確認是否繼續使用。</p>
+          <p class="jb-modal-content">
+            系統偵測到您已登入一段時間，請確認是否繼續使用。<br />
+            若未於 {{ graceCountdown }} 秒內確認，系統將自動登出。
+          </p>
           <div class="jb-modal-actions">
             <button class="jb-btn jb-btn-primary" style="width: 100%" @click="handleStillHere">還在，繼續使用</button>
           </div>
@@ -140,6 +143,7 @@ const menus = [
     route: null,
     children: [
       { label: '查看所有帳戶', desc: '帳戶餘額與明細總覽', route: 'user-accounts' },
+      { label: '電子存摺', desc: '帳戶封面與銀行資料', route: 'user-e-passbook' },
       { label: '查看所有交易紀錄', desc: '全帳戶交易歷史', route: 'user-transactions' },
     ],
   },
@@ -151,7 +155,7 @@ const menus = [
       { label: '國內轉帳', desc: '台幣即時轉帳', route: 'user-transfer' },
       { label: '預約轉帳', desc: '設定未來轉帳', route: 'user-scheduled-transfer' },
       { label: '常用帳號管理', desc: '管理常用收款帳戶', route: 'user-favorite-accounts' },
-      { label: '換匯', desc: '外幣兌換服務', route: null },
+      { label: '換匯', desc: '外幣兌換服務', route: 'user-exchange' },
     ],
   },
   {
@@ -189,8 +193,8 @@ const menus = [
     route: 'user-profile',
     children: [
       { label: '密碼修改', desc: '變更登入密碼', route: 'user-profile' },
-      { label: '登入紀錄', desc: '查看近期登入活動', route: null },
-      { label: '裝置管理', desc: '管理已授權裝置', route: null },
+      { label: '登入紀錄', desc: '查看近期登入活動', route: 'user-security-login-records' },
+      { label: '裝置管理', desc: '管理已授權裝置', route: 'user-security-devices' },
     ],
   },
 ]
@@ -215,9 +219,10 @@ const idleModal = reactive({
 })
 
 const countdown = ref(300) // 5 分鐘 = 300 秒
+const graceCountdown = ref(30)
 const isTimerPaused = ref(false)
-let idleTimer = null
 let secondTimer = null
+let graceTimer = null
 
 function formatTime(seconds) {
   const m = Math.floor(seconds / 60)
@@ -226,12 +231,36 @@ function formatTime(seconds) {
 }
 
 function triggerIdleAlert() {
+  if (idleModal.visible) return
   idleModal.visible = true
+  graceCountdown.value = 30
+  startGraceTimer()
 }
 
 function handleStillHere() {
   idleModal.visible = false
+  stopGraceTimer()
   countdown.value = 300 // 重設倒數
+}
+
+function startGraceTimer() {
+  stopGraceTimer()
+  graceTimer = setInterval(() => {
+    if (graceCountdown.value > 0) {
+      graceCountdown.value--
+      return
+    }
+
+    stopGraceTimer()
+    handleLogout()
+  }, 1000)
+}
+
+function stopGraceTimer() {
+  if (graceTimer) {
+    clearInterval(graceTimer)
+    graceTimer = null
+  }
 }
 
 onMounted(() => {
@@ -239,24 +268,25 @@ onMounted(() => {
   
   // 每 1 秒更新倒數
   secondTimer = setInterval(() => {
+    if (idleModal.visible) return
     if (isTimerPaused.value) return // 暫停時不動作
     
     if (countdown.value > 0) {
       countdown.value--
     } else {
       triggerIdleAlert()
-      countdown.value = 300 // 彈出後重設
     }
   }, 1000)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', closeOnOutsideClick)
-  if (idleTimer) clearInterval(idleTimer)
   if (secondTimer) clearInterval(secondTimer)
+  stopGraceTimer()
 })
 
 function handleLogout() {
+  stopGraceTimer()
   customerAuthStore.clearCustomer()
   router.push({ name: 'user-login' })
 }
@@ -265,7 +295,7 @@ function handleLogout() {
 <style scoped>
 .user-layout {
   min-height: 100vh;
-  background: var(--bg-primary);
+  background: #f5f1ea url('/java-bank-wabi-bg.webp') center / cover fixed;
 }
 
 /* === Header Top (Logo + User) === */

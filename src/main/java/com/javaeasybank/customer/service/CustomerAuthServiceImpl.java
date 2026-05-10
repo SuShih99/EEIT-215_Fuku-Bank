@@ -2,10 +2,14 @@ package com.javaeasybank.customer.service;
 
 import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.common.util.JwtUtil;
+import com.javaeasybank.customer.entity.CustomerDevice;
+import com.javaeasybank.customer.entity.CustomerLoginLog;
 import com.javaeasybank.customer.repository.CustomerRespository;
 import com.javaeasybank.customer.entity.CustomerAuth;
 import com.javaeasybank.customer.entity.CustomerProfile;
 import com.javaeasybank.customer.repository.CustomerAuthRepository;
+import com.javaeasybank.customer.repository.CustomerDeviceRepository;
+import com.javaeasybank.customer.repository.CustomerLoginLogRepository;
 import com.javaeasybank.customer.repository.CustomerProfileRepository;
 import com.javaeasybank.common.service.EmailService;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,10 +17,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HexFormat;
+import java.util.Locale;
 import java.util.UUID;
 
 /**
@@ -29,6 +37,8 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
 
     private final CustomerAuthRepository customerAuthRepository;
     private final CustomerProfileRepository customerProfileRepository;
+    private final CustomerLoginLogRepository customerLoginLogRepository;
+    private final CustomerDeviceRepository customerDeviceRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
@@ -42,11 +52,15 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
 
     public CustomerAuthServiceImpl(CustomerAuthRepository customerAuthRepository,
                                    CustomerProfileRepository customerProfileRepository,
+                                   CustomerLoginLogRepository customerLoginLogRepository,
+                                   CustomerDeviceRepository customerDeviceRepository,
                                    PasswordEncoder passwordEncoder,
                                    JwtUtil jwtUtil,
                                    EmailService emailService) {
         this.customerAuthRepository = customerAuthRepository;
         this.customerProfileRepository = customerProfileRepository;
+        this.customerLoginLogRepository = customerLoginLogRepository;
+        this.customerDeviceRepository = customerDeviceRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.emailService = emailService;
@@ -115,12 +129,16 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
     // 登入
     // ===========================
     @Override
-    public CustomerRespository.LoginResponse login(CustomerRespository.LoginRequest request) {
+    public CustomerRespository.LoginResponse login(CustomerRespository.LoginRequest request, String ipAddress, String userAgent) {
+        String deviceName = resolveDeviceName(userAgent);
+        String location = (ipAddress == null || ipAddress.isBlank() ? "未知位置" : ipAddress) + " / " + deviceName;
+
         // 1. 查帳號
         CustomerAuth auth = customerAuthRepository.findByUsername(request.getUsername())
                 .orElse(null);
 
         if (auth == null) {
+            recordLogin(null, request.getUsername(), "失敗", "帳號或密碼錯誤", ipAddress, userAgent, deviceName);
             throw new BusinessException("帳號或密碼錯誤");
         }
 
@@ -131,40 +149,46 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
 
         // 2. 檢查狀態
         if ("PENDING".equals(auth.getStatus())) {
+            recordLogin(auth.getCustomerId(), auth.getUsername(), "失敗", "帳號尚未驗證", ipAddress, userAgent, deviceName);
             throw new BusinessException("帳號尚未驗證，請先至信箱收取驗證信");
         }
         if (!"ACTIVE".equals(auth.getStatus())) {
+            recordLogin(auth.getCustomerId(), auth.getUsername(), "失敗", "帳號已被停用", ipAddress, userAgent, deviceName);
             throw new BusinessException("此帳號已被停用");
         }
 
         // 3. 驗密碼
         if (!passwordEncoder.matches(request.getPassword(), auth.getPasswordHash())) {
+            recordLogin(auth.getCustomerId(), auth.getUsername(), "失敗", "帳號或密碼錯誤", ipAddress, userAgent, deviceName);
             if (email != null) {
-                emailService.sendLoginNotification(email, auth.getUsername(), false, "未知位置");
+                emailService.sendLoginNotification(email, auth.getUsername(), false, location);
             }
             throw new BusinessException("帳號或密碼錯誤");
         }
 
-        // 4. 更新最後登入時間
-        auth.setLastLoginDate(LocalDateTime.now());
-        customerAuthRepository.save(auth);
-
-        // 5. 驗證身分證字號
+        // 4. 驗證身分證字號
         if (request.getIdNumber() != null && !request.getIdNumber().isEmpty()) {
             if (profile == null || !profile.getIdNumber().equals(request.getIdNumber())) {
+                recordLogin(auth.getCustomerId(), auth.getUsername(), "失敗", "身分證字號不正確", ipAddress, userAgent, deviceName);
                 if (email != null) {
-                    emailService.sendLoginNotification(email, auth.getUsername(), false, "未知位置");
+                    emailService.sendLoginNotification(email, auth.getUsername(), false, location);
                 }
                 throw new BusinessException("身分證字號不正確");
             }
         }
+
+        // 5. 更新最後登入時間與授權裝置
+        auth.setLastLoginDate(LocalDateTime.now());
+        customerAuthRepository.save(auth);
+        upsertDevice(auth.getCustomerId(), ipAddress, userAgent);
+        recordLogin(auth.getCustomerId(), auth.getUsername(), "成功", null, ipAddress, userAgent, deviceName);
 
         // 6. 產生 JWT
         String token = jwtUtil.generateToken(auth.getUsername(), "CUSTOMER", auth.getCustomerId());
 
         // 7. 發送登入成功通知
         if (email != null) {
-            emailService.sendLoginNotification(email, auth.getUsername(), true, "未知位置");
+            emailService.sendLoginNotification(email, auth.getUsername(), true, location);
         }
 
         CustomerRespository.LoginResponse response = new CustomerRespository.LoginResponse();
@@ -322,6 +346,85 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
     // ===========================
     // 私有方法
     // ===========================
+    private void recordLogin(String customerId,
+                             String username,
+                             String result,
+                             String failReason,
+                             String ipAddress,
+                             String userAgent,
+                             String deviceName) {
+        CustomerLoginLog log = new CustomerLoginLog();
+        log.setCustomerId(customerId);
+        log.setUsername(truncate(username == null || username.isBlank() ? "UNKNOWN" : username, 50));
+        log.setResult(result);
+        log.setFailReason(truncate(failReason, 200));
+        log.setIpAddress(truncate(ipAddress, 45));
+        log.setUserAgent(truncate(userAgent, 512));
+        log.setDeviceName(truncate(deviceName, 120));
+        customerLoginLogRepository.save(log);
+    }
+
+    private void upsertDevice(String customerId, String ipAddress, String userAgent) {
+        String fingerprint = fingerprint(customerId, userAgent);
+        String browserName = resolveBrowserName(userAgent);
+        String operatingSystem = resolveOperatingSystem(userAgent);
+        String deviceName = browserName + " / " + operatingSystem;
+
+        CustomerDevice device = customerDeviceRepository.findByCustomerIdAndDeviceFingerprint(customerId, fingerprint)
+                .orElseGet(CustomerDevice::new);
+        device.setCustomerId(customerId);
+        device.setDeviceFingerprint(fingerprint);
+        device.setDeviceName(deviceName);
+        device.setBrowserName(browserName);
+        device.setOperatingSystem(operatingSystem);
+        device.setIpAddress(truncate(ipAddress, 45));
+        device.setUserAgent(truncate(userAgent, 512));
+        device.setStatus("ACTIVE");
+        device.setTrusted(true);
+        device.setRevokedAt(null);
+        device.setLastSeenAt(LocalDateTime.now());
+        customerDeviceRepository.save(device);
+    }
+
+    private String fingerprint(String customerId, String userAgent) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest((customerId + "::" + (userAgent == null ? "" : userAgent))
+                    .getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash);
+        } catch (Exception e) {
+            throw new BusinessException("裝置識別失敗");
+        }
+    }
+
+    private String resolveDeviceName(String userAgent) {
+        return resolveBrowserName(userAgent) + " / " + resolveOperatingSystem(userAgent);
+    }
+
+    private String resolveBrowserName(String userAgent) {
+        String ua = userAgent == null ? "" : userAgent.toLowerCase(Locale.ROOT);
+        if (ua.contains("edg/")) return "Microsoft Edge";
+        if (ua.contains("chrome/") || ua.contains("crios/")) return "Chrome";
+        if (ua.contains("firefox/") || ua.contains("fxios/")) return "Firefox";
+        if (ua.contains("safari/")) return "Safari";
+        return "未知瀏覽器";
+    }
+
+    private String resolveOperatingSystem(String userAgent) {
+        String ua = userAgent == null ? "" : userAgent.toLowerCase(Locale.ROOT);
+        if (ua.contains("windows")) return "Windows";
+        if (ua.contains("mac os") || ua.contains("macintosh")) return "macOS";
+        if (ua.contains("iphone") || ua.contains("ipad")) return "iOS";
+        if (ua.contains("android")) return "Android";
+        if (ua.contains("linux")) return "Linux";
+        return "未知系統";
+    }
+
+    private String truncate(String value, int maxLength) {
+        if (value == null) return null;
+        return value.length() <= maxLength ? value : value.substring(0, maxLength);
+    }
+
     private CustomerRespository.CustomerResponse convertToResponse(CustomerProfile profile, CustomerAuth auth) {
         CustomerRespository.CustomerResponse res = new CustomerRespository.CustomerResponse();
         org.springframework.beans.BeanUtils.copyProperties(profile, res);

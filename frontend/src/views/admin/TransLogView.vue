@@ -79,14 +79,14 @@
       :scroll="{ x: 1200 }"
       row-key="transactionId"
       class="custom-table"
-      :pagination="searchType === 'referenceId' ? false : {
+      :pagination="searchType === 'referenceId' && searchValue ? false : {
         current: currentPage,
         pageSize: pageSize,
         total: total,
         showSizeChanger: true,
         showTotal: (t) => `共 ${t} 筆`,
       }"
-      :locale="{ triggerDesc: '點擊降冪排序', triggerAsc: '點擊升冪排序', cancelSort: '取消排序' }"
+      :locale="{ emptyText: '目前沒有交易紀錄', triggerDesc: '點擊降冪排序', triggerAsc: '點擊升冪排序', cancelSort: '取消排序' }"
       @change="handleTableChange"
       @resizeColumn="handleResizeColumn"
     >
@@ -183,7 +183,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, h } from 'vue'
+import { ref, reactive, computed, h, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { DownOutlined, SearchOutlined, RollbackOutlined } from '@ant-design/icons-vue'
 import * as XLSX from 'xlsx'
@@ -211,6 +211,8 @@ const showAccountModal = ref(false)
 const accountDetail = ref(null)
 const accountLoading = ref(false)
 
+onMounted(fetchData)
+
 const placeholderText = computed(() => {
   const map = {
     referenceId: '請輸入交易編號 (TXN-...)',
@@ -230,6 +232,7 @@ const transactionTypeMap = {
   TRANSFER: '轉帳',
   DEPOSIT: '存款',
   WITHDRAW: '提款',
+  EXCHANGE: '換匯',
   INTEREST: '利息',
   LOAN_DISBURSEMENT: '貸款撥款',
   LOAN_REPAYMENT: '貸款還款',
@@ -412,13 +415,14 @@ async function fetchData() {
   }
 }
 
-function handleClear() {
+async function handleClear() {
   searchValue.value = ''
   startDate.value = null
   endDate.value = null
   logs.value = []
   total.value = 0
   currentPage.value = 1
+  await fetchData()
 }
 
 // === 匯出功能 ===

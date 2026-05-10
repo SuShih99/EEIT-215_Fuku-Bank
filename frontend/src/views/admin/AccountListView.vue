@@ -92,7 +92,7 @@
         showSizeChanger: true,
         showTotal: (t) => `共 ${t} 筆`,
       }"
-      :locale="{ triggerDesc: '點擊降冪排序', triggerAsc: '點擊升冪排序', cancelSort: '取消排序' }"
+      :locale="{ emptyText: '目前沒有帳戶資料', triggerDesc: '點擊降冪排序', triggerAsc: '點擊升冪排序', cancelSort: '取消排序' }"
       @change="handleTableChange"
       @resizeColumn="handleResizeColumn"
     >
@@ -254,7 +254,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { SearchOutlined, PlusOutlined } from '@ant-design/icons-vue'
 import { getErrorMessage } from '@/utils/errorMessages'
@@ -309,6 +309,8 @@ const total = ref(0)
 
 // 記錄當前用哪種查詢，換頁時要用
 const lastSearchType = ref('')
+
+onMounted(fetchData)
 
 const columns = ref([
   { title: '客戶資訊', dataIndex: 'customerName', key: 'customer', width: 160, fixed: 'left', resizable: true, sorter: (a, b) => (a.customerName || '').localeCompare(b.customerName || '') },
@@ -506,16 +508,17 @@ function fillDemoAccount(type, currency) {
   createForm.parentAccountNumber = ''
 }
 
-  function handleClear() {
-    accountNumberSearch.value = ''
-    customerId.value = ''
-    statusFilter.value = undefined
-    typeFilter.value = undefined
-    currencyFilter.value = undefined
-    accounts.value = []
-    total.value = 0
-    currentPage.value = 1
-  }
+async function handleClear() {
+  accountNumberSearch.value = ''
+  customerId.value = ''
+  statusFilter.value = undefined
+  typeFilter.value = undefined
+  currencyFilter.value = undefined
+  accounts.value = []
+  total.value = 0
+  currentPage.value = 1
+  await fetchData()
+}
 
 // === 狀態變更相關 ===
 const showStatusModal = ref(false)

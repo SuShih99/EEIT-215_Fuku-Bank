@@ -176,6 +176,12 @@ function goTransfer(accountNumber) {
   border-bottom: 1px solid var(--border);
   margin-bottom: var(--space-4);
   overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.currency-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .tab-item {

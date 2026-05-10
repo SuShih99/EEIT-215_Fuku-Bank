@@ -13,7 +13,12 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('customer_token')
-    if (token) {
+    const requestUrl = config.url || ''
+    const isCustomerApi =
+      requestUrl.startsWith('/api/customer/') ||
+      requestUrl.startsWith('/user/')
+
+    if (token && isCustomerApi) {
       config.headers.Authorization = `Bearer ${token}`
     }
     return config

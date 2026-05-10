@@ -43,3 +43,20 @@ export function customerResetPassword(data) {
 export function seedCustomerAuth() {
   return api.post('/api/customer/auth/seed')
 }
+
+// 查詢登入紀錄
+export async function getCustomerLoginLogs() {
+  const res = await api.get('/api/customer/security/login-logs')
+  return res.data.data
+}
+
+// 查詢授權裝置
+export async function getCustomerDevices() {
+  const res = await api.get('/api/customer/security/devices')
+  return res.data.data
+}
+
+// 移除裝置授權
+export function revokeCustomerDevice(deviceId) {
+  return api.delete(`/api/customer/security/devices/${deviceId}`)
+}

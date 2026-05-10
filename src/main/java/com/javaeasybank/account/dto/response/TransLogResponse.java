@@ -28,6 +28,26 @@ public class TransLogResponse {
      */
     private String counterpartAccount;
     /**
+     * 本筆交易所屬銀行代碼。
+     */
+    private String bankCode;
+    /**
+     * 本筆交易所屬銀行名稱。
+     */
+    private String bankName;
+    /**
+     * 對手方銀行代碼。
+     */
+    private String counterpartBankCode;
+    /**
+     * 對手方銀行名稱。
+     */
+    private String counterpartBankName;
+    /**
+     * 是否跨行。
+     */
+    private boolean interbank;
+    /**
      * 記帳類型 (DEBIT 或 CREDIT)。
      */
     private String entryType;
@@ -39,6 +59,14 @@ public class TransLogResponse {
      * 交易金額。
      */
     private BigDecimal amount;
+    /**
+     * 手續費金額。
+     */
+    private BigDecimal feeAmount;
+    /**
+     * 本次業務總扣款金額。
+     */
+    private BigDecimal totalDebitAmount;
     /**
      * 交易前餘額。
      */
@@ -75,9 +103,16 @@ public class TransLogResponse {
         response.setReferenceId(transLog.getReferenceId());
         response.setAccountNumber(transLog.getAccountNumber());
         response.setCounterpartAccount(transLog.getCounterpartAccount());
+        response.setBankCode(transLog.getBankCode());
+        response.setBankName(transLog.getBankName());
+        response.setCounterpartBankCode(transLog.getCounterpartBankCode());
+        response.setCounterpartBankName(transLog.getCounterpartBankName());
+        response.setInterbank(transLog.isInterbank());
         response.setEntryType(transLog.getEntryType() != null ? transLog.getEntryType().name() : null);
         response.setTransactionType(transLog.getTransactionType() != null ? transLog.getTransactionType().name() : null);
         response.setAmount(transLog.getAmount());
+        response.setFeeAmount(transLog.getFeeAmount());
+        response.setTotalDebitAmount(transLog.getTotalDebitAmount());
         response.setBalanceBefore(transLog.getBalanceBefore());
         response.setBalanceAfter(transLog.getBalanceAfter());
         response.setCurrency(transLog.getCurrency() != null ? transLog.getCurrency().name() : null);
