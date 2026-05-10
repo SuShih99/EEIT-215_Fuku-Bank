@@ -1,7 +1,7 @@
 # Java Easy Bank 專案理解文件
 
 > 本文件依照目前程式碼靜態閱讀整理，時間點：2026-05-09。  
-> 目的：作為新成員交接、後續開發定位、API 對接與模組責任切分的總覽文件。  
+> 目的：作為資訊交接、後續開發定位、API 對接與模組責任切分的總覽文件。  
 > 範圍：後端 Spring Boot、前端 Vue、資料庫初始化腳本、目前可觀察到的業務流程與注意事項。
 
 ---
@@ -54,6 +54,7 @@ Java Easy Bank 是一套銀行業務系統，提供兩個主要使用端：
 |---|---|
 | Framework | Vue 3 |
 | Build Tool | Vite |
+| Runtime | Node.js `^20.19.0 || >=22.12.0` |
 | Router | Vue Router |
 | Store | Pinia |
 | UI | ant-design-vue |
@@ -147,11 +148,14 @@ npm run dev
 前端預設：
 
 - Vite dev server：`http://localhost:5173`
+- Node.js 版本依 `frontend/package.json` 為 `^20.19.0 || >=22.12.0`。
 - `frontend/src/api/axios.js` 的 `BASE_URL` 固定為 `http://localhost:8080`
 - axios 啟用 `withCredentials: true`，讓管理端 Session Cookie 能跟後端互通。
 - Vite proxy 目前代理：
   - `/api` -> `http://localhost:8080`
   - `/uploads` -> `http://localhost:8080`
+
+管理端登入依賴 session cookie；本機開發時建議前後端都使用 `localhost`，避免前端用 `127.0.0.1`、後端 base URL 用 `localhost` 時 cookie domain 不一致。
 
 ---
 
@@ -361,6 +365,42 @@ npm run dev
 | `CustomerProfile` | `CUSTOMER_PROFILE` | 客戶 KYC / 基本資料 / CIF / 聯絡方式 / 最近一次開戶申請同步資料 |
 | `CustomerAuth` | `CUSTOMER_AUTH` | 客戶登入帳號、密碼 hash、角色、狀態、reset token |
 
+### CustomerProfile 欄位範圍
+
+`CustomerProfile` 是顧客模組目前最核心的正式客戶資料表。新版結構除了原本的基本資料，也承接開戶申請表同步欄位，讓管理端顧客管理能直接看到最近一次開戶申請與審核結果。
+
+| 類別 | 欄位 |
+|---|---|
+| 識別與基本資料 | `customerId`, `cif`, `idNumber`, `name`, `birthday`, `gender`, `email`, `phone`, `address`, `avatarUrl`, `status`, `createdAt`, `updatedAt` |
+| 地址與 KYC | `nationality`, `registeredAddress`, `currentAddress` |
+| 職業與交易概況 | `occupation`, `employer`, `estimatedMonthlyTx`, `job`, `annualIncome`, `riskLevel` |
+| 開戶目的與法遵 | `accountPurpose`, `fundSource`, `taxResidency`, `isPep` |
+| 證件附件 | `idFrontUrl`, `idBackUrl`, `secondIdUrl` |
+| 最近一次開戶申請 | `latestAccountApplicationId`, `latestAccountApplicationNo`, `latestAppliedAccountType`, `latestAppliedCurrency`, `latestAccountApplicationStatus`, `latestAccountApplicationRiskFlag`, `latestAccountApplicationReviewedAt`, `latestAccountApplicationReviewedBy`, `latestAccountApplicationRejectReason`, `createdAccountNumber`, `accountApplicationSyncedAt` |
+
+目前 `address` 仍是舊版相容欄位；開戶申請同步時會優先使用 `currentAddress`，沒有現居地址時才用 `registeredAddress` 或原本的 `address`。
+
+### 開戶申請同步責任邊界
+
+帳戶模組不直接寫 `CUSTOMER_PROFILE`。同步流程由 Account 組裝 `AccountApplicationProfileSyncRequest`，再呼叫 Customer 的 `CustomerService.syncAccountApplicationProfile(customerId, request)`。
+
+同步時 Customer 模組負責：
+
+- 檢查 `customerId` 是否存在。
+- 檢查 `idNumber`、`phone` 是否和其他客戶重複。
+- 更新姓名、身分證、生日、電話、地址、職業、法遵、證件 URL。
+- 更新最近一次開戶申請編號、狀態、風險標記、審核人員、審核時間、補件或駁回原因、建立帳號。
+- 寫入 `accountApplicationSyncedAt`，表示最後同步時間。
+
+| 觸發時機 | 開戶申請狀態 | CustomerProfile 結果 |
+|---|---|---|
+| 客戶送出申請 | `PENDING` | 立即同步申請表欄位與證件 URL，讓顧客表先具備最新 KYC 資料 |
+| 管理端核准 | `APPROVED` | 同步審核結果與 `createdAccountNumber` |
+| 管理端要求補件 | `SUPPLEMENT_REQUIRED` | 同步補件狀態、審核人員、審核時間與原因 |
+| 管理端駁回 | `REJECTED` | 同步駁回狀態、審核人員、審核時間與原因 |
+
+因為補件後可能重新送審，所以不論核准、補件或駁回，都會把該次審核完成後的結果同步回 CustomerProfile。
+
 ### 客戶認證 API
 
 | Method | Path | 說明 |
@@ -492,6 +532,22 @@ npm run dev
 | PATCH | `/api/admin/account-applications/{id}/approve` | 核准申請，自動建立 Account |
 | PATCH | `/api/admin/account-applications/{id}/supplement` | 要求補件 |
 | PATCH | `/api/admin/account-applications/{id}/reject` | 駁回申請 |
+
+### 開戶申請表欄位
+
+`AccountApplicationRequest` 是客戶送出開戶申請時的文字欄位，證件檔案則在 Controller 層以 multipart file 接收。
+
+| 類別 | 欄位 | 說明 |
+|---|---|---|
+| 帳戶 | `accountType`, `currency` | 帳戶類型必填；外幣帳戶需帶幣別 |
+| 基本 KYC | `customerName`, `idNumber`, `birthday`, `nationality`, `phone` | 用來同步到 CustomerProfile |
+| 地址 | `registeredAddress`, `currentAddress` | 戶籍地址與現居地址分開存放 |
+| 職業 | `occupation`, `employer`, `estimatedMonthlyTx` | 職業、任職機構、預估月交易量 |
+| 開戶目的 | `accountPurpose`, `fundSource` | Enum 轉字串後同步到 CustomerProfile |
+| 法遵 | `taxResidency`, `isPep` | 稅務居民與 PEP 聲明 |
+| 證件 | `idFront`, `idBack`, `secondId` | Controller 上傳至 `/uploads/id-cards/**`，URL 寫入申請單與 CustomerProfile |
+
+管理端審核後，`AccountApplication` 也會保留 `reviewedAt`、`reviewedBy`、`rejectReason`、`riskFlag`、`createdAccountNumber` 等審核結果欄位，並同步成 CustomerProfile 的最近一次開戶申請資訊。
 
 ### 交易 API
 
@@ -954,15 +1010,47 @@ npm run dev
 | `/admin/logs` | `admin-logs` | `SystemLogView.vue` |
 | `/forbidden` | `forbidden` | inline component |
 
+### 管理端顧客管理畫面
+
+`frontend/src/views/admin/CustomerListView.vue` 對應 `GET /api/customers`，目前已配合新版 CustomerProfile 欄位顯示。
+
+主表欄位重點：
+
+- 客戶資訊：姓名、Email、頭像。
+- CIF。
+- 身分證字號。
+- 國籍。
+- 性別。
+- 電話。
+- 現居地址。
+- 職業 / 任職機構。
+- 法遵：PEP 與稅務居民。
+- 最近開戶申請：狀態與申請編號。
+- 建立帳號。
+- 顧客狀態。
+- 操作：停用、啟用、展開明細。
+
+展開列會顯示三組明細：
+
+| 區塊 | 內容 |
+|---|---|
+| 基本與地址 | 國籍、生日、Email、戶籍地址、現居地址 |
+| 職業與法遵 | 職業、任職機構、預估月交易量、開戶目的、資金來源、稅務居民 |
+| 最近開戶申請 | 申請編號、申請狀態、帳戶類型、幣別、風險標記、審核人員、審核時間、駁回或補件原因、建立帳號、同步時間 |
+
+因此後端 `CustomerResponse` 若再新增欄位，需要同步確認 `CustomerListView.vue` 的欄位、展開明細與格式化 map 是否要調整。
+
 ---
 
 ## 9. 資料庫腳本
 
 主要位置：`src/main/resources/database/`
 
+目前資料庫腳本已依模組拆分，Auth 與 Customer 不再共用 `auth_customer_*` 檔案。
+
 目前可見腳本：
 
-| 檔案 | 推測用途 |
+| 檔案 | 用途 |
 |---|---|
 | `auth_init.sql` | Auth 初始化 |
 | `auth_insert.sql` | Auth seed |
@@ -978,6 +1066,18 @@ npm run dev
 | `card_mockdata.sql` | Credit Card mock data |
 | `risk_init.sql` | Risk 初始化 |
 | `risk_mockdata.sql` | Risk mock data |
+
+建議初始化順序：
+
+1. 先建立模組 table：`auth_init.sql`、`customer_init.sql`、`account_init.sql`、`loan_init.sql`、`card_init.sql`、`risk_init.sql`。
+2. 再建立種子資料：`auth_insert.sql`、`customer_insert.sql`、各模組 `*_mockdata.sql`。
+3. 若要重建資料，先確認 FK 依賴再執行對應的 `*_drop.sql`。目前可見 drop 腳本包含 `auth_drop.sql`、`customer_drop.sql`。
+
+Customer 腳本重點：
+
+- `customer_init.sql` 的 `CUSTOMER_PROFILE` 已包含開戶申請同步欄位。
+- `CUSTOMER_AUTH` 目前仍放在 customer 腳本，因為它是客戶端登入帳密表，與管理端 Auth 模組的 `AUTH_EMP`、`AUTH_ROLE` 不同。
+- `customer_insert.sql` 會以既有 KYC / Risk seed 資料補齊新版 profile 欄位，例如職業、任職機構、年收入、稅務居民、PEP、風險等級與同步時間。
 
 其他 SQL：
 
@@ -996,7 +1096,22 @@ npm run dev
 | `AccountApplicationServiceTest` | 開戶申請 submit / approve 等單元測試 |
 | `ReferenceIdGeneratorTest` | 交易 referenceId 格式與唯一性 |
 
-目前閱讀範圍內測試主要集中在 account 模組，其他模組測試覆蓋較少。
+測試輔助設定：
+
+- `src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker`：本機 JDK 21 測試時使用 Mockito subclass mock maker，降低 inline mock maker 自動 attach 的環境問題。
+
+常用驗證指令：
+
+```bash
+./mvnw -q test
+```
+
+```bash
+cd frontend
+npm run build
+```
+
+目前閱讀範圍內測試主要集中在 account 模組，其他模組測試覆蓋較少。完整後端測試會載入 Spring context，若本機沒有 SQL Server 或 `application-local.properties` 設定不完整，可能會在 context load 階段失敗。
 
 ---
 
@@ -1031,6 +1146,9 @@ npm run dev
 - `CustomerProfile.idNumber`, `email`, `phone`, `cif` 具 unique 意圖。
 - 客戶註冊時會同步建立 profile 與 auth。
 - 客戶登入後主要依 JWT 中的 `customerId` 取得資料。
+- 開戶申請是 CustomerProfile 新版 KYC / 法遵欄位的重要來源。
+- Account 模組只能透過 `CustomerService.syncAccountApplicationProfile` 同步開戶申請資料，不應直接操作 Customer 資料表。
+- 每次管理端審核開戶申請後，無論核准、要求補件或駁回，都要同步最新審核結果，支援後續補件重送與歷程判讀。
 
 ---
 
@@ -1079,6 +1197,15 @@ npm run dev
     - 信用卡：`creditcard`
     - 風控：`risk`
 
+若要理解「開戶申請同步顧客資料」這條線，建議接著看：
+
+1. `account/dto/request/AccountApplicationRequest.java`
+2. `account/service/AccountApplicationService.java`
+3. `customer/service/CustomerService.java`
+4. `customer/service/CustomerServiceImpl.java`
+5. `customer/entity/CustomerProfile.java`
+6. `frontend/src/views/admin/CustomerListView.vue`
+
 ---
 
 ## 14. 模組責任邊界
@@ -1087,8 +1214,8 @@ npm run dev
 |---|---|---|
 | `common` | 共用 config、DTO、例外、工具、檔案服務 | 不放具體業務邏輯 |
 | `auth` | 行員、角色、登入、日誌 | 不處理客戶 JWT |
-| `customer` | 客戶基本資料與客戶登入 | 不直接操作帳戶餘額 |
-| `account` | 帳戶、交易、開戶、常用帳號、預約轉帳 | 不直接修改客戶認證資料 |
+| `customer` | 客戶基本資料、客戶登入、開戶申請資料同步落點 | 不直接操作帳戶餘額 |
+| `account` | 帳戶、交易、開戶、常用帳號、預約轉帳 | 不直接修改客戶認證資料；同步客戶資料需走 CustomerService |
 | `loan` | 貸款申請與審核流程 | 不直接撥款到 account，除非設計整合點 |
 | `creditcard` | 信用卡業務 | 不直接操作 account 交易紀錄 |
 | `risk` | 風控規則、黑名單、風險事件 | 不承擔業務流程本身 |
