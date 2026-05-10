@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Users/evan8/Desktop/專題/src/main/java/com/javaeasybank/risk -type f -name \"*.java\" -exec grep -l \"review\\\\|Review\\\\|callback\\\\|Callback\" {} \\\\;)",
+      "Bash(xargs grep *)"
+    ]
+  }
+}
