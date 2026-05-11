@@ -10,8 +10,8 @@ import lombok.Setter;
 @Setter
 public class LoanContactLogRequestDTO {
     private String empId;
-    private LoanContactStatus contactStatus;
-    private LoanContactChannel contactChannel;
+    private String contactStatus;
+    private String contactChannel;
     private String note;
 }
 

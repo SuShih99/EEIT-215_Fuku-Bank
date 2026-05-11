@@ -11,6 +11,7 @@ import com.javaeasybank.loan.entity.LoanApplication;
 import com.javaeasybank.loan.entity.LoanContactLog;
 import com.javaeasybank.loan.entity.LoanReviewDetail;
 import com.javaeasybank.loan.enums.LoanApplicationStatus;
+import com.javaeasybank.loan.enums.LoanContactChannel;
 import com.javaeasybank.loan.enums.LoanContactStatus;
 import com.javaeasybank.loan.enums.LoanReviewStatus;
 import com.javaeasybank.loan.repository.LoanApplicationRepository;
@@ -73,6 +74,7 @@ public class LoanApplicationService {
     }
 
     // ===新增功能===
+
     /// 會員申請
     public String insertMember(String customerId, LoanMemberRequestDTO dto) {
         LoanApplication loan = buildBaseLoan();
@@ -115,20 +117,22 @@ public class LoanApplicationService {
 
         LoanApplication loan = laRepo.findById(applicationId)
                 .orElseThrow(() -> new BusinessException("找不到申請編號：" + applicationId));
+        LoanContactStatus contactStatus = LoanContactStatus.valueOf(dto.getContactStatus());
+        LoanContactChannel contactChannel = LoanContactChannel.valueOf(dto.getContactChannel());
 
         // 寫入聯繫紀錄
         LoanContactLog log = new LoanContactLog();
         log.setLogId(generateId("CL"));
         log.setApplicationId(applicationId);
         log.setEmpId(dto.getEmpId());
-        log.setContactStatus(dto.getContactStatus());
-        log.setContactChannel(dto.getContactChannel());
+        log.setContactStatus(contactStatus);
+        log.setContactChannel(contactChannel);
         log.setContactTime(LocalDateTime.now());
         log.setNote(dto.getNote());
         contactLogRepo.save(log);
 
         // 同步更新主表最新聯繫狀態
-        loan.setLatestContactStatus(dto.getContactStatus());
+        loan.setLatestContactStatus(contactStatus);
         loan.setLatestContactTime(log.getContactTime());
 
         // 若主表仍是 PENDING_CONTACT，推進為 IN_CONTACT
@@ -136,7 +140,7 @@ public class LoanApplicationService {
             loan.setApplicationStatus(LoanApplicationStatus.IN_CONTACT);
         }
         // 客戶放棄時，主表推進為 CANCELLED
-        if (dto.getContactStatus() == LoanContactStatus.DECLINED) {
+        if (contactStatus == LoanContactStatus.DECLINED) {
             loan.setApplicationStatus(LoanApplicationStatus.CANCELLED);
         }
 

@@ -178,7 +178,7 @@
 
 <script setup>
 import { ref, watch, reactive } from 'vue'
-import axios from 'axios'
+import api from '@/api/axios'
 
 // ── Props / Emits ──
 const props = defineProps({
@@ -188,7 +188,10 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'log-added'])
 
 // ── Constants ──
-const BASE_URL = 'http://localhost:8080'
+const currentEmpId = (() => {
+  try { return JSON.parse(localStorage.getItem('auth_user'))?.empId || '' }
+  catch { return '' }
+})()
 
 const STATUS_LABEL = {
   NOT_CONTACTED: '未聯繫',
@@ -237,6 +240,7 @@ watch(() => props.modelValue, (open) => {
   if (open && props.app?.applicationId) {
     fetchLogs()
     resetForm()
+    form.empId = currentEmpId
   }
 })
 
@@ -244,8 +248,8 @@ watch(() => props.modelValue, (open) => {
 async function fetchLogs() {
   logsLoading.value = true
   try {
-    const res = await axios.get(
-      `${BASE_URL}/api/admin/loan-applications/${props.app.applicationId}/contact-logs`
+    const res = await api.get(
+      `/api/admin/loan-applications/${props.app.applicationId}/contact-logs`
     )
     logs.value = res.data.success ? res.data.data : []
   } catch (e) {
@@ -264,8 +268,8 @@ async function submitLog() {
   submitLoading.value = true
   formAlert.show = false
   try {
-    await axios.post(
-      `${BASE_URL}/api/admin/loan-applications/${props.app.applicationId}/contact-logs`,
+    await api.post(
+      `/api/admin/loan-applications/${props.app.applicationId}/contact-logs`,
       {
         empId:          form.empId,
         contactStatus:  form.contactStatus,
@@ -286,6 +290,7 @@ async function submitLog() {
 
 function resetForm() {
   Object.assign(form, { empId: '', contactStatus: '', contactChannel: 'PHONE', note: '' })
+  form.empId = currentEmpId
   submitted.value = false
 }
 

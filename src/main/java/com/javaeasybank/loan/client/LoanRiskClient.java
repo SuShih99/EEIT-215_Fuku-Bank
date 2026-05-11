@@ -22,7 +22,7 @@ public class LoanRiskClient {
     //   risk.api.base-url=http://risk-service/api
     //   risk.api.callback-url=http://loan-service/api/loan-callbacks
     @Value("${risk.api.base-url}")
-    private String riskBaseUrl;
+    private String riskBaseUrl;git
 
     @Value("${risk.api.callback-url}")
     private String callbackBaseUrl;
