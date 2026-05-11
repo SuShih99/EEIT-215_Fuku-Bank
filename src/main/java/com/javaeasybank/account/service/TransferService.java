@@ -11,6 +11,7 @@ import com.javaeasybank.account.dto.response.TransferResponse;
 import com.javaeasybank.account.entity.Account;
 import com.javaeasybank.account.entity.TransLog;
 import com.javaeasybank.account.enums.AccountStatus;
+import com.javaeasybank.account.enums.AccountType;
 import com.javaeasybank.account.enums.Currency;
 import com.javaeasybank.account.enums.EntryType;
 import com.javaeasybank.account.enums.TransactionType;
@@ -19,7 +20,9 @@ import com.javaeasybank.account.exception.TransferException;
 import com.javaeasybank.account.repository.AccountRepository;
 import com.javaeasybank.account.repository.TransLogRepository;
 import com.javaeasybank.account.utils.ReferenceIdGenerator;
+import com.javaeasybank.common.service.EmailService;
 import com.javaeasybank.common.service.ExchangeRateService;
+import com.javaeasybank.customer.repository.CustomerProfileRepository;
 import com.javaeasybank.risk.annotation.RiskCheck;
 import com.javaeasybank.risk.core.enums.RiskScene;
 import lombok.RequiredArgsConstructor;
@@ -43,11 +46,13 @@ public class TransferService {
     private static final BigDecimal INTERBANK_FEE_THRESHOLD = new BigDecimal("1000");
     private static final BigDecimal INTERBANK_FEE_LOW = new BigDecimal("10");
     private static final BigDecimal INTERBANK_FEE_HIGH = new BigDecimal("15");
+    private static final String INTERBANK_FEE_NOTE = "跨行轉帳手續費";
+    private static final String REVERSAL_NOTE_PREFIX = "沖正 ref: ";
 
     private final AccountRepository accountRepository;
     private final TransLogRepository transLogRepository;
-    private final com.javaeasybank.customer.repository.CustomerProfileRepository customerProfileRepository;
-    private final com.javaeasybank.common.service.EmailService emailService;
+    private final CustomerProfileRepository customerProfileRepository;
+    private final EmailService emailService;
     private final ExchangeRateService exchangeRateService;
 
     /**
@@ -63,24 +68,17 @@ public class TransferService {
         TransferBank toBank = TransferBank.fromCode(request.getToBankCode());
         boolean interbank = !toBank.isJavaBank();
 
-        if (fromAccNum == null || toAccNum == null) {
-            throw new TransferException("MISSING_ACCOUNT_NUMBER", "來源或目的帳號不可為空");
-        }
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new TransferException("INVALID_AMOUNT", "轉帳金額必須大於 0");
-        }
+        validateAccountNumbersPresent(fromAccNum, toAccNum, "來源或目的帳號不可為空");
+        validatePositiveAmount(amount, "INVALID_AMOUNT", "轉帳金額必須大於 0");
         validateTargetAccountNumber(toAccNum, interbank);
 
         if (!interbank && fromAccNum.equals(toAccNum)) {
             throw new TransferException("INVALID_TRANSFER", "來源與目的帳戶不可相同");
         }
 
-        Account fromAccount = accountRepository.findById(fromAccNum)
-                .orElseThrow(() -> new TransferException("SOURCE_ACCOUNT_NOT_FOUND", "來源帳戶不存在"));
+        Account fromAccount = findAccountOrThrow(fromAccNum, "SOURCE_ACCOUNT_NOT_FOUND", "來源帳戶不存在");
 
-        if (fromAccount.getStatus() != AccountStatus.ACTIVE) {
-            throw new TransferException("SOURCE_ACCOUNT_INACTIVE", "來源帳戶非 ACTIVE 狀態");
-        }
+        validateActiveAccount(fromAccount, "SOURCE_ACCOUNT_INACTIVE", "來源帳戶非 ACTIVE 狀態");
         if (interbank && fromAccount.getCurrency() != Currency.TWD) {
             throw new TransferException("INTERBANK_TWD_ONLY", "跨行轉帳僅支援台幣帳戶");
         }
@@ -99,7 +97,7 @@ public class TransferService {
 
         if (interbank) {
             fromAccount.setBalance(fromBalanceBefore.subtract(totalDebitAmount));
-            accountRepository.save(fromAccount);
+            saveAccounts(fromAccount);
 
             BigDecimal afterTransfer = fromBalanceBefore.subtract(amount);
             TransLog transferLog = buildTransLog(
@@ -130,21 +128,17 @@ public class TransferService {
                     afterTransfer,
                     fromAccount.getBalance(),
                     fromAccount.getCurrency(),
-                    "跨行轉帳手續費",
+                    INTERBANK_FEE_NOTE,
                     true,
                     feeAmount,
                     totalDebitAmount
             );
 
-            transLogRepository.save(transferLog);
-            transLogRepository.save(feeLog);
+            saveTransLogs(transferLog, feeLog);
         } else {
-            Account toAccount = accountRepository.findById(toAccNum)
-                    .orElseThrow(() -> new TransferException("TARGET_ACCOUNT_NOT_FOUND", "目的帳戶不存在"));
+            Account toAccount = findAccountOrThrow(toAccNum, "TARGET_ACCOUNT_NOT_FOUND", "目的帳戶不存在");
 
-            if (toAccount.getStatus() != AccountStatus.ACTIVE) {
-                throw new TransferException("TARGET_ACCOUNT_INACTIVE", "目的帳戶非 ACTIVE 狀態");
-            }
+            validateActiveAccount(toAccount, "TARGET_ACCOUNT_INACTIVE", "目的帳戶非 ACTIVE 狀態");
             if (fromAccount.getCurrency() != toAccount.getCurrency()) {
                 throw new TransferException("CURRENCY_MISMATCH", "來源與目的帳戶幣別不一致");
             }
@@ -153,8 +147,7 @@ public class TransferService {
             fromAccount.setBalance(fromBalanceBefore.subtract(amount));
             toAccount.setBalance(toBalanceBefore.add(amount));
 
-            accountRepository.save(fromAccount);
-            accountRepository.save(toAccount);
+            saveAccounts(fromAccount, toAccount);
 
             TransLog fromLog = buildTransLog(
                     referenceId,
@@ -190,8 +183,7 @@ public class TransferService {
                     amount
             );
 
-            transLogRepository.save(fromLog);
-            transLogRepository.save(toLog);
+            saveTransLogs(fromLog, toLog);
             toAccountBalance = toAccount.getBalance();
         }
 
@@ -237,20 +229,14 @@ public class TransferService {
         String toAccNum = normalizeAccountNumber(request.getToAccountNumber());
         BigDecimal fromAmount = request.getFromAmount();
 
-        if (fromAccNum == null || toAccNum == null) {
-            throw new TransferException("MISSING_ACCOUNT_NUMBER", "轉出或轉入帳戶不可為空");
-        }
+        validateAccountNumbersPresent(fromAccNum, toAccNum, "轉出或轉入帳戶不可為空");
         if (fromAccNum.equals(toAccNum)) {
             throw new TransferException("INVALID_EXCHANGE_ACCOUNT", "轉出與轉入帳戶不可相同");
         }
-        if (fromAmount == null || fromAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new TransferException("INVALID_AMOUNT", "換匯金額必須大於 0");
-        }
+        validatePositiveAmount(fromAmount, "INVALID_AMOUNT", "換匯金額必須大於 0");
 
-        Account fromAccount = accountRepository.findById(fromAccNum)
-                .orElseThrow(() -> new TransferException("SOURCE_ACCOUNT_NOT_FOUND", "轉出帳戶不存在"));
-        Account toAccount = accountRepository.findById(toAccNum)
-                .orElseThrow(() -> new TransferException("TARGET_ACCOUNT_NOT_FOUND", "轉入帳戶不存在"));
+        Account fromAccount = findAccountOrThrow(fromAccNum, "SOURCE_ACCOUNT_NOT_FOUND", "轉出帳戶不存在");
+        Account toAccount = findAccountOrThrow(toAccNum, "TARGET_ACCOUNT_NOT_FOUND", "轉入帳戶不存在");
 
         validateExchangeAccountOwner(fromAccount, customerId);
         validateExchangeAccountOwner(toAccount, customerId);
@@ -285,8 +271,7 @@ public class TransferService {
         fromAccount.setBalance(fromBalanceBefore.subtract(normalizedFromAmount));
         toAccount.setBalance(toBalanceBefore.add(toAmount));
 
-        accountRepository.save(fromAccount);
-        accountRepository.save(toAccount);
+        saveAccounts(fromAccount, toAccount);
 
         String referenceId = ReferenceIdGenerator.generate();
         LocalDateTime now = LocalDateTime.now();
@@ -326,8 +311,7 @@ public class TransferService {
                 toAmount
         );
 
-        transLogRepository.save(fromLog);
-        transLogRepository.save(toLog);
+        saveTransLogs(fromLog, toLog);
 
         ExchangeResponse response = new ExchangeResponse();
         response.setReferenceId(referenceId);
@@ -354,7 +338,7 @@ public class TransferService {
         if (account.getStatus() != AccountStatus.ACTIVE) {
             throw new TransferException("ACCOUNT_INACTIVE", label + "非 ACTIVE 狀態");
         }
-        if (account.getAccountType() == com.javaeasybank.account.enums.AccountType.LOAN) {
+        if (account.getAccountType() == AccountType.LOAN) {
             throw new TransferException("INVALID_ACCOUNT_TYPE", label + "不可使用貸款帳戶");
         }
     }
@@ -422,6 +406,162 @@ public class TransferService {
         return transLog;
     }
 
+    private void validateAccountNumbersPresent(String fromAccountNumber, String toAccountNumber, String message) {
+        if (fromAccountNumber == null || toAccountNumber == null) {
+            throw new TransferException("MISSING_ACCOUNT_NUMBER", message);
+        }
+    }
+
+    private void validatePositiveAmount(BigDecimal amount, String code, String message) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new TransferException(code, message);
+        }
+    }
+
+    private Account findAccountOrThrow(String accountNumber, String code, String message) {
+        return accountRepository.findById(accountNumber)
+                .orElseThrow(() -> new TransferException(code, message));
+    }
+
+    private void validateActiveAccount(Account account, String code, String message) {
+        if (account.getStatus() != AccountStatus.ACTIVE) {
+            throw new TransferException(code, message);
+        }
+    }
+
+    private void saveAccounts(Account... accounts) {
+        for (Account account : accounts) {
+            accountRepository.save(account);
+        }
+    }
+
+    private void saveTransLogs(TransLog... transLogs) {
+        for (TransLog transLog : transLogs) {
+            transLogRepository.save(transLog);
+        }
+    }
+
+    private CashResponse cashTransaction(CashRequest request,
+                                         EntryType entryType,
+                                         TransactionType transactionType,
+                                         String actionLabel) {
+        String accountNumber = normalizeAccountNumber(request.getAccountNumber());
+        BigDecimal amount = request.getAmount();
+
+        if (accountNumber == null) {
+            throw new TransferException("MISSING_ACCOUNT_NUMBER", actionLabel + "帳號不可為空");
+        }
+        validatePositiveAmount(amount, "INVALID_AMOUNT", actionLabel + "金額必須大於 0");
+
+        Account account = findAccountOrThrow(
+                accountNumber,
+                "ACCOUNT_NOT_FOUND",
+                "帳戶不存在: " + accountNumber
+        );
+        validateActiveAccount(account, "ACCOUNT_INACTIVE", "帳戶非 ACTIVE 狀態");
+
+        BigDecimal balanceBefore = account.getBalance();
+        if (entryType == EntryType.DEBIT && balanceBefore.compareTo(amount) < 0) {
+            throw new TransferException("INSUFFICIENT_BALANCE", "帳戶餘額不足");
+        }
+
+        BigDecimal balanceAfter = entryType == EntryType.CREDIT
+                ? balanceBefore.add(amount)
+                : balanceBefore.subtract(amount);
+        account.setBalance(balanceAfter);
+        saveAccounts(account);
+
+        String referenceId = ReferenceIdGenerator.generate();
+        LocalDateTime now = LocalDateTime.now();
+        saveTransLogs(buildCashTransLog(
+                referenceId,
+                account,
+                entryType,
+                transactionType,
+                amount,
+                balanceBefore,
+                request.getNote()
+        ));
+
+        log.info("{}成功: refId={}, account={}, amount={}", actionLabel, referenceId, accountNumber, amount);
+        return buildCashResponse(referenceId, accountNumber, amount, account.getBalance(), now);
+    }
+
+    private TransLog buildCashTransLog(String referenceId,
+                                       Account account,
+                                       EntryType entryType,
+                                       TransactionType transactionType,
+                                       BigDecimal amount,
+                                       BigDecimal balanceBefore,
+                                       String note) {
+        TransLog transLog = new TransLog();
+        transLog.setReferenceId(referenceId);
+        transLog.setAccountNumber(account.getAccountNumber());
+        transLog.setBankCode(TransferBank.JVB.getCode());
+        transLog.setBankName(TransferBank.JVB.getDisplayName());
+        transLog.setInterbank(false);
+        transLog.setEntryType(entryType);
+        transLog.setTransactionType(transactionType);
+        transLog.setAmount(amount);
+        transLog.setFeeAmount(BigDecimal.ZERO);
+        transLog.setBalanceBefore(balanceBefore);
+        transLog.setBalanceAfter(account.getBalance());
+        transLog.setCurrency(account.getCurrency());
+        transLog.setNote(note);
+        return transLog;
+    }
+
+    private CashResponse buildCashResponse(String referenceId,
+                                           String accountNumber,
+                                           BigDecimal amount,
+                                           BigDecimal balance,
+                                           LocalDateTime transactedAt) {
+        CashResponse response = new CashResponse();
+        response.setReferenceId(referenceId);
+        response.setAccountNumber(accountNumber);
+        response.setAmount(amount);
+        response.setBalance(balance);
+        response.setTransactedAt(transactedAt);
+        return response;
+    }
+
+    private TransLog buildReversalLog(String reversalRefId,
+                                      TransLog originalLog,
+                                      EntryType reversedEntryType,
+                                      BigDecimal balanceBefore,
+                                      BigDecimal balanceAfter,
+                                      String note) {
+        TransLog reversalLog = new TransLog();
+        reversalLog.setReferenceId(reversalRefId);
+        reversalLog.setAccountNumber(originalLog.getAccountNumber());
+        reversalLog.setCounterpartAccount(originalLog.getCounterpartAccount());
+        reversalLog.setBankCode(originalLog.getBankCode());
+        reversalLog.setBankName(originalLog.getBankName());
+        reversalLog.setCounterpartBankCode(originalLog.getCounterpartBankCode());
+        reversalLog.setCounterpartBankName(originalLog.getCounterpartBankName());
+        reversalLog.setInterbank(originalLog.isInterbank());
+        reversalLog.setEntryType(reversedEntryType);
+        reversalLog.setTransactionType(TransactionType.REVERSAL);
+        reversalLog.setAmount(originalLog.getAmount());
+        reversalLog.setFeeAmount(originalLog.getFeeAmount());
+        reversalLog.setTotalDebitAmount(originalLog.getTotalDebitAmount());
+        reversalLog.setBalanceBefore(balanceBefore);
+        reversalLog.setBalanceAfter(balanceAfter);
+        reversalLog.setCurrency(originalLog.getCurrency());
+        reversalLog.setNote(note);
+        return reversalLog;
+    }
+
+    private ReversalResponse.ReversalDetail buildReversalDetail(String accountNumber,
+                                                                BigDecimal reversedAmount,
+                                                                BigDecimal balanceAfter) {
+        ReversalResponse.ReversalDetail detail = new ReversalResponse.ReversalDetail();
+        detail.setAccountNumber(accountNumber);
+        detail.setReversedAmount(reversedAmount);
+        detail.setBalanceAfter(balanceAfter);
+        return detail;
+    }
+
     // ==========================================
     // 存款
     // ==========================================
@@ -435,51 +575,7 @@ public class TransferService {
      */
     @Transactional
     public CashResponse deposit(CashRequest request) {
-        String accNum = request.getAccountNumber();
-        BigDecimal amount = request.getAmount();
-
-        // 1. 查帳戶
-        Account account = accountRepository.findById(accNum)
-                .orElseThrow(() -> new TransferException("ACCOUNT_NOT_FOUND", "帳戶不存在: " + accNum));
-
-        // 2. 帳戶狀態檢查
-        if (account.getStatus() != AccountStatus.ACTIVE) {
-            throw new TransferException("ACCOUNT_INACTIVE", "帳戶非 ACTIVE 狀態");
-        }
-
-        // 3. 執行存款
-        BigDecimal balanceBefore = account.getBalance();
-        account.setBalance(balanceBefore.add(amount));
-        accountRepository.save(account);
-
-        // 4. 寫入交易紀錄（單筆，沒有對手方）
-        String referenceId = ReferenceIdGenerator.generate();
-        LocalDateTime now = LocalDateTime.now();
-
-        TransLog transLog = new TransLog();
-        transLog.setReferenceId(referenceId);
-        transLog.setAccountNumber(accNum);
-        transLog.setCounterpartAccount(null);       // 存款沒有對手方
-        transLog.setEntryType(EntryType.CREDIT);    // 錢進來 = CREDIT
-        transLog.setTransactionType(TransactionType.DEPOSIT);
-        transLog.setAmount(amount);
-        transLog.setBalanceBefore(balanceBefore);
-        transLog.setBalanceAfter(account.getBalance());
-        transLog.setCurrency(account.getCurrency());
-        transLog.setNote(request.getNote());
-
-        transLogRepository.save(transLog);
-
-        log.info("存款成功: refId={}, account={}, amount={}", referenceId, accNum, amount);
-
-        // 5. 組裝回傳
-        CashResponse response = new CashResponse();
-        response.setReferenceId(referenceId);
-        response.setAccountNumber(accNum);
-        response.setAmount(amount);
-        response.setBalance(account.getBalance());
-        response.setTransactedAt(now);
-        return response;
+        return cashTransaction(request, EntryType.CREDIT, TransactionType.DEPOSIT, "存款");
     }
 
     // ==========================================
@@ -495,56 +591,7 @@ public class TransferService {
      */
     @Transactional
     public CashResponse withdraw(CashRequest request) {
-        String accNum = request.getAccountNumber();
-        BigDecimal amount = request.getAmount();
-
-        // 1. 查帳戶
-        Account account = accountRepository.findById(accNum)
-                .orElseThrow(() -> new TransferException("ACCOUNT_NOT_FOUND", "帳戶不存在: " + accNum));
-
-        // 2. 帳戶狀態檢查
-        if (account.getStatus() != AccountStatus.ACTIVE) {
-            throw new TransferException("ACCOUNT_INACTIVE", "帳戶非 ACTIVE 狀態");
-        }
-
-        // 3. 餘額充足性檢查
-        if (account.getBalance().compareTo(amount) < 0) {
-            throw new TransferException("INSUFFICIENT_BALANCE", "帳戶餘額不足");
-        }
-
-        // 4. 執行提款
-        BigDecimal balanceBefore = account.getBalance();
-        account.setBalance(balanceBefore.subtract(amount));
-        accountRepository.save(account);
-
-        // 5. 寫入交易紀錄（單筆，沒有對手方）
-        String referenceId = ReferenceIdGenerator.generate();
-        LocalDateTime now = LocalDateTime.now();
-
-        TransLog transLog = new TransLog();
-        transLog.setReferenceId(referenceId);
-        transLog.setAccountNumber(accNum);
-        transLog.setCounterpartAccount(null);       // 提款沒有對手方
-        transLog.setEntryType(EntryType.DEBIT);     // 錢出去 = DEBIT
-        transLog.setTransactionType(TransactionType.WITHDRAW);
-        transLog.setAmount(amount);
-        transLog.setBalanceBefore(balanceBefore);
-        transLog.setBalanceAfter(account.getBalance());
-        transLog.setCurrency(account.getCurrency());
-        transLog.setNote(request.getNote());
-
-        transLogRepository.save(transLog);
-
-        log.info("提款成功: refId={}, account={}, amount={}", referenceId, accNum, amount);
-
-        // 6. 組裝回傳
-        CashResponse response = new CashResponse();
-        response.setReferenceId(referenceId);
-        response.setAccountNumber(accNum);
-        response.setAmount(amount);
-        response.setBalance(account.getBalance());
-        response.setTransactedAt(now);
-        return response;
+        return cashTransaction(request, EntryType.DEBIT, TransactionType.WITHDRAW, "提款");
     }
 
     // ==========================================
@@ -578,7 +625,7 @@ public class TransferService {
 
         // 2. 防止重複沖正：檢查是否已有以此 referenceId 為目標的沖正紀錄
         //    沖正紀錄的 note 會包含 "沖正 ref: {originalRefId}"
-        String reversalNoteKeyword = "沖正 ref: " + originalRefId;
+        String reversalNoteKeyword = REVERSAL_NOTE_PREFIX + originalRefId;
         boolean alreadyReversed = transLogRepository.existsByNoteContaining(reversalNoteKeyword);
         if (alreadyReversed) {
             throw new TransferException("ALREADY_REVERSED", "該交易已被沖正過: " + originalRefId);
@@ -587,7 +634,7 @@ public class TransferService {
         // 3. 產生新的沖正 referenceId
         String reversalRefId = ReferenceIdGenerator.generate();
         LocalDateTime now = LocalDateTime.now();
-        String notePrefix = "沖正 ref: " + originalRefId;
+        String notePrefix = REVERSAL_NOTE_PREFIX + originalRefId;
         if (request.getReason() != null && !request.getReason().isBlank()) {
             notePrefix += " | 原因: " + request.getReason();
         }
@@ -597,8 +644,7 @@ public class TransferService {
         // 4. 對每筆原始紀錄做反向操作
         for (TransLog originalLog : originalLogs) {
             String accNum = originalLog.getAccountNumber();
-            Account account = accountRepository.findById(accNum)
-                    .orElseThrow(() -> new TransferException("ACCOUNT_NOT_FOUND", "帳戶不存在: " + accNum));
+            Account account = findAccountOrThrow(accNum, "ACCOUNT_NOT_FOUND", "帳戶不存在: " + accNum);
 
             BigDecimal balanceBefore = account.getBalance();
             EntryType reversedEntryType;
@@ -617,36 +663,19 @@ public class TransferService {
                 reversedEntryType = EntryType.DEBIT;
             }
 
-            accountRepository.save(account);
+            saveAccounts(account);
 
-            // 5. 寫入沖正交易紀錄
-            TransLog reversalLog = new TransLog();
-            reversalLog.setReferenceId(reversalRefId);
-            reversalLog.setAccountNumber(accNum);
-            reversalLog.setCounterpartAccount(originalLog.getCounterpartAccount());
-            reversalLog.setBankCode(originalLog.getBankCode());
-            reversalLog.setBankName(originalLog.getBankName());
-            reversalLog.setCounterpartBankCode(originalLog.getCounterpartBankCode());
-            reversalLog.setCounterpartBankName(originalLog.getCounterpartBankName());
-            reversalLog.setInterbank(originalLog.isInterbank());
-            reversalLog.setEntryType(reversedEntryType);
-            reversalLog.setTransactionType(TransactionType.REVERSAL);
-            reversalLog.setAmount(originalLog.getAmount());
-            reversalLog.setFeeAmount(originalLog.getFeeAmount());
-            reversalLog.setTotalDebitAmount(originalLog.getTotalDebitAmount());
-            reversalLog.setBalanceBefore(balanceBefore);
-            reversalLog.setBalanceAfter(account.getBalance());
-            reversalLog.setCurrency(originalLog.getCurrency());
-            reversalLog.setNote(notePrefix);
-
-            transLogRepository.save(reversalLog);
+            saveTransLogs(buildReversalLog(
+                    reversalRefId,
+                    originalLog,
+                    reversedEntryType,
+                    balanceBefore,
+                    account.getBalance(),
+                    notePrefix
+            ));
 
             // 6. 收集沖正明細
-            ReversalResponse.ReversalDetail detail = new ReversalResponse.ReversalDetail();
-            detail.setAccountNumber(accNum);
-            detail.setReversedAmount(originalLog.getAmount());
-            detail.setBalanceAfter(account.getBalance());
-            details.add(detail);
+            details.add(buildReversalDetail(accNum, originalLog.getAmount(), account.getBalance()));
         }
 
         log.info("沖正成功: reversalRefId={}, originalRefId={}, 影響帳戶數={}", reversalRefId, originalRefId, details.size());

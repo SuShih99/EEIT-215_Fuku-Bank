@@ -1,6 +1,6 @@
 # Java Easy Bank 專案理解文件
 
-> 本文件依照目前程式碼靜態閱讀整理，時間點：2026-05-09。  
+> 本文件依照目前程式碼靜態閱讀整理，時間點：2026-05-11。
 > 目的：作為資訊交接、後續開發定位、API 對接與模組責任切分的總覽文件。  
 > 範圍：後端 Spring Boot、前端 Vue、資料庫初始化腳本、目前可觀察到的業務流程與注意事項。
 
@@ -18,8 +18,8 @@ Java Easy Bank 是一套銀行業務系統，提供兩個主要使用端：
 目前業務模組涵蓋：
 
 - Auth：員工登入、員工管理、系統操作日誌。
-- Customer：客戶資料、客戶註冊登入、個人資料、密碼重設、大頭照。
-- Account：帳戶、開戶申請、轉帳、存提款、交易紀錄、沖正、常用帳號、預約轉帳。
+- Customer：客戶資料、客戶註冊登入、個人資料、密碼重設、大頭照、登入紀錄、裝置管理。
+- Account：帳戶、開戶申請、行內/跨行轉帳、換匯、電子存摺、存提款、交易紀錄、沖正、常用帳號、預約轉帳。
 - Loan：貸款申請、聯繫紀錄、二次填單、送審、利率規則。
 - Credit Card：信用卡卡別、申請、申請明細審核、發卡、交易、刷退。
 - Risk：黑名單、風險事件、AOP 風控檢查框架。
@@ -44,7 +44,7 @@ Java Easy Bank 是一套銀行業務系統，提供兩個主要使用端：
 | DTO/Entity 輔助 | Lombok |
 | Mapper | MapStruct |
 | JWT | jjwt 0.12.6 |
-| Export | OpenCSV, OpenPDF |
+| Export / PDF | OpenCSV, OpenPDF, OpenHTMLtoPDF, iText |
 | Mail | Spring Boot Starter Mail |
 | Build | Maven |
 
@@ -68,6 +68,7 @@ Java Easy Bank 是一套銀行業務系統，提供兩個主要使用端：
 - `src/main/resources/application.properties` 僅匯入本機設定：
   - `spring.config.import=optional:classpath:application-local.properties`
 - DB 連線資訊預期放在本機 `application-local.properties`，不應提交。
+- SMTP、JWT secret、前端網址等環境值也應放在 `application-local.properties` 或部署環境變數中；`application.properties` 本身只保留 import。
 - 初始化與 mock data 位於 `src/main/resources/database/`。
 
 ---
@@ -356,6 +357,7 @@ npm run dev
 - 客戶個人資料維護。
 - 大頭照上傳。
 - 密碼重設 token 產生與重設。
+- 登入紀錄與授權裝置查詢 / 撤銷。
 - 提供 `syncAccountApplicationProfile`，讓帳戶模組同步開戶申請與審核結果。
 
 ### 主要 Entity
@@ -364,6 +366,8 @@ npm run dev
 |---|---|---|
 | `CustomerProfile` | `CUSTOMER_PROFILE` | 客戶 KYC / 基本資料 / CIF / 聯絡方式 / 最近一次開戶申請同步資料 |
 | `CustomerAuth` | `CUSTOMER_AUTH` | 客戶登入帳號、密碼 hash、角色、狀態、reset token |
+| `CustomerLoginLog` | `CUSTOMER_LOGIN_LOG` | 客戶登入成功 / 失敗紀錄、IP、裝置名稱 |
+| `CustomerDevice` | `CUSTOMER_DEVICE` | 客戶授權裝置、瀏覽器 / 作業系統、狀態與撤銷時間 |
 
 ### CustomerProfile 欄位範圍
 
@@ -414,6 +418,14 @@ npm run dev
 | POST | `/api/customer/auth/reset-password` | 執行密碼重設 |
 | POST | `/api/customer/auth/seed` | 建立客戶認證測試資料 |
 
+### 客戶安全中心 API
+
+| Method | Path | 說明 |
+|---|---|---|
+| GET | `/api/customer/security/login-logs` | 查目前客戶登入紀錄 |
+| GET | `/api/customer/security/devices` | 查目前客戶授權裝置 |
+| DELETE | `/api/customer/security/devices/{deviceId}` | 撤銷裝置授權 |
+
 ### 管理端客戶 API
 
 | Method | Path | 說明 |
@@ -436,7 +448,7 @@ npm run dev
 
 ### 密碼重設現況
 
-目前 `requestPasswordReset` 會產生 reset token，效期 30 分鐘，並將連結印到 console。SMTP 寄信仍是 TODO。
+目前 `requestPasswordReset` 會用 email、身分證字號與生日驗證身分，產生 30 分鐘有效的 reset token，組成前端重設連結後透過 `EmailService.sendPasswordResetEmail` 以 SMTP / Thymeleaf template 寄出。
 
 ---
 
@@ -458,7 +470,7 @@ npm run dev
 | Entity | Table | 用途 |
 |---|---|---|
 | `Account` | `ACCOUNT` | 帳號、客戶 ID、帳戶類型、幣別、餘額、狀態 |
-| `TransLog` | `TRANS_LOG` | 交易紀錄，雙邊記帳與沖正紀錄 |
+| `TransLog` | `TRANS_LOG` | 交易紀錄，雙邊記帳、跨行銀行欄位、手續費與沖正紀錄 |
 | `AccountApplication` | `ACCOUNT_APPLICATION` | 開戶申請、KYC、證件、風險標記、審核狀態 |
 | `FavoriteAccount` | `FAVORITE_ACCOUNT` | 客戶常用收款帳號 |
 | `ScheduledTransfer` | `SCHEDULED_TRANSFER` | 預約轉帳 |
@@ -471,8 +483,9 @@ npm run dev
 | `AccountType` | `CHECKING`, `SAVINGS`, `TIME_DEPOSIT`, `LOAN`, `SUB_ACCOUNT` |
 | `Currency` | `TWD`, `USD`, `EUR`, `JPY`, `GBP`, `CNY`, `AUD`, `CAD`, `CHF`, `HKD` |
 | `ApplicationStatus` | `PENDING`, `SUPPLEMENT_REQUIRED`, `APPROVED`, `REJECTED`, `CANCELLED` |
-| `TransactionType` | `TRANSFER`, `DEPOSIT`, `WITHDRAW`, `INTEREST`, `LOAN_DISBURSEMENT`, `LOAN_REPAYMENT`, `REVERSAL` |
+| `TransactionType` | `TRANSFER`, `TRANSFER_FEE`, `DEPOSIT`, `WITHDRAW`, `EXCHANGE`, `INTEREST`, `LOAN_DISBURSEMENT`, `LOAN_REPAYMENT`, `REVERSAL` |
 | `EntryType` | `DEBIT`, `CREDIT` |
+| `TransferBank` | 國內轉帳銀行代碼，含本行 `JVB("909","爪哇銀行")` |
 | `RiskFlag` | `NORMAL`, `WATCH`, `PEP`, `HIGH_RISK`, `HIGH_FREQUENCY`, `PEP_HIGH_FREQUENCY` |
 
 ### 帳戶建立與狀態規則
@@ -520,6 +533,7 @@ npm run dev
 |---|---|---|
 | GET | `/api/customer/accounts` | 查目前登入客戶的所有帳戶 |
 | GET | `/api/customer/transactions` | 查目前客戶交易紀錄，可依帳號或日期篩選 |
+| GET | `/api/customer/accounts/{accountNumber}/passbook/pdf` | 下載電子存摺 PDF，OpenHTMLtoPDF 轉檔並用 iText AES 加密 |
 
 ### 開戶申請 API
 
@@ -553,7 +567,10 @@ npm run dev
 
 | Method | Path | 說明 |
 |---|---|---|
+| GET | `/api/customer/transfer-banks` | 取得國內銀行代碼選單 |
 | POST | `/api/customer/transfers` | 客戶轉帳 |
+| POST | `/api/customer/exchanges` | 本人帳戶換匯，只支援 TWD <-> 外幣 |
+| GET | `/api/public/exchange-rates` | 取得匯率 API 資料 |
 | POST | `/api/customer/cash/deposit` | 存款 |
 | POST | `/api/customer/cash/withdraw` | 提款 |
 | POST | `/api/admin/transfers/reversal` | 管理端沖正 |
@@ -609,24 +626,28 @@ npm run dev
 
 注意：目前高頻申請是「標記」風險，不是直接阻擋送件。
 
-### 轉帳流程
+### 轉帳與換匯流程
 
 1. `TransferService.transfer` 被 `@RiskCheck(scene = RiskScene.TRANSFER)` 標註。
-2. 驗證來源/目的帳號不可空。
-3. 金額需大於 0。
-4. 不可自轉。
-5. 查來源與目的帳戶。
-6. 兩方帳戶狀態都必須是 `ACTIVE`。
-7. 兩方幣別必須一致。
-8. 來源餘額需足夠。
-9. 在同一個 transaction 內扣款與入帳。
-10. 產生同一個 `referenceId`。
-11. 寫兩筆 `TransLog`：
-    - 來源帳戶：`DEBIT` + `TRANSFER`
-    - 目的帳戶：`CREDIT` + `TRANSFER`
-12. 回傳 referenceId、雙方餘額與時間。
+2. 驗證來源/目的帳號不可空、金額需大於 0，並用 `TransferBank.fromCode` double-check 轉入銀行代碼。
+3. 本行轉帳：
+   - 目的銀行為 `JVB("909","爪哇銀行")`。
+   - 不可自轉。
+   - 查來源與目的帳戶，兩方都必須 `ACTIVE` 且幣別一致。
+   - 同一個 transaction 內扣款與入帳，寫 `DEBIT + TRANSFER`、`CREDIT + TRANSFER` 兩筆同 `referenceId` 的 `TransLog`。
+4. 跨行轉帳：
+   - 目的銀行不是 909。
+   - 僅支援 TWD 來源帳戶，不查目的帳戶 DB。
+   - 目的帳號限制為數字且 6 到 20 碼。
+   - 手續費：金額 `<= 1000` 收 10 元，`>= 1001` 收 15 元。
+   - 扣款總額為本金 + 手續費，寫 `TRANSFER` 與 `TRANSFER_FEE` 兩筆同 `referenceId` 的 `TransLog`。
+5. `TransferService.exchange` 處理本人帳戶換匯：
+   - Controller 從 JWT 解析 `customerId` 後傳入 service。
+   - 驗證兩個帳戶都屬於本人、非貸款帳戶、狀態為 `ACTIVE`。
+   - 僅支援 TWD <-> 外幣，不支援外幣對外幣直接互換。
+   - 透過 `ExchangeRateService` 計算成交匯率，寫兩筆同 `referenceId` 的 `EXCHANGE` 交易紀錄。
 
-注意：雖然轉帳 API 位於 `/api/customer/transfers`，目前 `TransferController` 沒有從 JWT 取出 `customerId` 驗證 `fromAccountNumber` 是否屬於目前登入客戶；實際 ownership check 需要後續補強。`CashController` 的存提款 API 也同樣未驗證帳戶歸屬。
+注意：`POST /api/customer/transfers` 目前仍沒有從 JWT 驗證 `fromAccountNumber` 是否屬於目前登入客戶；`POST /api/customer/exchanges` 已有 owner check。`CashController` 的存提款 API 也同樣未驗證帳戶歸屬。
 
 ### 沖正流程
 
@@ -908,7 +929,7 @@ npm run dev
 
 - `TransferRiskHandler` 的 `check` 邏輯尚未實作。
 - `TransferRiskHandler` 目前檔案內未看到 `@Component` / `@Service`，因此可能尚未被 Spring 掃描注入到 `RiskCheckAspect`。
-- `TransferService` 內仍留有大額交易、高頻交易、24 小時累計金額檢查 TODO。
+- `TransLogRepository` 已有高頻與 24 小時累計金額查詢方法，但風控 handler 尚未接上實際判斷。
 
 ---
 
@@ -954,10 +975,10 @@ npm run dev
 | 檔案 | 對應模組 |
 |---|---|
 | `api/auth.js` | 管理端登入、員工、日誌 |
-| `api/customerAuth.js` | 客戶登入、註冊、個資、密碼重設 |
+| `api/customerAuth.js` | 客戶登入、註冊、個資、密碼重設、登入紀錄、裝置管理 |
 | `api/customer.js` | 管理端客戶管理 |
 | `api/account.js` | 帳戶、轉帳、交易紀錄、存提款、沖正 |
-| `api/customerAccount.js` | 客戶端帳戶與交易 |
+| `api/customerAccount.js` | 客戶端帳戶、交易、轉帳、銀行選單、電子存摺 PDF、匯率、換匯 |
 | `api/accountApplication.js` | 開戶申請 |
 | `api/favoriteAccount.js` | 常用帳號 |
 | `api/scheduledTransfer.js` | 預約轉帳 |
@@ -978,12 +999,19 @@ npm run dev
 | `/user/profile` | `user-profile` | `UserProfileView.vue` |
 | `/user/card-types` | `user-card-types` | `CardTypeListView.vue` |
 | `/user/card-applications` | `user-card-applications` | `CardApplicationForm.vue` |
+| `/user/card-txns` | `user-card-txns` | `CardTxnView.vue` |
+| `/user/card-bills` | `user-card-bills` | `CardBillView.vue` |
 | `/user/account-application` | `user-account-application` | `AccountApplicationView.vue` |
 | `/user/accounts` | `user-accounts` | `UserAccountsView.vue` |
+| `/user/e-passbook` | `user-e-passbook` | `EPassbookView.vue` |
 | `/user/transactions` | `user-transactions` | `UserTransactionsView.vue` |
 | `/user/transfer` | `user-transfer` | `TransferView.vue` |
+| `/user/exchange` | `user-exchange` | `ExchangeView.vue` |
 | `/user/scheduled-transfer` | `user-scheduled-transfer` | `ScheduledTransferView.vue` |
 | `/user/favorite-accounts` | `user-favorite-accounts` | `FavoriteAccountsView.vue` |
+| `/user/security/login-records` | `user-security-login-records` | `SecurityLoginRecordsView.vue` |
+| `/user/security/devices` | `user-security-devices` | `SecurityDevicesView.vue` |
+| `/:pathMatch(.*)*` | `NotFound` | `NotFoundView.vue` |
 
 ### 管理端路由
 
@@ -1002,6 +1030,7 @@ npm run dev
 | `/admin/card-applications` | `admin-card-applications` | `CardApplicationList.vue` |
 | `/admin/card-applications/:id` | `admin-card-application-detail` | `CardApplicationDetailView.vue` |
 | `/admin/card-txns` | `admin-card-txns` | `CardTxnView.vue` |
+| `/admin/card-bills` | `admin-card-bills` | `CardBillView.vue` |
 | `/admin/risk-events` | `admin-risk-events` | `RiskEventView.vue` |
 | `/admin/cards` | `admin-cards` | `CardView.vue` |
 | `/admin/loan-apply` | `loan-apply` | `LoanApplyView.vue` |
@@ -1127,13 +1156,15 @@ npm run build
 
 - 轉帳採雙邊記帳。
 - 同一筆業務交易使用同一個 `referenceId`。
+- 跨行轉帳本金與手續費分開寫兩筆，但共用同一個 `referenceId`。
+- 換匯轉出與轉入分開寫兩筆 `EXCHANGE`，共用同一個 `referenceId`。
 - 每一筆 `TransLog` 自己有 `transactionId` UUID。
 - 沖正不修改原紀錄，只新增反向交易紀錄。
 
 ### 帳戶狀態
 
 - 轉帳、存款、提款都要求帳戶為 `ACTIVE`。
-- 轉帳要求來源與目的帳戶幣別一致。
+- 本行轉帳要求來源與目的帳戶幣別一致；跨行轉帳僅支援 TWD 來源帳戶；換匯只支援 TWD 與外幣互換。
 - 開戶核准後建立帳戶為 `ACTIVE`。
 
 ### 信用卡額度
@@ -1157,19 +1188,18 @@ npm run build
 以下不是一定要立即修正的錯誤，而是後續開發時需要知道的狀態。
 
 1. `TransferRiskHandler` 目前看起來尚未實作檢查邏輯，且未標註 Spring component，風控 AOP 對轉帳可能尚未真正生效。
-2. `TransferService` 留有大額、高頻、24 小時累計金額風控 TODO。
-3. `CustomerAuthServiceImpl.requestPasswordReset` 目前只在 console 印出重設連結，尚未接 SMTP。
-4. `SessionUtil` 是舊式 session 工具，註解顯示已被 Spring Security 方案取代，但檔案仍存在。
-5. 信用卡客戶端 API 使用 `/user/card-*`，沒有 `/api` 前綴；目前 axios 使用完整 `BASE_URL` 可正常打到後端，但與多數 API 命名風格不同。
-6. 部分 Controller 直接回傳 Spring Data `Page`，部分轉成 `PageResponse`；前端解包時要注意格式不完全一致。
-7. 信用卡交易的更新 / 刪除 API 存在，但交易類資料通常應避免物理刪除；程式註解也寫「不可刪除交易」，後續可確認是否只保留查詢與刷退。
-8. `CardTxnService.update` 更新交易金額時未同步調整信用卡 `currentBalance`，若此 API 真的會被使用，需要確認業務規則。
-9. `CardController.getMyCards` 目前呼叫 `findAll()`，名稱像客戶查自己的卡，但實際上可能回傳全部卡片。
-10. `SecurityConfig` 目前 permit seed endpoints，適合開發期；正式環境需確認是否關閉。
-11. JWT secret 有預設值，正式部署應以環境設定覆蓋。
-12. `GlobalExceptionHandler` 對 `AccountException` 會保留 errorCode，但 `TransferException` 繼承 `BusinessException`，若前端需要轉帳錯誤碼，需要確認是否有專用 handler。
-13. `TransferController` 與 `CashController` 位於 customer API 路徑，但目前沒有檢查操作帳戶是否屬於 JWT 中的 customerId。
-14. `ScheduledTransferService.executeDueTransfers` 目前尚未接 `@Scheduled`，且到期執行只更新狀態，未真正執行轉帳。
+2. `TransLogRepository` 已有大額、高頻、24 小時累計金額查詢能力，但尚未在 handler 中落地。
+3. `SessionUtil` 是舊式 session 工具，註解顯示已被 Spring Security 方案取代，但檔案仍存在。
+4. 信用卡客戶端 API 使用 `/user/card-*`，沒有 `/api` 前綴；目前 axios 使用完整 `BASE_URL` 可正常打到後端，但與多數 API 命名風格不同。
+5. 部分 Controller 直接回傳 Spring Data `Page`，部分轉成 `PageResponse`；前端解包時要注意格式不完全一致。
+6. 信用卡交易的更新 / 刪除 API 存在，但交易類資料通常應避免物理刪除；程式註解也寫「不可刪除交易」，後續可確認是否只保留查詢與刷退。
+7. `CardTxnService.update` 更新交易金額時未同步調整信用卡 `currentBalance`，若此 API 真的會被使用，需要確認業務規則。
+8. `CardController.getMyCards` 目前呼叫 `findAll()`，名稱像客戶查自己的卡，但實際上可能回傳全部卡片。
+9. `SecurityConfig` 目前 permit seed endpoints，適合開發期；正式環境需確認是否關閉。
+10. JWT secret 有預設值，正式部署應以環境設定覆蓋。
+11. `GlobalExceptionHandler` 對 `AccountException` 會保留 errorCode，但 `TransferException` 繼承 `BusinessException`，若前端需要轉帳錯誤碼，需要確認是否有專用 handler。
+12. `TransferController` 與 `CashController` 位於 customer API 路徑，但目前沒有檢查操作帳戶是否屬於 JWT 中的 customerId；`Exchange` 流程已驗證本人帳戶。
+13. `ScheduledTransferService.executeDueTransfers` 目前尚未接 `@Scheduled`，且到期執行只更新狀態，未真正執行轉帳。
 
 ---
 

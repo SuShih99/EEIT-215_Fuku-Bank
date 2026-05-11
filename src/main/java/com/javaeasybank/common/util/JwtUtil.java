@@ -1,7 +1,9 @@
 package com.javaeasybank.common.util;
 
+import com.javaeasybank.common.exception.BusinessException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -70,6 +72,14 @@ public class JwtUtil {
     }
 
     /**
+     * 從 Authorization Bearer Token 解析客戶 ID。
+     */
+    public String resolveCustomerId(HttpServletRequest request) {
+        String token = resolveBearerToken(request);
+        return getCustomerIdFromToken(token);
+    }
+
+    /**
      * 驗證 Token 是否有效
      */
     public boolean validateToken(String token) {
@@ -79,6 +89,14 @@ public class JwtUtil {
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
+    }
+
+    private String resolveBearerToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        throw new BusinessException("無法取得客戶身分資訊");
     }
 
     private Claims parseClaims(String token) {

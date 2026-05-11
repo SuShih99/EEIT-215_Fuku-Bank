@@ -7,6 +7,7 @@ import com.javaeasybank.account.entity.AccountApplication;
 import com.javaeasybank.account.enums.*;
 import com.javaeasybank.account.repository.AccountApplicationRepository;
 import com.javaeasybank.account.repository.AccountRepository;
+import com.javaeasybank.account.utils.AccountDefaults;
 import com.javaeasybank.account.utils.AccountNumberGenerator;
 import com.javaeasybank.account.utils.ApplicationNoGenerator;
 import com.javaeasybank.common.exception.BusinessException;
@@ -19,8 +20,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,9 +33,6 @@ import java.util.stream.Collectors;
 public class AccountApplicationService {
 
     private static final int MAX_APPLICATIONS_PER_24H = 3;
-    private static final BigDecimal CHECKING_INITIAL_BALANCE = new BigDecimal("1000");
-    private static final BigDecimal CHECKING_INTEREST_RATE = new BigDecimal("0.0015");
-
     private final AccountApplicationRepository applicationRepository;
     private final AccountRepository accountRepository;
     private final CustomerService customerService;
@@ -204,9 +200,7 @@ public class AccountApplicationService {
 
         // 活存帳戶設定初始餘額和利率
         if (app.getAccountType() == AccountType.CHECKING) {
-            account.setBalance(CHECKING_INITIAL_BALANCE.setScale(
-                    app.getCurrency().getDecimalPlaces(), RoundingMode.HALF_EVEN));
-            account.setInterestRate(CHECKING_INTEREST_RATE);
+            AccountDefaults.applyCheckingDefaults(account);
         }
 
         Account savedAccount = accountRepository.save(account);

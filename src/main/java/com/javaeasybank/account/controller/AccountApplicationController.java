@@ -6,7 +6,6 @@ import com.javaeasybank.account.enums.ApplicationStatus;
 import com.javaeasybank.account.service.AccountApplicationService;
 import com.javaeasybank.common.dto.response.ApiResponse;
 import com.javaeasybank.common.dto.response.PageResponse;
-import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.common.service.FileStorageService;
 import com.javaeasybank.common.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -63,7 +62,7 @@ public class AccountApplicationController {
             @RequestParam("secondId") MultipartFile secondId,
             HttpServletRequest httpRequest) {
 
-        String customerId = extractCustomerId(httpRequest);
+        String customerId = jwtUtil.resolveCustomerId(httpRequest);
         String applyIp = getClientIp(httpRequest);
 
         // 儲存三張證件圖片
@@ -85,7 +84,7 @@ public class AccountApplicationController {
     public ResponseEntity<ApiResponse<List<AccountApplicationResponse>>> getMyApplications(
             HttpServletRequest httpRequest) {
 
-        String customerId = extractCustomerId(httpRequest);
+        String customerId = jwtUtil.resolveCustomerId(httpRequest);
         List<AccountApplicationResponse> list = applicationService.getMyApplications(customerId);
         return ResponseEntity.ok(ApiResponse.success(list));
     }
@@ -179,15 +178,6 @@ public class AccountApplicationController {
     // =========================================================
     // Private Helpers
     // =========================================================
-
-    private String extractCustomerId(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            return jwtUtil.getCustomerIdFromToken(token);
-        }
-        throw new BusinessException("無法取得客戶身分資訊");
-    }
 
     private String getAdminUsername(HttpServletRequest request) {
         // 從 Security Context 取得管理員帳號

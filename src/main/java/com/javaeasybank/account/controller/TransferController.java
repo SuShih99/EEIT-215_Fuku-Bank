@@ -10,7 +10,6 @@ import com.javaeasybank.account.dto.response.TransferResponse;
 import com.javaeasybank.account.enums.TransferBank;
 import com.javaeasybank.account.service.TransferService;
 import com.javaeasybank.common.dto.response.ApiResponse;
-import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.common.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -65,7 +64,7 @@ public class TransferController {
     public ResponseEntity<ApiResponse<ExchangeResponse>> exchange(
             @Valid @RequestBody ExchangeRequest request,
             HttpServletRequest httpRequest) {
-        String customerId = extractCustomerId(httpRequest);
+        String customerId = jwtUtil.resolveCustomerId(httpRequest);
         ExchangeResponse response = transferService.exchange(request, customerId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -81,12 +80,4 @@ public class TransferController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    private String extractCustomerId(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            return jwtUtil.getCustomerIdFromToken(token);
-        }
-        throw new BusinessException("無法取得客戶身分資訊");
-    }
 }

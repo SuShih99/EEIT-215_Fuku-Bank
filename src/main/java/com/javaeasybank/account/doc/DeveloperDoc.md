@@ -16,10 +16,10 @@
 
 | 項目 | 現況 |
 | --- | --- |
-| 對齊日期 | 2026-05-09 |
-| 對齊依據 | `src/main/java/com/javaeasybank/account/**`、`frontend/src/router/index.js`、`frontend/src/api/**`、`common/doc/ProjectOverview.md` |
-| 模組現況 | 帳戶管理、客戶帳戶查詢、開戶申請、轉帳、存提款、沖正、交易紀錄、常用帳號、預約轉帳皆已有程式碼 |
-| 仍屬未落地設計 | 跨行轉帳、跨幣別換匯、每日快照、正式利息批次、帳戶狀態歷史表、完整風控攔截、預約轉帳實際排程執行 |
+| 對齊日期 | 2026-05-11 |
+| 對齊依據 | `src/main/java/com/javaeasybank/account/**`、`src/main/resources/database/account_init.sql`、`frontend/src/router/index.js`、`frontend/src/api/**`、`common/doc/ProjectOverview.md` |
+| 模組現況 | 帳戶管理、客戶帳戶查詢、開戶申請、行內/跨行轉帳、台幣與外幣換匯、電子存摺 PDF、存提款、沖正、交易紀錄、常用帳號、預約轉帳皆已有程式碼 |
+| 仍屬未落地設計 | 每日快照、正式利息批次、帳戶狀態歷史表、完整風控攔截、預約轉帳實際排程執行、貸款撥款 / 還款專用 API、外幣對外幣直接互換 |
 
 ---
 
@@ -56,7 +56,9 @@
 | 帳戶建立 / 查詢 / 狀態變更 | 已實作 | `AccountController`, `AccountService`, `Account`, `AccountRepository` |
 | 客戶查自己的帳戶與交易 | 已實作 | `CustomerAccountController` |
 | 開戶申請 / 審核 / 自動建帳 | 已實作 | `AccountApplicationController`, `AccountApplicationService`, `AccountApplication` |
-| 轉帳 | 已實作行內同幣別轉帳 | `TransferController`, `TransferService`, `TransferRequest`, `TransferResponse` |
+| 轉帳 | 已實作行內同幣別與跨行台幣轉帳，跨行有銀行代碼 enum 與手續費 | `TransferController`, `TransferService`, `TransferBank`, `TransferRequest`, `TransferResponse` |
+| 換匯 | 已實作本人帳戶台幣換外幣 / 外幣換台幣 | `TransferController.exchange`, `TransferService.exchange`, `ExchangeRateService` |
+| 電子存摺 | 已實作 HTML/CSS 版面轉 PDF 並用 iText AES 加密 | `PassbookPdfController`, `PassbookPdfService`, `EPassbookView.vue` |
 | 存款 / 提款 | 已實作 | `CashController`, `TransferService.deposit`, `TransferService.withdraw` |
 | 沖正 | 已實作 | `TransferService.reversal`, `ReversalRequest`, `ReversalResponse` |
 | 交易紀錄查詢 | 已實作 | `TransLogController`, `TransLogService`, `TransLogRepository` |
@@ -77,19 +79,19 @@
 | KYC 驗證 | 規劃 KYC，早期偏 mock | 直接建帳只驗證 customer 是否存在；開戶申請已收 KYC 欄位、證件圖、PEP、資金來源、開戶目的 |
 | 帳戶型別規則 | 活存唯一、子帳戶依附台幣活存 | 已實作：`CHECKING` 同客戶同幣別唯一；`SUB_ACCOUNT` 限 TWD、需 ACTIVE TWD checking、需 parent account 且同 customer |
 | 初始餘額 | 活存強制 1000 | 直接建帳與申請核准建帳都對 `CHECKING` 設 1000；直接建立為 `PENDING`，申請核准為 `ACTIVE` |
-| 利率 | 活存 0.15%，外幣 day count 規劃 | `CHECKING_INTEREST_RATE=0.0015` 已寫入；正式利息批次尚未實作 |
+| 利率 | 活存 0.15%，外幣 day count 規劃 | `AccountDefaults` 集中設定活存利率 0.0015；正式利息批次尚未實作 |
 | 狀態流轉 | PENDING / ACTIVE / FROZEN / DORMANT / CLOSED 狀態機 | 已實作狀態轉換檢查；凍結一個帳戶時會連動凍結同客戶其他 ACTIVE 帳戶 |
 | 狀態歷史 | 規劃 `ACCOUNT_STATUS_HISTORY` | 尚未實作 entity / repository / table 操作 |
 | 每日快照 | 規劃 `ACCOUNT_DAILY_SNAPSHOTS` | 尚未實作 |
-| 轉帳類型 | 行內優先，跨行 / 跨幣別為未來 | 目前只實作行內同幣別轉帳；跨行與換匯未實作 |
+| 轉帳類型 | 行內、跨行、本人換匯分流 | 行內查 DB 並入帳；跨行只扣本行帳戶並寫本金與手續費紀錄；換匯只支援 TWD <-> 外幣 |
 | 轉帳入口 | 管理端 / 客戶端皆可規劃 | 目前後端正式入口是客戶端 `POST /api/customer/transfers`；管理端有沖正入口 |
 | 交易紀錄 | 雙邊記帳、不可竄改、沖正 | 已實作雙邊 `TransLog`、同 referenceId、沖正新增反向紀錄 |
-| 交易表欄位 | 舊文件含 `counterpart_bank_code` 等未來欄位 | 現行 `TransLog` 無 `counterpart_bank_code`，只有 `counterpart_account` |
-| 風控 | A1/B1/B2 等規則規劃 | `TransferService` 有 TODO；`TransLogRepository` 已有 B1/B2 查詢方法；風控 handler 尚未完成 |
+| 交易表欄位 | 舊文件含 `counterpart_bank_code` 等未來欄位 | 現行 `TransLog` 已有 `bankCode`, `bankName`, `counterpartBankCode`, `counterpartBankName`, `interbank`, `feeAmount`, `totalDebitAmount` |
+| 風控 | A1/B1/B2 等規則規劃 | `TransLogRepository` 已有 B1/B2 查詢方法；風控 handler 尚未完成且尚未接入轉帳流程 |
 | 常用帳號 | 舊文件未涵蓋 | 已新增 `FavoriteAccount` 與 `/api/customer/favorite-accounts` |
 | 預約轉帳 | 舊文件列為遠期 | 已新增建立 / 查詢 / 取消；`executeDueTransfers` 目前只改狀態，沒有實際呼叫轉帳，也未看到 `@Scheduled` 入口 |
 | 前端管理端 | 舊文件提到 `/admin/transfers` | 目前 router 沒有 `/admin/transfers`；`TransferView.vue` 存在但未掛路由 |
-| 前端客戶端 | 舊文件標示待實作 | 已有 `/user/accounts`, `/user/transactions`, `/user/transfer`, `/user/scheduled-transfer`, `/user/favorite-accounts`, `/user/account-application` |
+| 前端客戶端 | 舊文件標示待實作 | 已有帳戶、交易、轉帳、換匯、電子存摺、常用帳號、預約轉帳、開戶申請與安全中心頁面 |
 
 ---
 
@@ -113,6 +115,7 @@
 | --- | --- | --- |
 | GET | `/api/customer/accounts` | 目前登入客戶查自己的帳戶 |
 | GET | `/api/customer/transactions?accountNumber=&startDate=&endDate=&page=&size=` | 目前登入客戶查自己的交易 |
+| GET | `/api/customer/accounts/{accountNumber}/passbook/pdf` | 下載 AES 加密電子存摺 PDF |
 
 ### 開戶申請
 
@@ -130,7 +133,10 @@
 
 | Method | Path | 說明 |
 | --- | --- | --- |
+| GET | `/api/customer/transfer-banks` | 取得可選國內銀行代碼，前端顯示中文銀行名 + 代碼 |
 | POST | `/api/customer/transfers` | 客戶端轉帳 |
+| POST | `/api/customer/exchanges` | 本人帳戶間換匯，只支援 TWD <-> 外幣 |
+| GET | `/api/public/exchange-rates` | 取得目前匯率資料，供首頁匯率卡片與換匯頁使用 |
 | POST | `/api/customer/cash/deposit` | 存款 |
 | POST | `/api/customer/cash/withdraw` | 提款 |
 | POST | `/api/admin/transfers/reversal` | 管理端沖正 |
@@ -196,9 +202,16 @@
 - `referenceId`
 - `accountNumber`
 - `counterpartAccount`
+- `bankCode`
+- `bankName`
+- `counterpartBankCode`
+- `counterpartBankName`
+- `interbank`
 - `entryType`
 - `transactionType`
 - `amount`
+- `feeAmount`
+- `totalDebitAmount`
 - `balanceBefore`
 - `balanceAfter`
 - `currency`
@@ -215,10 +228,14 @@
 | --- | --- | --- |
 | `/user/account-application` | `AccountApplicationView.vue` | 開戶申請 |
 | `/user/accounts` | `UserAccountsView.vue` | 我的帳戶 |
+| `/user/e-passbook` | `EPassbookView.vue` | 電子存摺封面與 PDF 下載 |
 | `/user/transactions` | `UserTransactionsView.vue` | 我的交易 |
 | `/user/transfer` | `TransferView.vue` | 客戶端轉帳 |
+| `/user/exchange` | `ExchangeView.vue` | 換匯 |
 | `/user/scheduled-transfer` | `ScheduledTransferView.vue` | 預約轉帳 |
 | `/user/favorite-accounts` | `FavoriteAccountsView.vue` | 常用帳號 |
+| `/user/security/login-records` | `SecurityLoginRecordsView.vue` | 登入紀錄 |
+| `/user/security/devices` | `SecurityDevicesView.vue` | 裝置管理 |
 
 ### 管理端帳戶相關路由
 
@@ -239,7 +256,19 @@
 3. `TransLogRepository` 已有 `countRecentTransactions` 與 `sumRecentOutflow`，但 `TransferService.transfer` 尚未實際呼叫。
 4. `@RiskCheck(scene = RiskScene.TRANSFER)` 已掛在 `TransferService.transfer`，但 `TransferRiskHandler` 邏輯尚未實作，也尚未看到 Spring component 註解。
 5. `ACCOUNT_STATUS_HISTORY`、`ACCOUNT_DAILY_SNAPSHOTS` 仍屬設計草案。
-6. 跨行轉帳、跨幣別換匯、貸款撥款 / 還款專用 API 尚未在 account 模組落地。
+6. `POST /api/customer/transfers` 目前沒有從 JWT 驗證 `fromAccountNumber` 是否屬於登入客戶；`POST /api/customer/exchanges` 已有 owner check。
+7. 貸款撥款 / 還款專用 API 尚未在 account 模組落地。
+
+---
+
+## 0.7 現行代碼整理重點
+
+本次對齊時也同步整理了 account 模組中幾個重複點：
+
+- 客戶端 account controller 不再各自解析 `Authorization` header，改由 `JwtUtil.resolveCustomerId(HttpServletRequest)` 統一取得 JWT 內的 `customerId`。
+- 活存初始餘額 1000 與活存 / 子帳戶利率 0.0015 集中在 `AccountDefaults`，`AccountService` 與 `AccountApplicationService` 共用同一套預設值。
+- `TransferService.deposit` 與 `TransferService.withdraw` 共用 `cashTransaction(...)`，避免存款 / 提款各自重複查帳戶、檢查狀態、更新餘額、寫 `TransLog` 與組 response。
+- `TransferService` 內的帳戶查詢、ACTIVE 檢查、帳戶儲存、交易紀錄儲存已收斂成 helper，讓轉帳、換匯、存提款、沖正流程保留業務主線。
 
 ---
 
@@ -634,6 +663,7 @@ Request body：
 {
   "fromAccountNumber": "123456789012",
   "toAccountNumber": "210987654321",
+  "toBankCode": "909",
   "amount": 1000,
   "note": "備註"
 }
@@ -643,31 +673,38 @@ Request body：
 
 - 來源 / 目的帳號不可為空。
 - 金額必須大於 0。
-- 不可自我轉帳。
-- 來源與目的帳戶都必須存在。
-- 來源與目的帳戶都必須是 `ACTIVE`。
-- 來源與目的帳戶幣別必須一致。
-- 來源餘額必須足夠。
-- 同一個 transaction 內扣款、入帳與寫入兩筆 `TransLog`。
-- 兩筆交易紀錄共用同一個 `referenceId`。
+- `toBankCode` 必須存在於 `TransferBank` enum；本行為 `JVB("909","爪哇銀行")`。
+- 目的帳號只能為數字，長度 6 到 20 碼；本行轉帳目的帳號須為 12 碼。
+- 本行轉本行不可自我轉帳，會查目的帳戶並即時入帳。
+- 跨行轉帳僅支援 TWD 轉出，不查目的帳戶 DB，只確認來源帳戶、狀態與餘額。
+- 跨行手續費：金額 `<= 1000` 收 10 元，`>= 1001` 收 15 元。
+- 跨行會寫兩筆同 `referenceId` 的 `TransLog`：本金 `TRANSFER` 與手續費 `TRANSFER_FEE`。
+- 本行轉帳會寫兩筆同 `referenceId` 的 `TransLog`：轉出方 `DEBIT` 與轉入方 `CREDIT`。
+- 轉帳成功後會寄送轉帳通知信。
+
+目前 `TransferService.exchange` 已實作：
+
+- 入口為 `POST /api/customer/exchanges`。
+- 從 JWT 取得 `customerId`，驗證轉出與轉入帳戶都屬於本人。
+- 僅支援台幣換外幣或外幣換台幣，不支援外幣對外幣直接互換。
+- 透過 `ExchangeRateService` 取得匯率並計算成交金額。
+- 寫入兩筆同 `referenceId` 的 `EXCHANGE` 交易紀錄。
 
 目前尚未實作或需注意：
 
-- 沒有跨行轉帳。
-- 沒有跨幣別換匯。
-- Controller 目前沒有從 JWT 取 `customerId` 驗證 `fromAccountNumber` 是否屬於目前登入客戶；前端會讓使用者選自己的帳戶，但後端尚未做 ownership check。
+- 轉帳 Controller 目前沒有從 JWT 取 `customerId` 驗證 `fromAccountNumber` 是否屬於目前登入客戶；前端會讓使用者選自己的帳戶，但後端尚未做 ownership check。
 - `@RiskCheck(scene = RiskScene.TRANSFER)` 已掛上，但風控 handler 尚未完成。
 
 #### 1.6.1 轉帳類型
 
 ```mermaid
 flowchart TD
-    A[轉帳類型] --> B[行內轉帳<br/>優先]
-    A --> C[跨行轉帳<br/>低優先]
-    A --> D[本人跨幣別轉換<br/>低優先]
-    B --> B1[來源與目的皆為本行<br/>即時到帳<br/>免手續費 MVP]
-    C --> C1[目的為他行<br/>整合 FISC 清算<br/>收取手續費]
-    D --> D1[同客戶不同幣別<br/>整合即時匯率 API<br/>本質為結售匯]
+    A[轉帳類型] --> B[行內轉帳]
+    A --> C[跨行轉帳]
+    A --> D[本人換匯]
+    B --> B1[來源與目的皆為本行<br/>查 DB 並即時入帳<br/>免手續費]
+    C --> C1[目的為他行<br/>不查對方 DB<br/>扣本金與手續費]
+    D --> D1[同客戶不同幣別<br/>只支援 TWD 與外幣互換<br/>使用匯率 API]
 ```
 
 ##### 行內轉帳(優先)
@@ -676,17 +713,16 @@ flowchart TD
 - 即時到帳
 - 免手續費(MVP 假設)
 
-##### 跨行轉帳(低優先)
+##### 跨行轉帳
 
 - 目的帳戶為他行
-- 需整合財金公司(FISC)清算
-- 收取手續費(依金額分級)
+- 後端不模擬財金入帳，只扣本行轉出帳戶
+- 收取手續費：1000 以下與等於 1000 收 10 元，1001 以上收 15 元
+- 手續費以 `TRANSFER_FEE` 另寫一筆交易紀錄，但與本金交易共用同一個 `referenceId`
 
-> **註1:** side project 階段先做行內轉帳即可,跨行涉及外部 API 與結算規則,複雜度太高。
+##### 本人換匯
 
-##### 本人跨幣別轉換(低優先)
-
-- 同客戶名下不同幣別帳戶互轉(例:TWD 活存 → USD 活存)
+- 同客戶名下 TWD 與外幣帳戶互換(例:TWD 活存 → USD 活存，或 USD 活存 → TWD 活存)
 - 需整合即時匯率 API
 - 本質是「結售匯」,不是單純轉帳
 
@@ -775,6 +811,10 @@ public void transfer(String from, String to, BigDecimal amount) {
 | 餘額不足 | 400 | `INSUFFICIENT_BALANCE` |
 | 幣別不一致 | 400 | `CURRENCY_MISMATCH` |
 | 轉帳金額 ≤ 0 | 400 | `INVALID_AMOUNT` |
+| 不支援的轉入銀行 | 400 | `INVALID_BANK_CODE` |
+| 跨行轉帳非台幣帳戶 | 400 | `INTERBANK_TWD_ONLY` |
+| 目的帳號格式錯誤 | 400 | `INVALID_TARGET_ACCOUNT_FORMAT` |
+| 目的帳號長度錯誤 | 400 | `INVALID_TARGET_ACCOUNT_LENGTH` / `INVALID_LOCAL_TARGET_ACCOUNT_LENGTH` |
 | 風險監控攔截 | 403 | `RISK_BLOCKED` |
 | 需二次驗證 | 202 | `VERIFICATION_REQUIRED` |
 
@@ -848,7 +888,7 @@ flowchart LR
 1. **原子性是核心**:用 `@Transactional` 保證扣款與入帳同時成功或同時失敗
 2. **先驗證再執行**:基本驗證 → 風險監控 → 實際動帳
 3. **錯誤要明確**:每種失敗情境要有對應的錯誤代碼,前端才能正確處理
-4. **MVP 只做行內同幣別**:跨行、跨幣別是遠期目標
+4. **目前已支援行內、跨行與本人換匯**:跨行只扣本行帳戶，不模擬外部銀行入帳；換匯只支援 TWD 與外幣互換
 5. **還款不是普通轉帳**:需設計專用 API 處理「一扣多入」的情境
 
 ---
@@ -1239,9 +1279,9 @@ flowchart TD
 
 現版本 `TRANS_LOG` 欄位與舊規劃主要差異：
 
-- 現行沒有 `counterpart_bank_code`，跨行轉帳尚未落地。
-- 現行用 `counterpart_account` 表示對手方帳號。
-- 現行 index：`reference_id`、`account_number, created_at`。
+- 現行已補上 `bank_code`, `bank_name`, `counterpart_bank_code`, `counterpart_bank_name`, `is_interbank`, `fee_amount`, `total_debit_amount`。
+- 現行用 `counterpart_account` 表示對手方帳號；行內為 12 碼，跨行允許 6 到 20 碼。
+- 現行 index：`reference_id`、`account_number, created_at`、`counterpart_account`。
 - 現行 repository 另外用 JPQL 提供「帳號 involved 查詢」與「客戶交易查詢」。
 
 ### 1. 內部主鍵 (Internal PK):使用 `BIGINT`
@@ -1491,7 +1531,7 @@ WHERE account_number = ?
 >
 > **核心原則:** 寫入後禁止修改與刪除,錯帳只能透過「沖正」產生新紀錄抵銷。
 >
-> 現況：現行 `TransLog` entity 沒有 `counterpart_bank_code`，跨行轉帳尚未落地；目前只保留 `counterpart_account`。
+> 現況：現行 `TransLog` entity 已支援本行/對手方銀行代碼與名稱、跨行旗標、手續費與本次總扣款金額；跨行轉帳會用同一個 `referenceId` 分別記錄本金與手續費。
 
 ### 欄位定義
 
@@ -1501,15 +1541,21 @@ WHERE account_number = ?
 | 2 | `reference_id` | VARCHAR(30) | NOT NULL | 業務交易編號(對外查詢)<br/>格式:`TXN-yyyyMMdd-HHmmss-8碼hex` |
 | 3 | `account_number` | VARCHAR(12) | FK → ACCOUNT, NOT NULL | 影響帳號 |
 | 4 | `counterpart_account` | VARCHAR(20) | NULL | 對手方帳號 |
-| 5 | `counterpart_bank_code` | VARCHAR(10) | NULL | 對手方銀行代碼(跨行轉帳用) |
-| 6 | `entry_type` | VARCHAR(10) | NOT NULL | 記帳方向(`DEBIT` / `CREDIT`) |
-| 7 | `transaction_type` | VARCHAR(25) | NOT NULL | 交易類型 |
-| 8 | `amount` | DECIMAL(19,4) | NOT NULL | 交易金額(永遠正數) |
-| 9 | `balance_before` | DECIMAL(19,4) | NOT NULL | 交易前餘額 |
-| 10 | `balance_after` | DECIMAL(19,4) | NOT NULL | 交易後餘額 |
-| 11 | `currency` | CHAR(3) | NOT NULL | 幣別(ISO 4217) |
-| 12 | `note` | NVARCHAR(200) | NULL | 註記(支援中文) |
-| 13 | `created_at` | DATETIME2(3) | NOT NULL | 操作時間(毫秒級) |
+| 5 | `bank_code` | VARCHAR(10) | NOT NULL | 本筆交易所屬銀行代碼，本行固定 909 |
+| 6 | `bank_name` | NVARCHAR(50) | NOT NULL | 本筆交易所屬銀行名稱，本行固定爪哇銀行 |
+| 7 | `counterpart_bank_code` | VARCHAR(10) | NULL | 對手方銀行代碼，本行 909 或他行代碼 |
+| 8 | `counterpart_bank_name` | NVARCHAR(50) | NULL | 對手方銀行名稱 |
+| 9 | `is_interbank` | BIT | NOT NULL | 是否跨行 |
+| 10 | `entry_type` | VARCHAR(10) | NOT NULL | 記帳方向(`DEBIT` / `CREDIT`) |
+| 11 | `transaction_type` | VARCHAR(25) | NOT NULL | 交易類型 |
+| 12 | `amount` | DECIMAL(19,4) | NOT NULL | 交易金額(永遠正數) |
+| 13 | `fee_amount` | DECIMAL(19,4) | NOT NULL | 手續費金額 |
+| 14 | `total_debit_amount` | DECIMAL(19,4) | NULL | 本次業務總扣款金額，本金 + 手續費 |
+| 15 | `balance_before` | DECIMAL(19,4) | NOT NULL | 交易前餘額 |
+| 16 | `balance_after` | DECIMAL(19,4) | NOT NULL | 交易後餘額 |
+| 17 | `currency` | CHAR(3) | NOT NULL | 幣別(ISO 4217) |
+| 18 | `note` | NVARCHAR(200) | NULL | 註記(支援中文) |
+| 19 | `created_at` | DATETIME2(3) | NOT NULL | 操作時間(毫秒級) |
 
 ### 欄位細節說明
 
@@ -1524,7 +1570,7 @@ WHERE account_number = ?
 #### `counterpart_account`
 
 - 行內轉帳:記錄對方帳號(12 碼)
-- 跨行轉帳:記錄他行帳號(最長 16 碼)
+- 跨行轉帳:記錄他行帳號(6 到 20 碼)
 - 存款 / 提款 / 利息入帳:留 NULL
 
 #### `entry_type`(記帳方向)
@@ -1541,8 +1587,10 @@ WHERE account_number = ?
 | 值 | 說明 | 固定方向 |
 | --- | --- | --- |
 | `TRANSFER` | 轉帳 | 可能 DEBIT 或 CREDIT |
+| `TRANSFER_FEE` | 跨行轉帳手續費 | 固定 DEBIT |
 | `DEPOSIT` | 存款 | 固定 CREDIT |
 | `WITHDRAW` | 提款 | 固定 DEBIT |
+| `EXCHANGE` | 本人帳戶換匯 | 轉出 DEBIT，轉入 CREDIT |
 | `INTEREST` | 利息入帳 | 固定 CREDIT |
 | `LOAN_DISBURSEMENT` | 貸款撥款 | 固定 CREDIT |
 | `LOAN_REPAYMENT` | 貸款還款 | 固定 DEBIT |
@@ -1703,10 +1751,16 @@ erDiagram
         varchar(30) reference_id
         varchar(12) account_number FK
         varchar(20) counterpart_account
+        varchar(10) bank_code
+        nvarchar(50) bank_name
         varchar(10) counterpart_bank_code
+        nvarchar(50) counterpart_bank_name
+        bit is_interbank
         varchar(10) entry_type
         varchar(25) transaction_type
         decimal amount
+        decimal fee_amount
+        decimal total_debit_amount
         decimal balance_before
         decimal balance_after
         char(3) currency
@@ -2247,10 +2301,15 @@ public static String generateReferenceId() {
 | `frontend/src/views/user/UserHomeView.vue` | 客戶端首頁 |
 | `frontend/src/views/user/AccountApplicationView.vue` | 開戶申請，multipart 上傳證件 |
 | `frontend/src/views/user/UserAccountsView.vue` | 我的帳戶 |
+| `frontend/src/views/user/EPassbookView.vue` | 電子存摺封面、帳戶選單、PDF 下載 |
 | `frontend/src/views/user/UserTransactionsView.vue` | 我的交易紀錄 |
 | `frontend/src/views/user/TransferView.vue` | 客戶端轉帳 |
+| `frontend/src/views/user/ExchangeView.vue` | 換匯，支援 TWD <-> 外幣 |
 | `frontend/src/views/user/ScheduledTransferView.vue` | 預約轉帳 |
 | `frontend/src/views/user/FavoriteAccountsView.vue` | 常用帳號 |
+| `frontend/src/views/user/SecurityLoginRecordsView.vue` | 安全中心登入紀錄 |
+| `frontend/src/views/user/SecurityDevicesView.vue` | 安全中心裝置管理 |
+| `frontend/src/views/NotFoundView.vue` | 404 頁面 |
 
 ### 2.2 現行路由
 
@@ -2260,10 +2319,15 @@ public static String generateReferenceId() {
 | `/user/home` | `user-home` | `UserHomeView.vue` |
 | `/user/account-application` | `user-account-application` | `AccountApplicationView.vue` |
 | `/user/accounts` | `user-accounts` | `UserAccountsView.vue` |
+| `/user/e-passbook` | `user-e-passbook` | `EPassbookView.vue` |
 | `/user/transactions` | `user-transactions` | `UserTransactionsView.vue` |
 | `/user/transfer` | `user-transfer` | `TransferView.vue` |
+| `/user/exchange` | `user-exchange` | `ExchangeView.vue` |
 | `/user/scheduled-transfer` | `user-scheduled-transfer` | `ScheduledTransferView.vue` |
 | `/user/favorite-accounts` | `user-favorite-accounts` | `FavoriteAccountsView.vue` |
+| `/user/security/login-records` | `user-security-login-records` | `SecurityLoginRecordsView.vue` |
+| `/user/security/devices` | `user-security-devices` | `SecurityDevicesView.vue` |
+| `/:pathMatch(.*)*` | `NotFound` | `NotFoundView.vue` |
 
 ### 2.3 與管理端的差異
 
@@ -2283,10 +2347,11 @@ public static String generateReferenceId() {
 | 檔案 | 用途 |
 | --- | --- |
 | `frontend/src/api/account.js` | 管理端帳戶、交易紀錄、存提款、轉帳、沖正 API wrapper |
-| `frontend/src/api/customerAccount.js` | 客戶端我的帳戶、我的交易、轉帳 |
+| `frontend/src/api/customerAccount.js` | 客戶端我的帳戶、我的交易、轉帳、銀行選單、電子存摺 PDF、匯率、換匯 |
 | `frontend/src/api/accountApplication.js` | 客戶端開戶申請與管理端審核 |
 | `frontend/src/api/favoriteAccount.js` | 客戶端常用帳號 |
 | `frontend/src/api/scheduledTransfer.js` | 客戶端預約轉帳 |
+| `frontend/src/api/customerAuth.js` | 客戶端登入、登入紀錄、裝置管理 |
 
 ### 2.5 已完成與待補
 
@@ -2294,6 +2359,10 @@ public static String generateReferenceId() {
 - [x] 客戶端我的帳戶查詢
 - [x] 客戶端交易紀錄查詢
 - [x] 客戶端轉帳
+- [x] 客戶端跨行轉帳與手續費預覽 / 寫入
+- [x] 客戶端換匯
+- [x] 電子存摺與 PDF 下載
+- [x] 安全中心登入紀錄與裝置管理
 - [x] 客戶端開戶申請
 - [x] 管理端開戶申請審核
 - [x] 常用帳號

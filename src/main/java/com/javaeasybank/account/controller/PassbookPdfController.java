@@ -1,7 +1,6 @@
 package com.javaeasybank.account.controller;
 
 import com.javaeasybank.account.service.PassbookPdfService;
-import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.common.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +26,7 @@ public class PassbookPdfController {
     @GetMapping("/{accountNumber}/passbook/pdf")
     public ResponseEntity<byte[]> downloadPassbookPdf(HttpServletRequest request,
                                                        @PathVariable String accountNumber) {
-        String customerId = extractCustomerId(request);
+        String customerId = jwtUtil.resolveCustomerId(request);
         byte[] pdf = passbookPdfService.generateEncryptedPassbookPdf(customerId, accountNumber);
 
         HttpHeaders headers = new HttpHeaders();
@@ -41,12 +40,4 @@ public class PassbookPdfController {
                 .body(pdf);
     }
 
-    private String extractCustomerId(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            return jwtUtil.getCustomerIdFromToken(token);
-        }
-        throw new BusinessException("無法取得客戶身分資訊");
-    }
 }

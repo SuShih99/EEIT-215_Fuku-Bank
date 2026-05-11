@@ -8,6 +8,7 @@ import com.javaeasybank.account.enums.AccountType;
 import com.javaeasybank.account.enums.Currency;
 import com.javaeasybank.account.exception.AccountException;
 import com.javaeasybank.account.repository.AccountRepository;
+import com.javaeasybank.account.utils.AccountDefaults;
 import com.javaeasybank.account.utils.AccountNumberGenerator;
 import com.javaeasybank.customer.repository.CustomerProfileRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,19 +18,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AccountService {
-
-    private static final BigDecimal CHECKING_INITIAL_BALANCE = new BigDecimal("1000");
-    private static final BigDecimal CHECKING_INTEREST_RATE = new BigDecimal("0.0015");
 
     private final AccountRepository accountRepository;
     private final CustomerProfileRepository customerProfileRepository;
@@ -65,11 +59,10 @@ public class AccountService {
 
         // 4. 活存帳戶強制綁定初始餘額 1,000，並設定固定利率 0.15%
         if (request.getAccountType() == AccountType.CHECKING) {
-            account.setBalance(CHECKING_INITIAL_BALANCE.setScale(request.getCurrency().getDecimalPlaces(), RoundingMode.HALF_EVEN));
-            account.setInterestRate(CHECKING_INTEREST_RATE);
+            AccountDefaults.applyCheckingDefaults(account);
         } else if (request.getAccountType() == AccountType.SUB_ACCOUNT) {
              // 子帳戶利率比照活存
-             account.setInterestRate(CHECKING_INTEREST_RATE);
+             AccountDefaults.applySubAccountDefaults(account);
         }
 
         // 儲存並回傳
