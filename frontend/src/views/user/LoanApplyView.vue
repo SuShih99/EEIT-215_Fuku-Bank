@@ -31,9 +31,8 @@
           <button class="btn btn-primary btn-lg" @click="goApply">
             申請貸款
           </button>
-          <button class="btn btn-action" disabled>
+          <button class="btn btn-action" @click="goStatus">
             查詢申貸狀態
-            <span class="coming-tag">即將推出</span>
           </button>
           <button class="btn btn-action" disabled>
             貸款帳戶
@@ -344,7 +343,7 @@
           </div>
         </div>
 
-        <button class="btn btn-outline btn-lg" @click="resetAll">再提交一筆申請</button>
+        <button class="btn btn-outline btn-lg" @click="resetAll">回到貸款首頁</button>
       </div>
     </div>
 
@@ -356,9 +355,12 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import axios from 'axios'
 import { useCustomerAuthStore } from '@/stores/customerAuth'
 import { getMyAccounts } from '@/api/customerAccount'
+import { useRouter } from 'vue-router'
+
 
 // ── Constants ──
 const BASE_URL = 'http://localhost:8080'
+const router = useRouter()
 
 const LOAN_TYPE_LIST = [
   { key: 'PERSONAL', name: '個人信貸', icon: '💳', desc: '靈活周轉，快速撥款到帳'      },
@@ -471,6 +473,10 @@ async function loadRateRules() {
       termRates: { '12':0,'24':0.002,'36':0.005,'48':0.008,'60':0.01,'84':0.015,'120':0,'180':0.002,'240':0.004,'360':0.006,'480':0.008 },
     }
   }
+}
+
+function goStatus() {
+  router.push({ name: 'user-loan-status' })
 }
 
 function goApply() {

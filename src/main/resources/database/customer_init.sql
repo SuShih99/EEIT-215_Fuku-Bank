@@ -90,21 +90,21 @@ CREATE TABLE CUSTOMER_AUTH (
 );
 
 -- [4] 客戶登入紀錄
-CREATE TABLE CUSTOMER_LOGIN_LOG (
-    login_log_id BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    customer_id VARCHAR(20) NULL,
-    username VARCHAR(50) NOT NULL,
-    result NVARCHAR(20) NOT NULL,
-    fail_reason NVARCHAR(200) NULL,
-    ip_address VARCHAR(45) NULL,
-    user_agent NVARCHAR(512) NULL,
-    device_name NVARCHAR(120) NULL,
-    login_time DATETIME2 NOT NULL DEFAULT GETDATE(),
-    CONSTRAINT FK_LoginLog_Profile FOREIGN KEY (customer_id) REFERENCES CUSTOMER_PROFILE(customer_id)
-);
+    CREATE TABLE CUSTOMER_LOGIN_LOG (
+        login_log_id BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        customer_id VARCHAR(20) NULL,
+        username VARCHAR(50) NOT NULL,
+        result NVARCHAR(20) NOT NULL,
+        fail_reason NVARCHAR(200) NULL,
+        ip_address VARCHAR(45) NULL,
+        user_agent NVARCHAR(512) NULL,
+        device_name NVARCHAR(120) NULL,
+        login_time DATETIME2 NOT NULL DEFAULT GETDATE(),
+        CONSTRAINT FK_LoginLog_Profile FOREIGN KEY (customer_id) REFERENCES CUSTOMER_PROFILE(customer_id)
+    );
 
-CREATE INDEX IDX_LoginLog_Customer_Time
-    ON CUSTOMER_LOGIN_LOG(customer_id, login_time DESC);
+    CREATE INDEX IDX_LoginLog_Customer_Time
+        ON CUSTOMER_LOGIN_LOG(customer_id, login_time DESC);
 
 -- [5] 客戶授權裝置
 CREATE TABLE CUSTOMER_DEVICE (
