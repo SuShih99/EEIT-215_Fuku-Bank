@@ -1,6 +1,7 @@
-package com.javaeasybank.loan.service;
+package com.javaeasybank.customer.loan.service;
 
 import com.javaeasybank.common.exception.BusinessException;
+import com.javaeasybank.customer.repository.CustomerProfileRepository;
 import com.javaeasybank.loan.client.LoanRiskClient;
 import com.javaeasybank.loan.dto.requests.*;
 import com.javaeasybank.loan.dto.response.LoanApplicationResponseDTO;
@@ -47,8 +48,12 @@ public class LoanApplicationService {
 
     @Autowired
     private LoanReviewDetailRepository reviewDetailRepo;
+
     @Autowired
     private LoanRiskClient loanRiskClient;
+
+    @Autowired
+    private CustomerProfileRepository customerProfileRepository;
 
     // ===查詢功能===
     // 依狀態顯示
@@ -223,6 +228,11 @@ public class LoanApplicationService {
         LoanRiskRequestDTO dto = new LoanRiskRequestDTO();
         dto.setApplicationId(loan.getApplicationId());
         dto.setCustomerId(loan.getCustomerId());
+        // 補入 cif 供風控模組對照顯示用
+        String cif = customerProfileRepository.findById(loan.getCustomerId())
+                .map(p -> p.getCif())
+                .orElse(null);
+        dto.setCif(cif);
         dto.setApplyType(loan.getApplyType());
         dto.setConfirmedAmount(detail.getConfirmedAmount());
         dto.setConfirmedPeriod(detail.getConfirmedPeriod());
@@ -345,6 +355,11 @@ public class LoanApplicationService {
         LoanApplicationResponseDTO dto = new LoanApplicationResponseDTO();
         dto.setApplicationId(loan.getApplicationId());
         dto.setCustomerId(loan.getCustomerId());
+        // 用 customerId 查出 cif 供前端顯示（Primary Key 查詢，效能无淣）
+        String cif = customerProfileRepository.findById(loan.getCustomerId())
+                .map(p -> p.getCif())
+                .orElse(null);
+        dto.setCif(cif);
         dto.setApplyType(loan.getApplyType());
         dto.setApplyAmount(loan.getApplyAmount());
         dto.setApplyPeriod(loan.getApplyPeriod());

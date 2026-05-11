@@ -173,9 +173,9 @@ const menus = [
     svg: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
     route: null,
     children: [
-      { label: '信用貸款', desc: '線上申請信貸', route: null },
-      { label: '房屋貸款', desc: '房貸方案查詢', route: null },
-      { label: '貸款試算', desc: '利率與還款試算', route: null },
+      { label: '快速申請貸款', desc: '線上貸款申請，快速撥款', route: 'user-loan-apply' },
+      { label: '查詢申貸狀態', desc: '查看所有貸款申請進度', route: 'user-loan-status' },
+      { label: '貸款帳戶', desc: '查看核准中的貸款帳戶', route: null },
     ],
   },
   {

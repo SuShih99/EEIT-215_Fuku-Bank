@@ -15,7 +15,8 @@ public class LoanRiskRequestDTO {
 
     // 申請基本資料
     private String applicationId;
-    private String customerId;
+    private String customerId;   // 內部識別
+    private String cif;          // 對外顯示用的顧客識別碼
     private String applyType;
 
     // 二次填單內容

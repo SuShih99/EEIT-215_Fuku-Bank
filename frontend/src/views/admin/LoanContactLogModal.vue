@@ -13,7 +13,7 @@
                 <div class="modal-sub">
                   <span class="id-chip">{{ app?.applicationId }}</span>
                   <span class="applicant-hint">
-                    {{ app?.applicantName || (app?.customerId ? `會員 #${app.customerId}` : '') }}
+                    {{ app?.applicantName || (app?.cif ? `CIF: ${app.cif}` : (app?.customerId ? `#${app.customerId}` : '')) }}
                   </span>
                 </div>
               </div>

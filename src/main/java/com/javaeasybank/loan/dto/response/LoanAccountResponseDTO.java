@@ -14,7 +14,8 @@ import java.util.List;
 public class LoanAccountResponseDTO {
     private String accountId;
     private String applicationId;
-    private String customerId;
+    private String customerId;   // 內部識別，不對外顯示
+    private String cif;          // 對外顯示用的顧客識別碼
 
     // ── 核准條件 ─────────────────────────────────────────────────────
     private Long principalAmount; // 核准金額

@@ -192,7 +192,7 @@
             <td>
               <div v-if="app.customerId" class="applicant-member">
                 <span class="member-badge">會員</span>
-                <span class="member-id"># {{ app.customerId }}</span>
+                <span class="member-id">{{ app.cif || app.customerId }}</span>
               </div>
               <div v-else class="applicant-nonmember">
                 <div class="nm-name">{{ app.applicantName || '—' }}</div>

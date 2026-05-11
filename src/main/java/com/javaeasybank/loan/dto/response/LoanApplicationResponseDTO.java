@@ -11,7 +11,8 @@ import java.time.LocalDateTime;
 @Setter
 public class LoanApplicationResponseDTO {
     private String applicationId;
-    private String customerId;
+    private String customerId;   // 內部識別，不對外顯示
+    private String cif;          // 對外顯示用的顧客識別碼
     private String applyType;
     private BigDecimal applyAmount;
     private Integer applyPeriod;

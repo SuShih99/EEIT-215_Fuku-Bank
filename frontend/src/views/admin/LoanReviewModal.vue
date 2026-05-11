@@ -13,7 +13,7 @@
                 <div class="modal-sub">
                   <span class="id-chip">{{ app?.applicationId }}</span>
                   <span class="applicant-hint">
-                    {{ app?.applicantName || (app?.customerId ? `會員 #${app.customerId}` : '') }}
+                    {{ app?.applicantName || (app?.cif ? `CIF: ${app.cif}` : (app?.customerId ? `#${app.customerId}` : '')) }}
                   </span>
                   <span v-if="review" class="review-status-badge" :class="reviewStatusClass">
                     {{ reviewStatusLabel }}
@@ -54,7 +54,7 @@
                   <div class="info-row">
                     <span class="info-label">申請人</span>
                     <span class="info-val">
-                      {{ app?.applicantName || (app?.customerId ? `會員 #${app.customerId}` : '—') }}
+                      {{ app?.applicantName || (app?.cif ? `CIF: ${app.cif}` : (app?.customerId ? `#${app.customerId}` : '—')) }}
                     </span>
                   </div>
                   <div class="info-row" v-if="app?.applicantPhone">
