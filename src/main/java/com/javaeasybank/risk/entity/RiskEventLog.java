@@ -42,7 +42,7 @@ public class RiskEventLog {
     private RiskLevel riskLevel;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "action_taken", nullable = false, length = 50)
+    @Column(name = "disposition", nullable = false, length = 50)
     // 儲存 "PASS", "REJECT" 或 "MANUAL_REVIEW"
     private Disposition disposition;
 

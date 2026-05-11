@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 @RestController
-@RequestMapping("/api/riskevent")
+@RequestMapping("/api/risk/riskevent")
 @RequiredArgsConstructor
 public class RiskEventController {
     private final RiskEventService riskEventService;

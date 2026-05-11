@@ -45,16 +45,16 @@ public class Blacklist {
     private Boolean status = Boolean.TRUE;
     //解封時間 設null表示永久
     @Column(name = "expires_at")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy-MM-ddTHH:mm:ss", timezone = "GMT+8")
     private LocalDateTime expireAt;
 
     @CreatedDate
     @Column(name = "created_at")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy-MM-ddTHH:mm:ss", timezone = "GMT+8")
     private LocalDateTime createdAt;
 
     @LastModifiedDate
     @Column(name = "updated_at")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @JsonFormat(pattern = "yyyy-MM-ddTHH:mm:ss", timezone = "GMT+8")
     private LocalDateTime updatedAt;
 }

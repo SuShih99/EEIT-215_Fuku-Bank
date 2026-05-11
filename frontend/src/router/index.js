@@ -51,21 +51,20 @@ const router = createRouter({
           component: () => import('../views/user/CardTypeListView.vue'),
         },
         {
-          path:'card-applications',
-          name:'user-card-applications',
+          path: 'card-applications',
+          name: 'user-card-applications',
           component: () => import('../views/user/CardApplicationForm.vue'),
         },
         {
-          path:'card-txns',
-          name:'user-card-txns',
+          path: 'card-txns',
+          name: 'user-card-txns',
           component: () => import('../views/user/CardTxnView.vue'),
         },
         {
           path: 'card-bills',
           name: 'user-card-bills',
           component: () => import('../views/user/CardBillView.vue'),
-        }
-        ,
+        },
         {
           path: 'account-application',
           name: 'user-account-application',
@@ -160,13 +159,13 @@ const router = createRouter({
           component: () => import('../views/admin/CardTypeListView.vue'),
         },
         {
-          path:'card-applications',
-          name:'admin-card-applications',
+          path: 'card-applications',
+          name: 'admin-card-applications',
           component: () => import('../views/admin/CardApplicationList.vue'),
         },
         {
-          path:'card-txns',
-          name:'admin-card-txns',
+          path: 'card-txns',
+          name: 'admin-card-txns',
           //http://localhost:5173/admin/card-txns
           component: () => import('../views/admin/CardTxnView.vue'),
         },
@@ -182,8 +181,13 @@ const router = createRouter({
           component: () => import('../views/admin/RiskEventView.vue'),
         },
         {
-          name:'admin-card-application-detail',
-          path:'/admin/card-applications/:id',
+          path: 'review-task',
+          name: 'admin-review-task',
+          component: () => import('../views/admin/ReviewTask.vue'),
+        },
+        {
+          name: 'admin-card-application-detail',
+          path: '/admin/card-applications/:id',
           component: () => import('../views/admin/CardApplicationDetailView.vue'),
         },
         {
@@ -269,7 +273,7 @@ router.beforeEach(async (to) => {
         // 所以會進入這裡的只剩 employees 跟 logs，這些保留給資安與系統管理員
         const systemAdminRoles = ['ISSA', 'CISO', 'SYS_SUPER', 'SYS_STAFF']
         if (!systemAdminRoles.includes(parsedUser.roleCode)) {
-          return { name: 'forbidden' } 
+          return { name: 'forbidden' }
         }
       } else {
         return { name: 'admin-login' }

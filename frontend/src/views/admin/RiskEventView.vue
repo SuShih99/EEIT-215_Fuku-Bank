@@ -65,7 +65,9 @@
           </div>
         </template>
         <template v-else-if="column.key === 'actionTaken'">
-          <a-tag :color="actionTakenColorMap[record.actionTaken]">{{ actionTakenMap[record.actionTaken] || record.actionTaken }}</a-tag>
+          <a-tag :color="actionTakenColorMap[record.actionTaken]">{{
+            actionTakenMap[record.actionTaken] || record.actionTaken
+          }}</a-tag>
         </template>
         <template v-else-if="column.key === 'eventType'">
           <a-tag color="blue">{{ eventTypeMap[record.eventType] || record.eventType }}</a-tag>
@@ -103,13 +105,13 @@ const actionTakenMap = {
 }
 
 const actionTakenColorMap = {
-  PASSED: 'green',
-  REJECTED: 'red',
+  PASS: 'green',
+  REJECT: 'red',
   MANUAL_REVIEW: 'orange',
 }
 
 const eventTypeMap = {
-  LOAN: '貸款',
+  LOAN_APPLY: '貸款',
   TRANSFER: '轉帳',
   USER_LOGIN: '登入',
   CREDIT_CARD: '信用卡',
@@ -132,15 +134,20 @@ const pagination = reactive({
 
 const loadData = async () => {
   loading.value = true
+
   try {
-    const res = await api.get('/api/riskevent/search', {
-      params: {
-        page: pagination.current - 1, // 後端從 0 開始
-        size: pagination.pageSize,
-        eventType: filterParams.eventType || null,
-        actionTaken: filterParams.actionTaken || null,
-        riskLevel: filterParams.riskLevel || null,
-      },
+    // 處理請求參數：移除 null 或空字串，避免後端解析 Enum 噴錯
+    const cleanParams = {
+      page: pagination.current - 1,
+      size: pagination.pageSize,
+    }
+
+    if (filterParams.eventType) cleanParams.eventType = filterParams.eventType
+    if (filterParams.actionTaken) cleanParams.actionTaken = filterParams.actionTaken
+    if (filterParams.riskLevel) cleanParams.riskLevel = filterParams.riskLevel
+
+    const res = await api.get('/api/risk/riskevent/search', {
+      params: cleanParams,
     })
     // 對接 ApiResponse 包裝的 Spring Page 物件
     dataSource.value = res.data.data.content
@@ -179,15 +186,35 @@ onMounted(() => loadData())
   border-radius: 50%;
 }
 
-.risk-low { background-color: rgba(82, 196, 26, 0.1); color: #389e0d; }
-.risk-low .status-dot { background-color: #52c41a; }
+.risk-low {
+  background-color: rgba(82, 196, 26, 0.1);
+  color: #389e0d;
+}
+.risk-low .status-dot {
+  background-color: #52c41a;
+}
 
-.risk-medium { background-color: rgba(250, 140, 22, 0.1); color: #fa8c16; }
-.risk-medium .status-dot { background-color: #fa8c16; }
+.risk-medium {
+  background-color: rgba(250, 140, 22, 0.1);
+  color: #fa8c16;
+}
+.risk-medium .status-dot {
+  background-color: #fa8c16;
+}
 
-.risk-high { background-color: rgba(255, 77, 79, 0.1); color: #d9363e; }
-.risk-high .status-dot { background-color: #ff4d4f; }
+.risk-high {
+  background-color: rgba(255, 77, 79, 0.1);
+  color: #d9363e;
+}
+.risk-high .status-dot {
+  background-color: #ff4d4f;
+}
 
-.risk-suspended { background-color: rgba(114, 46, 209, 0.1); color: #531dab; }
-.risk-suspended .status-dot { background-color: #722ed1; }
+.risk-suspended {
+  background-color: rgba(114, 46, 209, 0.1);
+  color: #531dab;
+}
+.risk-suspended .status-dot {
+  background-color: #722ed1;
+}
 </style>

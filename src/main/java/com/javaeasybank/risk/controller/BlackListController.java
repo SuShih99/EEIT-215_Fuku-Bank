@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/blacklist")
+@RequestMapping("/api/risk/blacklist")
 public class BlackListController {
 
     private final BlackListService blackListService;

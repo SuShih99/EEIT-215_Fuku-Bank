@@ -2,6 +2,7 @@ package com.javaeasybank.risk.service;
 
 import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.risk.dto.response.ReviewTaskResponse;
+import com.javaeasybank.risk.enums.BusinessScene;
 import com.javaeasybank.risk.enums.Disposition;
 import com.javaeasybank.risk.enums.ReviewResult;
 import com.javaeasybank.risk.dto.request.ReviewDecisionRequest;
@@ -30,8 +31,13 @@ public class ReviewTaskService {
     private final CallbackService callbackService;
 
     @Transactional(readOnly = true)
-    public Page<ReviewTaskResponse> findAll(Pageable pageable) {
-        return rtRepos.findAll(pageable)
+    public Page<ReviewTaskResponse> findAll(
+            String status,
+            BusinessScene scene,
+            Integer priority,
+            Pageable pageable) {
+
+        return rtRepos.findByFilter(status, scene, priority, pageable)
                 .map(this::toResponse);
     }
 
