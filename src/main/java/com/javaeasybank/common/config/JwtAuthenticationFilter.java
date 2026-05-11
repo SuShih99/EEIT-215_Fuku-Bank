@@ -32,8 +32,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+            HttpServletResponse response,
+            FilterChain filterChain) throws ServletException, IOException {
 
         String requestPath = request.getRequestURI();
         if (!isCustomerApi(requestPath)) {
@@ -52,12 +52,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String role = jwtUtil.getRoleFromToken(token);
 
                 // 建立 Spring Security 認證物件
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                username,
-                                null,
-                                List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                        );
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        username,
+                        null,
+                        List.of(new SimpleGrantedAuthority("ROLE_" + role)));
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 // 放入 SecurityContext
@@ -70,6 +68,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private boolean isCustomerApi(String requestPath) {
         return requestPath.startsWith("/api/customer/")
-                || requestPath.startsWith("/user/");
+                || requestPath.startsWith("/user/")
+                || requestPath.startsWith("/api/loan-applications/");
     }
 }

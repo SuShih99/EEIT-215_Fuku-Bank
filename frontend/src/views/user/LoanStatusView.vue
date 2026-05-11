@@ -118,19 +118,22 @@ const LOAN_TYPE_MAP = {
 
 // ── 狀態標籤與樣式 ──
 const STATUS_MAP = {
-  PENDING_CONTACT: { label: '待聯繫',     cls: 'st-pending'  },
-  IN_REVIEW:       { label: '審核中',     cls: 'st-review'   },
-  SUBMITTED:       { label: '已送風控',   cls: 'st-submitted'},
-  APPROVED:        { label: '核准撥款',   cls: 'st-approved' },
-  REJECTED:        { label: '申請拒絕',   cls: 'st-rejected' },
-  CANCELLED:       { label: '已取消',     cls: 'st-cancelled'},
+  PENDING_CONTACT: { label: '新申請（待聯繫）', cls: 'st-pending'   },
+  IN_CONTACT:      { label: '聯繫中',           cls: 'st-contact'   },
+  PENDING_REVIEW:  { label: '審核中',            cls: 'st-review'    },
+  APPROVED:        { label: '核准撥款',          cls: 'st-approved'  },
+  REJECTED:        { label: '申請拒絕',          cls: 'st-rejected'  },
+  CANCELLED:       { label: '已取消',            cls: 'st-cancelled' },
+  DISBURSED:       { label: '已撥款',            cls: 'st-disbursed' },
+  CLOSED:          { label: '已結案',            cls: 'st-closed'    },
 }
 
 const CONTACT_MAP = {
-  NO_CONTACT:    { label: '尚未聯繫', cls: 'ct-none'    },
-  CONTACTED:     { label: '已聯繫',   cls: 'ct-ok'      },
-  UNREACHABLE:   { label: '無法聯繫', cls: 'ct-miss'    },
-  FOLLOW_UP:     { label: '待跟進',   cls: 'ct-followup'},
+  NOT_CONTACTED: { label: '尚未聯繫', cls: 'ct-none'    },
+  ATTEMPTED:     { label: '嘗試中',   cls: 'ct-try'     },
+  REACHED:       { label: '已接通',   cls: 'ct-ok'      },
+  CONFIRMED:     { label: '已確認',   cls: 'ct-confirm' },
+  DECLINED:      { label: '已放棄',   cls: 'ct-decline' },
 }
 
 function loanTypeLabel(type) { return LOAN_TYPE_MAP[type] || type }
@@ -337,12 +340,14 @@ onMounted(load)
   font-weight: 600;
   letter-spacing: 0.02em;
 }
-.st-pending   { background: rgba(166,140,0,0.10);  color: #7a6000; }
-.st-review    { background: rgba(55,100,180,0.10);  color: #2a5aad; }
-.st-submitted { background: rgba(92,107,95,0.12);   color: #3F4A42; }
-.st-approved  { background: rgba(40,150,80,0.12);   color: #1a7a40; }
-.st-rejected  { background: rgba(166,90,77,0.12);   color: #A65A4D; }
-.st-cancelled { background: rgba(130,130,130,0.10); color: #6e6e6e; }
+.st-pending   { background: rgba(166,140,0,0.10);   color: #7a6000; }
+.st-contact   { background: rgba(55,100,180,0.10);   color: #2a5aad; }
+.st-review    { background: rgba(106,80,160,0.10);   color: #5a3aad; }
+.st-approved  { background: rgba(40,150,80,0.12);    color: #1a7a40; }
+.st-rejected  { background: rgba(166,90,77,0.12);    color: #A65A4D; }
+.st-cancelled { background: rgba(130,130,130,0.10);  color: #6e6e6e; }
+.st-disbursed { background: rgba(30,160,180,0.12);   color: #107080; }
+.st-closed    { background: rgba(80,80,80,0.08);     color: #555;    }
 
 /* Info grid */
 .card-info-grid {
@@ -398,8 +403,9 @@ onMounted(load)
   font-size: 11px;
   font-weight: 600;
 }
-.ct-none     { background: rgba(130,130,130,0.08); color: #888; }
-.ct-ok       { background: rgba(40,150,80,0.10);   color: #1a7a40; }
-.ct-miss     { background: rgba(166,90,77,0.10);   color: #A65A4D; }
-.ct-followup { background: rgba(55,100,180,0.10);  color: #2a5aad; }
+.ct-none     { background: rgba(130,130,130,0.08); color: #888;    }
+.ct-try      { background: rgba(55,100,180,0.10);   color: #2a5aad; }
+.ct-ok       { background: rgba(40,150,80,0.10);    color: #1a7a40; }
+.ct-confirm  { background: rgba(140,115,85,0.12);   color: #7a6040; }
+.ct-decline  { background: rgba(166,90,77,0.10);    color: #A65A4D; }
 </style>
