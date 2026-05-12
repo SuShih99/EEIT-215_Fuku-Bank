@@ -72,11 +72,22 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
     @Override
     @Transactional
     public CustomerRespository.LoginResponse register(CustomerRespository.RegisterRequest request) {
+        String username = request.getUsername() == null ? null : request.getUsername().trim();
+        String email = request.getEmail() == null ? null : request.getEmail().trim();
+        String phone = request.getPhone() == null ? null : request.getPhone().trim();
+        String idNumber = request.getIdNumber() == null ? null : request.getIdNumber().trim();
+
         // 1. 檢查帳號是否重複
-        if (customerAuthRepository.existsByUsername(request.getUsername())) {
+        if (customerAuthRepository.existsByUsername(username)) {
             throw new BusinessException("使用者帳號已存在");
         }
-        if (customerProfileRepository.findByIdNumber(request.getIdNumber()).isPresent()) {
+        if (customerProfileRepository.findByEmail(email).isPresent()) {
+            throw new BusinessException("電子信箱已被使用");
+        }
+        if (customerProfileRepository.findByPhone(phone).isPresent()) {
+            throw new BusinessException("手機號碼已被使用");
+        }
+        if (customerProfileRepository.findByIdNumber(idNumber).isPresent()) {
             throw new BusinessException("身分證字號已存在");
         }
 
@@ -88,12 +99,12 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
         CustomerProfile profile = new CustomerProfile();
         profile.setCustomerId(customerId);
         profile.setCif(cif);
-        profile.setIdNumber(request.getIdNumber());
+        profile.setIdNumber(idNumber);
         profile.setName(request.getName());
         profile.setBirthday(request.getBirthday());
         profile.setGender(request.getGender());
-        profile.setEmail(request.getEmail());
-        profile.setPhone(request.getPhone());
+        profile.setEmail(email);
+        profile.setPhone(phone);
         profile.setAddress(request.getAddress());
         profile.setRegisteredAddress(request.getAddress());
         profile.setCurrentAddress(request.getAddress());
@@ -106,7 +117,7 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
         CustomerAuth auth = new CustomerAuth();
         auth.setAuthId(generateAlphanumeric(10));
         auth.setCustomerId(customerId);
-        auth.setUsername(request.getUsername());
+        auth.setUsername(username);
         auth.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         auth.setRole("CUSTOMER");
         auth.setStatus("PENDING"); // 註冊後預設為 PENDING
@@ -114,13 +125,13 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
         customerAuthRepository.save(auth);
 
         // 4. 發送驗證信
-        emailService.sendVerificationEmail(request.getEmail(), verificationToken);
+        emailService.sendVerificationEmail(email, verificationToken);
 
         CustomerRespository.LoginResponse response = new CustomerRespository.LoginResponse();
         response.setCustomerId(customerId);
         response.setCif(cif);
         response.setName(request.getName());
-        response.setUsername(request.getUsername());
+        response.setUsername(username);
         response.setRole("CUSTOMER");
         return response;
     }
@@ -235,8 +246,24 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
         CustomerProfile profile = customerProfileRepository.findById(customerId)
                 .orElseThrow(() -> new BusinessException("查無此客戶"));
 
-        if (request.getPhone() != null) profile.setPhone(request.getPhone());
-        if (request.getEmail() != null) profile.setEmail(request.getEmail());
+        if (request.getPhone() != null) {
+            String phone = request.getPhone().trim();
+            customerProfileRepository.findByPhone(phone)
+                    .filter(existing -> !existing.getCustomerId().equals(customerId))
+                    .ifPresent(existing -> {
+                        throw new BusinessException("手機號碼已被使用");
+                    });
+            profile.setPhone(phone);
+        }
+        if (request.getEmail() != null) {
+            String email = request.getEmail().trim();
+            customerProfileRepository.findByEmail(email)
+                    .filter(existing -> !existing.getCustomerId().equals(customerId))
+                    .ifPresent(existing -> {
+                        throw new BusinessException("電子信箱已被使用");
+                    });
+            profile.setEmail(email);
+        }
         if (request.getAddress() != null) {
             profile.setAddress(request.getAddress());
             profile.setCurrentAddress(request.getAddress());
