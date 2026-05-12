@@ -99,6 +99,12 @@
         </p>
       </section>
     </main>
+
+    <transition name="toast-fade">
+      <div v-if="toast.visible" class="jb-toast" :class="`toast-${toast.type}`">
+        {{ toast.text }}
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -111,6 +117,7 @@ import JbLogo from '@/components/JbLogo.vue'
 const router = useRouter()
 const loading = ref(false)
 const showPwd = ref(false)
+const toast = reactive({ visible: false, text: '', type: 'error', timer: null })
 
 const form = reactive({
   name: '',
@@ -123,6 +130,16 @@ const form = reactive({
   email: '',
   address: '',
 })
+
+function showToast(text, type = 'error') {
+  toast.text = text
+  toast.type = type
+  toast.visible = true
+  if (toast.timer) clearTimeout(toast.timer)
+  toast.timer = setTimeout(() => {
+    toast.visible = false
+  }, 3200)
+}
 
 async function handleRegister() {
   loading.value = true
@@ -138,10 +155,12 @@ async function handleRegister() {
       email: form.email,
       address: form.address,
     })
-    alert('註冊成功！請登入您的帳號')
-    router.push('/login')
+    showToast('註冊成功，驗證信已寄出，請先至信箱完成認證', 'success')
+    setTimeout(() => {
+      router.push('/login')
+    }, 1200)
   } catch (err) {
-    alert(err.response?.data?.message || '註冊失敗，請檢查輸入資料')
+    showToast(err.response?.data?.message || '註冊失敗，請檢查輸入資料', 'error')
   } finally {
     loading.value = false
   }
@@ -207,5 +226,43 @@ async function handleRegister() {
 @media (max-width: 600px) {
   .form-grid { grid-template-columns: 1fr; }
   .register-card { padding: var(--space-4) var(--space-3); }
+}
+
+.jb-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  min-width: min(420px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(138, 122, 98, 0.18);
+  box-shadow: 0 18px 40px rgba(63, 74, 66, 0.16);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary);
+  text-align: center;
+  z-index: 40;
+}
+
+.toast-success {
+  background: rgba(245, 250, 245, 0.94);
+  border-color: rgba(103, 125, 107, 0.28);
+}
+
+.toast-error {
+  background: rgba(255, 246, 244, 0.95);
+  border-color: rgba(181, 109, 88, 0.25);
+}
+
+.toast-fade-enter-active,
+.toast-fade-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.toast-fade-enter-from,
+.toast-fade-leave-to {
+  opacity: 0;
+  transform: translate(-50%, 10px);
 }
 </style>

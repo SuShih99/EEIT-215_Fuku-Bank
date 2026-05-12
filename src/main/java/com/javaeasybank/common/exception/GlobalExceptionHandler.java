@@ -2,9 +2,9 @@ package com.javaeasybank.common.exception;
 
 import com.javaeasybank.account.exception.AccountException;
 import com.javaeasybank.common.dto.response.ApiResponse;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -65,6 +65,16 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 攔截資料唯一鍵或完整性衝突，避免直接把 Hibernate / SQL 訊息丟給前端。
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
+        return ResponseEntity
+                .badRequest()
+                .body(ApiResponse.fail(resolveDataIntegrityMessage(e)));
+    }
+
+    /**
 
      * 攔截權限不足錯誤（角色無權限存取此 API）
      * 回傳 HTTP 403
@@ -99,11 +109,25 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.fail("伺服器錯誤: " + e.getMessage()));
     }
 
-    //風控審核任務被重複審核回傳409
-    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
-    public ResponseEntity<ApiResponse<Void>> handleOptimisticLock(
-            ObjectOptimisticLockingFailureException e) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.fail("409", "該任務已被其他人審核，請重新整理"));
+    private String resolveDataIntegrityMessage(DataIntegrityViolationException e) {
+        String message = e.getMostSpecificCause() != null
+                ? e.getMostSpecificCause().getMessage()
+                : e.getMessage();
+        String lowerMessage = message == null ? "" : message.toLowerCase();
+
+        if (lowerMessage.contains("email")) {
+            return "電子信箱已被使用";
+        }
+        if (lowerMessage.contains("phone")) {
+            return "手機號碼已被使用";
+        }
+        if (lowerMessage.contains("username")) {
+            return "使用者帳號已存在";
+        }
+        if (lowerMessage.contains("id_number")) {
+            return "身分證字號已存在";
+        }
+
+        return "資料重複或格式不符，請確認帳號、信箱、手機與身分證字號是否已被使用";
     }
 }
