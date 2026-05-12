@@ -19,12 +19,12 @@ import org.springframework.web.client.RestTemplate;
 public class LoanRiskClient {
 
     // application.properties:
-    //   risk.api.base-url=http://risk-service/api
-    //   risk.api.callback-url=http://loan-service/api/loan-callbacks
-    @Value("${risk.api.base-url}")
+    //   risk.api.base-url=http://localhost:8080/api/risk/reviews
+    //   risk.api.callback-url=http://localhost:8080/api/loan-callbacks
+    @Value("@/api/risk/reviews")
     private String riskBaseUrl;
 
-    @Value("${risk.api.callback-url}")
+    @Value("@/api/loan-callbacks")
     private String callbackBaseUrl;
 
     private final RestTemplate restTemplate;
