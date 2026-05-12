@@ -1,7 +1,8 @@
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { submitAccountApplication, getMyAccountApplications } from '@/api/accountApplication'
+import { getMyAccounts } from '@/api/customerAccount'
 
 const router = useRouter()
 
@@ -16,6 +17,15 @@ const submitError = ref('')
 // 已有申請記錄
 const existingApplications = ref([])
 const loadingApps = ref(true)
+const existingAccounts = ref([])
+const loadingAccounts = ref(true)
+
+const UI_ACCOUNT_TYPE = {
+  CHECKING_TWD: 'CHECKING_TWD',
+  CHECKING_FOREIGN: 'CHECKING_FOREIGN',
+  SUB_ACCOUNT: 'SUB_ACCOUNT',
+  TIME_DEPOSIT: 'TIME_DEPOSIT',
+}
 
 // ===== 表單資料 =====
 const form = reactive({
@@ -64,12 +74,7 @@ function validateStep(s) {
   clearErrors()
   if (s === 1) {
     if (!form.accountType) errors.accountType = '請選擇帳戶類型'
-    if (showCurrency.value && !form.currency) {
-      errors.currency = '請選擇幣別'
-    }
-    if (form.accountType === 'CHECKING_FOREIGN' && form.currency === 'TWD') {
-      errors.currency = '外幣活存不可選擇台幣'
-    }
+    if (showCurrency.value && !form.currency) errors.currency = '請選擇幣別'
   } else if (s === 2) {
     if (!form.name) errors.name = '請輸入姓名'
     if (!form.idNumber) errors.idNumber = '請輸入身分證字號'
@@ -180,13 +185,6 @@ async function handleFile(field, event) {
 }
 
 // ===== 帳戶類型選項 =====
-const accountTypes = [
-  { value: 'CHECKING_TWD', label: '台幣活期存款', desc: '日常存款與轉帳，享有基礎利率' },
-  { value: 'CHECKING_FOREIGN', label: '外幣活期存款', desc: '申請美元、日圓、歐元等外幣帳戶' },
-  { value: 'SUB_ACCOUNT', label: '子帳戶', desc: '綁定既有台幣活存，管理專用資金' },
-  { value: 'TIME_DEPOSIT', label: '定期存款', desc: '固定期限存款，享有較高利率' },
-]
-
 const currencies = [
   { value: 'TWD', label: '新台幣 TWD' },
   { value: 'USD', label: '美元 USD' },
@@ -197,7 +195,48 @@ const currencies = [
   { value: 'AUD', label: '澳幣 AUD' },
 ]
 
-const foreignCurrencies = computed(() => currencies.filter(c => c.value !== 'TWD'))
+const hasActiveTwdChecking = computed(() =>
+  existingAccounts.value.some(account =>
+    account.status === 'ACTIVE' &&
+    account.accountType === 'CHECKING' &&
+    account.currency === 'TWD'
+  )
+)
+
+const accountTypes = computed(() => {
+  const options = []
+
+  if (!hasActiveTwdChecking.value) {
+    options.push({
+      value: UI_ACCOUNT_TYPE.CHECKING_TWD,
+      label: '台幣活期存款',
+      desc: '日常存款與轉帳使用的主帳戶，開立後才能申請子帳戶',
+    })
+  }
+
+  options.push(
+    {
+      value: UI_ACCOUNT_TYPE.CHECKING_FOREIGN,
+      label: '外幣活期存款',
+      desc: '可選擇外幣幣別，支援換匯與外幣資金收付',
+    },
+    {
+      value: UI_ACCOUNT_TYPE.TIME_DEPOSIT,
+      label: '定期存款',
+      desc: '固定期限存款，可依需求選擇台幣或外幣',
+    }
+  )
+
+  if (hasActiveTwdChecking.value) {
+    options.push({
+      value: UI_ACCOUNT_TYPE.SUB_ACCOUNT,
+      label: '子帳戶',
+      desc: '綁定您的台幣活存主帳戶，方便分帳與資金管理',
+    })
+  }
+
+  return options
+})
 
 const purposeOptions = [
   { value: 'SALARY', label: '薪資轉帳' },
@@ -218,22 +257,28 @@ const fundSourceOptions = [
   { value: 'OTHER', label: '其他' },
 ]
 
-const showCurrency = computed(() => {
-  return form.accountType === 'CHECKING_FOREIGN' || form.accountType === 'TIME_DEPOSIT'
-})
+const showCurrency = computed(() =>
+  form.accountType === UI_ACCOUNT_TYPE.CHECKING_FOREIGN ||
+  form.accountType === UI_ACCOUNT_TYPE.TIME_DEPOSIT
+)
 
-const currencyOptions = computed(() => {
-  return form.accountType === 'CHECKING_FOREIGN' ? foreignCurrencies.value : currencies
+const selectableCurrencies = computed(() => {
+  if (form.accountType === UI_ACCOUNT_TYPE.CHECKING_FOREIGN) {
+    return currencies.filter(currency => currency.value !== 'TWD')
+  }
+  return currencies
 })
 
 function resolvePayloadAccountType() {
-  return form.accountType === 'CHECKING_TWD' || form.accountType === 'CHECKING_FOREIGN'
-    ? 'CHECKING'
-    : form.accountType
+  if (form.accountType === UI_ACCOUNT_TYPE.SUB_ACCOUNT) return 'SUB_ACCOUNT'
+  if (form.accountType === UI_ACCOUNT_TYPE.TIME_DEPOSIT) return 'TIME_DEPOSIT'
+  return 'CHECKING'
 }
 
 function resolvePayloadCurrency() {
-  if (form.accountType === 'CHECKING_TWD' || form.accountType === 'SUB_ACCOUNT') return 'TWD'
+  if (form.accountType === UI_ACCOUNT_TYPE.CHECKING_TWD || form.accountType === UI_ACCOUNT_TYPE.SUB_ACCOUNT) {
+    return 'TWD'
+  }
   return form.currency || 'TWD'
 }
 
@@ -294,6 +339,17 @@ async function fetchApplications() {
   }
 }
 
+async function fetchAccounts() {
+  loadingAccounts.value = true
+  try {
+    existingAccounts.value = await getMyAccounts() || []
+  } catch {
+    existingAccounts.value = []
+  } finally {
+    loadingAccounts.value = false
+  }
+}
+
 function getStatusLabel(status) {
   const map = { PENDING: '審核中', APPROVED: '已核准', REJECTED: '已駁回', CANCELLED: '已取消' }
   return map[status] || status
@@ -305,22 +361,21 @@ function getStatusClass(status) {
 }
 
 function getAccountTypeLabel(app) {
-  if (app.accountType === 'CHECKING') {
-    return app.currency === 'TWD' ? '台幣活期存款' : `${app.currency || '外幣'} 活期存款`
+  if (app.accountType === 'SUB_ACCOUNT') return '子帳戶'
+  if (app.accountType === 'TIME_DEPOSIT') {
+    return app.currency ? `${app.currency} 定期存款` : '定期存款'
   }
-  const map = {
-    TIME_DEPOSIT: '定期存款',
-    SUB_ACCOUNT: '子帳戶',
-    SAVINGS: '儲蓄存款',
+  if (app.accountType === 'CHECKING' && app.currency && app.currency !== 'TWD') {
+    return `${app.currency} 外幣活期存款`
   }
-  return map[app.accountType] || app.accountType || '-'
+  return '台幣活期存款'
 }
 
 // ===== 一鍵帶入測試資料 =====
 async function fillMockData() {
   // Step 1
-  form.accountType = 'CHECKING_TWD'
-  form.currency = ''
+  form.accountType = accountTypes.value[0]?.value || UI_ACCOUNT_TYPE.CHECKING_TWD
+  form.currency = form.accountType === UI_ACCOUNT_TYPE.CHECKING_FOREIGN ? 'USD' : 'TWD'
 
   // Step 2
   form.name = '王小明'
@@ -360,6 +415,27 @@ async function fillMockData() {
   clearErrors()
 }
 
+watch(
+  () => form.accountType,
+  (nextValue) => {
+    if (!showCurrency.value) {
+      form.currency = ''
+      return
+    }
+    if (nextValue === UI_ACCOUNT_TYPE.CHECKING_FOREIGN && form.currency === 'TWD') {
+      form.currency = ''
+    }
+  }
+)
+
+watch(accountTypes, (options) => {
+  const values = options.map(option => option.value)
+  if (!values.includes(form.accountType)) {
+    form.accountType = ''
+    form.currency = ''
+  }
+})
+
 /** 從 public 資料夾抓圖片，轉成 File 物件供 FormData 上傳 */
 async function fetchAsFile(url, fileName) {
   const res = await fetch(url)
@@ -367,7 +443,9 @@ async function fetchAsFile(url, fileName) {
   return new File([blob], fileName, { type: blob.type || 'image/png' })
 }
 
-onMounted(fetchApplications)
+onMounted(async () => {
+  await Promise.all([fetchApplications(), fetchAccounts()])
+})
 </script>
 
 <template>
@@ -403,7 +481,9 @@ onMounted(fetchApplications)
     <section v-if="step === 1" class="step-card">
       <h2 class="step-title">選擇帳戶類型</h2>
 
-      <div class="type-grid">
+      <div v-if="loadingAccounts" class="state-panel" style="margin-bottom: var(--space-4)">正在整理可申請的帳戶類型...</div>
+
+      <div v-else class="type-grid">
         <label
           v-for="t in accountTypes"
           :key="t.value"
@@ -416,19 +496,22 @@ onMounted(fetchApplications)
         </label>
       </div>
       <p v-if="errors.accountType" class="field-error">{{ errors.accountType }}</p>
+      <p v-if="!loadingAccounts && hasActiveTwdChecking" class="helper-text">
+        您已持有台幣活存主帳戶，因此本頁不再顯示台幣活存申請，並開放子帳戶申請。
+      </p>
 
       <div v-if="showCurrency" class="jb-form-item" style="margin-top: var(--space-5)">
         <label class="jb-label">幣別</label>
         <select v-model="form.currency" class="jb-select">
           <option value="" disabled>請選擇幣別</option>
-          <option v-for="c in currencyOptions" :key="c.value" :value="c.value">{{ c.label }}</option>
+          <option v-for="c in selectableCurrencies" :key="c.value" :value="c.value">{{ c.label }}</option>
         </select>
         <p v-if="errors.currency" class="field-error">{{ errors.currency }}</p>
       </div>
 
       <div class="step-actions">
         <span></span>
-        <button class="jb-btn jb-btn-primary" @click="nextStep">下一步</button>
+        <button class="jb-btn jb-btn-primary" :disabled="loadingAccounts" @click="nextStep">下一步</button>
       </div>
     </section>
 

@@ -12,6 +12,13 @@ export function customerLogin(data) {
   return api.post('/api/customer/auth/login', data)
 }
 
+// 電子郵件驗證
+export function customerVerifyEmail(token) {
+  return api.get('/api/customer/auth/verify-email', {
+    params: { token },
+  })
+}
+
 // 取得目前客戶資訊
 export function customerGetProfile() {
   return api.get('/api/customer/auth/me')

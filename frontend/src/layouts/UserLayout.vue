@@ -143,6 +143,7 @@ const menus = [
     route: null,
     children: [
       { label: '查看所有帳戶', desc: '帳戶餘額與明細總覽', route: 'user-accounts' },
+      { label: '開戶申請', desc: '申請外幣、子帳戶與其他帳戶類型', route: 'user-account-application' },
       { label: '電子存摺', desc: '帳戶封面與銀行資料', route: 'user-e-passbook' },
       { label: '查看所有交易紀錄', desc: '全帳戶交易歷史', route: 'user-transactions' },
     ],
