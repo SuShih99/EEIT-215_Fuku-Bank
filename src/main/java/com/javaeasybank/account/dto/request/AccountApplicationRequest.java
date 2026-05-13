@@ -35,6 +35,15 @@ public class AccountApplicationRequest {
     @NotNull(message = "出生日期不可為空")
     private LocalDate birthday;
 
+    @NotBlank(message = "性別不可為空")
+    private String gender;
+
+    @NotBlank(message = "電子信箱不可為空")
+    private String email;
+
+    @NotBlank(message = "通訊地址不可為空")
+    private String address;
+
     @NotBlank(message = "國籍不可為空")
     private String nationality;
 

@@ -4,7 +4,59 @@
 
     <a-spin :spinning="loading">
       <div v-if="accounts.length === 0 && !loading" class="empty-hint">
-        <a-empty description="尚無帳戶，請先完成開戶申請" />
+        <section class="empty-panel" aria-label="尚未開立帳戶">
+          <div class="empty-illustration" aria-hidden="true">
+            <svg viewBox="0 0 120 120" role="img" focusable="false">
+              <circle cx="60" cy="60" r="46" fill="rgba(232, 226, 216, 0.74)" />
+              <path
+                d="M31 42c14-9 30-10 49-2 9 4 18 4 27 1"
+                fill="none"
+                stroke="rgba(61, 70, 63, 0.74)"
+                stroke-width="3"
+                stroke-linecap="round"
+              />
+              <rect
+                x="34"
+                y="39"
+                width="52"
+                height="64"
+                rx="8"
+                fill="rgba(255, 249, 239, 0.92)"
+                stroke="rgba(198, 188, 174, 0.96)"
+                stroke-width="2"
+              />
+              <path
+                d="M46 58h28M46 70h28M46 82h20"
+                fill="none"
+                stroke="rgba(92, 107, 95, 0.58)"
+                stroke-width="3"
+                stroke-linecap="round"
+              />
+              <path
+                d="M24 90c16 8 38 8 58 2 7-2 13-2 18 1"
+                fill="none"
+                stroke="rgba(176, 84, 70, 0.42)"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </div>
+
+          <p class="empty-eyebrow">ACCOUNT SETUP</p>
+          <h3 class="empty-title">尚未開立帳戶</h3>
+          <p class="empty-description">
+            完成開戶申請後，您的帳戶餘額、交易明細與電子存摺都會在這裡整理好。
+          </p>
+
+          <div class="empty-actions">
+            <button type="button" class="empty-primary-btn" @click="goAccountApplication">
+              前往開戶申請
+            </button>
+            <button type="button" class="empty-secondary-btn" @click="goHome">
+              返回首頁
+            </button>
+          </div>
+        </section>
       </div>
 
       <!-- 幣別分類 Tabs -->
@@ -130,6 +182,14 @@ function viewTransactions(accountNumber) {
 
 function goTransfer(accountNumber) {
   router.push({ name: 'user-transfer', query: { from: accountNumber } })
+}
+
+function goAccountApplication() {
+  router.push({ name: 'user-account-application' })
+}
+
+function goHome() {
+  router.push({ name: 'user-home' })
 }
 </script>
 
@@ -487,8 +547,157 @@ function goTransfer(accountNumber) {
 
 /* --- Empty 狀態 --- */
 .empty-hint {
-  padding: var(--space-8) 0;
+  min-height: 48vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 72px 0 96px;
   text-align: center;
+}
+
+.empty-panel {
+  position: relative;
+  width: min(560px, 100%);
+  overflow: hidden;
+  padding: 42px 40px;
+  background: rgba(255, 249, 239, 0.76);
+  border: 1px solid rgba(214, 206, 195, 0.9);
+  border-radius: 18px;
+  box-shadow: 0 18px 46px rgba(63, 74, 66, 0.1);
+  backdrop-filter: blur(2px);
+}
+
+.empty-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 48px;
+  right: 48px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(92, 107, 95, 0.46),
+    transparent
+  );
+}
+
+.empty-panel::after {
+  content: '';
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  right: -88px;
+  bottom: -92px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(92, 107, 95, 0.12),
+    rgba(92, 107, 95, 0.04) 48%,
+    transparent 72%
+  );
+  pointer-events: none;
+}
+
+.empty-illustration,
+.empty-eyebrow,
+.empty-title,
+.empty-description,
+.empty-actions {
+  position: relative;
+  z-index: 1;
+}
+
+.empty-illustration {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 18px;
+}
+
+.empty-illustration svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.empty-eyebrow {
+  margin: 0 0 10px;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.empty-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+
+.empty-description {
+  max-width: 420px;
+  margin: 16px auto 0;
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.9;
+  letter-spacing: 0;
+}
+
+.empty-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.empty-primary-btn,
+.empty-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 132px;
+  min-height: 42px;
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  cursor: pointer;
+  transition: transform var(--duration) var(--ease),
+              background-color var(--duration) var(--ease),
+              border-color var(--duration) var(--ease),
+              color var(--duration) var(--ease),
+              box-shadow var(--duration) var(--ease);
+}
+
+.empty-primary-btn {
+  color: #F5F1EA;
+  background: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+.empty-primary-btn:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  box-shadow: 0 6px 16px rgba(63, 74, 66, 0.18);
+  transform: translateY(-1px);
+}
+
+.empty-secondary-btn {
+  color: var(--primary-dark);
+  background: rgba(255, 249, 239, 0.58);
+  border: 1px solid var(--border);
+}
+
+.empty-secondary-btn:hover {
+  background: rgba(234, 228, 218, 0.72);
+  border-color: rgba(92, 107, 95, 0.38);
+  transform: translateY(-1px);
 }
 
 /* --- 響應式 --- */
@@ -499,6 +708,30 @@ function goTransfer(accountNumber) {
 
   .balance-amount {
     font-size: 22px;
+  }
+
+  .empty-hint {
+    align-items: flex-start;
+    padding: 48px 0 72px;
+  }
+
+  .empty-panel {
+    padding: 32px 22px;
+    border-radius: 16px;
+  }
+
+  .empty-title {
+    font-size: 24px;
+  }
+
+  .empty-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .empty-primary-btn,
+  .empty-secondary-btn {
+    width: 100%;
   }
 }
 </style>

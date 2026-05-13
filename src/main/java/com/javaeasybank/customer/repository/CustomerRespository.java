@@ -44,6 +44,11 @@ public class CustomerRespository {
         private String latestAccountApplicationRejectReason;
         private String createdAccountNumber;
         private LocalDateTime accountApplicationSyncedAt;
+        private String avatarUrl;
+        private String status;
+        private String job;
+        private Integer annualIncome;
+        private String riskLevel;
     }
 
     // ===== 管理端：回傳客戶資訊 =====
@@ -86,6 +91,11 @@ public class CustomerRespository {
         private String latestAccountApplicationRejectReason;
         private String createdAccountNumber;
         private LocalDateTime accountApplicationSyncedAt;
+        private LocalDateTime createdAt;
+        private LocalDateTime updatedAt;
+        private String job;
+        private Integer annualIncome;
+        private String riskLevel;
     }
 
     // ===== 帳戶模組：開戶申請資料同步 =====
@@ -95,6 +105,9 @@ public class CustomerRespository {
         private String name;
         private String idNumber;
         private LocalDate birthday;
+        private String gender;
+        private String email;
+        private String address;
         private String nationality;
         private String phone;
         private String registeredAddress;

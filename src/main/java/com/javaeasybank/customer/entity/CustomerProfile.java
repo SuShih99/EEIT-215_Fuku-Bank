@@ -71,7 +71,7 @@ public class CustomerProfile {
     @Column(name = "tax_residency", length = 10)
     private String taxResidency;
 
-    @Column(name = "is_pep", nullable = false)
+    @Column(name = "is_pep", columnDefinition = "BIT NOT NULL DEFAULT 0")
     private Boolean isPep = false;
 
     @Column(name = "id_front_url", length = 255)

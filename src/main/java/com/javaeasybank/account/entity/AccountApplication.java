@@ -58,6 +58,15 @@ public class AccountApplication {
     @Column(nullable = false)
     private LocalDate birthday;
 
+    @Column(nullable = false, length = 1)
+    private String gender;
+
+    @Column(nullable = false, length = 100)
+    private String email;
+
+    @Column(nullable = false, length = 255)
+    private String address;
+
     /** 國籍（ISO 3166 國碼） */
     @Column(nullable = false, length = 10)
     private String nationality;
@@ -104,7 +113,7 @@ public class AccountApplication {
     private String taxResidency;
 
     /** PEPs 聲明：本人或家庭成員是否為重要政治性職務之人 */
-    @Column(name = "is_pep", nullable = false)
+    @Column(name = "is_pep", columnDefinition = "BIT NOT NULL DEFAULT 0")
     private Boolean isPep = false;
 
     // ===== 證件圖片 =====

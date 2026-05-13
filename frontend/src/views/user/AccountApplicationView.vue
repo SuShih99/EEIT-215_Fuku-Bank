@@ -3,6 +3,7 @@ import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { submitAccountApplication, getMyAccountApplications } from '@/api/accountApplication'
 import { getMyAccounts } from '@/api/customerAccount'
+import { customerGetProfile } from '@/api/customerAuth'
 
 const router = useRouter()
 
@@ -37,6 +38,9 @@ const form = reactive({
   name: '',
   idNumber: '',
   birthday: '',
+  gender: '',
+  email: '',
+  address: '',
   nationality: 'TW',
   phone: '',
   registeredAddress: '',
@@ -82,10 +86,16 @@ function validateStep(s) {
       errors.idNumber = '身分證字號格式不正確'
     }
     if (!form.birthday) errors.birthday = '請選擇出生日期'
+    if (!form.gender) errors.gender = '請選擇性別'
+    if (!form.email) errors.email = '請輸入電子信箱'
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      errors.email = '電子信箱格式不正確'
+    }
     if (!form.phone) errors.phone = '請輸入手機號碼'
     if (form.phone && !/^09\d{8}$/.test(form.phone)) {
       errors.phone = '手機號碼格式不正確（09xxxxxxxx）'
     }
+    if (!form.address) errors.address = '請輸入通訊地址'
     if (!form.registeredAddress) errors.registeredAddress = '請輸入戶籍地址'
     if (!form.currentAddress) errors.currentAddress = '請輸入現居地址'
   } else if (s === 3) {
@@ -114,6 +124,9 @@ function prevStep() {
 function syncAddress() {
   if (form.sameAddress) {
     form.currentAddress = form.registeredAddress
+  }
+  if (!form.address) {
+    form.address = form.currentAddress || form.registeredAddress
   }
 }
 
@@ -298,6 +311,9 @@ async function handleSubmit() {
     formData.append('customerName', form.name)
     formData.append('idNumber', form.idNumber)
     formData.append('birthday', form.birthday)
+    formData.append('gender', form.gender)
+    formData.append('email', form.email)
+    formData.append('address', form.address)
     formData.append('nationality', form.nationality)
     formData.append('phone', form.phone)
     formData.append('registeredAddress', form.registeredAddress)
@@ -350,6 +366,32 @@ async function fetchAccounts() {
   }
 }
 
+async function fetchProfile() {
+  try {
+    const res = await customerGetProfile()
+    const profile = res.data?.data || {}
+    form.name = profile.name || form.name
+    form.idNumber = profile.idNumber || form.idNumber
+    form.birthday = profile.birthday || form.birthday
+    form.gender = profile.gender || form.gender
+    form.email = profile.email || form.email
+    form.phone = profile.phone || form.phone
+    form.nationality = profile.nationality || form.nationality
+    form.registeredAddress = profile.registeredAddress || profile.address || form.registeredAddress
+    form.currentAddress = profile.currentAddress || profile.address || form.currentAddress
+    form.address = profile.address || profile.currentAddress || profile.registeredAddress || form.address
+    form.occupation = profile.occupation || form.occupation
+    form.employer = profile.employer || form.employer
+    form.estimatedMonthlyTx = profile.estimatedMonthlyTx || form.estimatedMonthlyTx
+    form.accountPurpose = profile.accountPurpose || form.accountPurpose
+    form.fundSource = profile.fundSource || form.fundSource
+    form.taxResidency = profile.taxResidency || form.taxResidency
+    form.isPep = Boolean(profile.isPep)
+  } catch {
+    // ignore profile prefill failure
+  }
+}
+
 function getStatusLabel(status) {
   const map = { PENDING: '審核中', APPROVED: '已核准', REJECTED: '已駁回', CANCELLED: '已取消' }
   return map[status] || status
@@ -381,8 +423,11 @@ async function fillMockData() {
   form.name = '王小明'
   form.idNumber = 'A123456789'
   form.birthday = '1990-06-15'
+  form.gender = 'M'
+  form.email = 'test.user@example.com'
   form.nationality = 'TW'
   form.phone = '0912345678'
+  form.address = '台北市大安區忠孝東路四段100號5樓'
   form.registeredAddress = '台北市中正區重慶南路一段122號3樓'
   form.currentAddress = '台北市大安區忠孝東路四段100號5樓'
   form.sameAddress = false
@@ -444,7 +489,7 @@ async function fetchAsFile(url, fileName) {
 }
 
 onMounted(async () => {
-  await Promise.all([fetchApplications(), fetchAccounts()])
+  await Promise.all([fetchApplications(), fetchAccounts(), fetchProfile()])
 })
 </script>
 
@@ -539,6 +584,16 @@ onMounted(async () => {
         </div>
 
         <div class="jb-form-item">
+          <label class="jb-label"><span class="jb-required">*</span> 性別</label>
+          <select v-model="form.gender" class="jb-select">
+            <option value="" disabled>請選擇性別</option>
+            <option value="M">男</option>
+            <option value="F">女</option>
+          </select>
+          <p v-if="errors.gender" class="field-error">{{ errors.gender }}</p>
+        </div>
+
+        <div class="jb-form-item">
           <label class="jb-label"><span class="jb-required">*</span> 國籍</label>
           <select v-model="form.nationality" class="jb-select">
             <option value="TW">中華民國</option>
@@ -552,6 +607,12 @@ onMounted(async () => {
           <label class="jb-label"><span class="jb-required">*</span> 手機號碼</label>
           <input v-model.trim="form.phone" class="jb-input" placeholder="0912345678" maxlength="10" />
           <p v-if="errors.phone" class="field-error">{{ errors.phone }}</p>
+        </div>
+
+        <div class="jb-form-item span-2">
+          <label class="jb-label"><span class="jb-required">*</span> 電子信箱</label>
+          <input v-model.trim="form.email" type="email" class="jb-input" placeholder="請輸入電子信箱" />
+          <p v-if="errors.email" class="field-error">{{ errors.email }}</p>
         </div>
 
         <div class="jb-form-item span-2">
@@ -575,6 +636,12 @@ onMounted(async () => {
             :disabled="form.sameAddress"
           />
           <p v-if="errors.currentAddress" class="field-error">{{ errors.currentAddress }}</p>
+        </div>
+
+        <div class="jb-form-item span-2">
+          <label class="jb-label"><span class="jb-required">*</span> 通訊地址</label>
+          <input v-model.trim="form.address" class="jb-input" placeholder="請輸入通訊地址" />
+          <p v-if="errors.address" class="field-error">{{ errors.address }}</p>
         </div>
       </div>
 

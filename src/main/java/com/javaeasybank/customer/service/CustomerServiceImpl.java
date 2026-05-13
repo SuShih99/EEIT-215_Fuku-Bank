@@ -96,22 +96,49 @@ public class CustomerServiceImpl implements CustomerService {
         CustomerProfile profile = customerProfileRepository.findById(customerId)
                 .orElseThrow(() -> new BusinessException("查無此客戶"));
 
-        // 檢查 Email 與 Phone 是否被他人使用
-        customerProfileRepository.findByEmail(request.getEmail()).ifPresent(p -> {
-            if (!p.getCustomerId().equals(customerId)) throw new BusinessException("Email 已被他人使用");
-        });
-        customerProfileRepository.findByPhone(request.getPhone()).ifPresent(p -> {
-            if (!p.getCustomerId().equals(customerId)) throw new BusinessException("電話號碼已被他人使用");
-        });
+        ensureIdNumberAvailable(customerId, request.getIdNumber());
+        ensureEmailAvailable(customerId, request.getEmail());
+        ensurePhoneAvailable(customerId, request.getPhone());
 
-        profile.setName(request.getName());
-        profile.setPhone(request.getPhone());
-        profile.setAddress(request.getAddress());
-        profile.setEmail(request.getEmail());
+        if (request.getPhone() != null && blackListService.isBlacklisted(BlacklistType.PHONE, request.getPhone())) {
+            throw new BusinessException("此電話號碼已在黑名單中，無法修改");
+        }
+
+        if (request.getIdNumber() != null) {
+            profile.setIdNumber(request.getIdNumber());
+        }
+        if (request.getName() != null) {
+            profile.setName(request.getName());
+        }
         if (request.getBirthday() != null) {
             profile.setBirthday(request.getBirthday());
         }
+        if (request.getEmail() != null) {
+            profile.setEmail(request.getEmail());
+        }
+        if (request.getPhone() != null) {
+            profile.setPhone(request.getPhone());
+        }
+        if (request.getAddress() != null) {
+            profile.setAddress(request.getAddress());
+        }
+        if (request.getStatus() != null) {
+            profile.setStatus(request.getStatus());
+        }
+        if (request.getAvatarUrl() != null) {
+            profile.setAvatarUrl(request.getAvatarUrl());
+        }
         applyOptionalApplicationFields(profile, request);
+        if (request.getJob() != null) {
+            profile.setJob(request.getJob());
+        }
+        if (request.getAnnualIncome() != null) {
+            profile.setAnnualIncome(request.getAnnualIncome());
+        }
+        if (request.getRiskLevel() != null) {
+            profile.setRiskLevel(request.getRiskLevel());
+        }
+        normalizeApplicationDerivedFields(profile);
 
         CustomerProfile saved = customerProfileRepository.save(profile);
         return convertToResponse(saved);
@@ -302,6 +329,7 @@ public class CustomerServiceImpl implements CustomerService {
                 .orElseThrow(() -> new BusinessException("查無此客戶"));
 
         ensureIdNumberAvailable(customerId, request.getIdNumber());
+        ensureEmailAvailable(customerId, request.getEmail());
         ensurePhoneAvailable(customerId, request.getPhone());
 
         if (request.getName() != null) {
@@ -313,6 +341,12 @@ public class CustomerServiceImpl implements CustomerService {
         if (request.getBirthday() != null) {
             profile.setBirthday(request.getBirthday());
         }
+        if (request.getGender() != null) {
+            profile.setGender(request.getGender());
+        }
+        if (request.getEmail() != null) {
+            profile.setEmail(request.getEmail());
+        }
         if (request.getPhone() != null) {
             profile.setPhone(request.getPhone());
         }
@@ -320,7 +354,7 @@ public class CustomerServiceImpl implements CustomerService {
         profile.setNationality(request.getNationality());
         profile.setRegisteredAddress(request.getRegisteredAddress());
         profile.setCurrentAddress(request.getCurrentAddress());
-        profile.setAddress(resolveAddress(request.getCurrentAddress(), request.getRegisteredAddress(), profile.getAddress()));
+        profile.setAddress(resolveAddress(request.getAddress(), request.getCurrentAddress(), request.getRegisteredAddress(), profile.getAddress()));
         profile.setOccupation(request.getOccupation());
         profile.setJob(request.getOccupation());
         profile.setEmployer(request.getEmployer());
@@ -424,7 +458,21 @@ public class CustomerServiceImpl implements CustomerService {
         });
     }
 
-    private String resolveAddress(String currentAddress, String registeredAddress, String fallback) {
+    private void ensureEmailAvailable(String customerId, String email) {
+        if (email == null) {
+            return;
+        }
+        customerProfileRepository.findByEmail(email).ifPresent(profile -> {
+            if (!profile.getCustomerId().equals(customerId)) {
+                throw new BusinessException("Email 已被他人使用");
+            }
+        });
+    }
+
+    private String resolveAddress(String address, String currentAddress, String registeredAddress, String fallback) {
+        if (address != null && !address.isBlank()) {
+            return address;
+        }
         if (currentAddress != null && !currentAddress.isBlank()) {
             return currentAddress;
         }

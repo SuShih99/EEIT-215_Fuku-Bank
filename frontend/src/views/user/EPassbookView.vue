@@ -13,23 +13,78 @@
       <p>帳戶資料與存摺封面資訊</p>
       <div class="account-select">
         <span>選擇帳戶</span>
-        <a-select
-          v-model:value="selectedAccountNumber"
-          :loading="loading"
-          placeholder="請選擇帳戶"
-          style="width: 100%"
-        >
-          <a-select-option v-for="account in passbookAccounts" :key="account.accountNumber" :value="account.accountNumber">
-            {{ accountOptionLabel(account) }}
-          </a-select-option>
-        </a-select>
+        <div class="account-select-control" :class="{ empty: !passbookAccounts.length }">
+          <select
+            v-if="passbookAccounts.length"
+            v-model="selectedAccountNumber"
+            class="account-native-select"
+            :disabled="loading"
+          >
+            <option disabled value="">請選擇帳戶</option>
+            <option v-for="account in passbookAccounts" :key="account.accountNumber" :value="account.accountNumber">
+              {{ accountOptionLabel(account) }}
+            </option>
+          </select>
+          <div v-else class="account-empty-control" aria-disabled="true">
+            <strong>尚無可選帳戶</strong>
+            <small>完成開戶後即可產生電子存摺</small>
+          </div>
+        </div>
       </div>
     </section>
 
-    <a-spin :spinning="loading">
-      <a-empty v-if="!selectedAccount && !loading" description="尚無可顯示的帳戶" />
+    <div class="passbook-body">
+      <section v-if="loading" class="passbook-loading" aria-label="電子存摺資料載入中">
+        <span class="loading-brush" aria-hidden="true"></span>
+        <strong>資料整理中</strong>
+      </section>
 
-      <section v-else class="passbook-cover" aria-label="電子存摺封面">
+      <section v-else-if="!selectedAccount" class="passbook-empty" aria-label="尚無可顯示的帳戶">
+        <div class="passbook-empty-visual" aria-hidden="true">
+          <svg viewBox="0 0 132 132" role="img" focusable="false">
+            <circle cx="66" cy="66" r="48" fill="rgba(232, 226, 216, 0.76)" />
+            <path
+              d="M31 48c15-11 37-11 62 0 7 3 14 3 21 0"
+              fill="none"
+              stroke="rgba(61, 70, 63, 0.72)"
+              stroke-width="3"
+              stroke-linecap="round"
+            />
+            <rect
+              x="39"
+              y="45"
+              width="56"
+              height="66"
+              rx="8"
+              fill="rgba(255, 249, 239, 0.94)"
+              stroke="rgba(198, 188, 174, 0.98)"
+              stroke-width="2"
+            />
+            <path
+              d="M52 66h28M52 79h28M52 92h20"
+              fill="none"
+              stroke="rgba(92, 107, 95, 0.58)"
+              stroke-width="3"
+              stroke-linecap="round"
+            />
+            <path
+              d="M27 102c17 8 40 8 62 2 8-2 14-2 20 1"
+              fill="none"
+              stroke="rgba(176, 84, 70, 0.42)"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
+        </div>
+        <p class="passbook-empty-kicker">E-PASSBOOK</p>
+        <h2>尚無可顯示的帳戶</h2>
+        <p>完成開戶申請後，電子存摺封面與帳戶資料會在這裡生成。</p>
+        <button type="button" class="passbook-empty-btn" @click="$router.push({ name: 'user-account-application' })">
+          前往開戶申請
+        </button>
+      </section>
+
+      <section v-else-if="selectedAccount" class="passbook-cover" aria-label="電子存摺封面">
         <div class="brand-block">
           <img src="/logo.png" alt="JAVA_BANK" class="brand-mark" />
           <div>
@@ -79,7 +134,7 @@
         <p class="cover-note">本電子存摺僅供參考，實際帳戶資訊以本行系統資料為準。</p>
         <div class="seal" aria-hidden="true">爪哇<br />銀行</div>
       </section>
-    </a-spin>
+    </div>
 
     <div class="passbook-actions" v-if="selectedAccount">
       <button class="action-btn primary" :disabled="pdfLoading" @click="downloadPdf">
@@ -311,10 +366,254 @@ async function copyAccount() {
   text-align: left;
 }
 
-.account-select span {
+.account-select > span {
   color: var(--text-secondary);
   font-size: 14px;
   white-space: nowrap;
+}
+
+.account-select-control {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.account-select-control:not(.empty)::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid var(--text-secondary);
+  border-bottom: 1.5px solid var(--text-secondary);
+  transform: translateY(-66%) rotate(45deg);
+  pointer-events: none;
+}
+
+.account-native-select {
+  width: 100%;
+  min-height: 42px;
+  appearance: none;
+  padding: 0 42px 0 16px;
+  color: var(--text-primary);
+  background:
+    linear-gradient(180deg, rgba(255, 249, 239, 0.92), rgba(249, 244, 235, 0.78)),
+    url('/washi-texture.png');
+  background-size: auto, 240px 240px;
+  border: 1px solid rgba(198, 188, 174, 0.92);
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  letter-spacing: 0;
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--duration) var(--ease),
+              box-shadow var(--duration) var(--ease),
+              background-color var(--duration) var(--ease);
+}
+
+.account-native-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(92, 107, 95, 0.16);
+}
+
+.account-native-select:disabled {
+  color: var(--text-disabled);
+  cursor: wait;
+}
+
+.account-empty-control {
+  min-height: 46px;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  padding: 7px 16px;
+  color: var(--text-secondary);
+  background:
+    linear-gradient(180deg, rgba(255, 249, 239, 0.9), rgba(249, 244, 235, 0.76)),
+    url('/washi-texture.png');
+  background-size: auto, 240px 240px;
+  border: 1px solid rgba(198, 188, 174, 0.92);
+  border-radius: 8px;
+}
+
+.account-empty-control strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.account-empty-control small {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.passbook-loading {
+  width: min(420px, 100%);
+  min-height: 180px;
+  margin: 28px auto 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 14px;
+  color: var(--text-secondary);
+  background: rgba(255, 249, 239, 0.58);
+  border: 1px solid rgba(214, 206, 195, 0.72);
+  border-radius: 16px;
+  backdrop-filter: blur(2px);
+}
+
+.passbook-loading strong {
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
+.loading-brush {
+  width: 72px;
+  height: 18px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(92, 107, 95, 0.34), transparent);
+  animation: brushLoading 1.2s ease-in-out infinite;
+}
+
+@keyframes brushLoading {
+  0%, 100% {
+    opacity: 0.38;
+    transform: scaleX(0.72);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+.passbook-empty {
+  position: relative;
+  width: min(560px, 100%);
+  min-height: 330px;
+  margin: 18px auto 0;
+  overflow: hidden;
+  padding: 42px 40px;
+  text-align: center;
+  background:
+    linear-gradient(145deg, rgba(255, 249, 239, 0.78), rgba(249, 244, 235, 0.66)),
+    url('/washi-texture.png');
+  background-size: auto, 280px 280px;
+  border: 1px solid rgba(214, 206, 195, 0.9);
+  border-radius: 18px;
+  box-shadow: 0 18px 46px rgba(63, 74, 66, 0.1);
+  backdrop-filter: blur(2px);
+}
+
+.passbook-empty::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 48px;
+  right: 48px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(92, 107, 95, 0.46), transparent);
+}
+
+.passbook-empty::after {
+  content: '';
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  right: -98px;
+  bottom: -108px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(92, 107, 95, 0.12),
+    rgba(92, 107, 95, 0.04) 48%,
+    transparent 72%
+  );
+  pointer-events: none;
+}
+
+.passbook-empty-visual,
+.passbook-empty-kicker,
+.passbook-empty h2,
+.passbook-empty p,
+.passbook-empty-btn {
+  position: relative;
+  z-index: 1;
+}
+
+.passbook-empty-visual {
+  width: 104px;
+  height: 104px;
+  margin: 0 auto 12px;
+}
+
+.passbook-empty-visual svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.passbook-empty-kicker {
+  margin: 0 0 8px;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.passbook-empty h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0;
+}
+
+.passbook-empty p:not(.passbook-empty-kicker) {
+  max-width: 410px;
+  margin: 14px auto 0;
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.9;
+  letter-spacing: 0;
+}
+
+.passbook-empty-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 136px;
+  min-height: 42px;
+  margin-top: 26px;
+  padding: 8px 18px;
+  color: #F5F1EA;
+  background: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  cursor: pointer;
+  transition: transform var(--duration) var(--ease),
+              background-color var(--duration) var(--ease),
+              border-color var(--duration) var(--ease),
+              box-shadow var(--duration) var(--ease);
+}
+
+.passbook-empty-btn:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  box-shadow: 0 6px 16px rgba(63, 74, 66, 0.18);
+  transform: translateY(-1px);
 }
 
 .passbook-cover {
@@ -533,6 +832,20 @@ async function copyAccount() {
   .account-select {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+
+  .passbook-empty {
+    min-height: 0;
+    padding: 32px 22px;
+    border-radius: 16px;
+  }
+
+  .passbook-empty h2 {
+    font-size: 24px;
+  }
+
+  .passbook-empty-btn {
+    width: 100%;
   }
 
   .passbook-cover {

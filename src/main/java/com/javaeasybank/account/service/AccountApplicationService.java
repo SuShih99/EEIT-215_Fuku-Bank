@@ -106,6 +106,9 @@ public class AccountApplicationService {
         app.setName(request.getCustomerName());
         app.setIdNumber(request.getIdNumber());
         app.setBirthday(request.getBirthday());
+        app.setGender(request.getGender());
+        app.setEmail(request.getEmail());
+        app.setAddress(request.getAddress());
         app.setNationality(request.getNationality());
         app.setPhone(request.getPhone());
         app.setRegisteredAddress(request.getRegisteredAddress());
@@ -335,6 +338,9 @@ public class AccountApplicationService {
         request.setName(app.getName());
         request.setIdNumber(app.getIdNumber());
         request.setBirthday(app.getBirthday());
+        request.setGender(app.getGender());
+        request.setEmail(app.getEmail());
+        request.setAddress(app.getAddress());
         request.setNationality(app.getNationality());
         request.setPhone(app.getPhone());
         request.setRegisteredAddress(app.getRegisteredAddress());

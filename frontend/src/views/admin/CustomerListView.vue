@@ -34,6 +34,14 @@
       :locale="{ triggerDesc: '點擊降冪排序', triggerAsc: '點擊升冪排序', cancelSort: '取消排序' }"
       @resizeColumn="handleResizeColumn"
     >
+      <template #emptyText>
+        <div class="customer-empty-state">
+          <div class="customer-empty-mark" aria-hidden="true"></div>
+          <strong>{{ keyword ? '查無符合條件的客戶' : '目前尚無客戶資料' }}</strong>
+          <span>{{ keyword ? '請調整關鍵字後重新查詢。' : '建立客戶後，資料會顯示在這裡。' }}</span>
+        </div>
+      </template>
+
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'name'">
           <div class="emp-name-cell">
@@ -63,7 +71,7 @@
             <a-tag :color="record.isPep ? 'red' : 'green'">
               PEP {{ record.isPep ? '是' : '否' }}
             </a-tag>
-            <span class="secondary-text">{{ displayValue(record.taxResidency) }}</span>
+            <span class="secondary-text">{{ displayCountry(record.taxResidency) }}</span>
           </div>
         </template>
         <template v-else-if="column.key === 'latestApplication'">
@@ -115,7 +123,7 @@
             <dl>
               <div>
                 <dt>國籍</dt>
-                <dd>{{ displayValue(record.nationality) }}</dd>
+                <dd>{{ displayCountry(record.nationality) }}</dd>
               </div>
               <div>
                 <dt>生日</dt>
@@ -144,12 +152,24 @@
                 <dd>{{ displayValue(record.occupation) }}</dd>
               </div>
               <div>
+                <dt>風控職業</dt>
+                <dd>{{ displayValue(record.job) }}</dd>
+              </div>
+              <div>
                 <dt>任職機構</dt>
                 <dd>{{ displayValue(record.employer) }}</dd>
               </div>
               <div>
+                <dt>年收入</dt>
+                <dd>{{ formatAnnualIncome(record.annualIncome) }}</dd>
+              </div>
+              <div>
                 <dt>預估月交易量</dt>
                 <dd>{{ formatMonthlyTx(record.estimatedMonthlyTx) }}</dd>
+              </div>
+              <div>
+                <dt>風險等級</dt>
+                <dd>{{ displayValue(record.riskLevel) }}</dd>
               </div>
               <div>
                 <dt>開戶目的</dt>
@@ -161,7 +181,7 @@
               </div>
               <div>
                 <dt>稅務居民</dt>
-                <dd>{{ displayValue(record.taxResidency) }}</dd>
+                <dd>{{ displayCountry(record.taxResidency) }}</dd>
               </div>
             </dl>
           </section>
@@ -215,46 +235,209 @@
       </template>
     </a-table>
 
-    <!-- 編輯 Modal（僅修改聯絡資訊）-->
+    <!-- 編輯 Modal -->
     <a-modal
       v-model:open="showEditModal"
       title="編輯客戶資料"
+      :width="920"
       @ok="handleSubmitEdit"
       :confirm-loading="submitLoading"
       @cancel="resetEditForm"
       ok-text="儲存變更"
       cancel-text="取消"
     >
-      <a-form layout="vertical">
-        <a-form-item label="身分證字號">
-          <a-input :value="editForm.idNumber" disabled />
-        </a-form-item>
-        <a-form-item label="姓名">
-          <a-input v-model:value="editForm.name" placeholder="請輸入姓名" />
-        </a-form-item>
-        <a-form-item label="生日">
-          <a-date-picker
-            v-model:value="editForm.birthday"
-            style="width: 100%"
-            value-format="YYYY-MM-DD"
-            placeholder="請選擇生日"
-          />
-        </a-form-item>
-        <a-form-item label="性別">
-          <a-select v-model:value="editForm.gender" placeholder="請選擇性別">
-            <a-select-option value="M">男</a-select-option>
-            <a-select-option value="F">女</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item label="Email">
-          <a-input v-model:value="editForm.email" placeholder="請輸入 Email" />
-        </a-form-item>
-        <a-form-item label="電話">
-          <a-input v-model:value="editForm.phone" placeholder="請輸入電話" />
-        </a-form-item>
-        <a-form-item label="地址">
-          <a-input v-model:value="editForm.address" placeholder="請輸入地址" />
-        </a-form-item>
+      <a-form layout="vertical" class="customer-edit-form">
+        <section class="edit-section">
+          <h4>識別資料</h4>
+          <div class="edit-grid">
+            <a-form-item label="Customer ID">
+              <a-input :value="editForm.customerId" disabled />
+            </a-form-item>
+            <a-form-item label="CIF">
+              <a-input :value="editForm.cif" disabled />
+            </a-form-item>
+            <a-form-item label="身分證字號">
+              <a-input v-model:value="editForm.idNumber" placeholder="請輸入身分證字號" />
+            </a-form-item>
+            <a-form-item label="姓名">
+              <a-input v-model:value="editForm.name" placeholder="請輸入姓名" />
+            </a-form-item>
+            <a-form-item label="生日">
+              <a-date-picker
+                v-model:value="editForm.birthday"
+                style="width: 100%"
+                value-format="YYYY-MM-DD"
+                placeholder="請選擇生日"
+              />
+            </a-form-item>
+            <a-form-item label="性別">
+              <a-input :value="genderMap[editForm.gender] || displayValue(editForm.gender)" disabled />
+            </a-form-item>
+            <a-form-item label="顧客狀態">
+              <a-select v-model:value="editForm.status" placeholder="請選擇狀態">
+                <a-select-option value="ACTIVE">正常</a-select-option>
+                <a-select-option value="INACTIVE">停用</a-select-option>
+                <a-select-option value="DEACTIVATED">已停用</a-select-option>
+                <a-select-option value="PENDING">待審核</a-select-option>
+                <a-select-option value="FROZEN">凍結</a-select-option>
+              </a-select>
+            </a-form-item>
+            <a-form-item label="大頭照 URL">
+              <a-input v-model:value="editForm.avatarUrl" placeholder="請輸入大頭照 URL" />
+            </a-form-item>
+          </div>
+        </section>
+
+        <section class="edit-section">
+          <h4>聯絡與地址</h4>
+          <div class="edit-grid">
+            <a-form-item label="Email">
+              <a-input v-model:value="editForm.email" placeholder="請輸入 Email" />
+            </a-form-item>
+            <a-form-item label="電話">
+              <a-input v-model:value="editForm.phone" placeholder="請輸入電話" />
+            </a-form-item>
+            <a-form-item label="國籍">
+              <a-select v-model:value="editForm.nationality" placeholder="請選擇國籍" allow-clear>
+                <a-select-option v-for="option in countryOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+            <a-form-item label="稅務居民">
+              <a-select v-model:value="editForm.taxResidency" placeholder="請選擇稅務居民" allow-clear>
+                <a-select-option v-for="option in countryOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+            <a-form-item label="通訊地址" class="full-width">
+              <a-input v-model:value="editForm.address" placeholder="請輸入通訊地址" />
+            </a-form-item>
+            <a-form-item label="戶籍地址" class="full-width">
+              <a-input v-model:value="editForm.registeredAddress" placeholder="請輸入戶籍地址" />
+            </a-form-item>
+            <a-form-item label="現居地址" class="full-width">
+              <a-input v-model:value="editForm.currentAddress" placeholder="請輸入現居地址" />
+            </a-form-item>
+          </div>
+        </section>
+
+        <section class="edit-section">
+          <h4>職業與法遵</h4>
+          <div class="edit-grid">
+            <a-form-item label="職業">
+              <a-input v-model:value="editForm.occupation" placeholder="請輸入職業" />
+            </a-form-item>
+            <a-form-item label="Job / 風控職業">
+              <a-input v-model:value="editForm.job" placeholder="請輸入風控職業欄位" />
+            </a-form-item>
+            <a-form-item label="任職機構">
+              <a-input v-model:value="editForm.employer" placeholder="請輸入任職機構" />
+            </a-form-item>
+            <a-form-item label="預估月交易量（萬元）">
+              <a-input-number v-model:value="editForm.estimatedMonthlyTx" style="width: 100%" :min="0" />
+            </a-form-item>
+            <a-form-item label="年收入（萬元）">
+              <a-select v-model:value="editForm.annualIncome" placeholder="請選擇年收入級距" allow-clear>
+                <a-select-option v-for="option in annualIncomeOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+            <a-form-item label="開戶目的">
+              <a-select v-model:value="editForm.accountPurpose" placeholder="請選擇開戶目的" allow-clear>
+                <a-select-option v-for="(label, value) in accountPurposeMap" :key="value" :value="value">
+                  {{ label }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+            <a-form-item label="資金來源">
+              <a-select v-model:value="editForm.fundSource" placeholder="請選擇資金來源" allow-clear>
+                <a-select-option v-for="(label, value) in fundSourceMap" :key="value" :value="value">
+                  {{ label }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
+            <a-form-item label="風險等級">
+              <a-select v-model:value="editForm.riskLevel" placeholder="請選擇風險等級" allow-clear>
+                <a-select-option value="LOW">LOW</a-select-option>
+                <a-select-option value="MEDIUM">MEDIUM</a-select-option>
+                <a-select-option value="HIGH">HIGH</a-select-option>
+              </a-select>
+            </a-form-item>
+            <a-form-item label="PEP">
+              <a-switch v-model:checked="editForm.isPep" checked-children="是" un-checked-children="否" />
+            </a-form-item>
+          </div>
+        </section>
+
+        <section class="edit-section">
+          <h4>證件與開戶同步資料</h4>
+          <div class="document-upload-grid">
+            <div v-for="doc in documentFields" :key="doc.field" class="document-upload-card">
+              <div class="document-preview">
+                <img v-if="documentPreviewUrl(doc.field)" :src="documentPreviewUrl(doc.field)" :alt="doc.label" />
+                <div v-else class="document-placeholder">
+                  <span></span>
+                </div>
+              </div>
+              <div class="document-meta">
+                <strong>{{ doc.label }}</strong>
+                <small>{{ documentFileNames[doc.field] || documentPathLabel(editForm[doc.field]) }}</small>
+              </div>
+              <label class="document-upload-btn">
+                選擇檔案
+                <input type="file" accept="image/jpeg,image/png" @change="handleDocumentFile(doc.field, $event)" />
+              </label>
+              <a-button v-if="editForm[doc.field]" type="link" size="small" @click="openDocument(editForm[doc.field])">
+                檢視目前檔案
+              </a-button>
+            </div>
+          </div>
+
+          <div class="edit-grid">
+            <a-form-item label="最近申請 ID">
+              <a-input :value="displayValue(editForm.latestAccountApplicationId)" disabled />
+            </a-form-item>
+            <a-form-item label="最近申請編號">
+              <a-input :value="displayValue(editForm.latestAccountApplicationNo)" disabled />
+            </a-form-item>
+            <a-form-item label="最近申請狀態">
+              <a-input :value="applicationStatusMap[editForm.latestAccountApplicationStatus] || displayValue(editForm.latestAccountApplicationStatus)" disabled />
+            </a-form-item>
+            <a-form-item label="最近帳戶類型">
+              <a-input :value="accountTypeMap[editForm.latestAppliedAccountType] || displayValue(editForm.latestAppliedAccountType)" disabled />
+            </a-form-item>
+            <a-form-item label="最近申請幣別">
+              <a-input :value="displayValue(editForm.latestAppliedCurrency)" disabled />
+            </a-form-item>
+            <a-form-item label="最近風險標記">
+              <a-input :value="riskFlagMap[editForm.latestAccountApplicationRiskFlag] || displayValue(editForm.latestAccountApplicationRiskFlag)" disabled />
+            </a-form-item>
+            <a-form-item label="建立帳號">
+              <a-input :value="displayValue(editForm.createdAccountNumber)" disabled />
+            </a-form-item>
+            <a-form-item label="審核時間">
+              <a-input :value="displayValue(editForm.latestAccountApplicationReviewedAt)" disabled />
+            </a-form-item>
+            <a-form-item label="審核人員">
+              <a-input :value="displayValue(editForm.latestAccountApplicationReviewedBy)" disabled />
+            </a-form-item>
+            <a-form-item label="駁回/補件原因" class="full-width">
+              <a-textarea :value="displayValue(editForm.latestAccountApplicationRejectReason)" disabled :rows="2" />
+            </a-form-item>
+            <a-form-item label="同步時間">
+              <a-input :value="displayValue(editForm.accountApplicationSyncedAt)" disabled />
+            </a-form-item>
+            <a-form-item label="建立時間">
+              <a-input :value="displayValue(editForm.createdAt)" disabled />
+            </a-form-item>
+            <a-form-item label="更新時間">
+              <a-input :value="displayValue(editForm.updatedAt)" disabled />
+            </a-form-item>
+          </div>
+        </section>
       </a-form>
     </a-modal>
   </div>
@@ -265,11 +448,13 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
 import { SearchOutlined } from '@ant-design/icons-vue'
+import { BASE_URL } from '@/api/axios'
 import {
   getCustomers,
   updateCustomer,
   deactivateCustomer,
   activateCustomer,
+  uploadCustomerDocument,
 } from '@/api/customer'
 
 const router = useRouter()
@@ -286,6 +471,41 @@ const genderMap = {
   M: '男',
   F: '女',
 }
+
+const countryOptions = [
+  { value: 'TW', label: '中華民國（TW）' },
+  { value: 'US', label: '美國（US）' },
+  { value: 'JP', label: '日本（JP）' },
+  { value: 'CN', label: '中國（CN）' },
+  { value: 'HK', label: '香港（HK）' },
+  { value: 'MO', label: '澳門（MO）' },
+  { value: 'KR', label: '韓國（KR）' },
+  { value: 'SG', label: '新加坡（SG）' },
+  { value: 'MY', label: '馬來西亞（MY）' },
+  { value: 'TH', label: '泰國（TH）' },
+  { value: 'VN', label: '越南（VN）' },
+  { value: 'PH', label: '菲律賓（PH）' },
+  { value: 'ID', label: '印尼（ID）' },
+  { value: 'AU', label: '澳洲（AU）' },
+  { value: 'CA', label: '加拿大（CA）' },
+  { value: 'GB', label: '英國（GB）' },
+  { value: 'DE', label: '德國（DE）' },
+  { value: 'FR', label: '法國（FR）' },
+  { value: 'OTHER', label: '其他（OTHER）' },
+]
+
+const countryMap = Object.fromEntries(countryOptions.map(option => [option.value, option.label]))
+
+const annualIncomeOptions = [
+  { value: 50, label: '50 萬元以下' },
+  { value: 100, label: '51 - 100 萬元' },
+  { value: 200, label: '101 - 200 萬元' },
+  { value: 500, label: '201 - 500 萬元' },
+  { value: 1000, label: '501 - 1000 萬元' },
+  { value: 1001, label: '1001 萬元以上' },
+]
+
+const annualIncomeMap = Object.fromEntries(annualIncomeOptions.map(option => [option.value, option.label]))
 
 const applicationStatusMap = {
   PENDING: '待審核',
@@ -396,6 +616,27 @@ function formatMonthlyTx(value) {
   return `${value} 萬元`
 }
 
+function formatAnnualIncome(value) {
+  if (value === null || value === undefined || value === '') return '-'
+  return annualIncomeMap[value] || `${value} 萬元`
+}
+
+function displayCountry(value) {
+  return countryMap[value] || displayValue(value)
+}
+
+function normalizeAnnualIncomeOption(value) {
+  if (value === null || value === undefined || value === '') return undefined
+  const amount = Number(value)
+  if (Number.isNaN(amount)) return undefined
+  if (amount <= 50) return 50
+  if (amount <= 100) return 100
+  if (amount <= 200) return 200
+  if (amount <= 500) return 500
+  if (amount <= 1000) return 1000
+  return 1001
+}
+
 function applicationStatusClass(status) {
   return String(status || 'none').toLowerCase().replace('_', '-')
 }
@@ -407,50 +648,160 @@ const showEditModal = ref(false)
 const submitLoading = ref(false)
 const editingCustomerId = ref('')
 
-const editForm = reactive({
-  idNumber: '',
-  name: '',
-  birthday: null,
-  gender: undefined,
-  email: '',
-  phone: '',
-  address: '',
+const documentFields = [
+  { field: 'idFrontUrl', label: '身分證正面' },
+  { field: 'idBackUrl', label: '身分證反面' },
+  { field: 'secondIdUrl', label: '第二證件' },
+]
+
+const documentFiles = reactive({
+  idFrontUrl: null,
+  idBackUrl: null,
+  secondIdUrl: null,
 })
 
+const documentFileNames = reactive({
+  idFrontUrl: '',
+  idBackUrl: '',
+  secondIdUrl: '',
+})
+
+const documentPreviewUrls = reactive({
+  idFrontUrl: '',
+  idBackUrl: '',
+  secondIdUrl: '',
+})
+
+function createEmptyEditForm() {
+  return {
+    customerId: '',
+    cif: '',
+    idNumber: '',
+    name: '',
+    birthday: null,
+    gender: undefined,
+    email: '',
+    phone: '',
+    address: '',
+    nationality: '',
+    registeredAddress: '',
+    currentAddress: '',
+    occupation: '',
+    employer: '',
+    estimatedMonthlyTx: null,
+    accountPurpose: undefined,
+    fundSource: undefined,
+    taxResidency: '',
+    isPep: false,
+    idFrontUrl: '',
+    idBackUrl: '',
+    secondIdUrl: '',
+    latestAccountApplicationId: null,
+    latestAccountApplicationNo: '',
+    latestAppliedAccountType: '',
+    latestAppliedCurrency: '',
+    latestAccountApplicationStatus: '',
+    latestAccountApplicationRiskFlag: '',
+    latestAccountApplicationReviewedAt: '',
+    latestAccountApplicationReviewedBy: '',
+    latestAccountApplicationRejectReason: '',
+    createdAccountNumber: '',
+    accountApplicationSyncedAt: '',
+    avatarUrl: '',
+    status: 'ACTIVE',
+    createdAt: '',
+    updatedAt: '',
+    job: '',
+    annualIncome: null,
+    riskLevel: undefined,
+  }
+}
+
+const editForm = reactive(createEmptyEditForm())
+
 function resetEditForm() {
-  editForm.idNumber = ''
-  editForm.name = ''
-  editForm.birthday = null
-  editForm.gender = undefined
-  editForm.email = ''
-  editForm.phone = ''
-  editForm.address = ''
+  Object.assign(editForm, createEmptyEditForm())
+  clearDocumentSelections()
   editingCustomerId.value = ''
 }
 
 function openEditModal(record) {
+  clearDocumentSelections()
   editingCustomerId.value = record.customerId
-  editForm.idNumber = record.idNumber
-  editForm.name = record.name
-  editForm.birthday = record.birthday || null
-  editForm.gender = record.gender
-  editForm.email = record.email
-  editForm.phone = record.phone
-  editForm.address = record.address
+  Object.assign(editForm, createEmptyEditForm(), {
+    customerId: record.customerId || '',
+    cif: record.cif || '',
+    idNumber: record.idNumber || '',
+    name: record.name || '',
+    birthday: record.birthday || null,
+    gender: record.gender || undefined,
+    email: record.email || '',
+    phone: record.phone || '',
+    address: record.address || '',
+    nationality: record.nationality || '',
+    registeredAddress: record.registeredAddress || '',
+    currentAddress: record.currentAddress || '',
+    occupation: record.occupation || '',
+    employer: record.employer || '',
+    estimatedMonthlyTx: record.estimatedMonthlyTx ?? null,
+    accountPurpose: record.accountPurpose || undefined,
+    fundSource: record.fundSource || undefined,
+    taxResidency: record.taxResidency || '',
+    isPep: Boolean(record.isPep),
+    idFrontUrl: record.idFrontUrl || '',
+    idBackUrl: record.idBackUrl || '',
+    secondIdUrl: record.secondIdUrl || '',
+    latestAccountApplicationId: record.latestAccountApplicationId ?? null,
+    latestAccountApplicationNo: record.latestAccountApplicationNo || '',
+    latestAppliedAccountType: record.latestAppliedAccountType || '',
+    latestAppliedCurrency: record.latestAppliedCurrency || '',
+    latestAccountApplicationStatus: record.latestAccountApplicationStatus || '',
+    latestAccountApplicationRiskFlag: record.latestAccountApplicationRiskFlag || '',
+    latestAccountApplicationReviewedAt: record.latestAccountApplicationReviewedAt || '',
+    latestAccountApplicationReviewedBy: record.latestAccountApplicationReviewedBy || '',
+    latestAccountApplicationRejectReason: record.latestAccountApplicationRejectReason || '',
+    createdAccountNumber: record.createdAccountNumber || '',
+    accountApplicationSyncedAt: record.accountApplicationSyncedAt || '',
+    avatarUrl: record.avatarUrl || '',
+    status: record.status || 'ACTIVE',
+    createdAt: record.createdAt || '',
+    updatedAt: record.updatedAt || '',
+    job: record.job || '',
+    annualIncome: normalizeAnnualIncomeOption(record.annualIncome),
+    riskLevel: record.riskLevel || undefined,
+  })
   showEditModal.value = true
 }
 
 async function handleSubmitEdit() {
   submitLoading.value = true
   try {
+    await uploadPendingDocuments()
     await updateCustomer(editingCustomerId.value, {
       idNumber: editForm.idNumber,
       name: editForm.name,
       birthday: editForm.birthday,
-      gender: editForm.gender,
       email: editForm.email,
       phone: editForm.phone,
       address: editForm.address,
+      nationality: editForm.nationality,
+      registeredAddress: editForm.registeredAddress,
+      currentAddress: editForm.currentAddress,
+      occupation: editForm.occupation,
+      employer: editForm.employer,
+      estimatedMonthlyTx: editForm.estimatedMonthlyTx,
+      accountPurpose: editForm.accountPurpose,
+      fundSource: editForm.fundSource,
+      taxResidency: editForm.taxResidency,
+      isPep: editForm.isPep,
+      idFrontUrl: editForm.idFrontUrl,
+      idBackUrl: editForm.idBackUrl,
+      secondIdUrl: editForm.secondIdUrl,
+      avatarUrl: editForm.avatarUrl,
+      status: editForm.status,
+      job: editForm.job,
+      annualIncome: editForm.annualIncome,
+      riskLevel: editForm.riskLevel,
     })
     message.success('客戶資料已更新')
     showEditModal.value = false
@@ -461,6 +812,73 @@ async function handleSubmitEdit() {
   } finally {
     submitLoading.value = false
   }
+}
+
+function clearDocumentSelections() {
+  documentFields.forEach(({ field }) => {
+    if (documentPreviewUrls[field]) {
+      URL.revokeObjectURL(documentPreviewUrls[field])
+    }
+    documentFiles[field] = null
+    documentFileNames[field] = ''
+    documentPreviewUrls[field] = ''
+  })
+}
+
+function handleDocumentFile(field, event) {
+  const file = event.target.files?.[0]
+  event.target.value = ''
+  if (!file) return
+
+  if (!['image/jpeg', 'image/png'].includes(file.type)) {
+    message.error('僅支援 JPG / PNG 格式')
+    return
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    message.error('檔案大小不可超過 5MB')
+    return
+  }
+
+  if (documentPreviewUrls[field]) {
+    URL.revokeObjectURL(documentPreviewUrls[field])
+  }
+  documentFiles[field] = file
+  documentFileNames[field] = file.name
+  documentPreviewUrls[field] = URL.createObjectURL(file)
+}
+
+async function uploadPendingDocuments() {
+  for (const { field } of documentFields) {
+    const file = documentFiles[field]
+    if (!file) continue
+
+    const formData = new FormData()
+    formData.append('file', file)
+    const result = await uploadCustomerDocument(formData)
+    editForm[field] = result.url
+  }
+}
+
+function resolveDocumentUrl(url) {
+  if (!url) return ''
+  if (url.startsWith('blob:') || url.startsWith('http')) return url
+  return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`
+}
+
+function documentPreviewUrl(field) {
+  return documentPreviewUrls[field] || resolveDocumentUrl(editForm[field])
+}
+
+function documentPathLabel(url) {
+  if (!url) return '尚未上傳'
+  return String(url).split('/').filter(Boolean).pop() || '已上傳'
+}
+
+function openDocument(url) {
+  const href = resolveDocumentUrl(url)
+  if (!href) return
+  window.open(href, '_blank', 'noopener,noreferrer')
 }
 
 // ===========================
@@ -619,6 +1037,61 @@ onMounted(() => {
   color: #cf1322;
 }
 
+.customer-empty-state {
+  display: flex;
+  min-height: 220px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #6f6a60;
+  text-align: center;
+}
+
+.customer-empty-state strong {
+  color: #2f312b;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.customer-empty-state span {
+  font-size: 13px;
+  color: #8a8477;
+}
+
+.customer-empty-mark {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(255, 251, 244, 0.96), rgba(242, 233, 216, 0.92));
+  border: 1px solid rgba(164, 142, 111, 0.2);
+  box-shadow: 0 16px 34px rgba(95, 82, 61, 0.12);
+}
+
+.customer-empty-mark::before,
+.customer-empty-mark::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: rgba(111, 102, 85, 0.3);
+}
+
+.customer-empty-mark::before {
+  top: 18px;
+  width: 26px;
+  height: 3px;
+}
+
+.customer-empty-mark::after {
+  top: 30px;
+  width: 18px;
+  height: 3px;
+  box-shadow: 0 10px 0 rgba(111, 102, 85, 0.3);
+}
+
 .customer-detail-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -715,8 +1188,175 @@ onMounted(() => {
   background-color: rgba(82, 196, 26, 0.05);
 }
 
+.customer-edit-form {
+  max-height: 68vh;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.edit-section {
+  padding: 14px 0 4px;
+  border-top: 1px solid rgba(92, 107, 95, 0.12);
+}
+
+.edit-section:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.edit-section h4 {
+  margin: 0 0 14px;
+  color: #1a1a2e;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+}
+
+.edit-grid .full-width {
+  grid-column: 1 / -1;
+}
+
+.document-upload-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.document-upload-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(92, 107, 95, 0.14);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255, 251, 246, 0.9), rgba(250, 245, 238, 0.82));
+}
+
+.document-preview {
+  display: flex;
+  aspect-ratio: 16 / 10;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px dashed rgba(120, 118, 102, 0.26);
+}
+
+.document-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.document-placeholder {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(circle at 20% 24%, rgba(197, 180, 150, 0.16), transparent 34%),
+    linear-gradient(180deg, rgba(255, 250, 242, 0.9), rgba(245, 237, 226, 0.65));
+}
+
+.document-placeholder span {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 42px;
+  height: 52px;
+  border-radius: 12px;
+  border: 1.4px solid rgba(141, 125, 100, 0.4);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.document-placeholder span::before,
+.document-placeholder span::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: rgba(141, 125, 100, 0.35);
+}
+
+.document-placeholder span::before {
+  top: 14px;
+  width: 18px;
+  height: 2px;
+  box-shadow: 0 8px 0 rgba(141, 125, 100, 0.35);
+}
+
+.document-placeholder span::after {
+  top: 30px;
+  width: 12px;
+  height: 2px;
+}
+
+.document-meta {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.document-meta strong {
+  color: #28312a;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.document-meta small {
+  overflow: hidden;
+  color: #857f72;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.document-upload-btn {
+  position: relative;
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: #5c6b5f;
+  color: #fffdf7;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.document-upload-btn:hover {
+  background: #4f5d52;
+  transform: translateY(-1px);
+}
+
+.document-upload-btn input {
+  display: none;
+}
+
 @media (max-width: 1100px) {
   .customer-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .document-upload-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .edit-grid {
     grid-template-columns: 1fr;
   }
 }

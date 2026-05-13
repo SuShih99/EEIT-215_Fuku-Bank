@@ -27,6 +27,9 @@ public class AccountApplicationResponse {
     private String name;
     private String idNumber;
     private LocalDate birthday;
+    private String gender;
+    private String email;
+    private String address;
     private String nationality;
     private String phone;
     private String registeredAddress;
@@ -77,6 +80,9 @@ public class AccountApplicationResponse {
                 .name(app.getName())
                 .idNumber(maskIdNumber(app.getIdNumber()))
                 .birthday(app.getBirthday())
+                .gender(app.getGender())
+                .email(maskEmail(app.getEmail()))
+                .address(app.getAddress())
                 .nationality(app.getNationality())
                 .phone(maskPhone(app.getPhone()))
                 .registeredAddress(app.getRegisteredAddress())
@@ -115,6 +121,9 @@ public class AccountApplicationResponse {
                 .name(app.getName())
                 .idNumber(app.getIdNumber())
                 .birthday(app.getBirthday())
+                .gender(app.getGender())
+                .email(app.getEmail())
+                .address(app.getAddress())
                 .nationality(app.getNationality())
                 .phone(app.getPhone())
                 .registeredAddress(app.getRegisteredAddress())
@@ -152,5 +161,13 @@ public class AccountApplicationResponse {
     private static String maskPhone(String phone) {
         if (phone == null || phone.length() < 7) return phone;
         return phone.substring(0, 4) + "***" + phone.substring(phone.length() - 3);
+    }
+
+    /** Email 遮蔽：user@example.com → u***@example.com */
+    private static String maskEmail(String email) {
+        if (email == null || !email.contains("@")) return email;
+        String[] parts = email.split("@", 2);
+        if (parts[0].isBlank()) return email;
+        return parts[0].charAt(0) + "***@" + parts[1];
     }
 }
