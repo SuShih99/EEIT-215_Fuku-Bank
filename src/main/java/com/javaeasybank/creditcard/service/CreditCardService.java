@@ -6,8 +6,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.javaeasybank.account.dto.request.CreditCardAccountCreateRequest;
+import com.javaeasybank.account.dto.response.CreditCardAccountResponse;
+import com.javaeasybank.account.service.AccountIntegrationService;
 import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.creditcard.dto.CreditCardRequestDto;
 import com.javaeasybank.creditcard.dto.CreditCardResponseDto;
@@ -31,10 +36,11 @@ public class CreditCardService {
     private final CardTypeRepository cardTypeRepository;
     private final CardAppItemRepository itemRepository;
     private final CreditCardMapper mapper;
+    private final AccountIntegrationService accountIntegrationService;
 
     // 查全部（回 DTO）
-    public List<CreditCardResponseDto> findAll() {
-        return mapper.toDtoList(cardRepository.findAll());
+    public Page<CreditCardResponseDto> findAll(Pageable pageable, String keyword, CardStatus status) {
+        return cardRepository.search(pageable, keyword, status).map(mapper::toDto);
     }
 
     // 查單筆
@@ -45,7 +51,7 @@ public class CreditCardService {
         return mapper.toDto(entity);
     }
 
-    // 新增
+    // 新增(後臺用)
     public CreditCardResponseDto create(CreditCardRequestDto dto) {
 
         CreditCard entity = mapper.toEntity(dto);
@@ -68,20 +74,9 @@ public class CreditCardService {
         CreditCard entity = cardRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("CreditCard not found"));
 
-        // 基本欄位更新
-        mapper.updateEntityFromDto(dto, entity);
-
-        // 關聯更新
-        if (dto.getCardTypeId() != null) {
-            entity.setCardType(
-                    cardTypeRepository.findById(dto.getCardTypeId())
-                            .orElseThrow(() -> new BusinessException("CardType not found")));
-        }
-
-        if (dto.getApplicationItemId() != null) {
-            entity.setApplicationItem(
-                    itemRepository.findById(dto.getApplicationItemId())
-                            .orElseThrow(() -> new BusinessException("ApplicationItem not found")));
+        //只更新額度
+        if (dto.getCreditLimit()!=null) {
+            entity.setCreditLimit(dto.getCreditLimit());
         }
 
         return mapper.toDto(cardRepository.save(entity));
@@ -97,7 +92,7 @@ public class CreditCardService {
         return mapper.toDtoList(cardRepository.findByCustomerCustomerId(customerId));
     }
 
-    // 由item產生卡片
+    // 由item產生卡片(創建卡片)
     public void createFromApplicationItem(CardApplicationItem item) {
 
         CreditCard card = new CreditCard();
@@ -117,6 +112,15 @@ public class CreditCardService {
 
         // 預設狀態為未開通
         card.setStatus(CardStatus.INACTIVE);
+
+        // 生成信用卡帳號
+        CreditCardAccountCreateRequest accountRequest = new CreditCardAccountCreateRequest();
+        accountRequest.setCustomerId(card.getCustomer().getCustomerId());
+
+        CreditCardAccountResponse accountResponse = accountIntegrationService.createCreditCardAccount(accountRequest);
+        card.setCreditCardAccountNumber(accountResponse.getCreditCardAccountNumber());
+
+        // 存檔
 
         cardRepository.save(card);
 
@@ -144,6 +148,33 @@ public class CreditCardService {
 
         if (card.getStatus() == CardStatus.ACTIVE) {
             throw new BusinessException("卡片已開通");
+        }
+
+        card.setStatus(CardStatus.ACTIVE);
+        return mapper.toDto(cardRepository.save(card));
+    }
+    //停用卡片
+    public CreditCardResponseDto blockCard(Integer id) {
+        CreditCard card = cardRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("找不到卡片"));
+
+        if (card.getStatus() == CardStatus.BLOCKED) {
+            throw new BusinessException("卡片已停用");
+        }
+        if (card.getStatus() == CardStatus.INACTIVE) {
+            throw new BusinessException("卡片尚未開通");
+        }
+
+        card.setStatus(CardStatus.BLOCKED);
+        return mapper.toDto(cardRepository.save(card));
+    }
+    // 解除停用卡片
+    public CreditCardResponseDto unblockCard(Integer id) {
+        CreditCard card = cardRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("找不到卡片"));
+
+        if (card.getStatus() != CardStatus.BLOCKED) {
+            throw new BusinessException("卡片未停用");
         }
 
         card.setStatus(CardStatus.ACTIVE);

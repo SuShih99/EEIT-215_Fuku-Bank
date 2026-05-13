@@ -10,4 +10,5 @@ public interface CardBillRepository extends JpaRepository<CardBill, Integer> {
 
     Page<CardBill> findByCardCustomerCustomerId(String customerId, Pageable pageable);
 
+    boolean existsByBillingMonth(String billingMonth);
 }

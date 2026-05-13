@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import {
   getApplications,
@@ -73,7 +73,9 @@ const columns = [
   },
   { title: '狀態', dataIndex: 'status', key: 'status', width: 120 },
   { title: '備註', dataIndex: 'remark', key: 'remark' },
-  { title: '操作', key: 'action', width: 120, fixed: 'right' },
+  { title: '明細', key: 'detail', width: 120 },
+  { title: '修改備註', key: 'editRemark', width: 120 },
+  { title: '刪除', key: 'delete', width: 120 },
 ]
 //取得資料
 const fetchData = async () => {
@@ -138,6 +140,14 @@ const handlePageChange = (page) => {
   pagination.value.pageSize = page.pageSize
   fetchData()
 }
+const handleSearch = () => {
+  pagination.value.current = 1
+  fetchData()
+}
+watch([keyword, status], () => {
+  pagination.value.current = 1
+  fetchData()
+})
 
 onMounted(() => {
   fetchData()
@@ -172,16 +182,7 @@ onMounted(() => {
           allow-clear
         />
 
-        <a-button
-          type="primary"
-          class="rounded-btn"
-          @click="
-            () => {
-              pagination.value.current = 1
-              fetchData()
-            }
-          "
-        >
+        <a-button type="primary" class="rounded-btn" @click="handleSearch()">
           <template #icon><SearchOutlined /></template>
           搜尋
         </a-button>
@@ -201,40 +202,19 @@ onMounted(() => {
       @change="handlePageChange"
     >
       <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'customerName'">
-          <div class="emp-name-cell">
-            <div class="emp-avatar">
-              {{ record.customerName ? record.customerName.charAt(0) : '?' }}
-            </div>
-            <div class="emp-info">
-              <span class="emp-name-text">{{ record.customerName }}</span>
-              <span class="emp-id-text">{{ record.applicationId }}</span>
-            </div>
-          </div>
+        <!-- 查看明細 -->
+        <template v-if="column.key === 'detail'">
+          <a-button type="link" @click="goDetail(record)"> 查看明細 </a-button>
         </template>
 
-        <template v-else-if="column.key === 'status'">
-          <div :class="['status-tag', `status-${record.status.toLowerCase()}`]">
-            <span class="status-dot"></span>
-            {{ statusOptions.find((opt) => opt.value === record.status)?.label || record.status }}
-          </div>
+        <!-- 修改備註 -->
+        <template v-else-if="column.key === 'editRemark'">
+          <a-button type="link" @click="openRemarkModal(record)"> 修改備註 </a-button>
         </template>
 
-        <template v-else-if="column.key === 'action'">
-          <div class="action-cell">
-            <a-dropdown>
-              <a-button type="link" class="action-btn"> 操作 <DownOutlined /> </a-button>
-              <template #overlay>
-                <a-menu>
-                  <!-- <a-menu-item @click="handleApprove(record)">核准</a-menu-item>
-                  <a-menu-item @click="handleReject(record)">拒絕</a-menu-item> -->
-                  <a-menu-item @click="openRemarkModal(record)">修改備註</a-menu-item>
-                  <a-menu-item danger @click="handleDelete(record)">刪除</a-menu-item>
-                  <a-menu-item @click="goDetail(record)">查看明細</a-menu-item>
-                </a-menu>
-              </template>
-            </a-dropdown>
-          </div>
+        <!-- 刪除 -->
+        <template v-else-if="column.key === 'delete'">
+          <a-button danger type="link" @click="handleDelete(record)"> 刪除 </a-button>
         </template>
       </template>
     </a-table>

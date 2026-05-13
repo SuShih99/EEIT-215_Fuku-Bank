@@ -14,4 +14,5 @@ public class CardTxnRequestDto {
     private String description;
     private Integer cardId;
     private Integer merchantId;
+    private String customerId; // 從 JWT 解析出來的 customerId
 }

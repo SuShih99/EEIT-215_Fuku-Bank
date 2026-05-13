@@ -3,8 +3,8 @@ import api from "./axios";
 const BASE_URL = 'api/admin/cards'
 
 //查全部
-export const getCards = () => {
-    return api.get(BASE_URL);
+export const getCards = (params) => {
+    return api.get(BASE_URL, { params });
 }
 //查單筆
 export const getCardById = (id) => {
@@ -21,5 +21,13 @@ export const updateCard = (id, data) => {
 //刪除
 export const deleteCard = (id) => {
     return api.delete(`${BASE_URL}/${id}`);
+}
+//停用
+export const blockCard = (id) => {
+    return api.patch(`${BASE_URL}/${id}/block`);
+}
+//啟用
+export const unblockCard = (id) => {
+    return api.patch(`${BASE_URL}/${id}/unblock`);
 }
 

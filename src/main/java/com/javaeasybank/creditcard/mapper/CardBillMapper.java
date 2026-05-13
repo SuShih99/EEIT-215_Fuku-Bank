@@ -12,7 +12,11 @@ public interface CardBillMapper {
 
 
     @Mapping(target = "customerName", source = "card.customer.name")
+    @Mapping(target = "creditCardAccountNumber", source = "card.creditCardAccountNumber")
     CardBillResponseDto toDto(CardBill bill);
 
     List<CardBillResponseDto> toDtoList(List<CardBill> bills);
+
+    
+
 }

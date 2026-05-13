@@ -2,9 +2,13 @@
 import { ref, onMounted } from 'vue'
 import dayjs from 'dayjs'
 import { getBills } from '@/api/userCardBill'
+import { payCard, getPaymentAccounts } from '@/api/userCardPayment'
+import { message } from 'ant-design-vue'
 
 const loading = ref(false)
 const bills = ref([])
+const paymentAccounts = ref([])
+const selectedAccount = ref('')
 const pagination = ref({
   current: 1,
   pageSize: 10,
@@ -62,9 +66,39 @@ const fetchBills = async () => {
     loading.value = false
   }
 }
+const handlePayment = async (bill) => {
+  try {
+    await payCard({
+      fromAccountNumber: selectedAccount.value,
+      creditCardAccountNumber: bill.creditCardAccountNumber,
+      amount: bill.payAmount,
+      note: '信用卡繳費',
+    })
+    message.success('繳費成功')
+    fetchBills()
+  } catch (error) {
+    console.error('Payment failed:', error)
+    message.error(error.response?.data?.message || '繳費失敗')
+  }
+}
+
+const fetchAccounts = async () => {
+  try {
+    const res = await getPaymentAccounts()
+    console.log(res)
+    paymentAccounts.value = res
+
+    if (res.length > 0) {
+      selectedAccount.value = res[0].accountNumber
+    }
+  } catch (error) {
+    console.error('Failed to fetch accounts:', error)
+  }
+}
 
 onMounted(() => {
   fetchBills()
+  fetchAccounts()
 })
 </script>
 <template>
@@ -119,6 +153,19 @@ onMounted(() => {
             </strong>
           </div>
         </div>
+        <div class="account-select">
+          <select v-model="selectedAccount" class="account-dropdown">
+            <option
+              v-for="account in paymentAccounts"
+              :key="account.accountNumber"
+              :value="account.accountNumber"
+            >
+              {{ account.accountNumber }}
+              餘額: NT$ {{ account.balance }}
+            </option>
+          </select>
+        </div>
+
         <div class="payment-section">
           <div class="quick-actions">
             <button class="quick-btn" @click="bill.payAmount = bill.minimumPayment">
@@ -136,7 +183,7 @@ onMounted(() => {
               placeholder="請輸入繳費金額"
             />
 
-            <button class="pay-btn">立即繳費</button>
+            <button class="pay-btn" @click="handlePayment(bill)">立即繳費</button>
           </div>
         </div>
       </div>
@@ -226,7 +273,6 @@ onMounted(() => {
   color: #999;
 }
 
-
 .payment-section {
   margin-top: 20px;
 }
@@ -276,5 +322,16 @@ onMounted(() => {
 
 .pay-btn:hover {
   opacity: 0.9;
+}
+.account-select {
+  margin-bottom: 12px;
+}
+
+.account-dropdown {
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 16px;
 }
 </style>

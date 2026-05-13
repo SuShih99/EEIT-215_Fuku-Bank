@@ -104,7 +104,9 @@ const handleGenerateBills = async()=>{
     fetchBills()
   } catch (error) {
     console.log(error);
-    message.error('生成帳單失敗')
+    message.error(
+    error.response?.data?.message || '生成帳單失敗'
+  )
   }
 }
 
