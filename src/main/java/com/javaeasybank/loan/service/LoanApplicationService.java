@@ -59,6 +59,9 @@ public class LoanApplicationService {
     @Autowired
     private CustomerProfileRepository customerProfileRepository;
 
+    @Autowired
+    private LoanAccountService loanAccountService;
+
     // ===查詢功能===
     // 依狀態顯示
     public List<LoanApplicationResponseDTO> getByStatus(LoanApplicationStatus status) {
@@ -269,33 +272,53 @@ public class LoanApplicationService {
         return dto;
     }
 
-    // 風控審核完成後傳回，更新主表狀態為 APPROVED 或 REJECTED
-    // callerModule 必須是 "RISK"；可接受的目標狀態只有 APPROVED / REJECTED
+    // 外部模組回調，更新主表狀態
+    // RISK   模組：PENDING_REVIEW → APPROVED / REJECTED
+    // ACCOUNT 模組：APPROVED      → DISBURSED
     public void handleStatusCallback(String applicationId, LoanStatusCallbackRequestDTO dto) {
 
         LoanApplication loan = laRepo.findById(applicationId)
                 .orElseThrow(() -> new BusinessException("找不到申請編號：" + applicationId));
 
-        // 來源模組驗證
-        if (!"RISK".equals(dto.getCallerModule())) {
-            throw new BusinessException("此 callback 僅接受 RISK 模組呼叫");
-        }
+        String caller = dto.getCallerModule();
 
-        // 狀態合法性驗證：當前必須是 PENDING_REVIEW
-        if (loan.getApplicationStatus() != LoanApplicationStatus.PENDING_REVIEW) {
-            throw new BusinessException(
-                    "申請目前狀態為 " + loan.getApplicationStatus() + "，無法套用風控回調");
-        }
+        if ("RISK".equals(caller)) {
 
-        // 目標狀態只允許 APPROVED / REJECTED
-        if (dto.getNewStatus() != LoanApplicationStatus.APPROVED
-                && dto.getNewStatus() != LoanApplicationStatus.REJECTED) {
-            throw new BusinessException("風控回調目標狀態不合法：" + dto.getNewStatus());
+            // 前置狀態：必須是 PENDING_REVIEW
+            if (loan.getApplicationStatus() != LoanApplicationStatus.PENDING_REVIEW) {
+                throw new BusinessException(
+                        "申請目前狀態為 " + loan.getApplicationStatus() + "，無法套用風控回調");
+            }
+            // 目標狀態只允許 APPROVED / REJECTED
+            if (dto.getNewStatus() != LoanApplicationStatus.APPROVED
+                    && dto.getNewStatus() != LoanApplicationStatus.REJECTED) {
+                throw new BusinessException("風控回調目標狀態不合法：" + dto.getNewStatus());
+            }
+
+        } else if ("ACCOUNT".equals(caller)) {
+
+            // 前置狀態：必須是 APPROVED
+            if (loan.getApplicationStatus() != LoanApplicationStatus.APPROVED) {
+                throw new BusinessException(
+                        "申請目前狀態為 " + loan.getApplicationStatus() + "，無法套用帳戶撥款回調");
+            }
+            // 目標狀態只允許 DISBURSED
+            if (dto.getNewStatus() != LoanApplicationStatus.DISBURSED) {
+                throw new BusinessException("帳戶回調目標狀態不合法：" + dto.getNewStatus());
+            }
+
+        } else {
+            throw new BusinessException("不認識的 callerModule：" + caller);
         }
 
         loan.setApplicationStatus(dto.getNewStatus());
         loan.setUpdateTime(LocalDateTime.now());
         laRepo.save(loan);
+
+        // ACCOUNT 模組撥款確認後，同步建立貸款帳戶
+        if ("ACCOUNT".equals(caller)) {
+            loanAccountService.createOnDisbursement(applicationId);
+        }
     }
 
     // 查填單內容
