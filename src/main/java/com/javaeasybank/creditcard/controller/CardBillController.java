@@ -12,7 +12,9 @@ import com.javaeasybank.common.dto.response.ApiResponse;
 import com.javaeasybank.common.dto.response.PageResponse;
 import com.javaeasybank.common.util.SecurityUtil;
 import com.javaeasybank.creditcard.dto.CardBillResponseDto;
+import com.javaeasybank.creditcard.dto.CardTxnResponseDto;
 import com.javaeasybank.creditcard.service.BillService;
+import com.javaeasybank.creditcard.service.CardTxnService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,6 +25,7 @@ public class CardBillController {
 
     private final BillService cardBillService;
     private final SecurityUtil securityUtil;
+    private final CardTxnService cardTxnService;
 
     // 查全部帳單
     @GetMapping
@@ -33,6 +36,19 @@ public class CardBillController {
         
         Page<CardBillResponseDto> page =
                 cardBillService.getBillsByCustomerId(customerId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(
+                page.getContent(),
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements())));
+    }
+    //查未出帳帳單
+    @GetMapping("/unbilled")
+    public ResponseEntity<ApiResponse<PageResponse<CardTxnResponseDto>>> getUnbilledBills(Pageable pageable, @RequestHeader("Authorization") String authHeader) {      
+        String customerId = securityUtil.getCustomerIdFromHeader(authHeader);
+        
+        Page<CardTxnResponseDto> page =
+                cardTxnService.getUnbilledBillsByCustomerId(customerId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(
                 page.getContent(),
                 page.getNumber(),

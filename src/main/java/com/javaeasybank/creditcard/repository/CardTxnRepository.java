@@ -1,7 +1,6 @@
 package com.javaeasybank.creditcard.repository;
 
 import java.util.List;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,4 +14,6 @@ public interface CardTxnRepository extends JpaRepository<CardTransaction, Intege
     Page<CardTransaction> findByCard_Customer_CustomerId(String customerId, Pageable pageable);
 
     List<CardTransaction> findByCardCardId(Integer cardId);
+
+    Page<CardTransaction> findByCard_Customer_CustomerIdAndBillIsNull(String customerId, Pageable pageable);
 }

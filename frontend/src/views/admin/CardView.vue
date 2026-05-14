@@ -107,7 +107,7 @@ const columns = [
   { title: '卡片名稱', key: 'cardTypeName', width: 150 },
   { title: '卡片圖片', key: 'image', width: 120, align: 'center' },
   { title: '額度', dataIndex: 'creditLimit', width: 100 },
-  { title: '已用額度', dataIndex: 'currentBalance', width: 100 },
+  { title: '已用額度', dataIndex: 'currentDebt', width: 100 },
   { title: '狀態', dataIndex: 'status', width: 100 },
   { title: '編輯額度', key: 'edit', width: 80 },
   { title: '卡片狀態操作', key: 'statusAction', width: 120 },

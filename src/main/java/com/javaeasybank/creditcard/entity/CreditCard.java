@@ -52,8 +52,7 @@ public class CreditCard {
     private LocalDateTime createDate;
     @Enumerated(EnumType.STRING)
     private CardStatus status;
-    
-//    private Integer applicationItemId;//FK關聯不留
+
     
     @ManyToOne
     @JoinColumn(name = "application_item_id")
@@ -62,4 +61,7 @@ public class CreditCard {
     @Column(name = "credit_card_account_number", length = 20)
     private String creditCardAccountNumber;//新增信用卡帳號欄位
 
+    @ManyToOne
+    @JoinColumn(name = "card_account_id")
+    private CardAccount cardAccount;//新增與CardAccount的關聯
 }

@@ -2,8 +2,6 @@ package com.javaeasybank.creditcard.controller;
 
 import java.util.List;
 
-import javax.smartcardio.Card;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.javaeasybank.common.dto.response.ApiResponse;
-import com.javaeasybank.creditcard.dto.CardApplicationItemRequestDto;
+import com.javaeasybank.creditcard.dto.ApproveCardRequestDto;
 import com.javaeasybank.creditcard.dto.CardApplicationItemResponseDto;
 import com.javaeasybank.creditcard.service.CardAppItemService;
 import com.javaeasybank.creditcard.service.CardReviewService;
@@ -42,7 +40,7 @@ public class CardApplicationItemAdminController {
     // 核准
     @PostMapping("/{id}/approve")
     public ResponseEntity<ApiResponse<CardApplicationItemResponseDto>> approve(
-            @PathVariable Integer id,@RequestBody CardApplicationItemRequestDto request) {
+            @PathVariable Integer id,@RequestBody ApproveCardRequestDto request) {
 
         return ResponseEntity.ok(
                 ApiResponse.success(

@@ -13,3 +13,13 @@ export const getBills = (page=0, size=10) => {
     }).then(unwrap);
 
 };
+//查未出帳
+export const getUnbilledBills = (page=0, size=10) => {
+    return api.get(`${BASE_URL}/unbilled`,{
+        params:{
+            page,
+            size
+        },
+    }).then(unwrap);
+
+};

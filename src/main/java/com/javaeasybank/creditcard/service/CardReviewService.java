@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.javaeasybank.common.exception.BusinessException;
-import com.javaeasybank.creditcard.dto.CardApplicationItemRequestDto;
+import com.javaeasybank.creditcard.dto.ApproveCardRequestDto;
 import com.javaeasybank.creditcard.dto.CardApplicationItemResponseDto;
 import com.javaeasybank.creditcard.entity.CardApplication;
 import com.javaeasybank.creditcard.entity.CardApplicationItem;
@@ -29,7 +29,7 @@ public class CardReviewService {
     private final CardAppRepository cardAppRepository;
 
     // 審核卡片
-    public CardApplicationItemResponseDto approveItem(Integer id, CardApplicationItemRequestDto request) {
+    public CardApplicationItemResponseDto approveItem(Integer id, ApproveCardRequestDto request) {
         CardApplicationItem item = cardAppItemRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("Card application item not found"));
         // 防止重複審核

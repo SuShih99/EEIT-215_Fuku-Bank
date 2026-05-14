@@ -26,10 +26,10 @@ const fetchDetail = async () => {
   //明細
   const itemsData = await getApplicationItems(id)
   console.log('items', itemsData)
-  items.value = itemsData.map(item => ({
-  ...item,
-  customLimit: item.approvedLimit
-}))
+  items.value = itemsData.map((item) => ({
+    ...item,
+    customLimit: item.approvedLimit,
+  }))
 
   loading.value = false
 }
@@ -69,7 +69,10 @@ const approveItem = async (record) => {
 
     async onOk() {
       try {
-        const updated = await approveApplicationItem(record.itemId, record.customLimit || record.approvedLimit)
+        const updated = await approveApplicationItem(
+          record.itemId,
+          record.customLimit || record.approvedLimit,
+        )
 
         const index = items.value.findIndex((item) => item.itemId === record.itemId)
 
@@ -80,7 +83,9 @@ const approveItem = async (record) => {
         message.success('核准成功')
       } catch (err) {
         console.error(err)
-        message.error('核准失敗')
+        const msg = err.response?.data?.message || err.response?.data?.error || '核准失敗'
+
+        message.error(msg)
       }
     },
   })
@@ -113,7 +118,8 @@ const rejectItem = async (record) => {
         message.success('已拒絕')
       } catch (err) {
         console.error(err)
-        message.error('操作失敗')
+        const msg = err.response?.data?.message || err.response?.data?.error || '操作失敗'
+        message.error(msg)
       }
     },
   })

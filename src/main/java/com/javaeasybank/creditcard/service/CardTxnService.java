@@ -254,4 +254,9 @@ public class CardTxnService {
                 .map(mapper::toDto);
     }
 
+    public Page<CardTxnResponseDto> getUnbilledBillsByCustomerId(String customerId, Pageable pageable) {
+        return cardTxnRepository.findByCard_Customer_CustomerIdAndBillIsNull(customerId, pageable)
+                .map(mapper::toDto);
+    }
+
 }

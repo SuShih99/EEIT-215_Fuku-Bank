@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 import com.javaeasybank.account.dto.request.CreditCardAccountCreateRequest;
 import com.javaeasybank.account.dto.response.CreditCardAccountResponse;
+import com.javaeasybank.account.enums.AccountType;
+import com.javaeasybank.account.repository.AccountRepository;
 import com.javaeasybank.account.service.AccountIntegrationService;
 import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.creditcard.dto.CreditCardRequestDto;
@@ -37,6 +39,7 @@ public class CreditCardService {
     private final CardAppItemRepository itemRepository;
     private final CreditCardMapper mapper;
     private final AccountIntegrationService accountIntegrationService;
+    private final AccountRepository accountRepository;
 
     // 查全部（回 DTO）
     public Page<CreditCardResponseDto> findAll(Pageable pageable, String keyword, CardStatus status) {
@@ -114,11 +117,12 @@ public class CreditCardService {
         card.setStatus(CardStatus.INACTIVE);
 
         // 生成信用卡帳號
-        CreditCardAccountCreateRequest accountRequest = new CreditCardAccountCreateRequest();
-        accountRequest.setCustomerId(card.getCustomer().getCustomerId());
-
-        CreditCardAccountResponse accountResponse = accountIntegrationService.createCreditCardAccount(accountRequest);
-        card.setCreditCardAccountNumber(accountResponse.getCreditCardAccountNumber());
+        String customerId = card.getCustomer().getCustomerId();
+        String creditCardAccountNumber = accountRepository
+                .findFirstByCustomerIdAndAccountType(customerId, AccountType.CREDIT_CARD)
+                .map(account -> account.getAccountNumber())
+                .orElseGet(() -> createCreditCardAccount(customerId));
+        card.setCreditCardAccountNumber(creditCardAccountNumber);
 
         // 存檔
 
@@ -140,6 +144,13 @@ public class CreditCardService {
         }
 
         throw new BusinessException("Unable to generate unique card number");
+    }
+    // 創建信用卡帳號
+    private String createCreditCardAccount(String customerId) {
+        CreditCardAccountCreateRequest accountRequest = new CreditCardAccountCreateRequest();
+        accountRequest.setCustomerId(customerId);
+        CreditCardAccountResponse accountResponse = accountIntegrationService.createCreditCardAccount(accountRequest);
+        return accountResponse.getCreditCardAccountNumber();
     }
     // 開通卡片
     public CreditCardResponseDto activeCard(Integer id) {

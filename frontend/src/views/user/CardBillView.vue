@@ -1,7 +1,7 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import dayjs from 'dayjs'
-import { getBills } from '@/api/userCardBill'
+import { getBills, getUnbilledBills } from '@/api/userCardBill'
 import { payCard, getPaymentAccounts } from '@/api/userCardPayment'
 import { message } from 'ant-design-vue'
 
@@ -14,6 +14,9 @@ const pagination = ref({
   pageSize: 10,
   total: 0,
 })
+
+const activeTab = ref('BILLED')
+const unbilledTransactions = ref([])
 
 const columns = [
   {
@@ -66,6 +69,23 @@ const fetchBills = async () => {
     loading.value = false
   }
 }
+
+const fetchUnbilledTransactions = async () => {
+  loading.value = true
+  try {
+    const res = await getUnbilledBills(pagination.value.current - 1, pagination.value.pageSize)
+    unbilledTransactions.value = res.content.map((item) => ({
+      ...item,
+      transactionDate: dayjs(item.transactionDate).format('YYYY-MM-DD HH:mm'),
+    }))
+  } catch (error) {
+    console.error('Failed to fetch unbilled transactions:', error)
+    message.error(error.response?.data?.message || '無法獲取未出帳交易')
+  } finally {
+    loading.value = false
+  }
+}
+
 const handlePayment = async (bill) => {
   try {
     await payCard({
@@ -96,6 +116,14 @@ const fetchAccounts = async () => {
   }
 }
 
+watch(activeTab, async (newTab) => {
+  if (newTab === 'BILLED') {
+    await fetchBills()
+  } else if (newTab === 'UNBILLED') {
+    await fetchUnbilledTransactions()
+  }
+})
+
 onMounted(() => {
   fetchBills()
   fetchAccounts()
@@ -105,11 +133,34 @@ onMounted(() => {
   <div class="bill-page">
     <h2 class="page-title">我的帳單</h2>
 
+    <div class="tabs">
+      <button
+        :class="['tab-btn', activeTab === 'UNBILLED' ? 'active' : '']"
+        @click="
+          activeTab = 'UNBILLED'
+        "
+      >
+        未出帳交易
+      </button>
+      <button
+        :class="['tab-btn', activeTab === 'BILLED' ? 'active' : '']"
+        @click="
+          activeTab = 'BILLED'
+        "
+      >
+        已出帳單
+      </button>
+    </div>
+
     <div v-if="loading" class="loading">載入中...</div>
 
-    <div v-else-if="bills.length === 0" class="empty">尚無帳單資料</div>
+    <div v-if="activeTab === 'BILLED' && bills.length === 0" class="empty">尚無帳單資料</div>
 
-    <div v-else class="bill-list">
+    <div v-else-if="activeTab === 'UNBILLED' && unbilledTransactions.length === 0" class="empty">
+      尚無未出帳交易
+    </div>
+
+    <div v-if="activeTab === 'BILLED'" class="bill-list">
       <div v-for="bill in bills" :key="bill.billId" class="bill-card">
         <div class="bill-header">
           <div>
@@ -188,6 +239,33 @@ onMounted(() => {
             />
 
             <button class="pay-btn" @click="handlePayment(bill)">立即繳費</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div v-else class="bill-list">
+      <div v-for="txn in unbilledTransactions" :key="txn.txnId" class="bill-card">
+        <div class="bill-body">
+          <div class="info-row">
+            <span>商店</span>
+            <strong>{{ txn.merchantName }}</strong>
+          </div>
+
+          <div class="info-row">
+            <span>刷卡時間</span>
+            <strong>
+              {{ dayjs(txn.txnDate).format('YYYY-MM-DD HH:mm') }}
+            </strong>
+          </div>
+
+          <div class="info-row">
+            <span>金額</span>
+            <strong> NT$ {{ txn.txnAmount }} </strong>
+          </div>
+
+          <div class="info-row">
+            <span>卡號</span>
+            <strong>{{ txn.cardNumber }}</strong>
           </div>
         </div>
       </div>
@@ -337,5 +415,23 @@ onMounted(() => {
   border-radius: 10px;
   padding: 10px;
   font-size: 16px;
+}
+.tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.tab-btn {
+  border: none;
+  padding: 10px 20px;
+  border-radius: 999px;
+  cursor: pointer;
+  background: #f0f0f0;
+}
+
+.tab-btn.active {
+  background: #3e5c4b;
+  color: white;
 }
 </style>

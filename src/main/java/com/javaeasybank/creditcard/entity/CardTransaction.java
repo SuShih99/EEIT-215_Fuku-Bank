@@ -26,19 +26,19 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CardTransaction {
-	
-	@Id
+
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer txnId;
-    
-	@Column(precision = 15, scale = 2)
+
+    @Column(precision = 15, scale = 2)
     private BigDecimal txnAmount;
 
-    //交易回饋
+    // 交易回饋
     @Column(precision = 15, scale = 2)
     private BigDecimal cashbackRate;
 
-    //交易回饋金額
+    // 交易回饋金額
     @Column(precision = 15, scale = 2)
     private BigDecimal cashbackAmount;
 
@@ -49,8 +49,8 @@ public class CardTransaction {
 
     @Column(length = 200)
     private String description;
-    
-    //退款沖銷用
+
+    // 退款沖銷用
     @ManyToOne
     @JoinColumn(name = "ref_txn_id")
     private CardTransaction refTxn;
@@ -58,22 +58,21 @@ public class CardTransaction {
     @ManyToOne
     @JoinColumn(name = "card_id")
     private CreditCard card;
-    
+
     @ManyToOne
     @JoinColumn(name = "merchant_id")
     private Merchant merchant;
-    
-    // @ManyToOne
-    // @JoinColumn(name = "bill_id")
-    // private CardBill bill;
-    
-    //預設交易時間
+
+    @ManyToOne
+    @JoinColumn(name = "bill_id")
+    private CardBill bill;
+
+    // 預設交易時間
     @PrePersist
     public void prePersist() {
         if (this.txnDate == null) {
-        this.txnDate = LocalDateTime.now();
-    }
+            this.txnDate = LocalDateTime.now();
+        }
 
-    
-}
+    }
 }
