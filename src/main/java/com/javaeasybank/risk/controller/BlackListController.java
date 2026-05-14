@@ -14,6 +14,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/risk/blacklist")
@@ -67,5 +71,42 @@ public class BlackListController {
             @RequestBody BlackListRequest request) {
         BlackListResponse updatedResponse = blackListService.updateByBusinessKey(type, value, request);
         return ResponseEntity.ok(ApiResponse.success(updatedResponse));
+    }
+
+    /**
+     * 單一快速校驗（給外部模組呼叫）
+     * GET /api/risk/blacklist/check?type=ACCOUNT_NO&value=帳號
+     */
+    @GetMapping("/check")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> check(
+            @RequestParam BlacklistType type,
+            @RequestParam String value) {
+
+        boolean hit = blackListService.isBlacklisted(type, value);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("blacklisted", hit);
+        result.put("type", type);
+        result.put("value", value);
+
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+    /**
+     * 批次校驗（給送審前預檢用）
+     * POST /api/risk/blacklist/check-batch
+     * Body: { "ACCOUNT_NO": "123456", "EMAIL": "xx@gmail.com" }
+     */
+    @PostMapping("/check-batch")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> checkBatch(
+            @RequestBody Map<BlacklistType, String> map) {
+
+        List<BlacklistType> hitTypes = blackListService.checkAll(map);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("blacklisted", !hitTypes.isEmpty());
+        result.put("hitTypes", hitTypes);
+
+        return ResponseEntity.ok(ApiResponse.success(result));
     }
 }

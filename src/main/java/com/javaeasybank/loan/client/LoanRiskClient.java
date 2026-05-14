@@ -38,7 +38,7 @@ public class LoanRiskClient {
 
         dto.setCallbackUrl(callbackBaseUrl + "/" + dto.getApplicationId() + "/status");
 
-        String url = riskBaseUrl;
+        String url = riskBaseUrl + "reviews";
         log.info("[RiskClient] 送審 applicationId={} → {}", dto.getApplicationId(), url);
 
         try {

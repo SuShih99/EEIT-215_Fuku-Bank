@@ -50,4 +50,15 @@ public class TransferResponse {
      * 轉帳完成的時間。
      */
     private LocalDateTime transferredAt;
+
+    //測試風控轉帳
+    private boolean pending = false;
+    private String pendingReason;
+
+    public static TransferResponse pending(String reason) {
+        TransferResponse res = new TransferResponse();
+        res.setPending(true);
+        res.setPendingReason(reason);
+        return res;
+    }
 }

@@ -1,5 +1,6 @@
 package com.javaeasybank.account.service;
 
+import com.javaeasybank.account.TransferRiskClient;
 import com.javaeasybank.account.dto.request.CashRequest;
 import com.javaeasybank.account.dto.request.ExchangeRequest;
 import com.javaeasybank.account.dto.request.ReversalRequest;
@@ -9,6 +10,7 @@ import com.javaeasybank.account.dto.response.ExchangeResponse;
 import com.javaeasybank.account.dto.response.ReversalResponse;
 import com.javaeasybank.account.dto.response.TransferResponse;
 import com.javaeasybank.account.entity.Account;
+import com.javaeasybank.account.entity.PendingTransfer;
 import com.javaeasybank.account.entity.TransLog;
 import com.javaeasybank.account.enums.AccountStatus;
 import com.javaeasybank.account.enums.AccountType;
@@ -18,11 +20,13 @@ import com.javaeasybank.account.enums.TransactionType;
 import com.javaeasybank.account.enums.TransferBank;
 import com.javaeasybank.account.exception.TransferException;
 import com.javaeasybank.account.repository.AccountRepository;
+import com.javaeasybank.account.repository.PendingTransferRepository;
 import com.javaeasybank.account.repository.TransLogRepository;
 import com.javaeasybank.account.utils.ReferenceIdGenerator;
 import com.javaeasybank.common.service.EmailService;
 import com.javaeasybank.common.service.ExchangeRateService;
 import com.javaeasybank.customer.repository.CustomerProfileRepository;
+import com.javaeasybank.risk.dto.response.RiskCheckResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,6 +37,8 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.javaeasybank.risk.enums.Disposition.*;
 
 @Slf4j
 @Service
@@ -52,6 +58,8 @@ public class TransferService {
     private final CustomerProfileRepository customerProfileRepository;
     private final EmailService emailService;
     private final ExchangeRateService exchangeRateService;
+    private final TransferRiskClient transferRiskClient;
+    private final PendingTransferRepository pendingTransferRepository;
 
     /**
      * 執行國內轉帳。
@@ -60,6 +68,9 @@ public class TransferService {
 
     @Transactional
     public TransferResponse transfer(TransferRequest request) {
+
+        String referenceId = ReferenceIdGenerator.generate();
+
         String fromAccNum = normalizeAccountNumber(request.getFromAccountNumber());
         String toAccNum = normalizeAccountNumber(request.getToAccountNumber());
         BigDecimal amount = request.getAmount();
@@ -82,6 +93,27 @@ public class TransferService {
             throw new TransferException("INTERBANK_TWD_ONLY", "跨行轉帳僅支援台幣帳戶");
         }
 
+        // ── 黑名單比對 ──────────────────────────────────
+        RiskCheckResponse riskResult = transferRiskClient.checkTransfer(
+                fromAccount.getCustomerId(),
+                toAccNum,
+                amount,
+                referenceId);
+
+        switch (riskResult.getDisposition()) {
+            case REJECT -> throw new TransferException(
+                    "RISK_REJECTED", riskResult.getReason());
+            case MANUAL_REVIEW -> {
+                // 暫存交易，等人工審核
+                savePendingTransfer(request, riskResult, referenceId);
+                return TransferResponse.pending(
+                        riskResult.getReason());
+            }
+            case PASS -> { /* 繼續正常轉帳流程 */ }
+        }
+        // ────────────────────────────────────────────────
+
+
         BigDecimal feeAmount = interbank ? calculateInterbankFee(amount) : BigDecimal.ZERO;
         BigDecimal totalDebitAmount = amount.add(feeAmount);
 
@@ -90,7 +122,6 @@ public class TransferService {
         }
 
         BigDecimal fromBalanceBefore = fromAccount.getBalance();
-        String referenceId = ReferenceIdGenerator.generate();
         LocalDateTime now = LocalDateTime.now();
         BigDecimal toAccountBalance = null;
 
@@ -374,6 +405,30 @@ public class TransferService {
     private BigDecimal calculateInterbankFee(BigDecimal amount) {
         return amount.compareTo(INTERBANK_FEE_THRESHOLD) <= 0 ? INTERBANK_FEE_LOW : INTERBANK_FEE_HIGH;
     }
+
+    private void savePendingTransfer(
+            TransferRequest request, RiskCheckResponse riskResult, String referenceId) {
+
+        PendingTransfer pending = new PendingTransfer();
+        pending.setReferenceId(referenceId);
+        pending.setFromAccountNumber(
+                normalizeAccountNumber(request.getFromAccountNumber()));
+        pending.setToAccountNumber(
+                normalizeAccountNumber(request.getToAccountNumber()));
+        pending.setToBankCode(request.getToBankCode());
+        pending.setAmount(request.getAmount());
+        pending.setNote(request.getNote());
+        pending.setRiskLogId(riskResult.getLogId());
+        pending.setReviewTaskId(riskResult.getReviewTaskId());
+        pending.setHoldReason(riskResult.getReason());
+        pending.setStatus("PENDING");
+
+        pendingTransferRepository.save(pending);
+        log.info("[Transfer] 大額交易暫存 referenceId={} reviewTaskId={}",
+                referenceId, riskResult.getReviewTaskId());
+    }
+
+
 
     private TransLog buildTransLog(String referenceId,
                                   String accountNumber,
