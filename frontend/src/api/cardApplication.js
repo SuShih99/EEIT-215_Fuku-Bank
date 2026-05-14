@@ -46,11 +46,11 @@ export async function getApplicationItems(id) {
   return res.data.data
 }
 //核准
-export async function approveApplicationItem(id) {
+export async function approveApplicationItem(id, approvedLimit) {
   const res = await api.post(
-    `/api/admin/card-application-items/${id}/approve`
+    `/api/admin/card-application-items/${id}/approve`,
+    {approvedLimit}
   )
-
   return unwrap(res)
 }
 //拒絕

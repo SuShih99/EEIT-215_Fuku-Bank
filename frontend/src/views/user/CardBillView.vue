@@ -145,6 +145,10 @@ onMounted(() => {
             <span>已繳金額</span>
             <strong> NT$ {{ bill.paidAmount }} </strong>
           </div>
+          <div class="info-row">
+            <span>可用額度</span>
+            <strong> NT$ {{ bill.availableCredit }} </strong>
+          </div>
 
           <div class="info-row">
             <span>繳費截止日</span>

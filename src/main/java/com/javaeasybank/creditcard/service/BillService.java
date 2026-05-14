@@ -97,9 +97,12 @@ public class BillService {
                         card.setCreditCardAccountNumber(accountNumber);
                         creditCardRepository.save(card);
                 }
-                return cardBillMapper.toDto(bill);
-        }
+                CardBillResponseDto dto = cardBillMapper.toDto(bill);
+                dto.setAvailableCredit(card.getCreditLimit().subtract(card.getCurrentDebt()));
 
+                return dto;
+        }
+        // 創建信用卡帳戶
         private String createCreditCardAccount(String customerId) {
                 CreditCardAccountCreateRequest request = new CreditCardAccountCreateRequest();
                 request.setCustomerId(customerId);

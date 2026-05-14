@@ -48,7 +48,7 @@ public class CreditCard {
     @Column(name = "credit_limit", precision = 15, scale = 2)
     private BigDecimal creditLimit;
     @Column(name = "current_balance", precision = 15, scale = 2)
-    private BigDecimal currentBalance;
+    private BigDecimal currentDebt;
     private LocalDateTime createDate;
     @Enumerated(EnumType.STRING)
     private CardStatus status;

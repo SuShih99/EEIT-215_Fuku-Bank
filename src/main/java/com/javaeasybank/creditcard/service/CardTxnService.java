@@ -50,7 +50,7 @@ public class CardTxnService {
 
         // ===== 額度檢查 =====
         BigDecimal availableCredit = card.getCreditLimit()
-                .subtract(card.getCurrentBalance());
+                .subtract(card.getCurrentDebt());
 
         if (dto.getTxnAmount().compareTo(availableCredit) > 0) {
             throw new BusinessException("信用額度不足");
@@ -72,8 +72,8 @@ public class CardTxnService {
         txn.setMerchant(merchant);
 
         // ===== 更新已使用額度 =====
-        card.setCurrentBalance(
-                card.getCurrentBalance()
+        card.setCurrentDebt(
+                card.getCurrentDebt()
                         .add(dto.getTxnAmount()));
         // 計算回饋
         //初始值為0，避免為null
@@ -181,8 +181,8 @@ public class CardTxnService {
 
         // ===== 更新信用卡已使用額度 =====
         CreditCard card = originalTxn.getCard();
-        card.setCurrentBalance(
-                card.getCurrentBalance()
+        card.setCurrentDebt(
+                card.getCurrentDebt()
                         .subtract(originalTxn.getTxnAmount()));
         // 計算回饋
         refundTxn.setCashbackRate(originalTxn.getCashbackRate());

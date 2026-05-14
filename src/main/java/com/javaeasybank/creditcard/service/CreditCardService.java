@@ -101,7 +101,7 @@ public class CreditCardService {
         card.setCreditLimit(item.getApprovedLimit());
 
         // 初始消費額度為0
-        card.setCurrentBalance(BigDecimal.ZERO);
+        card.setCurrentDebt(BigDecimal.ZERO);
 
         //開卡時間
         card.setCreateDate(LocalDateTime.now());

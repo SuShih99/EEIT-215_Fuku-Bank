@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted,h } from 'vue'
+import { ref, onMounted, h } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import {
   getApplicationItems,
@@ -26,7 +26,10 @@ const fetchDetail = async () => {
   //明細
   const itemsData = await getApplicationItems(id)
   console.log('items', itemsData)
-  items.value = itemsData
+  items.value = itemsData.map(item => ({
+  ...item,
+  customLimit: item.approvedLimit
+}))
 
   loading.value = false
 }
@@ -39,6 +42,11 @@ const columns = [
     customRender: ({ text }) => {
       return text ? Number(text).toLocaleString() : '無'
     },
+  },
+  {
+    title: '設定核准額度',
+    dataIndex: 'customLimit',
+    key: 'customLimit',
   },
   {
     title: '年費(元)',
@@ -54,16 +62,16 @@ const columns = [
 ]
 
 // 核准
-const approveItem = async (id) => {
+const approveItem = async (record) => {
   Modal.confirm({
     title: '確認核准此卡片申請？',
     content: '核准後將更新申請狀態',
 
     async onOk() {
       try {
-        const updated = await approveApplicationItem(id)
+        const updated = await approveApplicationItem(record.itemId, record.customLimit || record.approvedLimit)
 
-        const index = items.value.findIndex((item) => item.itemId === id)
+        const index = items.value.findIndex((item) => item.itemId === record.itemId)
 
         if (index !== -1) {
           items.value[index] = updated
@@ -165,6 +173,16 @@ onMounted(() => {
 
           <span v-else> - </span>
         </template>
+        <!-- 核准額度 -->
+        <template v-if="column.dataIndex === 'customLimit'">
+          <a-input-number
+            v-model:value="record.customLimit"
+            :min="10000"
+            :step="1000"
+            style="width: 120px"
+            :disabled="record.result !== 'PENDING'"
+          />
+        </template>
 
         <!-- 操作 -->
         <template v-if="column.key === 'action'">
@@ -172,7 +190,7 @@ onMounted(() => {
             <a-button
               type="primary"
               :disabled="record.result !== 'PENDING'"
-              @click="approveItem(record.itemId)"
+              @click="approveItem(record)"
             >
               核准
             </a-button>

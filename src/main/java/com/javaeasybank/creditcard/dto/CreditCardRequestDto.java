@@ -11,7 +11,7 @@ public class CreditCardRequestDto {
     private Integer cardTypeId;
     private Integer applicationItemId;
     private BigDecimal creditLimit;
-    private BigDecimal currentBalance;
+    private BigDecimal currentDebt;
     private String cardImageUrl;
 
 }
