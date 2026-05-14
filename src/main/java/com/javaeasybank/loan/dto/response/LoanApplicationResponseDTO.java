@@ -17,6 +17,7 @@ public class LoanApplicationResponseDTO {
     private BigDecimal applyAmount;
     private Integer applyPeriod;
     private BigDecimal rate;
+    private String disbursementAccount;     // 客戶申請時選擇的撥款入帳帳號
     private LoanApplicationStatus applicationStatus;
     private LocalDateTime createTime;
     private LoanContactStatus latestContactStatus;

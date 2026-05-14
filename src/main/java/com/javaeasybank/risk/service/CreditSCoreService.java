@@ -7,6 +7,7 @@ import com.javaeasybank.risk.enums.RiskLevel;
 import com.javaeasybank.risk.entity.CustomerCreditInfo;
 import com.javaeasybank.risk.repository.CustomerCreditRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -40,6 +42,8 @@ public class CreditSCoreService {
         CustomerCreditInfo info = ccRepos.findById(customerId)
                 .orElseThrow(() -> new IllegalArgumentException("CustomerCreditInfo not found: " + customerId));
         score(info);
+        log.info("[CreditScore] 評分結果 customerId={} finalScore={} riskLevel={}",
+                customerId, info.getFinalScore(), info.getRiskLevel());
         return ccRepos.save(info);
     }
 
@@ -120,15 +124,30 @@ public class CreditSCoreService {
     // 2. 選填欄位覆蓋（從 RiskReviewRequest 更新 CustomerCreditInfo）
     @Transactional
     public void updateIfPresent(RiskReviewRequest dto) {
+        log.info("[CreditScore] 查詢 CustomerCreditInfo customerId={}", dto.getCustomerId());
         CustomerCreditInfo info = ccRepos.findById(dto.getCustomerId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "CustomerCreditInfo not found: " + dto.getCustomerId()));
+                .orElseThrow(() -> {
+                    log.error("[CreditScore] ❌ 找不到 CustomerCreditInfo，customerId={} — 請確認客戶建立時有初始化信用資料",
+                            dto.getCustomerId());
+                    return new IllegalArgumentException(
+                            "CustomerCreditInfo not found: " + dto.getCustomerId());
+                });
 
-        Optional.ofNullable(dto.getAnnualIncome()).ifPresent(info::setAnnualIncome);
-        Optional.ofNullable(dto.getExternalScore()).ifPresent(info::setExternalScore);
-        Optional.ofNullable(dto.getOtherBankDebt()).ifPresent(info::setOtherBankDebt);
-        Optional.ofNullable(dto.getOccupation()).ifPresent(info::setOccupation);
-        Optional.ofNullable(dto.getHasRealEstate()).ifPresent(info::setHasRealEstate);
+        log.info("[CreditScore] 找到信用資料，更新前 externalScore={}, annualIncome={}, occupation={}, otherBankDebt={}, hasRealEstate={}",
+                info.getExternalScore(), info.getAnnualIncome(),
+                info.getOccupation(), info.getOtherBankDebt(), info.getHasRealEstate());
+
+        Optional.ofNullable(dto.getAnnualIncome()).ifPresent(v -> { log.info("[CreditScore] 覆蓋 annualIncome → {}", v); info.setAnnualIncome(v); });
+        Optional.ofNullable(dto.getExternalScore()).ifPresent(v -> { log.info("[CreditScore] 覆蓋 externalScore → {}", v); info.setExternalScore(v); });
+        Optional.ofNullable(dto.getOtherBankDebt()).ifPresent(v -> { log.info("[CreditScore] 覆蓋 otherBankDebt → {}", v); info.setOtherBankDebt(v); });
+        Optional.ofNullable(dto.getOccupation()).ifPresent(v -> { log.info("[CreditScore] 覆蓋 occupation → {}", v); info.setOccupation(v); });
+        Optional.ofNullable(dto.getHasRealEstate()).ifPresent(v -> { log.info("[CreditScore] 覆蓋 hasRealEstate → {}", v); info.setHasRealEstate(v); });
+
+        if (dto.getAnnualIncome() == null && dto.getExternalScore() == null
+                && dto.getOtherBankDebt() == null && dto.getOccupation() == null
+                && dto.getHasRealEstate() == null) {
+            log.info("[CreditScore] 選填欄位皆為 null，沿用資料庫既有資料（不覆蓋）");
+        }
 
         ccRepos.save(info);
     }

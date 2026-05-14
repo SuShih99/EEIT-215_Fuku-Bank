@@ -500,6 +500,7 @@ public class LoanApplicationService {
         dto.setApplyAmount(loan.getApplyAmount());
         dto.setApplyPeriod(loan.getApplyPeriod());
         dto.setRate(loan.getRate());
+        dto.setDisbursementAccount(loan.getDisbursementAccount());
         dto.setApplicationStatus(loan.getApplicationStatus());
         dto.setCreateTime(loan.getCreateTime());
         dto.setLatestContactStatus(loan.getLatestContactStatus());
