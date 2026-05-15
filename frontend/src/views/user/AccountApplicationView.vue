@@ -50,6 +50,7 @@ const form = reactive({
   // Step 3: 職業 & 資金
   occupation: '',
   employer: '',
+  annualIncome: '',
   estimatedMonthlyTx: '',
   accountPurpose: '',
   fundSource: '',
@@ -270,6 +271,15 @@ const fundSourceOptions = [
   { value: 'OTHER', label: '其他' },
 ]
 
+const annualIncomeOptions = [
+  { value: 50, label: '50 萬元以下' },
+  { value: 100, label: '51 - 100 萬元' },
+  { value: 200, label: '101 - 200 萬元' },
+  { value: 500, label: '201 - 500 萬元' },
+  { value: 1000, label: '501 - 1000 萬元' },
+  { value: 1001, label: '1001 萬元以上' },
+]
+
 const showCurrency = computed(() =>
   form.accountType === UI_ACCOUNT_TYPE.CHECKING_FOREIGN ||
   form.accountType === UI_ACCOUNT_TYPE.TIME_DEPOSIT
@@ -320,6 +330,7 @@ async function handleSubmit() {
     formData.append('currentAddress', form.currentAddress)
     if (form.occupation) formData.append('occupation', form.occupation)
     if (form.employer) formData.append('employer', form.employer)
+    if (form.annualIncome) formData.append('annualIncome', form.annualIncome)
     if (form.estimatedMonthlyTx) formData.append('estimatedMonthlyTx', form.estimatedMonthlyTx)
     if (form.accountPurpose) formData.append('accountPurpose', form.accountPurpose)
     if (form.fundSource) formData.append('fundSource', form.fundSource)
@@ -382,6 +393,7 @@ async function fetchProfile() {
     form.address = profile.address || profile.currentAddress || profile.registeredAddress || form.address
     form.occupation = profile.occupation || form.occupation
     form.employer = profile.employer || form.employer
+    form.annualIncome = normalizeAnnualIncomeRange(profile.annualIncome) || form.annualIncome
     form.estimatedMonthlyTx = profile.estimatedMonthlyTx || form.estimatedMonthlyTx
     form.accountPurpose = profile.accountPurpose || form.accountPurpose
     form.fundSource = profile.fundSource || form.fundSource
@@ -413,6 +425,19 @@ function getAccountTypeLabel(app) {
   return '台幣活期存款'
 }
 
+function normalizeAnnualIncomeRange(value) {
+  if (value === null || value === undefined || value === '') return ''
+  const rawAmount = Number(value)
+  if (Number.isNaN(rawAmount)) return ''
+  const amountInTenThousands = rawAmount > 10000 ? rawAmount / 10000 : rawAmount
+  if (amountInTenThousands <= 50) return 50
+  if (amountInTenThousands <= 100) return 100
+  if (amountInTenThousands <= 200) return 200
+  if (amountInTenThousands <= 500) return 500
+  if (amountInTenThousands <= 1000) return 1000
+  return 1001
+}
+
 // ===== 一鍵帶入測試資料 =====
 async function fillMockData() {
   // Step 1
@@ -435,6 +460,7 @@ async function fillMockData() {
   // Step 3
   form.occupation = '軟體工程師'
   form.employer = 'ABC 科技股份有限公司'
+  form.annualIncome = 100
   form.estimatedMonthlyTx = 50
   form.accountPurpose = 'SALARY'
   form.fundSource = 'SALARY'
@@ -664,6 +690,14 @@ onMounted(async () => {
         <div class="jb-form-item">
           <label class="jb-label">任職機構</label>
           <input v-model.trim="form.employer" class="jb-input" placeholder="公司名稱" />
+        </div>
+
+        <div class="jb-form-item">
+          <label class="jb-label">年收入</label>
+          <select v-model="form.annualIncome" class="jb-select">
+            <option value="">請選擇</option>
+            <option v-for="o in annualIncomeOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+          </select>
         </div>
 
         <div class="jb-form-item">

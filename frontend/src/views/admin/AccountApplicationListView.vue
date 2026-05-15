@@ -267,6 +267,14 @@ onMounted(fetchData)
         expandedRowKeys = expanded ? [record.id] : []
       }"
     >
+      <template #emptyText>
+        <div class="account-application-empty-state">
+          <div class="account-application-empty-mark" aria-hidden="true"></div>
+          <strong>{{ status ? '目前沒有符合條件的申請' : '目前尚無開戶申請' }}</strong>
+          <span>{{ status ? '請切換審核狀態或重新搜尋。' : '客戶送出申請後，會在這裡等待審核。' }}</span>
+        </div>
+      </template>
+
       <!-- 欄位自訂 -->
       <template #bodyCell="{ column, record }">
 
@@ -303,7 +311,7 @@ onMounted(fetchData)
 
         <!-- 狀態 -->
         <template v-else-if="column.key === 'status'">
-          <div :class="['status-tag', `status-${record.status.toLowerCase()}`]">
+          <div :class="['status-tag', `status-${String(record.status || '').toLowerCase()}`]">
             <span class="status-dot"></span>
             {{ statusOptions.find(o => o.value === record.status)?.label || record.status }}
           </div>
@@ -599,5 +607,61 @@ onMounted(fetchData)
   font-size: 11px;
   color: #8c8c8c;
   padding: 4px 0;
+}
+
+.account-application-empty-state {
+  display: flex;
+  min-height: 220px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #6f6a60;
+  text-align: center;
+  background: linear-gradient(145deg, rgba(255, 251, 244, 0.82), rgba(246, 239, 227, 0.74));
+}
+
+.account-application-empty-state strong {
+  color: #2f312b;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.account-application-empty-state span {
+  color: #8a8477;
+  font-size: 13px;
+}
+
+.account-application-empty-mark {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(255, 251, 244, 0.96), rgba(242, 233, 216, 0.92));
+  border: 1px solid rgba(164, 142, 111, 0.2);
+  box-shadow: 0 16px 34px rgba(95, 82, 61, 0.12);
+}
+
+.account-application-empty-mark::before,
+.account-application-empty-mark::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: rgba(111, 102, 85, 0.3);
+}
+
+.account-application-empty-mark::before {
+  top: 18px;
+  width: 26px;
+  height: 3px;
+}
+
+.account-application-empty-mark::after {
+  top: 30px;
+  width: 18px;
+  height: 3px;
+  box-shadow: 0 10px 0 rgba(111, 102, 85, 0.3);
 }
 </style>

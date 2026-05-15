@@ -16,12 +16,22 @@ import com.javaeasybank.customer.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Date;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -33,9 +43,11 @@ import java.util.stream.Collectors;
 public class AccountApplicationService {
 
     private static final int MAX_APPLICATIONS_PER_24H = 3;
+    private static final String ACCOUNT_APPLICATION_TABLE = "ACCOUNT_APPLICATION";
     private final AccountApplicationRepository applicationRepository;
     private final AccountRepository accountRepository;
     private final CustomerService customerService;
+    private final JdbcTemplate jdbcTemplate;
 
     // =========================================================
     // 客戶端：提交申請
@@ -140,7 +152,7 @@ public class AccountApplicationService {
         app.setStatus(ApplicationStatus.PENDING);
 
         AccountApplication saved = applicationRepository.save(app);
-        syncCustomerProfileFromApplication(saved);
+        syncCustomerProfileFromApplication(saved, request.getAnnualIncome());
         log.info("Account application submitted: id={}, customer={}, riskFlag={}",
                 saved.getId(), customerId, riskFlag);
 
@@ -165,13 +177,47 @@ public class AccountApplicationService {
 
     @Transactional(readOnly = true)
     public Page<AccountApplicationResponse> listByStatus(ApplicationStatus status, Pageable pageable) {
-        Page<AccountApplication> page;
-        if (status != null) {
-            page = applicationRepository.findByStatusOrderByCreatedAtDesc(status, pageable);
-        } else {
-            page = applicationRepository.findAllByOrderByCreatedAtDesc(pageable);
+        Set<String> columns = findAccountApplicationColumns();
+        if (columns.isEmpty()) {
+            log.warn("Cannot list account applications because table {} was not found", ACCOUNT_APPLICATION_TABLE);
+            return new PageImpl<>(List.of(), pageable, 0);
         }
-        return page.map(AccountApplicationResponse::fromEntityForAdmin);
+
+        List<Object> whereArgs = new ArrayList<>();
+        String whereSql = "";
+        if (status != null && columns.contains("status")) {
+            whereSql = " WHERE [status] = ?";
+            whereArgs.add(status.name());
+        }
+
+        Long total = jdbcTemplate.queryForObject(
+                "SELECT COUNT(1) FROM " + ACCOUNT_APPLICATION_TABLE + whereSql,
+                Long.class,
+                whereArgs.toArray());
+
+        if (total == null || total == 0) {
+            return new PageImpl<>(List.of(), pageable, 0);
+        }
+
+        List<Object> queryArgs = new ArrayList<>(whereArgs);
+        queryArgs.add(pageable.getOffset());
+        queryArgs.add(pageable.getPageSize());
+
+        String orderColumn = columns.contains("created_at")
+                ? "[created_at]"
+                : columns.contains("id") ? "[id]" : "(SELECT NULL)";
+        String sql = "SELECT " + buildAdminApplicationSelectClause(columns)
+                + " FROM " + ACCOUNT_APPLICATION_TABLE
+                + whereSql
+                + " ORDER BY " + orderColumn + " DESC"
+                + " OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+
+        List<AccountApplicationResponse> content = jdbcTemplate.query(
+                sql,
+                this::mapAdminApplicationRow,
+                queryArgs.toArray());
+
+        return new PageImpl<>(content, pageable, total);
     }
 
     @Transactional(readOnly = true)
@@ -332,6 +378,10 @@ public class AccountApplicationService {
     }
 
     private void syncCustomerProfileFromApplication(AccountApplication app) {
+        syncCustomerProfileFromApplication(app, null);
+    }
+
+    private void syncCustomerProfileFromApplication(AccountApplication app, Integer annualIncome) {
         CustomerRespository.AccountApplicationProfileSyncRequest request =
                 new CustomerRespository.AccountApplicationProfileSyncRequest();
 
@@ -347,6 +397,7 @@ public class AccountApplicationService {
         request.setCurrentAddress(app.getCurrentAddress());
         request.setOccupation(app.getOccupation());
         request.setEmployer(app.getEmployer());
+        request.setAnnualIncome(annualIncome);
         request.setEstimatedMonthlyTx(app.getEstimatedMonthlyTx());
         request.setAccountPurpose(enumName(app.getAccountPurpose()));
         request.setFundSource(enumName(app.getFundSource()));
@@ -371,5 +422,153 @@ public class AccountApplicationService {
 
     private String enumName(Enum<?> value) {
         return value == null ? null : value.name();
+    }
+
+    private Set<String> findAccountApplicationColumns() {
+        List<String> columnNames = jdbcTemplate.queryForList("""
+                SELECT COLUMN_NAME
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_NAME = ?
+                """, String.class, ACCOUNT_APPLICATION_TABLE);
+
+        return columnNames.stream()
+                .map(column -> column.toLowerCase(Locale.ROOT))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private String buildAdminApplicationSelectClause(Set<String> columns) {
+        List<String> selects = new ArrayList<>();
+        selects.add(selectColumn(columns, "id", "id", "CAST(NULL AS BIGINT)"));
+        selects.add(selectColumn(columns, "application_no", "application_no", applicationNoFallback(columns)));
+        selects.add(selectColumn(columns, "customer_id", "customer_id", "N''"));
+        selects.add(selectColumn(columns, "account_type", "account_type", "N'CHECKING'"));
+        selects.add(selectColumn(columns, "currency", "currency", "N'TWD'"));
+        selects.add(selectColumn(columns, "customer_name", "customer_name", "N''"));
+        selects.add(selectColumn(columns, "id_number", "id_number", "N''"));
+        selects.add(selectColumn(columns, "birthday", "birthday", "CAST(NULL AS DATE)"));
+        selects.add(selectColumn(columns, "gender", "gender", "CAST(NULL AS NVARCHAR(1))"));
+        selects.add(selectColumn(columns, "email", "email", "N''"));
+        selects.add(selectColumn(columns, "address", "address", addressFallback(columns)));
+        selects.add(selectColumn(columns, "nationality", "nationality", "N'TW'"));
+        selects.add(selectColumn(columns, "phone", "phone", "N''"));
+        selects.add(selectColumn(columns, "registered_address", "registered_address", "N''"));
+        selects.add(selectColumn(columns, "current_address", "current_address", "N''"));
+        selects.add(selectColumn(columns, "occupation", "occupation", "CAST(NULL AS NVARCHAR(50))"));
+        selects.add(selectColumn(columns, "employer", "employer", "CAST(NULL AS NVARCHAR(100))"));
+        selects.add(selectColumn(columns, "estimated_monthly_tx", "estimated_monthly_tx", "CAST(NULL AS INT)"));
+        selects.add(selectColumn(columns, "account_purpose", "account_purpose", "CAST(NULL AS NVARCHAR(30))"));
+        selects.add(selectColumn(columns, "fund_source", "fund_source", "CAST(NULL AS NVARCHAR(30))"));
+        selects.add(selectColumn(columns, "tax_residency", "tax_residency", "N'TW'"));
+        selects.add(selectColumn(columns, "is_pep", "is_pep", "CAST(0 AS BIT)"));
+        selects.add(selectColumn(columns, "id_front_url", "id_front_url", "CAST(NULL AS NVARCHAR(255))"));
+        selects.add(selectColumn(columns, "id_back_url", "id_back_url", "CAST(NULL AS NVARCHAR(255))"));
+        selects.add(selectColumn(columns, "second_id_url", "second_id_url", "CAST(NULL AS NVARCHAR(255))"));
+        selects.add(selectColumn(columns, "risk_flag", "risk_flag", "N'NORMAL'"));
+        selects.add(selectColumn(columns, "status", "status", "N'PENDING'"));
+        selects.add(selectColumn(columns, "reject_reason", "reject_reason", "CAST(NULL AS NVARCHAR(500))"));
+        selects.add(selectColumn(columns, "reviewed_at", "reviewed_at", "CAST(NULL AS DATETIME2)"));
+        selects.add(selectColumn(columns, "reviewed_by", "reviewed_by", "CAST(NULL AS NVARCHAR(50))"));
+        selects.add(selectColumn(columns, "created_account_number", "created_account_number", "CAST(NULL AS NVARCHAR(14))"));
+        selects.add(selectColumn(columns, "created_at", "created_at", "CAST(NULL AS DATETIME2)"));
+        selects.add(selectColumn(columns, "updated_at", "updated_at", updatedAtFallback(columns)));
+        return String.join(", ", selects);
+    }
+
+    private String selectColumn(Set<String> columns, String columnName, String alias, String fallbackExpression) {
+        if (columns.contains(columnName.toLowerCase(Locale.ROOT))) {
+            return "[" + columnName + "] AS [" + alias + "]";
+        }
+        return fallbackExpression + " AS [" + alias + "]";
+    }
+
+    private String applicationNoFallback(Set<String> columns) {
+        return columns.contains("id") ? "CONCAT(N'APP-', [id])" : "N'-'";
+    }
+
+    private String addressFallback(Set<String> columns) {
+        if (columns.contains("current_address") && columns.contains("registered_address")) {
+            return "COALESCE([current_address], [registered_address], N'')";
+        }
+        if (columns.contains("current_address")) {
+            return "COALESCE([current_address], N'')";
+        }
+        if (columns.contains("registered_address")) {
+            return "COALESCE([registered_address], N'')";
+        }
+        return "N''";
+    }
+
+    private String updatedAtFallback(Set<String> columns) {
+        return columns.contains("created_at") ? "[created_at]" : "CAST(NULL AS DATETIME2)";
+    }
+
+    private AccountApplicationResponse mapAdminApplicationRow(ResultSet rs, int rowNum) throws SQLException {
+        return AccountApplicationResponse.builder()
+                .id(nullableLong(rs, "id"))
+                .applicationNo(rs.getString("application_no"))
+                .customerId(rs.getString("customer_id"))
+                .accountType(parseEnum(AccountType.class, rs.getString("account_type"), AccountType.CHECKING))
+                .currency(parseEnum(Currency.class, rs.getString("currency"), Currency.TWD))
+                .name(rs.getString("customer_name"))
+                .idNumber(rs.getString("id_number"))
+                .birthday(nullableDate(rs, "birthday"))
+                .gender(rs.getString("gender"))
+                .email(rs.getString("email"))
+                .address(rs.getString("address"))
+                .nationality(rs.getString("nationality"))
+                .phone(rs.getString("phone"))
+                .registeredAddress(rs.getString("registered_address"))
+                .currentAddress(rs.getString("current_address"))
+                .occupation(rs.getString("occupation"))
+                .employer(rs.getString("employer"))
+                .estimatedMonthlyTx(nullableInteger(rs, "estimated_monthly_tx"))
+                .accountPurpose(parseEnum(AccountPurpose.class, rs.getString("account_purpose"), null))
+                .fundSource(parseEnum(FundSource.class, rs.getString("fund_source"), null))
+                .taxResidency(rs.getString("tax_residency"))
+                .isPep(rs.getBoolean("is_pep"))
+                .idFrontUrl(rs.getString("id_front_url"))
+                .idBackUrl(rs.getString("id_back_url"))
+                .secondIdUrl(rs.getString("second_id_url"))
+                .riskFlag(parseEnum(RiskFlag.class, rs.getString("risk_flag"), RiskFlag.NORMAL))
+                .status(parseEnum(ApplicationStatus.class, rs.getString("status"), ApplicationStatus.PENDING))
+                .rejectReason(rs.getString("reject_reason"))
+                .reviewedAt(nullableDateTime(rs, "reviewed_at"))
+                .reviewedBy(rs.getString("reviewed_by"))
+                .createdAccountNumber(rs.getString("created_account_number"))
+                .createdAt(nullableDateTime(rs, "created_at"))
+                .updatedAt(nullableDateTime(rs, "updated_at"))
+                .build();
+    }
+
+    private Long nullableLong(ResultSet rs, String columnName) throws SQLException {
+        long value = rs.getLong(columnName);
+        return rs.wasNull() ? null : value;
+    }
+
+    private Integer nullableInteger(ResultSet rs, String columnName) throws SQLException {
+        int value = rs.getInt(columnName);
+        return rs.wasNull() ? null : value;
+    }
+
+    private java.time.LocalDate nullableDate(ResultSet rs, String columnName) throws SQLException {
+        Date value = rs.getDate(columnName);
+        return value == null ? null : value.toLocalDate();
+    }
+
+    private java.time.LocalDateTime nullableDateTime(ResultSet rs, String columnName) throws SQLException {
+        Timestamp value = rs.getTimestamp(columnName);
+        return value == null ? null : value.toLocalDateTime();
+    }
+
+    private <E extends Enum<E>> E parseEnum(Class<E> enumType, String rawValue, E fallback) {
+        if (rawValue == null || rawValue.isBlank()) {
+            return fallback;
+        }
+        try {
+            return Enum.valueOf(enumType, rawValue.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            log.warn("Unsupported account application {} value: {}", enumType.getSimpleName(), rawValue);
+            return fallback;
+        }
     }
 }

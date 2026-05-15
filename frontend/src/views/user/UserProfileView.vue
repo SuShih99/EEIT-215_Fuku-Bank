@@ -186,10 +186,9 @@
             <div class="ctbc-field">
               <select v-model="editForm.annualIncome" class="jb-input" style="width: 200px;">
                 <option value="">請選擇</option>
-                <option :value="500000">50萬以下</option>
-                <option :value="1000000">50萬 - 100萬</option>
-                <option :value="2000000">100萬 - 200萬</option>
-                <option :value="3000000">200萬以上</option>
+                <option v-for="option in annualIncomeOptions" :key="option.value" :value="option.value">
+                  {{ option.label }}
+                </option>
               </select>
             </div>
           </div>
@@ -290,6 +289,14 @@ const editForm = reactive({
 const jobOptions = ['農林漁牧業', '礦業及土石採取業', '製造業', '水電燃氣業', '營造業', '批發及零售業', '住宿及餐飲業', '運輸及通信業', '金融及保險業', '不動產及租賃業', '專業科學及技術服務業', '教育服務業', '醫療保健及社會工作服務業', '藝術娛樂及休閒服務業', '家管/學生/退休/無業', '其他']
 const occupationOptions = ['民意代表/高階主管', '專業人員', '技術員及助理專業人員', '事務支援人員', '服務及銷售工作人員', '農林漁牧業生產人員', '技藝有關工作人員', '機械設備操作及組裝人員', '基層技術工及勞力工', '軍人', '無', '其他']
 const fundSourceOptions = ['薪資', '經營事業收入', '退休(職)金', '遺產繼承(含贈與)', '買賣房地產', '理財投資', '租金收入', '其他']
+const annualIncomeOptions = [
+  { value: 50, label: '50 萬元以下' },
+  { value: 100, label: '51 - 100 萬元' },
+  { value: 200, label: '101 - 200 萬元' },
+  { value: 500, label: '201 - 500 萬元' },
+  { value: 1000, label: '501 - 1000 萬元' },
+  { value: 1001, label: '1001 萬元以上' },
+]
 
 const avatarSrc = ref(null)
 
@@ -317,7 +324,7 @@ const isDirty = computed(() => {
   if (currentFund !== (profile.fundSource || '')) return true
   
   if (editForm.employer !== (profile.employer || '')) return true
-  if (editForm.annualIncome !== (profile.annualIncome || '')) return true
+  if (editForm.annualIncome !== normalizeAnnualIncomeRange(profile.annualIncome)) return true
   
   return false
 })
@@ -441,6 +448,19 @@ function parseSelectOther(value, options) {
   return { select: '其他', other: value }
 }
 
+function normalizeAnnualIncomeRange(value) {
+  if (value === null || value === undefined || value === '') return ''
+  const rawAmount = Number(value)
+  if (Number.isNaN(rawAmount)) return ''
+  const amountInTenThousands = rawAmount > 10000 ? rawAmount / 10000 : rawAmount
+  if (amountInTenThousands <= 50) return 50
+  if (amountInTenThousands <= 100) return 100
+  if (amountInTenThousands <= 200) return 200
+  if (amountInTenThousands <= 500) return 500
+  if (amountInTenThousands <= 1000) return 1000
+  return 1001
+}
+
 function resetForm() {
   editForm.phone = profile.phone || ''
   editForm.email = ''
@@ -460,7 +480,7 @@ function resetForm() {
   editForm.fundSourceOther = f.other
   
   editForm.employer = profile.employer || ''
-  editForm.annualIncome = profile.annualIncome || ''
+  editForm.annualIncome = normalizeAnnualIncomeRange(profile.annualIncome)
 }
 
 onUnmounted(() => {

@@ -59,6 +59,7 @@ public class AccountApplicationRequest {
     // 職業
     private String occupation;
     private String employer;
+    private Integer annualIncome;
     private Integer estimatedMonthlyTx;
 
     // 目的 & 資金來源

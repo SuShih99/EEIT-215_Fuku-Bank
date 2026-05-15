@@ -114,6 +114,7 @@ public class CustomerRespository {
         private String currentAddress;
         private String occupation;
         private String employer;
+        private Integer annualIncome;
         private Integer estimatedMonthlyTx;
         private String accountPurpose;
         private String fundSource;

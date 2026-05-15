@@ -379,6 +379,9 @@ public class CustomerServiceImpl implements CustomerService {
         profile.setOccupation(request.getOccupation());
         profile.setJob(request.getOccupation());
         profile.setEmployer(request.getEmployer());
+        if (request.getAnnualIncome() != null) {
+            profile.setAnnualIncome(request.getAnnualIncome());
+        }
         profile.setEstimatedMonthlyTx(request.getEstimatedMonthlyTx());
         profile.setAccountPurpose(request.getAccountPurpose());
         profile.setFundSource(request.getFundSource());
