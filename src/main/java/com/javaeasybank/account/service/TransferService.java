@@ -112,8 +112,8 @@ public class TransferService {
         BigDecimal velocitySum = velocityStats.sum();
         if (velocityCount >= 3) {
             log.warn("[Transfer] 高頻轉帳 fromAcc={} count={}", fromAccNum, velocityCount);
-            throw new TransferException("HIGH_FREQUENCY",
-                    "短時間內轉帳次數過多，請稍後再試");
+            //throw new TransferException("HIGH_FREQUENCY",
+                   // "短時間內轉帳次數過多，請稍後再試");
         }
 
         String internalWarning = null;

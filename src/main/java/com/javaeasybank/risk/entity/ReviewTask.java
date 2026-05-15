@@ -52,6 +52,13 @@ public class ReviewTask {
     private String adminComment;
     //優先度
     private Integer priority;
+    /**
+     * 客戶送出的補件文件清單（JSON 陣列，null = 尚未收到補件）
+     * ⚠ DB migration: ALTER TABLE REVIEW_TASK ADD attachments NVARCHAR(MAX) NULL
+     */
+    @Lob
+    @Column(name = "attachments", columnDefinition = "NVARCHAR(MAX)")
+    private String attachments;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @CreatedDate
@@ -64,9 +71,5 @@ public class ReviewTask {
     @Version // 樂觀鎖預防併發衝突
     private Long version;
 
-    /** 客戶送出的補件文件清單（JSON 陣列，null = 尚未收到補件）
-     *  ⚠ DB migration: ALTER TABLE REVIEW_TASK ADD attachments NVARCHAR(MAX) NULL
-     */
-    @Column(columnDefinition = "NVARCHAR(MAX)")
-    private String attachments;
+
 }

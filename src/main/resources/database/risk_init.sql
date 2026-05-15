@@ -46,6 +46,7 @@ CREATE TABLE REVIEW_TASK
     assignee      VARCHAR(255) NULL,
     admin_comment VARCHAR(255) NULL,
     priority      INT      DEFAULT 0,
+    attachments   NVARCHAR(MAX) NULL,
     create_at     DATETIME DEFAULT GETDATE(), -- 自動記錄建立時間
     processed_at  DATETIME NULL,
     version       BIGINT       DEFAULT 0,
