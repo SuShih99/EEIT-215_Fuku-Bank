@@ -31,12 +31,12 @@ CREATE TABLE CUSTOMER_APPLICATION (
 CREATE TABLE CUSTOMER_PROFILE (
     customer_id VARCHAR(20) NOT NULL PRIMARY KEY, -- 預設建立叢集索引 (Clustered Index)
     cif VARCHAR(20) NOT NULL UNIQUE,
-    id_number VARCHAR(20) NOT NULL UNIQUE,
+    id_number VARCHAR(20) NOT NULL,
     name NVARCHAR(50) NOT NULL,
     birthday DATE NOT NULL,
     gender CHAR(1) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    phone VARCHAR(20) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
     address NVARCHAR(255) NOT NULL,
     nationality VARCHAR(10) NULL,
     registered_address NVARCHAR(255) NULL,

@@ -35,13 +35,13 @@
             </div>
 
             <div class="jb-form-item">
-              <label for="login-username" class="jb-label">使用者名稱 / 信箱</label>
+              <label for="login-username" class="jb-label">使用者名稱</label>
               <input
                 id="login-username"
                 v-model="form.username"
                 type="text"
                 class="jb-input"
-                placeholder="輸入使用者名稱或信箱"
+                placeholder="輸入使用者名稱"
                 autocomplete="username"
                 required
               />

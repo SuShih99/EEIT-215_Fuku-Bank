@@ -52,6 +52,9 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
 
     // 用於產生隨機英數
     private static final String ALPHANUMERIC_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    private static final String TAIWAN_MOBILE_PATTERN = "^09\\d{8}$";
+    private static final String EMAIL_PATTERN = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
+    private static final String CUSTOMER_NAME_PATTERN = "^[\\p{IsHan}A-Za-z\\s]{2,30}$";
     private final SecureRandom secureRandom = new SecureRandom();
 
     public CustomerAuthServiceImpl(CustomerAuthRepository customerAuthRepository,
@@ -84,19 +87,19 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
         if (!TaiwanIdValidator.isValid(idNumber)) {
             throw new BusinessException("身分證字號格式不正確");
         }
+        if (!isValidCustomerName(request.getName())) {
+            throw new BusinessException("姓名格式不正確，請輸入 2 到 30 個中英文字符");
+        }
+        if (!isValidEmail(email)) {
+            throw new BusinessException("電子信箱格式不正確");
+        }
+        if (!isValidTaiwanMobile(phone)) {
+            throw new BusinessException("手機號碼格式不正確，請輸入 09 開頭共 10 碼");
+        }
 
-        // 1. 檢查帳號是否重複
+        // 1. Demo 保留 username 唯一，其他身分資料僅做格式驗證
         if (customerAuthRepository.existsByUsername(username)) {
             throw new BusinessException("使用者帳號已存在");
-        }
-        if (customerProfileRepository.findByEmail(email).isPresent()) {
-            throw new BusinessException("電子信箱已被使用");
-        }
-        if (customerProfileRepository.findByPhone(phone).isPresent()) {
-            throw new BusinessException("手機號碼已被使用");
-        }
-        if (customerProfileRepository.findByIdNumber(idNumber).isPresent()) {
-            throw new BusinessException("身分證字號已存在");
         }
 
         // 2. 建立 customer_profile
@@ -259,20 +262,16 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
 
         if (request.getPhone() != null) {
             String phone = request.getPhone().trim();
-            customerProfileRepository.findByPhone(phone)
-                    .filter(existing -> !existing.getCustomerId().equals(customerId))
-                    .ifPresent(existing -> {
-                        throw new BusinessException("手機號碼已被使用");
-                    });
+            if (!isValidTaiwanMobile(phone)) {
+                throw new BusinessException("手機號碼格式不正確，請輸入 09 開頭共 10 碼");
+            }
             profile.setPhone(phone);
         }
         if (request.getEmail() != null) {
             String email = request.getEmail().trim();
-            customerProfileRepository.findByEmail(email)
-                    .filter(existing -> !existing.getCustomerId().equals(customerId))
-                    .ifPresent(existing -> {
-                        throw new BusinessException("電子信箱已被使用");
-                    });
+            if (!isValidEmail(email)) {
+                throw new BusinessException("電子信箱格式不正確");
+            }
             profile.setEmail(email);
         }
         if (request.getAddress() != null) {
@@ -326,6 +325,15 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
         auth.setResetToken(resetToken);
         auth.setResetTokenExpiry(LocalDateTime.now().plusMinutes(30));
         customerAuthRepository.save(auth);
+        recordLogin(
+                profile.getCustomerId(),
+                auth.getUsername(),
+                "成功",
+                "密碼重設連結已發送",
+                null,
+                "Password reset request",
+                "安全中心 / 密碼重設"
+        );
 
         // 組成重設連結
         String resetLink = frontendUrl + "/reset-password?token=" + resetToken;
@@ -350,6 +358,15 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
         auth.setResetToken(null);
         auth.setResetTokenExpiry(null);
         customerAuthRepository.save(auth);
+        recordLogin(
+                auth.getCustomerId(),
+                auth.getUsername(),
+                "成功",
+                "密碼已完成變更",
+                null,
+                "Password reset completed",
+                "安全中心 / 密碼重設"
+        );
     }
 
     // ===========================
@@ -461,6 +478,18 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
     private String truncate(String value, int maxLength) {
         if (value == null) return null;
         return value.length() <= maxLength ? value : value.substring(0, maxLength);
+    }
+
+    private boolean isValidTaiwanMobile(String phone) {
+        return phone != null && phone.matches(TAIWAN_MOBILE_PATTERN);
+    }
+
+    private boolean isValidEmail(String email) {
+        return email != null && email.matches(EMAIL_PATTERN);
+    }
+
+    private boolean isValidCustomerName(String name) {
+        return name != null && name.trim().matches(CUSTOMER_NAME_PATTERN);
     }
 
     private CustomerRespository.CustomerResponse convertToResponse(CustomerProfile profile, CustomerAuth auth) {

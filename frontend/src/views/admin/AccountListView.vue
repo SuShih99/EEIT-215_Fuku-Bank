@@ -70,7 +70,7 @@
 
       <!-- 右側全域操作區 -->
       <div class="global-actions">
-        <a-button v-if="canOperateAccounts" type="primary" class="rounded-btn" @click="showCreateModal = true">
+        <a-button v-if="canCreateAccounts" type="primary" class="rounded-btn" @click="showCreateModal = true">
           <template #icon><PlusOutlined /></template>
           建立帳戶
         </a-button>
@@ -121,7 +121,7 @@
         </template>
 
         <!-- F 終點：行動按鈕 -->
-        <template v-else-if="column.key === 'action' && canOperateAccounts">
+        <template v-else-if="column.key === 'action' && canSeeAccountActions">
           <div class="action-cell">
             <a-button 
               v-if="record.status !== 'CLOSED'"
@@ -224,6 +224,13 @@
       @ok="handleStatusChange"
       :confirm-loading="statusModalLoading"
     >
+      <a-alert
+        v-if="statusActionError"
+        :message="statusActionError"
+        type="error"
+        show-icon
+        style="margin-bottom: 16px"
+      />
       <a-form layout="vertical">
         <a-form-item label="帳號">
           <a-input :value="statusTarget.accountNumber" disabled />
@@ -270,7 +277,8 @@ import {
 } from '@/api/account'
 
 const authStore = useAuthStore()
-const canOperateAccounts = computed(() => authStore.user?.roleCode === 'CFDM')
+const canCreateAccounts = computed(() => authStore.user?.roleCode === 'CFDM')
+const canSeeAccountActions = computed(() => ['CFDM', 'CFSO'].includes(authStore.user?.roleCode))
 
 // === 狀態/型別 中文對照 ===
 const statusMap = {
@@ -352,7 +360,7 @@ const baseColumns = [
 ]
 
 const columns = computed(() => {
-  if (!canOperateAccounts.value) {
+  if (!canSeeAccountActions.value) {
     return baseColumns
   }
   return [...baseColumns, { title: '操作', key: 'action', width: 120, fixed: 'right' }]
@@ -539,6 +547,7 @@ const statusTarget = reactive({
   newStatus: undefined,
 })
 const closeConfirmText = ref('')
+const statusActionError = ref('')
 
 // 合法的狀態轉換選項
 const validTransitions = {
@@ -554,6 +563,7 @@ function openStatusModal(record) {
   statusTarget.currentStatus = record.status
   statusTarget.newStatus = undefined
   closeConfirmText.value = ''
+  statusActionError.value = ''
   showStatusModal.value = true
 }
 
@@ -578,7 +588,8 @@ async function handleStatusChange() {
     closeConfirmText.value = ''
     await fetchData()
   } catch (err) {
-    message.error(getErrorMessage(err, '狀態變更失敗'))
+    statusActionError.value = getErrorMessage(err, '狀態變更失敗')
+    message.error(statusActionError.value)
   } finally {
     statusModalLoading.value = false
   }

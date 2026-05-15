@@ -30,11 +30,12 @@
             <div class="device-title">
               <span>{{ device.deviceName || '未知裝置' }}</span>
               <a-tag :color="device.status === 'ACTIVE' ? 'green' : 'default'">{{ statusLabel(device.status) }}</a-tag>
+              <a-tag v-if="device.deviceId === latestActiveDeviceId" color="blue">最近登入</a-tag>
             </div>
             <div class="device-meta">
               <span>{{ device.browserName || '未知瀏覽器' }}</span>
               <span>{{ device.operatingSystem || '未知系統' }}</span>
-              <span>{{ device.ipAddress || '未知 IP' }}</span>
+              <span>登入位置/IP {{ device.ipAddress || '未知 IP' }}</span>
               <span>最近使用 {{ formatDateTime(device.lastSeenAt) }}</span>
             </div>
           </div>
@@ -56,7 +57,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { message } from 'ant-design-vue'
 import { LaptopOutlined, ReloadOutlined } from '@ant-design/icons-vue'
 import { getCustomerDevices, revokeCustomerDevice } from '@/api/customerAuth'
@@ -64,13 +65,15 @@ import { getCustomerDevices, revokeCustomerDevice } from '@/api/customerAuth'
 const loading = ref(false)
 const revokingId = ref(null)
 const devices = ref([])
+const latestActiveDeviceId = computed(() => devices.value.find(device => device.status === 'ACTIVE')?.deviceId)
 
 onMounted(loadDevices)
 
 async function loadDevices() {
   loading.value = true
   try {
-    devices.value = await getCustomerDevices()
+    const result = await getCustomerDevices()
+    devices.value = [...result].sort((a, b) => new Date(b.lastSeenAt || 0) - new Date(a.lastSeenAt || 0))
   } catch (e) {
     console.error(e)
     message.error('授權裝置讀取失敗')

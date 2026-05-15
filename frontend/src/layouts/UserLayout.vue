@@ -257,26 +257,26 @@ const notificationModal = reactive({
 
 const offerMessages = [
   {
-    badge: '信用卡',
-    title: 'JCB 現金回饋升級',
-    text: '本月指定通路最高 5% 回饋，適合展示優惠推播與客戶分眾通知。',
+    badge: '安全',
+    title: '登入成功紀錄已建立',
+    text: '系統已記錄本次登入時間、IP 與裝置資訊，可至安全中心查看完整登入紀錄。',
   },
   {
-    badge: '貸款',
-    title: '信貸利率限時優惠',
-    text: '優質往來客戶可享前 3 個月優惠利率，線上申請可快速取得試算結果。',
+    badge: '裝置',
+    title: '授權裝置同步更新',
+    text: '新瀏覽器或不同作業系統登入時，會更新裝置指紋與最近使用時間，協助辨識異常活動。',
   },
   {
     badge: '安全',
-    title: '新裝置登入提醒',
-    text: '系統偵測到新裝置登入時會即時通知，協助客戶掌握帳戶安全。',
+    title: '密碼異動提醒已開啟',
+    text: '密碼重設與登入失敗會寄送安全通知信，避免敏感帳務操作在未授權情境下發生。',
   },
 ]
 
 const notificationPrefs = reactive([
-  { key: 'card', label: '信用卡優惠', desc: '刷卡回饋、通路活動與帳單提醒', enabled: true },
-  { key: 'loan', label: '貸款優惠', desc: '信貸、車貸與房貸方案通知', enabled: true },
-  { key: 'security', label: '安全提醒', desc: '登入、新裝置與密碼異動通知', enabled: true },
+  { key: 'login', label: '登入提醒', desc: '成功、失敗與高風險登入通知', enabled: true },
+  { key: 'device', label: '裝置提醒', desc: '新裝置、授權移除與異常 IP 提醒', enabled: true },
+  { key: 'password', label: '密碼提醒', desc: '密碼重設與帳號安全異動通知', enabled: true },
 ])
 
 function closeOnOutsideClick(e) {

@@ -76,18 +76,6 @@
       </a-table>
     </template>
 
-    <!-- ── 資安長專屬：稽核說明區塊 ── -->
-    <template v-if="isCISO">
-      <div class="section-title">稽核職責說明</div>
-      <div class="ciso-notice">
-        <div class="ciso-notice-icon">🔒</div>
-        <div class="ciso-notice-body">
-          <h3>職責分離提醒</h3>
-          <p>您的角色為 <strong>資訊安全長 (CISO)</strong>，依職責分離原則，您僅能查看系統日誌與員工帳號，<strong>不可參與業務審核</strong>。</p>
-          <p>如需查看操作紀錄，請前往 <a @click="$router.push('/admin/logs')" style="cursor:pointer;color:#5C6B5F;font-weight:600;">系統日誌 →</a></p>
-        </div>
-      </div>
-    </template>
   </div>
 </template>
 
@@ -457,36 +445,4 @@ onUnmounted(() => {
   .welcome-date { text-align: center; }
 }
 
-/* ── CISO 職責說明框 ── */
-.ciso-notice {
-  display: flex;
-  align-items: flex-start;
-  gap: 20px;
-  background: linear-gradient(135deg, #fafaf7 0%, #f0f4f1 100%);
-  border: 1px solid rgba(92, 107, 95, 0.2);
-  border-left: 4px solid #5C6B5F;
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 28px;
-}
-
-.ciso-notice-icon {
-  font-size: 32px;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.ciso-notice-body h3 {
-  font-size: 16px;
-  font-weight: 700;
-  color: #1a1a2e;
-  margin: 0 0 8px 0;
-}
-
-.ciso-notice-body p {
-  font-size: 14px;
-  color: #555;
-  margin: 4px 0;
-  line-height: 1.7;
-}
 </style>

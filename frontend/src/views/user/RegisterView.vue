@@ -142,8 +142,20 @@ function showToast(text, type = 'error') {
 }
 
 async function handleRegister() {
+  if (!isValidCustomerName(form.name)) {
+    showToast('姓名格式不正確，請輸入 2 到 30 個中英文字符', 'error')
+    return
+  }
   if (!isValidTaiwanId(form.idNumber)) {
     showToast('身分證字號格式或檢查碼不正確', 'error')
+    return
+  }
+  if (!isValidEmail(form.email)) {
+    showToast('電子信箱格式不正確', 'error')
+    return
+  }
+  if (!isValidTaiwanMobile(form.phone)) {
+    showToast('手機號碼格式不正確，請輸入 09 開頭共 10 碼', 'error')
     return
   }
 
@@ -184,6 +196,18 @@ function isValidTaiwanId(value) {
   }
   sum += Number(id[9])
   return sum % 10 === 0
+}
+
+function isValidTaiwanMobile(value) {
+  return /^09\d{8}$/.test(String(value || '').trim())
+}
+
+function isValidEmail(value) {
+  return /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(String(value || '').trim())
+}
+
+function isValidCustomerName(value) {
+  return /^[\u4e00-\u9fa5A-Za-z\s]{2,30}$/.test(String(value || '').trim())
 }
 </script>
 

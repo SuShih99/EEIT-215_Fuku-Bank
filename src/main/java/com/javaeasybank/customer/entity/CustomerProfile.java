@@ -22,7 +22,7 @@ public class CustomerProfile {
     @Column(length = 20, nullable = false, unique = true)
     private String cif;
 
-    @Column(name = "id_number", length = 20, nullable = false, unique = true)
+    @Column(name = "id_number", length = 20, nullable = false)
     private String idNumber;
 
     @Column(length = 50, nullable = false)
@@ -35,10 +35,10 @@ public class CustomerProfile {
     @Column(length = 1, nullable = false)
     private String gender;
 
-    @Column(length = 100, nullable = false, unique = true)
+    @Column(length = 100, nullable = false)
     private String email;
 
-    @Column(length = 20, nullable = false, unique = true)
+    @Column(length = 20, nullable = false)
     private String phone;
 
     @Column(length = 255, nullable = false)
