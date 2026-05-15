@@ -47,7 +47,7 @@ public class CreditCard {
     private LocalDate expiryDate;
     @Column(name = "credit_limit", precision = 15, scale = 2)
     private BigDecimal creditLimit;
-    @Column(name = "current_balance", precision = 15, scale = 2)
+    @Column(name = "current_debt", precision = 15, scale = 2)
     private BigDecimal currentDebt;
     private LocalDateTime createDate;
     @Enumerated(EnumType.STRING)

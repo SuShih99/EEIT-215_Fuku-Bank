@@ -1,7 +1,6 @@
 package com.javaeasybank.creditcard.entity;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 
 
@@ -32,19 +31,13 @@ public class CardAccount {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-
     // 帳號
     private String accountNumber;
-
     // 總信用額度
     private BigDecimal creditLimit;
-
     // 已使用額度
-    private BigDecimal currentDebt;
-
     // 結帳日
     private Integer statementDay;
-
     // 繳款截止日
     private Integer dueDays;
 

@@ -107,9 +107,11 @@ const handleGenerateBills = async()=>{
   try {
     const response = await generateBills()
     message.success(response.message)
-    fetchBills()
+    await fetchBills()
   } catch (error) {
     console.log(error);
+    console.log(error.response?.data?.message);
+    
     message.error(
     error.response?.data?.message || '生成帳單失敗'
   )

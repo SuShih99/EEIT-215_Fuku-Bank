@@ -136,17 +136,13 @@ onMounted(() => {
     <div class="tabs">
       <button
         :class="['tab-btn', activeTab === 'UNBILLED' ? 'active' : '']"
-        @click="
-          activeTab = 'UNBILLED'
-        "
+        @click="activeTab = 'UNBILLED'"
       >
         未出帳交易
       </button>
       <button
         :class="['tab-btn', activeTab === 'BILLED' ? 'active' : '']"
-        @click="
-          activeTab = 'BILLED'
-        "
+        @click="activeTab = 'BILLED'"
       >
         已出帳單
       </button>
@@ -199,6 +195,15 @@ onMounted(() => {
           <div class="info-row">
             <span>可用額度</span>
             <strong> NT$ {{ bill.availableCredit }} </strong>
+          </div>
+          <div class="info-row">
+            <span>信用卡帳戶</span>
+            <strong>{{ bill.creditCardAccountNumber }}</strong>
+          </div>
+
+          <div class="info-row">
+            <span>信用額度</span>
+            <strong> NT$ {{ bill.creditLimit }} </strong>
           </div>
 
           <div class="info-row">

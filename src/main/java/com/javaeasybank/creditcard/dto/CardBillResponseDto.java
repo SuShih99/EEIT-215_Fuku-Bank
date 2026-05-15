@@ -27,4 +27,7 @@ public class CardBillResponseDto {
     private String creditCardAccountNumber;
 
     private BigDecimal availableCredit;
+
+    private String accountNumber;
+    private BigDecimal creditLimit;
 }

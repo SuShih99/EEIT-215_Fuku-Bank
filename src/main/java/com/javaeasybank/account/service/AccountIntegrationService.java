@@ -365,16 +365,14 @@ public class AccountIntegrationService {
 
         // 取得最早未繳帳單，更新繳款金額與狀態
         CardBill bill = cardBillRepository
-                .findTopByCardCustomerCustomerIdAndBillStatusInOrderByDueDateAsc(customerId,
+                .findTopByCardAccountCustomerCustomerIdAndBillStatusInOrderByDueDateAsc(customerId,
                         List.of(BillStatus.UNPAID, BillStatus.PARTIAL))
                 .orElseThrow(() -> new AccountException("BILL_NOT_FOUND", "找不到未繳帳單"));
         // 更新帳單繳款金額與狀態
         bill.setPaidAmount(
                 bill.getPaidAmount().add(amount));
         //回補信用卡可用餘額
-        CreditCard card=bill.getCard();
-        card.setCurrentDebt(card.getCurrentDebt().subtract(amount));
-        creditCardRepository.save(card);
+        applyPaymentToCardDebts(bill, amount);
 
         // 已繳清
         if (bill.getPaidAmount().compareTo(bill.getTotalAmount()) >= 0) {
@@ -639,6 +637,32 @@ public class AccountIntegrationService {
 
     private BigDecimal zeroIfNull(BigDecimal value) {
         return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private void applyPaymentToCardDebts(CardBill bill, BigDecimal amount) {
+        if (bill == null || bill.getTransactions() == null || amount == null) {
+            return;
+        }
+
+        BigDecimal remaining = amount;
+        List<CreditCard> cards = bill.getTransactions().stream()
+                .map(transaction -> transaction.getCard())
+                .filter(card -> card != null)
+                .distinct()
+                .toList();
+
+        for (CreditCard card : cards) {
+            if (remaining.compareTo(BigDecimal.ZERO) <= 0) {
+                break;
+            }
+
+            BigDecimal currentDebt = zeroIfNull(card.getCurrentDebt());
+            BigDecimal paymentApplied = currentDebt.min(remaining);
+            card.setCurrentDebt(currentDebt.subtract(paymentApplied));
+            remaining = remaining.subtract(paymentApplied);
+        }
+
+        creditCardRepository.saveAll(cards);
     }
 
     private TransLog buildTransLog(String referenceId,

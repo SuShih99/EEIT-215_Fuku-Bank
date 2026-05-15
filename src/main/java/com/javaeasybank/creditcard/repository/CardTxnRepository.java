@@ -15,5 +15,7 @@ public interface CardTxnRepository extends JpaRepository<CardTransaction, Intege
 
     List<CardTransaction> findByCardCardId(Integer cardId);
 
+    List<CardTransaction> findByCard_CardAccount_IdAndBillIsNull(Integer cardAccountId);
+
     Page<CardTransaction> findByCard_Customer_CustomerIdAndBillIsNull(String customerId, Pageable pageable);
 }
