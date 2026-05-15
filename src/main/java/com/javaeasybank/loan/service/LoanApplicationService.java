@@ -73,7 +73,7 @@ public class LoanApplicationService {
     // 自身 proxy 注入：讓 autoDisburse() 的 @Transactional 能被 Spring AOP 攔截
     @Lazy
     @Autowired
-    private LoanApplicationService self;
+    private LoanApplicationService LAService;
 
     // ===查詢功能===
     // 依狀態顯示
@@ -316,7 +316,7 @@ public class LoanApplicationService {
                     public void afterCommit() {
                         log.info("[AutoDisburse] 風控核准，觸發自動撥款 applicationId={}", applicationId);
                         try {
-                            self.autoDisburse(applicationId);
+                            LAService.autoDisburse(applicationId);
                         } catch (Exception e) {
                             log.error("[AutoDisburse] 自動撥款失敗，申請保留 APPROVED 供重試 applicationId={} error={}",
                                     applicationId, e.getMessage());
@@ -407,8 +407,8 @@ public class LoanApplicationService {
         }
 
         log.info("[RetryDisburse] 行員手動重送撥款 applicationId={}", applicationId);
-        // 透過 self proxy 確保 autoDisburse 的 @Transactional 被 Spring AOP 攔截
-        self.autoDisburse(applicationId);
+        // 透過 LAService proxy 確保 autoDisburse 的 @Transactional 被 Spring AOP 攔截
+        LAService.autoDisburse(applicationId);
     }
 
     // 風控送審補償：行員手動重送（狀態必須仍是 PENDING_REVIEW）

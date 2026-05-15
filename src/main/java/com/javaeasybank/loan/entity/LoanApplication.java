@@ -22,29 +22,36 @@ import java.time.LocalDateTime;
 public class LoanApplication {
 
     @Id
-    private String applicationId;           // 申請編號
+    // 申請ID
+    private String applicationId;
 
-    private String customerId;              // 用戶ID
+    // 用戶ID
+    private String customerId;
 
-    private String applyType;               // 種類
-    private BigDecimal applyAmount;         // 金額
-    private Integer applyPeriod;            // 期數
-    private BigDecimal rate;                // 系統計算利率
-    private String disbursementAccount;     // 客戶選擇的撥款入帳帳號（台幣活存）
-    // ⚠ DB migration 需補: ALTER TABLE LOAN_APPLICATION ADD disbursement_account VARCHAR(14)
+    // 申請種類/金額/期數/利率/入款帳戶(台幣活存)
+    private String applyType;
+    private BigDecimal applyAmount;
+    private Integer applyPeriod;
+    private BigDecimal rate;
+    private String disbursementAccount;
 
+    // 申請狀態
     @Enumerated(EnumType.STRING)
-    private LoanApplicationStatus applicationStatus;    // 申請狀態
+    private LoanApplicationStatus applicationStatus;
 
-    private LocalDateTime createTime;                   // 申請時間
+    // 申請時間
+    private LocalDateTime createTime;
 
+    // 最新聯絡狀態
     @Enumerated(EnumType.STRING)
-    private LoanContactStatus latestContactStatus;      // 最新聯絡狀態
+    private LoanContactStatus latestContactStatus;
 
-    private LocalDateTime latestContactTime;            // 最後聯絡時間
+    // 最後聯絡時間
+    private LocalDateTime latestContactTime;
 
-    private LocalDateTime updateTime;                   // 外部模組更新狀態時間
+    // 外部模組更新狀態時間
+    private LocalDateTime updateTime;
 
-    private LocalDateTime documentsSubmittedAt;          // 客戶送出補件的時間（null = 尚未送出）
-    // ⚠ DB migration: ALTER TABLE LOAN_APPLICATION ADD documents_submitted_at DATETIME NULL
+    // 客戶送出補件的時間
+    private LocalDateTime documentsSubmittedAt;
 }

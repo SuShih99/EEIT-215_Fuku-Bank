@@ -16,13 +16,13 @@ CREATE TABLE loan_application
     apply_amount          DECIMAL(18, 2) NULL,
     apply_period          INT            NULL,
     rate                  DECIMAL(10, 6) NULL,
-    disbursement_account  NVARCHAR(14)   NULL,     -- 客戶選擇的撥款入帳帳號（核准後撥款使用）
-    application_status      NVARCHAR(30)   NOT NULL, -- LoanApplicationStatus enum
+    disbursement_account  NVARCHAR(14)   NULL,
+    application_status      NVARCHAR(30)   NOT NULL,
     create_time             DATETIME2      NOT NULL,
-    latest_contact_status   NVARCHAR(30)   NULL,     -- LoanContactStatus enum
+    latest_contact_status   NVARCHAR(30)   NULL,
     latest_contact_time     DATETIME2      NULL,
     update_time             DATETIME2      NULL,
-    documents_submitted_at  DATETIME2      NULL,     -- 客戶送出補件的時間（NULL = 尚未送出）
+    documents_submitted_at  DATETIME2      NULL,
     CONSTRAINT PK_LOAN_APPLICATION PRIMARY KEY (application_id)
 );
 
