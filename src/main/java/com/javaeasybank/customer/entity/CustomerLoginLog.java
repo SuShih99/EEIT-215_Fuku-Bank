@@ -24,10 +24,10 @@ public class CustomerLoginLog {
     @Column(name = "username", length = 50, nullable = false)
     private String username;
 
-    @Column(name = "result", length = 20, nullable = false)
+    @Column(name = "result", length = 20, nullable = false, columnDefinition = "NVARCHAR(20)")
     private String result;
 
-    @Column(name = "fail_reason", length = 200)
+    @Column(name = "fail_reason", length = 200, columnDefinition = "NVARCHAR(200)")
     private String failReason;
 
     @Column(name = "ip_address", length = 45)
@@ -36,7 +36,7 @@ public class CustomerLoginLog {
     @Column(name = "user_agent", length = 512)
     private String userAgent;
 
-    @Column(name = "device_name", length = 120)
+    @Column(name = "device_name", length = 120, columnDefinition = "NVARCHAR(120)")
     private String deviceName;
 
     @Column(name = "login_time", nullable = false, updatable = false)

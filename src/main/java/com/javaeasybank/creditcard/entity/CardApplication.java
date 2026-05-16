@@ -44,7 +44,7 @@ public class CardApplication {
     @Column(name = "status")
     private CardApplicationStatus status;
 
-    @Column(name = "remark", length = 200)
+    @Column(name = "remark", length = 200, columnDefinition = "NVARCHAR(200)")
     private String remark;
     
     @ManyToOne

@@ -24,6 +24,7 @@ public class CardType {
     @Column(name = "card_type_id")
     private Integer cardTypeId;
 
+    @Column(name = "card_type_name", length = 50, columnDefinition = "NVARCHAR(50)")
     private String cardTypeName;
 
     private String brand;

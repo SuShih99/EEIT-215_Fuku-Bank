@@ -49,7 +49,7 @@ public class AccountApplication {
 
     // ===== KYC 個人資料（部分可從 CustomerProfile 帶入） =====
 
-    @Column(name = "customer_name", nullable = false, length = 50)
+    @Column(name = "customer_name", nullable = false, length = 50, columnDefinition = "NVARCHAR(50)")
     private String name;
 
     @Column(name = "id_number", nullable = false, length = 20)
@@ -64,7 +64,7 @@ public class AccountApplication {
     @Column(nullable = false, length = 100)
     private String email;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false, length = 255, columnDefinition = "NVARCHAR(255)")
     private String address;
 
     /** 國籍（ISO 3166 國碼） */
@@ -75,21 +75,21 @@ public class AccountApplication {
     private String phone;
 
     /** 戶籍地址 */
-    @Column(name = "registered_address", nullable = false, length = 255)
+    @Column(name = "registered_address", nullable = false, length = 255, columnDefinition = "NVARCHAR(255)")
     private String registeredAddress;
 
     /** 現居地址 */
-    @Column(name = "current_address", nullable = false, length = 255)
+    @Column(name = "current_address", nullable = false, length = 255, columnDefinition = "NVARCHAR(255)")
     private String currentAddress;
 
     // ===== 職業與財務背景 =====
 
     /** 職業別 */
-    @Column(length = 50)
+    @Column(length = 50, columnDefinition = "NVARCHAR(50)")
     private String occupation;
 
     /** 任職機構 */
-    @Column(name = "employer", length = 100)
+    @Column(name = "employer", length = 100, columnDefinition = "NVARCHAR(100)")
     private String employer;
 
     /** 預估月交易量（萬元） */
@@ -149,7 +149,7 @@ public class AccountApplication {
     private ApplicationStatus status = ApplicationStatus.PENDING;
 
     /** 駁回原因 */
-    @Column(name = "reject_reason", length = 500)
+    @Column(name = "reject_reason", length = 500, columnDefinition = "NVARCHAR(500)")
     private String rejectReason;
 
     /** 審核時間 */

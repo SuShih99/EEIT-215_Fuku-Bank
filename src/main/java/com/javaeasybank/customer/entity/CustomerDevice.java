@@ -30,7 +30,7 @@ public class CustomerDevice {
     @Column(name = "device_fingerprint", length = 64, nullable = false)
     private String deviceFingerprint;
 
-    @Column(name = "device_name", length = 120, nullable = false)
+    @Column(name = "device_name", length = 120, nullable = false, columnDefinition = "NVARCHAR(120)")
     private String deviceName;
 
     @Column(name = "browser_name", length = 60)

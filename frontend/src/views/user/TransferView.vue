@@ -4,15 +4,31 @@
 
     <a-card class="transfer-form-card">
       <a-form :model="form" layout="vertical" @finish="handleTransfer">
-        <a-form-item label="轉出帳戶" name="fromAccount" :rules="[{ required: true, message: '請選擇轉出帳戶' }]">
-          <a-select v-model:value="form.fromAccount" placeholder="選擇轉出帳戶" @change="onFromChange">
-            <a-select-option v-for="a in twdAccounts" :key="a.accountNumber" :value="a.accountNumber">
+        <a-form-item
+          label="轉出帳戶"
+          name="fromAccount"
+          :rules="[{ required: true, message: '請選擇轉出帳戶' }]"
+        >
+          <a-select
+            v-model:value="form.fromAccount"
+            placeholder="選擇轉出帳戶"
+            @change="onFromChange"
+          >
+            <a-select-option
+              v-for="a in twdAccounts"
+              :key="a.accountNumber"
+              :value="a.accountNumber"
+            >
               {{ a.accountNumber }} — 餘額 {{ formatNum(a.balance) }} TWD
             </a-select-option>
           </a-select>
         </a-form-item>
 
-        <a-form-item label="轉入銀行" name="toBankCode" :rules="[{ required: true, message: '請選擇轉入銀行' }]">
+        <a-form-item
+          label="轉入銀行"
+          name="toBankCode"
+          :rules="[{ required: true, message: '請選擇轉入銀行' }]"
+        >
           <a-select
             v-model:value="form.toBankCode"
             show-search
@@ -23,7 +39,11 @@
           />
         </a-form-item>
 
-        <a-form-item label="轉入帳號" name="toAccount" :rules="[{ required: true, message: '請輸入轉入帳號' }]">
+        <a-form-item
+          label="轉入帳號"
+          name="toAccount"
+          :rules="[{ required: true, message: '請輸入轉入帳號' }]"
+        >
           <div class="account-input-row">
             <a-input
               v-model:value="form.toAccount"
@@ -37,17 +57,23 @@
           <div class="hint">轉入帳號限 6 到 20 碼數字，本行帳號為 12 碼。</div>
         </a-form-item>
 
-        <a-form-item label="轉帳金額" name="amount" :rules="[{ required: true, message: '請輸入金額' }]">
+        <a-form-item
+          label="轉帳金額"
+          name="amount"
+          :rules="[{ required: true, message: '請輸入金額' }]"
+        >
           <a-input-number
             v-model:value="form.amount"
             :min="1"
             :max="maxAmount"
             style="width: 100%"
-            :formatter="v => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
-            :parser="v => v.replace(/,/g, '')"
+            :formatter="(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
+            :parser="(v) => v.replace(/,/g, '')"
             placeholder="請輸入金額"
           />
-          <div class="hint" v-if="selectedBalance !== null">可用餘額：{{ formatNum(selectedBalance) }} TWD</div>
+          <div class="hint" v-if="selectedBalance !== null">
+            可用餘額：{{ formatNum(selectedBalance) }} TWD
+          </div>
         </a-form-item>
 
         <div class="fee-preview" v-if="Number(form.amount) > 0">
@@ -66,7 +92,11 @@
         </div>
 
         <a-form-item label="備註">
-          <a-input v-model:value="form.note" placeholder="選填，例如：房租、貨款" :maxlength="100" />
+          <a-input
+            v-model:value="form.note"
+            placeholder="選填，例如：房租、貨款"
+            :maxlength="100"
+          />
         </a-form-item>
 
         <a-form-item>
@@ -115,7 +145,13 @@ const JAVA_BANK_CODE = '909'
 const fallbackBanks = [{ code: JAVA_BANK_CODE, name: '爪哇銀行', label: '爪哇銀行 909' }]
 
 const route = useRoute()
-const form = ref({ fromAccount: undefined, toBankCode: JAVA_BANK_CODE, toAccount: '', amount: null, note: '' })
+const form = ref({
+  fromAccount: undefined,
+  toBankCode: JAVA_BANK_CODE,
+  toAccount: '',
+  amount: null,
+  note: '',
+})
 const accounts = ref([])
 const banks = ref(fallbackBanks)
 const favorites = ref([])
@@ -129,9 +165,15 @@ const resultTitle = ref('')
 const resultSub = ref('')
 const selectedBalance = ref(null)
 
-const twdAccounts = computed(() => accounts.value.filter(a => a.currency === 'TWD' && a.status === 'ACTIVE' && a.accountType !== 'LOAN'))
+const twdAccounts = computed(() =>
+  accounts.value.filter(
+    (a) => a.currency === 'TWD' && a.status === 'ACTIVE' && a.accountType !== 'LOAN',
+  ),
+)
 const maxAmount = computed(() => selectedBalance.value || 999999999)
-const selectedBank = computed(() => banks.value.find(bank => bank.code === form.value.toBankCode) || fallbackBanks[0])
+const selectedBank = computed(
+  () => banks.value.find((bank) => bank.code === form.value.toBankCode) || fallbackBanks[0],
+)
 const isInterbank = computed(() => form.value.toBankCode !== JAVA_BANK_CODE)
 const feeAmount = computed(() => {
   const amount = Number(form.value.amount || 0)
@@ -139,13 +181,17 @@ const feeAmount = computed(() => {
   return amount <= 1000 ? 10 : 15
 })
 const totalDebitAmount = computed(() => Number(form.value.amount || 0) + feeAmount.value)
-const toAccountPlaceholder = computed(() => isInterbank.value ? '請輸入 6 到 20 碼帳號' : '請輸入 12 碼本行帳號')
-const bankSelectOptions = computed(() => banks.value.map(bank => ({
-  value: bank.code,
-  label: `${bank.name} ${bank.code}`,
-  name: bank.name,
-  code: bank.code,
-})))
+const toAccountPlaceholder = computed(() =>
+  isInterbank.value ? '請輸入 6 到 20 碼帳號' : '請輸入 12 碼本行帳號',
+)
+const bankSelectOptions = computed(() =>
+  banks.value.map((bank) => ({
+    value: bank.code,
+    label: `${bank.name} ${bank.code}`,
+    name: bank.name,
+    code: bank.code,
+  })),
+)
 
 onMounted(async () => {
   await Promise.all([loadAccounts(), loadBanks()])
@@ -179,17 +225,24 @@ async function loadBanks() {
 
 async function loadFavorites() {
   favLoading.value = true
-  try { favorites.value = await getFavoriteAccounts() } catch (e) { console.error(e) }
-  finally { favLoading.value = false }
+  try {
+    favorites.value = await getFavoriteAccounts()
+  } catch (e) {
+    console.error(e)
+  } finally {
+    favLoading.value = false
+  }
 }
 
 function onFromChange(val) {
-  const acct = accounts.value.find(a => a.accountNumber === val)
+  const acct = accounts.value.find((a) => a.accountNumber === val)
   selectedBalance.value = acct ? Number(acct.balance) : null
 }
 
 function normalizeToAccount() {
-  form.value.toAccount = String(form.value.toAccount || '').replace(/\D/g, '').slice(0, 20)
+  form.value.toAccount = String(form.value.toAccount || '')
+    .replace(/\D/g, '')
+    .slice(0, 20)
 }
 
 function selectFavorite(item) {
@@ -202,7 +255,9 @@ function selectFavorite(item) {
 function findBankCodeByName(bankName) {
   if (!bankName) return null
   const normalized = bankName.trim()
-  const found = banks.value.find(bank => bank.name === normalized || bank.label?.includes(normalized))
+  const found = banks.value.find(
+    (bank) => bank.name === normalized || bank.label?.includes(normalized),
+  )
   return found?.code || null
 }
 
@@ -240,9 +295,19 @@ async function handleTransfer() {
     })
     await loadAccounts()
     onFromChange(form.value.fromAccount)
-    resultStatus.value = 'success'
-    resultTitle.value = '轉帳成功'
-    resultSub.value = `已成功轉帳 ${formatNum(result.amount || form.value.amount)} TWD 至 ${selectedBank.value.name} ${form.value.toAccount}，預計扣款 ${formatNum(result.totalDebitAmount || totalDebitAmount.value)} TWD`
+    if (result && result.pending) {
+      // 狀態為審核中
+      resultStatus.value = 'warning' // 使用黃色警告樣式
+      resultTitle.value = '轉帳審核中'
+      resultSub.value =
+        result.pendingReason ||
+        '您的轉帳交易已妥善受理。為保障您的帳戶資金安全，系統正進行例行的安全覆核程序，詳細的覆核進度已同步寄送至您的電子信箱。您無須重複送出申請，稍後亦可至「交易明細」查詢最終結果。'
+    } else {
+      // 狀態為正常成功
+      resultStatus.value = 'success'
+      resultTitle.value = '轉帳成功'
+      resultSub.value = `已成功轉帳 ${formatNum(result.amount || form.value.amount)} TWD 至 ${selectedBank.value.name} ${form.value.toAccount}，預計扣款 ${formatNum(result.totalDebitAmount || totalDebitAmount.value)} TWD`
+    }
     showResult.value = true
   } catch (e) {
     resultStatus.value = 'error'
@@ -256,11 +321,20 @@ async function handleTransfer() {
 
 function resetForm() {
   showResult.value = false
-  form.value = { fromAccount: form.value.fromAccount, toBankCode: JAVA_BANK_CODE, toAccount: '', amount: null, note: '' }
+  form.value = {
+    fromAccount: form.value.fromAccount,
+    toBankCode: JAVA_BANK_CODE,
+    toAccount: '',
+    amount: null,
+    note: '',
+  }
 }
 
 function formatNum(v) {
-  return Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return Number(v || 0).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 }
 </script>
 

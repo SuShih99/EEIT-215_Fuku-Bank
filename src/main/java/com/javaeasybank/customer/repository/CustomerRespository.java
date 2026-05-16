@@ -179,6 +179,11 @@ public class CustomerRespository {
         private String phone;
         private String email;
         private String address;
+        private String job;
+        private String occupation;
+        private String employer;
+        private String fundSource;
+        private Integer annualIncome;
     }
 
     // ===== 客戶端：密碼重設請求 =====

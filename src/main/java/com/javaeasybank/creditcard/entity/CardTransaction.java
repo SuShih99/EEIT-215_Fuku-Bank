@@ -48,7 +48,7 @@ public class CardTransaction {
 
     private LocalDateTime txnDate;
 
-    @Column(length = 200)
+    @Column(length = 200, columnDefinition = "NVARCHAR(200)")
     private String description;
 
     @Enumerated(EnumType.STRING)

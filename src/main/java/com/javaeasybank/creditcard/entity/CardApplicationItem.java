@@ -67,7 +67,7 @@ public class CardApplicationItem {
     private LocalDateTime reviewDate;
 
 
-    @Column(name = "remark", length = 200)
+    @Column(name = "remark", length = 200, columnDefinition = "NVARCHAR(200)")
     private String remark;
 
     @PrePersist

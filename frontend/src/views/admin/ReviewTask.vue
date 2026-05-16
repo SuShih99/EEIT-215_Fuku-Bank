@@ -1,36 +1,9 @@
 <template>
   <div class="page-container">
+    <!-- 頁首：標題 + 篩選列同一行 -->
     <div class="page-header">
       <h2 class="page-title">審核任務</h2>
-    </div>
-
-    <div class="action-bar">
-      <!-- 統計卡片 -->
-      <a-row :gutter="16" style="margin-bottom: 24px">
-        <a-col :span="6">
-          <a-statistic title="待處理" :value="stats.pending" :value-style="{ color: '#faad14' }" />
-        </a-col>
-        <a-col :span="6">
-          <a-statistic
-            title="處理中"
-            :value="stats.processing"
-            :value-style="{ color: '#1890ff' }"
-          />
-        </a-col>
-        <a-col :span="6">
-          <a-statistic
-            title="已結案"
-            :value="stats.completed"
-            :value-style="{ color: '#52c41a' }"
-          />
-        </a-col>
-        <a-col :span="6">
-          <a-statistic title="總計" :value="stats.total" />
-        </a-col>
-      </a-row>
-
-      <!-- 篩選列 -->
-      <a-space style="margin-bottom: 16px" wrap>
+      <a-space class="filter-bar" wrap>
         <a-select
           v-model:value="filters.status"
           placeholder="全部狀態"
@@ -52,6 +25,7 @@
           <a-select-option value="LOAN_APPLY">貸款申請</a-select-option>
           <a-select-option value="ACCOUNT_OPEN">帳戶開戶</a-select-option>
           <a-select-option value="CARD_APPLY">信用卡申請</a-select-option>
+          <a-select-option value="TRANSFER_REVIEW">轉帳審核</a-select-option>
         </a-select>
         <a-select
           v-model:value="filters.priority"
@@ -69,6 +43,31 @@
           重新整理
         </a-button>
       </a-space>
+    </div>
+
+    <!-- 統計卡片：獨立一排，帶底色區分 -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <span class="stat-label">待處理</span>
+        <span class="stat-value pending">{{ stats.pending }}</span>
+      </div>
+      <div class="stat-divider" />
+      <div class="stat-card">
+        <span class="stat-label">處理中</span>
+        <span class="stat-value processing">{{ stats.processing }}</span>
+      </div>
+      <div class="stat-divider" />
+      <div class="stat-card">
+        <span class="stat-label">已結案</span>
+        <span class="stat-value completed">{{ stats.completed }}</span>
+      </div>
+      <div class="stat-divider" />
+      <div class="stat-card">
+        <span class="stat-label">總計</span>
+        <span class="stat-value total">{{
+          stats.pending + stats.processing + stats.completed
+        }}</span>
+      </div>
     </div>
 
     <!-- 任務列表 -->
@@ -407,7 +406,14 @@ function statusBadge(s) {
   return { PENDING: 'warning', PROCESSING: 'processing', COMPLETED: 'success' }[s] || 'default'
 }
 function sceneLabel(s) {
-  return { LOAN_APPLY: '貸款申請', ACCOUNT_OPEN: '帳戶開戶', CARD_APPLY: '信用卡申請' }[s] || s
+  return (
+    {
+      LOAN_APPLY: '貸款申請',
+      ACCOUNT_OPEN: '帳戶開戶',
+      CARD_APPLY: '信用卡申請',
+      TRANSFER_REVIEW: '轉帳審核',
+    }[s] || s
+  )
 }
 function riskLabel(r) {
   return { HIGH: '高風險', MEDIUM: '中風險', LOW: '低風險' }[r] || r
@@ -423,17 +429,92 @@ onMounted(fetchTasks)
 </script>
 
 <style scoped>
+/* ── 整體頁面 ── */
+.page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── 頁首：標題 + 篩選列 同一列，左右對齊 ── */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a2e;
+  line-height: 1;
+}
+
+.filter-bar {
+  flex-shrink: 0;
+}
+
+/* ── 統計卡片列 ── */
+.stats-row {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 16px 32px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.stat-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 36px;
+  background: #f0f0f0;
+  margin: 0 8px;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #8c8c8c;
+  white-space: nowrap;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stat-value.pending {
+  color: #faad14;
+}
+.stat-value.processing {
+  color: #1890ff;
+}
+.stat-value.completed {
+  color: #52c41a;
+}
+.stat-value.total {
+  color: #262626;
+}
+
+/* ── 表格 ── */
 :deep(.clickable-row) {
   cursor: pointer;
 }
 :deep(.clickable-row:hover td) {
   background: #fafafa;
-}
-:deep(.ant-statistic-title) {
-  white-space: nowrap;
-  text-align: center;
-}
-:deep(.ant-statistic-content) {
-  text-align: center;
 }
 </style>

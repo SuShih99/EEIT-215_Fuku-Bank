@@ -69,7 +69,6 @@ public class TransferService {
      * 執行國內轉帳。
      * 本行 909 轉帳會查詢目的帳戶並入帳；跨行轉帳只扣轉出帳戶，並額外寫入同業務編號的手續費紀錄。
      */
-
     @Transactional
     public TransferResponse transfer(TransferRequest request) {
 
@@ -112,8 +111,8 @@ public class TransferService {
         BigDecimal velocitySum = velocityStats.sum();
         if (velocityCount >= 3) {
             log.warn("[Transfer] 高頻轉帳 fromAcc={} count={}", fromAccNum, velocityCount);
-            //throw new TransferException("HIGH_FREQUENCY",
-                   // "短時間內轉帳次數過多，請稍後再試");
+            throw new TransferException("HIGH_FREQUENCY",
+                   "短時間內轉帳次數過多，請稍後再試");
         }
 
         String internalWarning = null;
@@ -166,6 +165,18 @@ public class TransferService {
                     .build();
 
             savePendingTransfer(request, pendingResult, referenceId);
+
+            customerProfileRepository.findById(fromAccount.getCustomerId())
+                    .ifPresent(profile -> {
+                        if (profile.getEmail() != null) {
+                            emailService.sendTransferPendingNotification(
+                                    profile.getEmail(),
+                                    fromAccNum, toAccNum, amount,
+                                    fromAccount.getCurrency().name(),
+                                    referenceId);
+                        }
+                    });
+
             return TransferResponse.pending(finalReason);
         }
 
@@ -173,8 +184,8 @@ public class TransferService {
 
         return executeTransfer(request, referenceId);
     }
-
-    private TransferResponse executeTransfer(TransferRequest request, String referenceId) {
+    @Transactional
+    protected TransferResponse executeTransfer(TransferRequest request, String referenceId) {
 
         String fromAccNum = normalizeAccountNumber(request.getFromAccountNumber());
         String toAccNum = normalizeAccountNumber(request.getToAccountNumber());

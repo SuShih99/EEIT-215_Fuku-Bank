@@ -281,6 +281,21 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
             profile.setAddress(request.getAddress());
             profile.setCurrentAddress(request.getAddress());
         }
+        if (request.getJob() != null) {
+            profile.setJob(request.getJob());
+        }
+        if (request.getOccupation() != null) {
+            profile.setOccupation(request.getOccupation());
+        }
+        if (request.getEmployer() != null) {
+            profile.setEmployer(request.getEmployer());
+        }
+        if (request.getFundSource() != null) {
+            profile.setFundSource(request.getFundSource());
+        }
+        if (request.getAnnualIncome() != null) {
+            profile.setAnnualIncome(request.getAnnualIncome());
+        }
 
         customerProfileRepository.save(profile);
 

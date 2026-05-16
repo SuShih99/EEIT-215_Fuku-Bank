@@ -20,6 +20,6 @@ public class AuthDept {
     @Column(name = "dept_code", length = 20, nullable = false, unique = true)
     private String deptCode;
 
-    @Column(name = "dept_name", length = 50, nullable = false)
+    @Column(name = "dept_name", length = 50, nullable = false, columnDefinition = "NVARCHAR(50)")
     private String deptName;
 }

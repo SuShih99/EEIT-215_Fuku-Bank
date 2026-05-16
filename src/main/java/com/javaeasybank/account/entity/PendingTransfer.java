@@ -49,7 +49,7 @@ public class PendingTransfer {
     private String currency;
 
     /** 備註 */
-    @Column(length = 200)
+    @Column(length = 200, columnDefinition = "NVARCHAR(200)")
     private String note;
 
     // ── 風控關聯 ──────────────────────────────────────
@@ -63,7 +63,7 @@ public class PendingTransfer {
     private Long reviewTaskId;
 
     /** 觸發暫停的原因 */
-    @Column(name = "hold_reason", length = 200)
+    @Column(name = "hold_reason", length = 200, columnDefinition = "NVARCHAR(200)")
     private String holdReason;
 
     // ── 狀態 ──────────────────────────────────────────

@@ -30,5 +30,6 @@ public class LoanContactLog {
     private LoanContactChannel contactChannel;
 
     private LocalDateTime contactTime;
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String note;
 }

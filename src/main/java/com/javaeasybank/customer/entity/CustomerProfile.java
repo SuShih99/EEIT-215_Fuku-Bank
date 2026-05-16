@@ -25,7 +25,7 @@ public class CustomerProfile {
     @Column(name = "id_number", length = 20, nullable = false)
     private String idNumber;
 
-    @Column(length = 50, nullable = false)
+    @Column(length = 50, nullable = false, columnDefinition = "NVARCHAR(50)")
     private String name;
 
     @Column(nullable = false)
@@ -41,22 +41,22 @@ public class CustomerProfile {
     @Column(length = 20, nullable = false)
     private String phone;
 
-    @Column(length = 255, nullable = false)
+    @Column(length = 255, nullable = false, columnDefinition = "NVARCHAR(255)")
     private String address;
 
     @Column(length = 10)
     private String nationality;
 
-    @Column(name = "registered_address", length = 255)
+    @Column(name = "registered_address", length = 255, columnDefinition = "NVARCHAR(255)")
     private String registeredAddress;
 
-    @Column(name = "current_address", length = 255)
+    @Column(name = "current_address", length = 255, columnDefinition = "NVARCHAR(255)")
     private String currentAddress;
 
-    @Column(length = 50)
+    @Column(length = 50, columnDefinition = "NVARCHAR(50)")
     private String occupation;
 
-    @Column(name = "employer", length = 100)
+    @Column(name = "employer", length = 100, columnDefinition = "NVARCHAR(100)")
     private String employer;
 
     @Column(name = "estimated_monthly_tx")
@@ -65,7 +65,7 @@ public class CustomerProfile {
     @Column(name = "account_purpose", length = 30)
     private String accountPurpose;
 
-    @Column(name = "fund_source", length = 30)
+    @Column(name = "fund_source", length = 50)
     private String fundSource;
 
     @Column(name = "tax_residency", length = 10)
@@ -108,7 +108,7 @@ public class CustomerProfile {
     @Column(name = "latest_account_application_reviewed_by", length = 50)
     private String latestAccountApplicationReviewedBy;
 
-    @Column(name = "latest_account_application_reject_reason", length = 500)
+    @Column(name = "latest_account_application_reject_reason", length = 500, columnDefinition = "NVARCHAR(500)")
     private String latestAccountApplicationRejectReason;
 
     @Column(name = "created_account_number", length = 14)
@@ -134,7 +134,7 @@ public class CustomerProfile {
 
 
     //風控
-    @Column(name="job")
+    @Column(name = "job", length = 100, columnDefinition = "NVARCHAR(100)")
     private String job;
     @Column(name="annual_income")
     private Integer annualIncome;

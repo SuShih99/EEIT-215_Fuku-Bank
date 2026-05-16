@@ -24,6 +24,7 @@ public class LoanDocument {
     private LoanDocumentType documentType;  // 文件類型
 
     private String fileUrl;             // 實體檔案路徑（FileStorageService 回傳）
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String originalName;        // 原始檔名（前端顯示用）
 
     private String uploadedBy;          // 上傳者 customerId

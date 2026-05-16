@@ -13,7 +13,7 @@ INSERT INTO AUTH_DEPT (dept_id, dept_code, dept_name) VALUES
 ('DPT005', 'IS',  N'資訊安全部');
 GO
 
--- 寫入 11 個標準職務角色
+-- 寫入 13 個標準職務角色
 INSERT INTO AUTH_ROLE (role_id, dept_id, role_code, role_name, perm_level, perm_scope) VALUES
 ('R001', 'DPT001', 'CFSO',   N'消金業務專員',   0, NULL),
 ('R002', 'DPT001', 'CFDM',   N'消金部經理',     2, NULL),
@@ -30,7 +30,7 @@ INSERT INTO AUTH_ROLE (role_id, dept_id, role_code, role_name, perm_level, perm_
 ('R013', 'DPT005', 'SYS_SUPER', N'超級管理員',     1, NULL);
 GO
 
--- 寫入 11 位擬真員工帳號（密碼皆為 123456）
+-- 寫入 13 位擬真員工帳號（密碼皆為 123456）
 INSERT INTO AUTH_EMP (emp_id, emp_name, dept_id, role_id, email, password_hash, status, contract_end_date, permission_expire) VALUES
 -- 消費金融部
 ('E26001', N'林家豪', 'DPT001', 'R001', 'chiahao.lin@javabank.com',  '$2a$10$1Wa/uOR8VZXCrOwfd9.2ZOtgSeATa0xVvdSsYudUgtCSsQJ0M2cDS', 'ACTIVE', NULL, '2026-12-31'),

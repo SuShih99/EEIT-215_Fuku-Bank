@@ -87,5 +87,26 @@ public class EmailService {
         String html = templateEngine.process("mail/password-reset", context);
         sendEmail(to, "Java Easy Bank - 密碼重設連結", html);
     }
+
+    /**
+     * ─── 新增：轉帳交易安全覆核中（審核中）通知信 ───
+     * 採用隱晦委婉、站在維護資金安全角度的文案設計
+     */
+    public void sendTransferPendingNotification(String to, String fromAccount, String toAccount, BigDecimal amount, String currency, String referenceId) {
+        String time = LocalDateTime.now().format(formatter);
+        Context context = new Context();
+        context.setVariable("time", time);
+        context.setVariable("referenceId", referenceId);
+        context.setVariable("fromAccount", fromAccount);
+        context.setVariable("toAccount", toAccount);
+        context.setVariable("amount", amount);
+        context.setVariable("currency", currency);
+
+        // 渲染對應的審核中 HTML 樣板
+        String html = templateEngine.process("mail/transfer-pending", context);
+
+        // 使用溫和的主旨，不使用「風控」、「審核」、「攔截」等字眼
+        sendEmail(to, "Java Easy Bank - 轉帳交易處理進度通知", html);
+    }
 }
 

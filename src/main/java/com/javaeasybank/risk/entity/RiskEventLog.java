@@ -47,11 +47,11 @@ public class RiskEventLog {
     private Disposition disposition;
 
     //描述原因
-    @Column(name = "trigger_reason", length = 500)
+    @Column(name = "trigger_reason", length = 500, columnDefinition = "NVARCHAR(500)")
     private String triggerReason;
 
     //元參考數據(信用分數 收入
-    @Column(name = "meta_data")
+    @Column(name = "meta_data", columnDefinition = "NVARCHAR(MAX)")
     private String metaData;
 
     @Column(name = "transaction_amount", precision = 18, scale = 4)

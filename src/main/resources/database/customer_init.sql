@@ -45,7 +45,7 @@ CREATE TABLE CUSTOMER_PROFILE (
     employer NVARCHAR(100) NULL,
     estimated_monthly_tx INT NULL,
     account_purpose VARCHAR(30) NULL,
-    fund_source VARCHAR(30) NULL,
+    fund_source NVARCHAR(50) NULL,
     tax_residency VARCHAR(10) NULL,
     is_pep BIT NOT NULL DEFAULT 0,
     id_front_url VARCHAR(255) NULL,

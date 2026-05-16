@@ -49,6 +49,7 @@ public class ReviewTask {
     //審核人
     private String assignee;
     //審核人備註意見
+    @Column(columnDefinition = "NVARCHAR(500)")
     private String adminComment;
     //優先度
     private Integer priority;

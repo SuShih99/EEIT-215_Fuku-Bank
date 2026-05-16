@@ -35,10 +35,10 @@ public class Blacklist {
     @Column(name = "list_value", nullable = false, length = 100)
     private String listValue;
     //資料來源
-    @Column(name = "source", length = 50)
+    @Column(name = "source", length = 50, columnDefinition = "NVARCHAR(50)")
     private String source;
 
-    @Column(name = "reason")
+    @Column(name = "reason", columnDefinition = "NVARCHAR(255)")
     private String reason;
     //是否啟用
     @Column(name = "status", nullable = false)

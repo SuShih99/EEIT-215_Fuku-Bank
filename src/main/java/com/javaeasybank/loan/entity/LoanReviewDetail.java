@@ -26,6 +26,7 @@ public class LoanReviewDetail {
     private Integer confirmedPeriod;
     @Column(precision = 10, scale = 6)
     private BigDecimal confirmedRate;
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String collateralNote;         // 擔保品資料
 
     private String empId;
@@ -35,5 +36,6 @@ public class LoanReviewDetail {
     private LoanReviewStatus reviewStatus;
 
     private LocalDateTime submittedTime;
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String reviewNote;
 }

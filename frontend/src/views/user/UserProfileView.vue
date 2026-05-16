@@ -433,6 +433,13 @@ async function handleSave() {
       annualIncome: editForm.annualIncome ? Number(editForm.annualIncome) : null,
     })
     Object.assign(profile, res.data.data)
+    if (customerAuthStore.customer) {
+      customerAuthStore.setCustomer({
+        ...customerAuthStore.customer,
+        ...res.data.data,
+        token: customerAuthStore.token,
+      })
+    }
     resetForm()
     showToast('個人資料已更新', 'success')
   } catch (err) {

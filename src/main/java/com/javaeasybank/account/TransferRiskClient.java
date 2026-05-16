@@ -23,7 +23,7 @@ public class TransferRiskClient {
     @Value("${risk.api.base-url}")
     private String riskBaseUrl;
 
-    @Value("${risk.api.transfer-callback-url}")
+    @Value("${risk.api.transfer.callback-url:${risk.api.transfer-callback-url:http://localhost:8080/api/transfer-callbacks}}")
     private String callbackBaseUrl;
 
     private final RestTemplate restTemplate;
@@ -47,7 +47,7 @@ public class TransferRiskClient {
             req.addContext("internalWarning", internalWarning);
         }
 
-        String url = riskBaseUrl + "check";
+        String url = buildRiskUrl("check");
         try {
             ResponseEntity<ApiResponse> res =
                     restTemplate.postForEntity(url, req, ApiResponse.class);
@@ -67,6 +67,11 @@ public class TransferRiskClient {
                     .reason("風控降級，小額放行")
                     .build();
         }
+    }
+
+    private String buildRiskUrl(String path) {
+        String normalizedBaseUrl = riskBaseUrl.endsWith("/") ? riskBaseUrl : riskBaseUrl + "/";
+        return normalizedBaseUrl + path;
     }
 
     private RiskCheckResponse parseCheckResponse(Map<?, ?> data) {

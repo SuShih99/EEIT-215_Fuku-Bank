@@ -23,7 +23,7 @@ public class AuthRole {
     @Column(name = "role_code", length = 20, nullable = false, unique = true)
     private String roleCode;
 
-    @Column(name = "role_name", length = 50, nullable = false)
+    @Column(name = "role_name", length = 50, nullable = false, columnDefinition = "NVARCHAR(50)")
     private String roleName;
 
     @Column(name = "perm_level", nullable = false)

@@ -24,13 +24,13 @@ import java.util.Map;
 @Component
 public class LoanRiskClient {
 
-    // application.properties:
-    //   risk.api.base-url=http://localhost:8080/api/risk/reviews
-    //   risk.api.callback-url=http://localhost:8080/api/loan-callbacks
+    // application-local.properties:
+    //   risk.api.base-url=http://localhost:8080/api/risk/
+    //   risk.api.loan.callback-url=http://localhost:8080/api/loan-callbacks
     @Value("${risk.api.base-url}")
     private String riskBaseUrl;
 
-    @Value("${risk.api.loan.callback-url}")
+    @Value("${risk.api.loan.callback-url:${risk.api.callback-url:http://localhost:8080/api/loan-callbacks}}")
     private String callbackBaseUrl;
 
     private final RestTemplate restTemplate;
@@ -41,7 +41,7 @@ public class LoanRiskClient {
 
     // 補件通知：把文件清單推給風控，更新對應的 ReviewTask
     public void attachDocuments(String businessId, List<LoanDocumentInfoDTO> documents) {
-        String url = riskBaseUrl + "reviews/" + businessId + "/attachments";
+        String url = buildRiskUrl("reviews/" + businessId + "/attachments");
         log.info("[RiskClient] 補件通知 businessId={} count={} → {}", businessId, documents.size(), url);
         try {
             Map<String, Object> body = Map.of("documents", documents);
@@ -57,7 +57,7 @@ public class LoanRiskClient {
 
         dto.setCallbackUrl(callbackBaseUrl + "/" + dto.getApplicationId() + "/status");
 
-        String url = riskBaseUrl + "reviews";
+        String url = buildRiskUrl("reviews");
         log.info("[RiskClient] 送審 applicationId={} → {}", dto.getApplicationId(), url);
 
         try {
@@ -69,5 +69,10 @@ public class LoanRiskClient {
             log.error("[RiskClient] 呼叫風控失敗 applicationId={}", dto.getApplicationId(), e);
             throw new BusinessException("送審失敗：無法連接風控模組，請稍後再試");
         }
+    }
+
+    private String buildRiskUrl(String path) {
+        String normalizedBaseUrl = riskBaseUrl.endsWith("/") ? riskBaseUrl : riskBaseUrl + "/";
+        return normalizedBaseUrl + path;
     }
 }

@@ -324,19 +324,22 @@ SET
 FROM CUSTOMER_PROFILE p
 JOIN ACCOUNT_APPLICATION a ON a.customer_id = p.customer_id;
 
-INSERT INTO ACCOUNT_STATUS_HISTORY (
-    history_id, account_number, old_status, new_status, change_reason, changed_at, changed_by
-)
-SELECT
-    LOWER(CONVERT(CHAR(36), NEWID())),
-    account_number,
-    NULL,
-    status,
-    N'Mock data initial status',
-    created_at,
-    'mock'
-FROM #mock_accounts
-WHERE account_type <> 'BUSINESS';
+IF OBJECT_ID('ACCOUNT_STATUS_HISTORY', 'U') IS NOT NULL
+BEGIN
+    INSERT INTO ACCOUNT_STATUS_HISTORY (
+        history_id, account_number, old_status, new_status, change_reason, changed_at, changed_by
+    )
+    SELECT
+        LOWER(CONVERT(CHAR(36), NEWID())),
+        account_number,
+        NULL,
+        status,
+        N'Mock data initial status',
+        created_at,
+        'mock'
+    FROM #mock_accounts
+    WHERE account_type <> 'BUSINESS';
+END;
 
 INSERT INTO FAVORITE_ACCOUNT (customer_id, account_number, alias, bank_name, created_at, updated_at)
 SELECT TOP (12)

@@ -105,6 +105,16 @@
           <button
             class="jb-btn jb-btn-secondary jb-btn-block"
             style="margin-top: var(--space-3)"
+            :disabled="loading"
+            @click="loginAsWangDaming"
+          >
+            一般登入
+          </button>
+
+          <button
+            class="jb-btn jb-btn-secondary jb-btn-block"
+            style="margin-top: var(--space-2)"
+            :disabled="loading"
             @click="fillTestAccount"
           >
             一鍵帶入測試帳號並登入
@@ -177,8 +187,24 @@ const form = reactive({
   captcha: '',
 })
 
-function fillTestAccount() {
+const WANG_DAMING_ACCOUNT = {
+  idNumber: 'A100260501',
+  username: 'cust0001',
+  password: '123456',
+}
+
+async function loginAsWangDaming() {
+  fillLoginForm(WANG_DAMING_ACCOUNT)
+  await handleLogin(true)
+}
+
+async function fillTestAccount() {
   const account = getLastRegisteredDemoAccount()
+  fillLoginForm(account)
+  await handleLogin(true)
+}
+
+function fillLoginForm(account) {
   form.idNumber = account.idNumber
   form.username = account.username
   form.password = account.password
