@@ -34,8 +34,6 @@ import com.javaeasybank.creditcard.repository.CardBillRepository;
 import com.javaeasybank.creditcard.repository.CreditCardRepository;
 import com.javaeasybank.customer.entity.CustomerProfile;
 import com.javaeasybank.customer.repository.CustomerProfileRepository;
-import com.javaeasybank.loan.dto.requests.LoanStatusCallbackRequestDTO;
-import com.javaeasybank.loan.enums.LoanApplicationStatus;
 import com.javaeasybank.loan.service.LoanApplicationService;
 import com.javaeasybank.loan.service.LoanRepaymentService;
 import lombok.RequiredArgsConstructor;
@@ -179,10 +177,7 @@ public class AccountIntegrationService {
                 public void afterCommit() {
                     log.info("[Disbursement] 帳務事務提交，通知 Loan 模組 applicationId={}", appId);
                     try {
-                        LoanStatusCallbackRequestDTO callbackDto = new LoanStatusCallbackRequestDTO();
-                        callbackDto.setCallerModule("ACCOUNT");
-                        callbackDto.setNewStatus(LoanApplicationStatus.DISBURSED);
-                        loanApplicationService.handleStatusCallback(appId, callbackDto);
+                        loanApplicationService.handleAccountDisbursedCallback(appId);
                     } catch (Exception e) {
                         log.error("[Disbursement] Loan 回調失敗 applicationId={}", appId, e);
                         // TODO（第五部）：寫入補傳表，搭配排程重試
