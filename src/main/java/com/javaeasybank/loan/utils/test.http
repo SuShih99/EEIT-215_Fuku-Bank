@@ -1,0 +1,2 @@
+PATCH http://localhost:8080/api/admin/loan-applications/LA202605161007218879/disburse/retry
+Cookie: JSESSIONID=2394BBD2DB2043FF7C91C136756ED35A

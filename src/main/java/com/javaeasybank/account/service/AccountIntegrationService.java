@@ -116,7 +116,8 @@ public class AccountIntegrationService {
         account.setChangedBy(SYSTEM_OPERATOR);
         Account saved = accountRepository.save(account);
 
-        log.info("建立貸款帳戶成功: customerId={}, loanAccountNumber={}", customer.getCustomerId(), accountNumber);
+        log.info("[createLoanAccount] 貸款帳戶建立完成: customerId={}, loanAccountNumber={}",
+                customer.getCustomerId(), accountNumber);
         return toLoanAccountResponse(saved);
     }
 
@@ -183,8 +184,7 @@ public class AccountIntegrationService {
                         callbackDto.setNewStatus(LoanApplicationStatus.DISBURSED);
                         loanApplicationService.handleStatusCallback(appId, callbackDto);
                     } catch (Exception e) {
-                        log.error("[Disbursement] Loan 回調失敗 applicationId={} error={}",
-                                appId, e.getMessage());
+                        log.error("[Disbursement] Loan 回調失敗 applicationId={}", appId, e);
                         // TODO（第五部）：寫入補傳表，搭配排程重試
                     }
                 }

@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -318,8 +319,8 @@ public class LoanApplicationService {
                         try {
                             LAService.autoDisburse(applicationId);
                         } catch (Exception e) {
-                            log.error("[AutoDisburse] 自動撥款失敗，申請保留 APPROVED 供重試 applicationId={} error={}",
-                                    applicationId, e.getMessage());
+                            log.error("[AutoDisburse] 自動撥款失敗，申請保留 APPROVED 供重試 applicationId={}",
+                                    applicationId, e);
                         }
                     }
                 });
@@ -352,9 +353,10 @@ public class LoanApplicationService {
     }
 
     // 風控核准後自動建帳與撥款（由 handleStatusCallback APPROVED afterCommit 呼叫）
-    // @Transactional 確保 createLoanAccount + disburseLoan 在同一事務內；
-    // disburseLoan 的 afterCommit 會再觸發 ACCOUNT callback → DISBURSED + 建 LoanAccount 紀錄
-    @Transactional
+    // NOT_SUPPORTED：覆蓋 class 層級 @Transactional，使本方法不持有外層事務。
+    // 如此 createLoanAccount 和 disburseLoan 各自以 REQUIRED 建立並提交自己的事務，
+    // createLoanAccount 提交後 LOAN 帳戶已寫入 DB，disburseLoan 的 lockAccounts 才能查到它。
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void autoDisburse(String applicationId) {
 
         LoanApplication loan = laRepo.findById(applicationId)
@@ -374,6 +376,10 @@ public class LoanApplicationService {
         LoanReviewDetail detail = reviewDetailRepo.findByApplicationId(applicationId)
                 .orElseThrow(() -> new BusinessException("找不到二次填單，無法自動撥款：" + applicationId));
 
+        log.info("[AutoDisburse] 開始撥款 applicationId={} customerId={} amount={} disbursementAccount={}",
+                applicationId, loan.getCustomerId(),
+                detail.getConfirmedAmount(), loan.getDisbursementAccount());
+
         // 步驟一：在 Account 模組建立貸款負債帳戶
         LoanAccountCreateRequest createReq = new LoanAccountCreateRequest();
         createReq.setCustomerId(loan.getCustomerId());
@@ -381,9 +387,12 @@ public class LoanApplicationService {
         createReq.setRate(detail.getConfirmedRate());
         LoanAccountResponse accountResp = accountIntegrationService.createLoanAccount(createReq);
         String loanAccountNumber = accountResp.getLoanAccountNumber();
-        log.info("[AutoDisburse] 貸款帳戶建立完成 loanAccountNumber={}", loanAccountNumber);
+        log.info("[AutoDisburse] Step1 完成 loanAccountNumber={}", loanAccountNumber);
 
         // 步驟二：撥款（disburseLoan 的 afterCommit 會呼叫 handleStatusCallback ACCOUNT/DISBURSED）
+        // lockAccounts 將同時鎖定：909000000001（銀行）、loanAccountNumber（LOAN帳）、disbursementAccount（客戶CHECKING）
+        log.info("[AutoDisburse] Step2 開始撥款 lockAccounts 目標: 銀行=909000000001 loan={} to={}",
+                loanAccountNumber, loan.getDisbursementAccount());
         LoanDisbursementRequest disburseReq = new LoanDisbursementRequest();
         disburseReq.setApplicationId(applicationId);
         disburseReq.setLoanAccountNumber(loanAccountNumber);
@@ -391,7 +400,7 @@ public class LoanApplicationService {
         disburseReq.setAmount(detail.getConfirmedAmount());
         disburseReq.setNote("貸款核准自動撥款 applicationId=" + applicationId);
         accountIntegrationService.disburseLoan(disburseReq);
-        log.info("[AutoDisburse] 撥款指令送出 applicationId={}", applicationId);
+        log.info("[AutoDisburse] Step2 完成，撥款指令送出 applicationId={}", applicationId);
     }
 
     // 撥款補償：行員手動重送撥款（狀態必須仍是 APPROVED）

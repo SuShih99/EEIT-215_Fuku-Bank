@@ -64,6 +64,7 @@ public class LoanAccountService {
             return;
         }
 
+        log.info("[Disbursement] Step-A 查詢申請與填單 applicationId={}", applicationId);
         LoanApplication loan = loanApplicationRepo.findById(applicationId)
                 .orElseThrow(() -> new BusinessException("找不到申請編號：" + applicationId));
 
@@ -73,8 +74,10 @@ public class LoanAccountService {
         BigDecimal principal    = detail.getConfirmedAmount();
         Integer    periods      = detail.getConfirmedPeriod();
         BigDecimal annualRate   = detail.getConfirmedRate();
-        // 改用 AmortizationCalculator，移除內嵌公式
+        log.info("[Disbursement] Step-B 計算月付金 principal={} annualRate={} periods={}",
+                principal, annualRate, periods);
         BigDecimal monthlyPmt   = AmortizationCalculator.calcMonthlyPayment(principal, annualRate, periods);
+        log.info("[Disbursement] Step-B 完成 monthlyPmt={}", monthlyPmt);
 
         LocalDate startDate = LocalDate.now();
 
@@ -94,12 +97,14 @@ public class LoanAccountService {
         account.setAccountStatus(LoanAccountStatus.ACTIVE);
         account.setCreateTime(LocalDateTime.now());
 
+        log.info("[Disbursement] Step-C 儲存 LoanAccount accountId={}", account.getAccountId());
         loanAccountRepo.save(account);
-        log.info("[Disbursement] 帳戶建立完成 accountId={} applicationId={}",
-                account.getAccountId(), applicationId);
+        log.info("[Disbursement] Step-C 完成 applicationId={}", applicationId);
 
+        log.info("[Disbursement] Step-D 預排還款明細 periods={}", periods);
         // 預排 N 期還款明細
         loanRepaymentService.createSchedule(account);
+        log.info("[Disbursement] Step-D 完成 applicationId={}", applicationId);
     }
 
     // ===客戶查詢===
