@@ -415,6 +415,16 @@ public class LoanApplicationService {
                     "此申請狀態為 " + loan.getApplicationStatus() + "，無需重送撥款（僅 APPROVED 可重送）");
         }
 
+        if (accountIntegrationService.hasDisbursementRecordByApplicationId(applicationId)) {
+            log.warn("[RetryDisburse] 偵測到既有撥款紀錄，改補送 ACCOUNT 回調 applicationId={}", applicationId);
+            LoanStatusCallbackRequestDTO callbackDto = new LoanStatusCallbackRequestDTO();
+            callbackDto.setCallerModule("ACCOUNT");
+            callbackDto.setNewStatus(LoanApplicationStatus.DISBURSED);
+            callbackDto.setNote("retryDisburse: 補送 ACCOUNT 回調");
+            handleStatusCallback(applicationId, callbackDto);
+            return;
+        }
+
         log.info("[RetryDisburse] 行員手動重送撥款 applicationId={}", applicationId);
         // 透過 LAService proxy 確保 autoDisburse 的 @Transactional 被 Spring AOP 攔截
         LAService.autoDisburse(applicationId);

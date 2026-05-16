@@ -202,6 +202,16 @@ public class AccountIntegrationService {
                 targetAccount.getBalance());
     }
 
+    @Transactional(readOnly = true)
+    public boolean hasDisbursementRecordByApplicationId(String applicationId) {
+        if (applicationId == null || applicationId.isBlank()) {
+            return false;
+        }
+        return transLogRepository.existsByTransactionTypeAndNoteContaining(
+                TransactionType.LOAN_DISBURSEMENT,
+                "applicationId=" + applicationId);
+    }
+
     @Transactional
     public LoanAccountTransactionResponse addLoanInterest(LoanInterestRequest request) {
         BigDecimal amount = normalizePositiveAmount(request.getAmount(), "利息金額");

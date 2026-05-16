@@ -19,9 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /*
@@ -169,10 +169,8 @@ public class LoanRepaymentService {
         return dto;
     }
 
-    // 產生格式化 ID（前綴 + yyyyMMddHHmmss + 4 位亂數），與其他 Service 同規格
+    // 產生還款 ID（前綴 + 32 碼 UUID hex），避免批次建檔時主鍵碰撞
     private String generateId(String prefix) {
-        String timeStr      = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        String randomSuffix = String.format("%04d", (int) (Math.random() * 10000));
-        return prefix + timeStr + randomSuffix;
+        return prefix + UUID.randomUUID().toString().replace("-", "");
     }
 }

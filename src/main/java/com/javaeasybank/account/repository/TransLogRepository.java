@@ -41,6 +41,15 @@ public interface TransLogRepository extends JpaRepository<TransLog, String>, Jpa
     boolean existsByNoteContaining(String keyword);
 
     /**
+     * 檢查是否存在指定交易類型且 note 包含關鍵字的交易紀錄。
+     *
+     * @param transactionType 交易類型。
+     * @param keyword         note 中的關鍵字。
+     * @return 是否存在匹配的紀錄。
+     */
+    boolean existsByTransactionTypeAndNoteContaining(TransactionType transactionType, String keyword);
+
+    /**
      * 查詢與指定帳號相關的所有交易紀錄（包括作為影響帳號或對手方帳號的交易），並進行分頁。
      *
      * @param accountNumber 要查詢的帳號。
