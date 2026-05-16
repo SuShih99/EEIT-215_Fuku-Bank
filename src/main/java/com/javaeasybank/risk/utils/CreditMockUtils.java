@@ -1,7 +1,8 @@
 package com.javaeasybank.risk.utils;
 
-import com.javaeasybank.risk.enums.Occupation;
+import com.javaeasybank.risk.enums.FundSource;
 import com.javaeasybank.risk.entity.CustomerCreditInfo;
+import com.javaeasybank.risk.enums.Occupation;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -11,154 +12,97 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class CreditMockUtils {
 
-    // 各年齡段可選的職業池
-    private static final Occupation[] YOUNG_OCCUPATIONS = {
-            Occupation.STUDENT,
-            Occupation.OFFICE_WORKER,
-            Occupation.MANUFACTURING,
-            Occupation.SERVICE_INDUSTRY,
-            Occupation.FREELANCER,
-            Occupation.GOVERNMENT_EMPLOYEE
-    };
-
-    private static final Occupation[] MID_OCCUPATIONS = {
-            Occupation.OFFICE_WORKER,
-            Occupation.GOVERNMENT_EMPLOYEE,
-            Occupation.MANAGER,
-            Occupation.PROFESSIONAL,
-            Occupation.MANUFACTURING,
-            Occupation.SERVICE_INDUSTRY,
-            Occupation.SELF_EMPLOYED,
-            Occupation.FREELANCER,
-            Occupation.HOUSEWIFE
-    };
-
-    private static final Occupation[] SENIOR_OCCUPATIONS = {
-            Occupation.MANAGER,
-            Occupation.PROFESSIONAL,
-            Occupation.GOVERNMENT_EMPLOYEE,
-            Occupation.SELF_EMPLOYED,
-            Occupation.SERVICE_INDUSTRY,
-            Occupation.RETIRED,
-            Occupation.HOUSEWIFE,
-            Occupation.UNEMPLOYED
-    };
-
-    /**
-     * 根據 customerId 與生日，產生一筆模擬信用資料
-     *
-     * @param customerId 客戶ID，必須與 CustomerProfile 一致
-     * @param birthday   客戶生日，用於推算年齡與職業分布
-     * @return 尚未持久化的 CustomerCreditInfo
-     * @throws IllegalArgumentException 若生日為未來日期
-     */
-    public static CustomerCreditInfo generateMockInfo(String customerId, LocalDate birthday) {
-        validateBirthday(birthday);
-
-        int age = Period.between(birthday, LocalDate.now()).getYears();
-        Occupation occupation = selectOccupationByAge(age);
-
+    public static CustomerCreditInfo generateMockInfo(String customerId, LocalDate birthday, Occupation occupation, BigDecimal annualIncome, FundSource fundSource, Boolean isPep, String job) {
         CustomerCreditInfo info = new CustomerCreditInfo();
         info.setCustomerId(customerId);
-        info.setOccupation(occupation);
-        info.setAnnualIncome(generateIncome(occupation, age));
-        info.setOtherBankDebt(generateDebt(info.getAnnualIncome()));
-        info.setExternalScore(ThreadLocalRandom.current().nextInt(300, 801));
-        info.setHasRealEstate(generateHasRealEstate(age));
+
+        // 計算年齡 (處理 null 的情況)
+        int age = (birthday != null) ? Period.between(birthday, LocalDate.now()).getYears() : 30;
+
+        // 組裝 Mock 資料
+        info.setHasRealEstate(generateHasRealEstate(annualIncome, fundSource, age));
+        info.setOtherBankDebt(generateDebt(annualIncome, fundSource));
+        info.setExternalScore(generateExternalScore(occupation, annualIncome));
+
+        // 根據需求塞入其他基本資料
+        //info.setIsPep(isPep != null ? isPep : false);
+        //info.setJobTitle(job);
 
         return info;
     }
 
-    private static void validateBirthday(LocalDate birthday) {
-        if (birthday == null) {
-            throw new IllegalArgumentException("Birthday must not be null");
+    //生成有無房產
+    private static boolean generateHasRealEstate(
+            BigDecimal annualIncome, FundSource fundSource, int age) {
+
+        double base = age < 30 ? 0.05 : age < 45 ? 0.20 : 0.40;
+
+        // 高收入加成
+        double incomeBonus = 0;
+        if (annualIncome != null) {
+            if (annualIncome.compareTo(new BigDecimal("2000000")) >= 0) incomeBonus = 0.20;
+            else if (annualIncome.compareTo(new BigDecimal("1000000")) >= 0) incomeBonus = 0.10;
         }
-        if (birthday.isAfter(LocalDate.now())) {
-            throw new IllegalArgumentException("Birthday cannot be in the future: " + birthday);
-        }
-    }
 
-    private static Occupation selectOccupationByAge(int age) {
-        var random = ThreadLocalRandom.current();
-
-        if (age < 22) return Occupation.STUDENT;
-
-        Occupation[] pool = age < 35 ? YOUNG_OCCUPATIONS
-                : age < 55 ? MID_OCCUPATIONS
-                  : SENIOR_OCCUPATIONS;
-
-        return pool[random.nextInt(pool.length)];
-    }
-
-    /**
-     * 年齡加成邏輯：
-     * 每多一歲，在基礎收入上加 seniority * 年資乘數
-     * 年資從各職業的「預設起始年齡」開始計算
-     */
-    private static BigDecimal generateIncome(Occupation occupation, int age) {
-        var random = ThreadLocalRandom.current();
-
-        record Income(double base, double bonus) {}
-
-        Income inc = switch (occupation) {
-            case OFFICE_WORKER ->
-                    new Income(400_000 + random.nextInt(400_000),
-                            Math.max(0, age - 25) * 8_000.0);
-            case GOVERNMENT_EMPLOYEE ->
-                    new Income(500_000 + random.nextInt(200_000),
-                            Math.max(0, age - 25) * 6_000.0);
-            case PROFESSIONAL ->
-                    new Income(1_500_000 + random.nextInt(500_000),
-                            Math.max(0, age - 30) * 30_000.0);
-            case MANAGER ->
-                    new Income(1_000_000 + random.nextInt(500_000),
-                            Math.max(0, age - 35) * 20_000.0);
-            case MANUFACTURING ->
-                    new Income(350_000 + random.nextInt(150_000),
-                            Math.max(0, age - 22) * 3_000.0);
-            case SERVICE_INDUSTRY ->
-                    new Income(300_000 + random.nextInt(200_000),
-                            Math.max(0, age - 22) * 2_000.0);
-            case SELF_EMPLOYED ->
-                    new Income(500_000 + random.nextInt(1_000_000),
-                            Math.max(0, age - 30) * 15_000.0);
-            case FREELANCER ->
-                    new Income(400_000 + random.nextInt(800_000),
-                            Math.max(0, age - 28) * 10_000.0);
-            case STUDENT ->
-                    new Income(50_000 + random.nextInt(100_000), 0);
-            case RETIRED ->
-                    new Income(200_000 + random.nextInt(200_000), 0);
-            case HOUSEWIFE ->
-                    new Income(random.nextInt(100_000), 0);
-            case UNEMPLOYED ->
-                    new Income(random.nextInt(50_000), 0);
+        // 繼承或儲蓄來源，有房機率更高
+        double sourceBonus = fundSource == null ? 0 : switch (fundSource) {
+            case INHERITANCE -> 0.15;
+            case SAVINGS -> 0.05;
+            case PENSION -> 0.10;
+            default -> 0;
         };
 
-        return BigDecimal.valueOf(inc.base() + inc.bonus())
+        double probability = Math.min(0.85, base + incomeBonus + sourceBonus);
+        return ThreadLocalRandom.current().nextDouble() < probability;
+    }
+
+    //生成他行負債
+    private static BigDecimal generateDebt(BigDecimal annualIncome, FundSource fundSource) {
+        if (annualIncome == null) return BigDecimal.ZERO;
+
+        // 資金來源決定負債傾向
+        double maxDebtRatio = fundSource == null ? 1.0 : switch (fundSource) {
+            case SALARY -> 0.8;   // 薪資族，負債相對低
+            case PENSION -> 0.3;   // 退休金，負債低
+            case BUSINESS -> 1.5;   // 營業收入，可能有較多負債
+            case SAVINGS -> 0.5;
+            case INVESTMENT -> 1.2;
+            case INHERITANCE -> 0.2;  // 繼承，通常負債低
+            case OTHER -> 1.0;
+        };
+
+        // 隨機 0 ~ maxDebtRatio 倍
+        double ratio = ThreadLocalRandom.current().nextDouble(0, maxDebtRatio);
+        return annualIncome.multiply(BigDecimal.valueOf(ratio))
                 .setScale(2, RoundingMode.HALF_UP);
     }
 
-    /**
-     * 負債為年收入的 0.0 ~ 2.0 倍隨機值
-     * 上限 2 倍模擬最壞情況（房貸 + 信貸並存）
-     */
-    private static BigDecimal generateDebt(BigDecimal annualIncome) {
-        // 先產生整數倍數避免 double 精度問題：0 ~ 200 代表 0.00 ~ 2.00
-        int debtPermille = ThreadLocalRandom.current().nextInt(0, 201); // 0~200
-        BigDecimal factor = BigDecimal.valueOf(debtPermille, 2);        // scale=2，即除以100
-        return annualIncome.multiply(factor).setScale(2, RoundingMode.HALF_UP);
-    }
+    //生成外部聯徵分數
+    private static int generateExternalScore(Occupation occupation, BigDecimal annualIncome) {
+        // 基礎分：依職業穩定性
+        int base = occupation == null ? 500 : switch (occupation) {
+            case LEGISLATOR_MANAGER -> 700;
+            case PROFESSIONAL -> 680;
+            case TECHNICIAN, CLERICAL, MILITARY -> 640;
+            case SERVICE_SALES, CRAFT_WORKER,
+                 MACHINE_OPERATOR -> 580;
+            case AGRICULTURAL, ELEMENTARY -> 540;
+            case OTHER -> 520;
+            case NONE -> 400;
+        };
 
-    /**
-     * 有房機率隨年齡提升：
-     * < 30 歲：5%，30~45 歲：20%，> 45 歲：40%
-     */
-    private static boolean generateHasRealEstate(int age) {
-        double probability = age < 30 ? 0.05
-                : age < 45 ? 0.20
-                  : 0.40;
-        return ThreadLocalRandom.current().nextDouble() < probability;
+        // 收入加成：年收入每 100 萬加 20 分，上限 +80
+        int incomeBonus = 0;
+        if (annualIncome != null) {
+            incomeBonus = Math.min(80,
+                    annualIncome.divide(new BigDecimal("1000000"), 0, RoundingMode.DOWN)
+                            .intValue() * 20);
+        }
+
+        // 加上隨機擾動 ±50，確保不同客戶有差異
+        int jitter = ThreadLocalRandom.current().nextInt(-50, 51);
+
+        return Math.clamp(base + incomeBonus + jitter, 300, 800);
     }
 }
 

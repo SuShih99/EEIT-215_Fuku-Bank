@@ -1,8 +1,9 @@
 package com.javaeasybank.risk.service;
 
 import com.javaeasybank.risk.dto.request.RiskReviewRequest;
-import com.javaeasybank.risk.utils.CreditMockUtils;
+import com.javaeasybank.risk.enums.FundSource;
 import com.javaeasybank.risk.enums.Occupation;
+import com.javaeasybank.risk.utils.CreditMockUtils;
 import com.javaeasybank.risk.enums.RiskLevel;
 import com.javaeasybank.risk.entity.CustomerCreditInfo;
 import com.javaeasybank.risk.repository.CustomerCreditRepository;
@@ -20,7 +21,7 @@ import java.util.Optional;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class CreditSCoreService {
+public class CreditScoreService {
 
     private static final int EXTERNAL_SCORE_MIN = 300;
     private static final int EXTERNAL_SCORE_RANGE = 500; // 800 - 300
@@ -28,8 +29,8 @@ public class CreditSCoreService {
     private final CustomerCreditRepository ccRepos;
 
     @Transactional
-    public CustomerCreditInfo initializeCreditInfo(String customerId, LocalDate birthday) {
-        CustomerCreditInfo info = CreditMockUtils.generateMockInfo(customerId, birthday);
+    public CustomerCreditInfo initializeCreditInfo(String customerId, LocalDate birthday, Occupation occupation, BigDecimal annualIncome, FundSource fundSource, Boolean isPep, String job) {
+        CustomerCreditInfo info = CreditMockUtils.generateMockInfo(customerId, birthday, occupation, annualIncome, fundSource, isPep, job);
         score(info);
         return ccRepos.save(info);
     }
@@ -54,7 +55,8 @@ public class CreditSCoreService {
         int total = scoreExternalCredit(info.getExternalScore())
                 + scoreDebtRatio(info.getAnnualIncome(), info.getOtherBankDebt())
                 + scoreOccupation(info.getOccupation())
-                + scoreRealEstate(info.getHasRealEstate());
+                + scoreRealEstate(info.getHasRealEstate())
+                + scoreFundSource(info.getFundSource());
 
         info.setFinalScore(total);
         info.setRiskLevel(resolveRiskLevel(total));
@@ -90,17 +92,17 @@ public class CreditSCoreService {
     }
 
     /**
-     * 職業穩定性（20分）
+     * 職業穩定性（15分）
      */
     private int scoreOccupation(Occupation occupation) {
         if (occupation == null) return 0;
         return switch (occupation) {
-            case GOVERNMENT_EMPLOYEE -> 20;
-            case PROFESSIONAL, MANAGER -> 18;
-            case OFFICE_WORKER, MANUFACTURING -> 15;
-            case SERVICE_INDUSTRY, SELF_EMPLOYED -> 12;
-            case FREELANCER, HOUSEWIFE, RETIRED -> 8;
-            case STUDENT, UNEMPLOYED -> 3;
+            case LEGISLATOR_MANAGER -> 15;
+            case PROFESSIONAL -> 13;
+            case TECHNICIAN, MILITARY, CLERICAL -> 10;
+            case SERVICE_SALES, MACHINE_OPERATOR, CRAFT_WORKER -> 7;
+            case AGRICULTURAL, ELEMENTARY -> 3;
+            case NONE, OTHER -> 2;
         };
     }
 
@@ -121,6 +123,22 @@ public class CreditSCoreService {
         return RiskLevel.HIGH;
     }
 
+    /**
+     * 資金來源（5分）
+     */
+    private int scoreFundSource(FundSource fundSource) {
+        if (fundSource == null) return 0;
+        return switch (fundSource) {
+            case SALARY -> 5;   // 薪資收入，最穩定
+            case PENSION -> 4;   // 退休金，穩定
+            case BUSINESS -> 3;   // 營業收入，有波動
+            case SAVINGS -> 3;   // 儲蓄
+            case INVESTMENT -> 2;   // 投資收益，波動大
+            case INHERITANCE -> 1;   // 繼承，一次性
+            case OTHER -> 1;
+        };
+    }
+
     // 2. 選填欄位覆蓋（從 RiskReviewRequest 更新 CustomerCreditInfo）
     @Transactional
     public void updateIfPresent(RiskReviewRequest dto) {
@@ -137,16 +155,36 @@ public class CreditSCoreService {
                 info.getExternalScore(), info.getAnnualIncome(),
                 info.getOccupation(), info.getOtherBankDebt(), info.getHasRealEstate());
 
-        Optional.ofNullable(dto.getAnnualIncome()).ifPresent(v -> { log.info("[CreditScore] 覆蓋 annualIncome → {}", v); info.setAnnualIncome(v); });
-        Optional.ofNullable(dto.getExternalScore()).ifPresent(v -> { log.info("[CreditScore] 覆蓋 externalScore → {}", v); info.setExternalScore(v); });
-        Optional.ofNullable(dto.getOtherBankDebt()).ifPresent(v -> { log.info("[CreditScore] 覆蓋 otherBankDebt → {}", v); info.setOtherBankDebt(v); });
-        Optional.ofNullable(dto.getOccupation()).ifPresent(v -> { log.info("[CreditScore] 覆蓋 occupation → {}", v); info.setOccupation(v); });
-        Optional.ofNullable(dto.getHasRealEstate()).ifPresent(v -> { log.info("[CreditScore] 覆蓋 hasRealEstate → {}", v); info.setHasRealEstate(v); });
+        Optional.ofNullable(dto.getAnnualIncome()).ifPresent(v -> {
+            log.info("[CreditScore] 覆蓋 annualIncome → {}", v);
+            info.setAnnualIncome(v);
+        });
+        Optional.ofNullable(dto.getExternalScore()).ifPresent(v -> {
+            log.info("[CreditScore] 覆蓋 externalScore → {}", v);
+            info.setExternalScore(v);
+        });
+        Optional.ofNullable(dto.getOtherBankDebt()).ifPresent(v -> {
+            log.info("[CreditScore] 覆蓋 otherBankDebt → {}", v);
+            info.setOtherBankDebt(v);
+        });
+        Optional.ofNullable(dto.getOccupation()).ifPresent(v -> {
+            log.info("[CreditScore] 覆蓋 occupation → {}", v);
+            info.setOccupation(v);
+        });
+        Optional.ofNullable(dto.getHasRealEstate()).ifPresent(v -> {
+            log.info("[CreditScore] 覆蓋 hasRealEstate → {}", v);
+            info.setHasRealEstate(v);
+        });
 
         if (dto.getAnnualIncome() == null && dto.getExternalScore() == null
                 && dto.getOtherBankDebt() == null && dto.getOccupation() == null
                 && dto.getHasRealEstate() == null) {
             log.info("[CreditScore] 選填欄位皆為 null，沿用資料庫既有資料（不覆蓋）");
+        }else {
+            // 只要有欄位被覆蓋，就必須重新計算分數與風險等級
+            score(info);
+            log.info("[CreditScore] 欄位覆蓋後重新評分：finalScore={}, riskLevel={}",
+                    info.getFinalScore(), info.getRiskLevel());
         }
 
         ccRepos.save(info);

@@ -24,7 +24,7 @@ import java.util.Map;
 public class RiskReviewService {
 
     private final BlackListService blackListService;
-    private final CreditSCoreService creditScoreService;
+    private final CreditScoreService creditScoreService;
     private final ReviewTaskService reviewTaskService;
     private final CallbackService callbackService;
     private final RiskEventLogRepository logRepository;

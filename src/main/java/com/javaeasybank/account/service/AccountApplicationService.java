@@ -13,6 +13,7 @@ import com.javaeasybank.account.utils.ApplicationNoGenerator;
 import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.customer.repository.CustomerRespository;
 import com.javaeasybank.customer.service.CustomerService;
+import com.javaeasybank.risk.service.CreditScoreService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -48,6 +49,7 @@ public class AccountApplicationService {
     private final AccountRepository accountRepository;
     private final CustomerService customerService;
     private final JdbcTemplate jdbcTemplate;
+    private final CreditScoreService creditScoreService;
 
     // =========================================================
     // 客戶端：提交申請
@@ -153,6 +155,7 @@ public class AccountApplicationService {
 
         AccountApplication saved = applicationRepository.save(app);
         syncCustomerProfileFromApplication(saved, request.getAnnualIncome());
+
         log.info("Account application submitted: id={}, customer={}, riskFlag={}",
                 saved.getId(), customerId, riskFlag);
 

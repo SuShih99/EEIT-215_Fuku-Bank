@@ -1,40 +1,27 @@
 package com.javaeasybank.risk.enums;
 
-/**
- * 職業類型列舉 - 用於風險評估與隨機資料產生
- */
 public enum Occupation {
-    // 穩定受僱
-    OFFICE_WORKER("上班族", EmploymentStatus.EMPLOYED),
-    GOVERNMENT_EMPLOYEE("公務人員", EmploymentStatus.EMPLOYED),
-    PROFESSIONAL("專業人士 (醫/律/會)", EmploymentStatus.EMPLOYED),
-    MANAGER("管理職", EmploymentStatus.EMPLOYED),
-    MANUFACTURING("製造業勞工", EmploymentStatus.EMPLOYED),
-    SERVICE_INDUSTRY("服務業人員", EmploymentStatus.EMPLOYED),
-
-    // 自主經營/自由業
-    SELF_EMPLOYED("自營業者", EmploymentStatus.EMPLOYED),
-    FREELANCER("自由職業者", EmploymentStatus.EMPLOYED),
-
-    // 非在職狀態
-    STUDENT("學生", EmploymentStatus.UNEMPLOYED),
-    RETIRED("退休人員", EmploymentStatus.UNEMPLOYED),
-    HOUSEWIFE("家庭主婦/主夫", EmploymentStatus.UNEMPLOYED),
-    UNEMPLOYED("待業者", EmploymentStatus.UNEMPLOYED);
+    LEGISLATOR_MANAGER("民意代表/高階主管", EmploymentStatus.EMPLOYED),
+    PROFESSIONAL("專業人員", EmploymentStatus.EMPLOYED),
+    TECHNICIAN("技術員及助理專業人員", EmploymentStatus.EMPLOYED),
+    CLERICAL("事務支援人員", EmploymentStatus.EMPLOYED),
+    SERVICE_SALES("服務及銷售工作人員", EmploymentStatus.EMPLOYED),
+    AGRICULTURAL("農林漁牧業生產人員", EmploymentStatus.EMPLOYED),
+    CRAFT_WORKER("技藝有關工作人員", EmploymentStatus.EMPLOYED),
+    MACHINE_OPERATOR("機械設備操作及組裝人員", EmploymentStatus.EMPLOYED),
+    ELEMENTARY("基層技術工及勞力工", EmploymentStatus.EMPLOYED),
+    MILITARY("軍人", EmploymentStatus.EMPLOYED),
+    NONE("無", EmploymentStatus.UNEMPLOYED),
+    OTHER("其他", EmploymentStatus.EMPLOYED);
 
     private final String desc;
-    private final EmploymentStatus defaultStatus; // 預設就業狀態
+    private final EmploymentStatus defaultStatus;
 
     Occupation(String desc, EmploymentStatus defaultStatus) {
         this.desc = desc;
         this.defaultStatus = defaultStatus;
     }
 
-    public String getDesc() {
-        return desc;
-    }
-
-    public EmploymentStatus getDefaultStatus() {
-        return defaultStatus;
-    }
+    public String getDesc() { return desc; }
+    public EmploymentStatus getDefaultStatus() { return defaultStatus; }
 }
