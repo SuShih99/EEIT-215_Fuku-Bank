@@ -25,7 +25,7 @@ import java.util.Map;
 public class LoanRiskClient {
 
     // application.properties:
-    //   risk.api.base-url=http://localhost:8080/api/risk/reviews
+    //   risk.api.base-url=http://localhost:8080/api/risk/
     //   risk.api.callback-url=http://localhost:8080/api/loan-callbacks
     @Value("${risk.api.base-url}")
     private String riskBaseUrl;

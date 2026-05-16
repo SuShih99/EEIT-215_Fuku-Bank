@@ -1,28 +1,16 @@
 <template>
   <div class="page-container">
+    <!-- 頁首：標題左、操作列右 -->
     <div class="page-header">
       <h2 class="page-title">黑名單</h2>
-    </div>
-
-    <div class="action-bar">
-      <!-- 功能列 -->
-      <div
-        style="
-          margin-bottom: 16px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        "
-      >
+      <div class="header-actions">
+        <span class="filter-label">顯示狀態：</span>
+        <a-radio-group v-model:value="filterStatus" @change="handleFilterChange">
+          <a-radio-button :value="true">已啟用</a-radio-button>
+          <a-radio-button :value="false">已停用</a-radio-button>
+          <a-radio-button :value="null">全部</a-radio-button>
+        </a-radio-group>
         <a-button type="primary" @click="openModal('create')">新增黑名單</a-button>
-        <div style="display: flex; align-items: center">
-          <span style="margin-right: 8px; white-space: nowrap">顯示狀態：</span>
-          <a-radio-group v-model:value="filterStatus" @change="handleFilterChange">
-            <a-radio-button :value="true">已啟用</a-radio-button>
-            <a-radio-button :value="false">已停用</a-radio-button>
-            <a-radio-button :value="null">全部</a-radio-button>
-          </a-radio-group>
-        </div>
       </div>
     </div>
 
@@ -293,3 +281,42 @@ function resetForm() {
 
 onMounted(fetchList)
 </script>
+
+<style scoped>
+.page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* 頁首：標題 + 操作列同一行，左右對齊 */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a2e;
+  line-height: 1;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: 14px;
+  color: #595959;
+  white-space: nowrap;
+}
+</style>
