@@ -16,6 +16,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.security.web.access.expression.WebExpressionAuthorizationManager;
 
 /**
  * Spring Security 設定
@@ -76,11 +77,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/linepay/**").permitAll()
 
-                        //風控測試用
-                        .requestMatchers("/api/risk/**").permitAll()
-                        .requestMatchers("/api/loan-callbacks/**").permitAll()
-                        .requestMatchers("/api/transfer-callbacks/**").permitAll()
-                        .requestMatchers("/api/account-callbacks/**").permitAll()                       // === 其餘都要登入 ===
+                        // === 風控接口全部鎖在本機ip ===
+                        .requestMatchers("/api/risk/**").access(new WebExpressionAuthorizationManager("hasIpAddress('127.0.0.1') or hasIpAddress('::1')"))
+                        .requestMatchers("/api/loan-callbacks/**").access(new WebExpressionAuthorizationManager("hasIpAddress('127.0.0.1') or hasIpAddress('::1')"))
+                        .requestMatchers("/api/transfer-callbacks/**").access(new WebExpressionAuthorizationManager("hasIpAddress('127.0.0.1') or hasIpAddress('::1')"))
+                        .requestMatchers("/api/account-callbacks/**").access(new WebExpressionAuthorizationManager("hasIpAddress('127.0.0.1') or hasIpAddress('::1')"))
+                        // === 其餘都要登入 ===
                         .anyRequest().authenticated()
                 )
 
