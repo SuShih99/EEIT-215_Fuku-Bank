@@ -12,6 +12,7 @@ import com.javaeasybank.loan.repository.LoanApplicationRepository;
 import com.javaeasybank.loan.repository.LoanDocumentRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,6 +43,9 @@ public class LoanDocumentService {
 
     @Autowired
     private LoanRiskClient loanRiskClient;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     // ===客戶上傳補件===
 
@@ -86,7 +90,17 @@ public class LoanDocumentService {
         doc.setOriginalName(file.getOriginalFilename());
         doc.setUploadedBy(customerId);
         doc.setUploadTime(LocalDateTime.now());
-        documentRepo.save(doc);
+        try {
+            insertDocument(doc);
+        } catch (RuntimeException e) {
+            try {
+                fileStorageService.delete(fileUrl);
+            } catch (Exception cleanupError) {
+                log.warn("[Document] DB 寫入失敗後刪除檔案也失敗 documentId={} fileUrl={} err={}",
+                        doc.getDocumentId(), fileUrl, cleanupError.getMessage());
+            }
+            throw e;
+        }
 
         log.info("[Document] 上傳完成 documentId={} applicationId={}", doc.getDocumentId(), applicationId);
         return toResponseDTO(doc);
@@ -195,6 +209,21 @@ public class LoanDocumentService {
         String timeStr      = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         String randomSuffix = String.format("%04d", (int) (Math.random() * 10000));
         return prefix + timeStr + randomSuffix;
+    }
+
+    private void insertDocument(LoanDocument doc) {
+        jdbcTemplate.update("""
+                INSERT INTO loan_document
+                    (application_id, document_type, file_url, original_name, upload_time, uploaded_by, document_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                doc.getApplicationId(),
+                doc.getDocumentType().name(),
+                doc.getFileUrl(),
+                doc.getOriginalName(),
+                doc.getUploadTime(),
+                doc.getUploadedBy(),
+                doc.getDocumentId());
     }
 
     private LoanDocumentResponseDTO toResponseDTO(LoanDocument doc) {
