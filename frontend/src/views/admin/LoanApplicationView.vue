@@ -94,13 +94,31 @@
         </transition>
       </div>
 
+      <!-- 姓名模糊搜尋 -->
+      <div class="name-search-wrap">
+        <span class="name-search-icon">🔍</span>
+        <input
+          class="name-search-input"
+          type="text"
+          placeholder="搜尋申請人姓名…"
+          v-model="nameQuery"
+          @input="currentPage = 1"
+        />
+        <button
+          v-if="nameQuery"
+          class="name-search-clear"
+          @click="nameQuery = ''; currentPage = 1"
+          title="清除"
+        >✕</button>
+      </div>
+
       <!-- 結果摘要 -->
       <div class="filter-meta" v-if="!loading">
         <span class="status-dot"
               :class="STATUS_OPTIONS.find(s => s.value === currentStatus)?.dot"></span>
         共 <strong>{{ filteredApplications.length }}</strong> 筆
         <span v-if="sortKey" class="sort-hint">
-          · 依 {{ SORT_LABEL[sortKey] }} {{ sortDir === 'asc' ? '↑' : '↓' }}
+          · 依 {{ sortLabel(sortKey) }} {{ sortDir === 'asc' ? '↑' : '↓' }}
         </span>
       </div>
     </div>
@@ -173,8 +191,8 @@
             <th @click="toggleSort('applicationStatus')" class="sortable">
               申請狀態<span class="sort-icon">{{ sortIcon('applicationStatus') }}</span>
             </th>
-            <th @click="toggleSort('latestContactStatus')" class="sortable">
-              最新聯繫<span class="sort-icon">{{ sortIcon('latestContactStatus') }}</span>
+            <th @click="toggleSort('progressTime')" class="sortable">
+              {{ progressColumnLabel }}<span class="sort-icon">{{ sortIcon('progressTime') }}</span>
             </th>
             <th @click="toggleSort('createTime')" class="sortable">
               申請時間<span class="sort-icon">{{ sortIcon('createTime') }}</span>
@@ -195,8 +213,8 @@
             <!-- 申請人 -->
             <td>
               <div v-if="app.customerId" class="applicant-member">
-                <span class="member-badge">會員</span>
                 <span class="member-id">{{ app.cif || app.customerId }}</span>
+                <span class="member-name">{{ app.memberName || '—' }}</span>
               </div>
               <div v-else class="applicant-nonmember">
                 <div class="nm-name">{{ app.applicantName || '—' }}</div>
@@ -233,13 +251,17 @@
                 </span>
             </td>
 
-            <!-- 最新聯繫 -->
+            <!-- 最新進度 -->
             <td>
-              <div v-if="app.latestContactStatus" class="contact-cell">
+              <div v-if="showContactProgress(app)" class="contact-cell">
                   <span class="contact-status" :class="CONTACT_CLASS[app.latestContactStatus]">
                     {{ CONTACT_LABEL[app.latestContactStatus] || app.latestContactStatus }}
                   </span>
                 <div class="contact-time">{{ formatDate(app.latestContactTime) }}</div>
+              </div>
+              <div v-else-if="progressTime(app)" class="date-cell">
+                <span class="date-main">{{ formatDateShort(progressTime(app)) }}</span>
+                <span class="date-time">{{ formatTime(progressTime(app)) }}</span>
               </div>
               <span v-else class="text-muted">—</span>
             </td>
@@ -442,12 +464,14 @@ const LOAN_TYPE_NAME = {
   BUSINESS: '創業貸款', HOUSE: '房屋貸款', LAND: '土地貸款',
 }
 const LOAN_TYPE_KEYS = Object.keys(LOAN_TYPE_NAME)
+const POST_REVIEW_STATUSES = new Set(['PENDING_REVIEW', 'APPROVED', 'DISBURSED', 'CLOSED'])
+const STATUS_PROGRESS_STATUSES = new Set(['PENDING_REVIEW', 'APPROVED', 'REJECTED', 'DISBURSED', 'CLOSED'])
 
 // ① 排序欄位中文對照
 const SORT_LABEL = {
   applicationId: '申請編號', applyType: '類型', applyAmount: '金額',
   applyPeriod: '期數', rate: '利率', applicationStatus: '申請狀態',
-  latestContactStatus: '最新聯繫', createTime: '申請時間',
+  progressTime: '更新時間', createTime: '申請時間',
 }
 
 // ── State ──
@@ -468,21 +492,29 @@ const pageSize = ref(10)
 const selectedTypes = ref([])
 const typeDropdownOpen = ref(false)
 
+// ⑤ 姓名模糊搜尋
+const nameQuery = ref('')
+
 // ── Computed ──
 
-/** ④ 類型篩選 → ① 排序 */
+/** ④ 類型篩選 ＋ ⑤ 姓名搜尋 → ① 排序 */
 const filteredApplications = computed(() => {
   let list = applications.value
 
   if (selectedTypes.value.length > 0)
     list = list.filter(a => selectedTypes.value.includes(a.applyType))
 
+  if (nameQuery.value.trim()) {
+    const q = nameQuery.value.trim()
+    list = list.filter(a => (a.memberName || '').includes(q))
+  }
+
   if (sortKey.value) {
     const key = sortKey.value
     const dir = sortDir.value === 'asc' ? 1 : -1
     list = [...list].sort((a, b) => {
-      const av = a[key] ?? ''
-      const bv = b[key] ?? ''
+      const av = key === 'progressTime' ? progressTime(a) : (a[key] ?? '')
+      const bv = key === 'progressTime' ? progressTime(b) : (b[key] ?? '')
       if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir
       return String(av).localeCompare(String(bv), 'zh-TW') * dir
     })
@@ -505,6 +537,10 @@ const pagedApplications = computed(() => {
   const s = (currentPage.value - 1) * pageSize.value
   return filteredApplications.value.slice(s, s + pageSize.value)
 })
+
+const progressColumnLabel = computed(() =>
+  STATUS_PROGRESS_STATUSES.has(currentStatus.value) ? '更新時間' : '最新聯繫'
+)
 
 /** 省略號分頁按鈕序列 */
 const pageNumbers = computed(() => {
@@ -571,8 +607,6 @@ function countByType(key) {
 }
 
 // ── 顯示值選擇：審核中/已核准/已撥款/已結案 使用確認值，其餘用申請值 ──
-const POST_REVIEW_STATUSES = new Set(['PENDING_REVIEW', 'APPROVED', 'DISBURSED', 'CLOSED'])
-
 function displayAmount(app) {
   return POST_REVIEW_STATUSES.has(app.applicationStatus) && app.confirmedAmount != null
     ? app.confirmedAmount
@@ -593,6 +627,21 @@ function isConfirmedValue(app) {
 }
 
 // ── Formatters ──
+function sortLabel(key) {
+  return key === 'progressTime' ? progressColumnLabel.value : (SORT_LABEL[key] || key)
+}
+
+function showContactProgress(app) {
+  return !STATUS_PROGRESS_STATUSES.has(app.applicationStatus) && !!app.latestContactStatus
+}
+
+function progressTime(app) {
+  if (STATUS_PROGRESS_STATUSES.has(app.applicationStatus)) {
+    return app.updateTime || app.documentsSubmittedAt || app.latestContactTime || app.createTime
+  }
+  return app.latestContactTime
+}
+
 function formatAmount(n) {
   return n ? '$ ' + Number(n).toLocaleString('zh-TW') : '—'
 }
@@ -1381,23 +1430,77 @@ onUnmounted(() => clearInterval(refreshTimer))
 .applicant-member {
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.member-badge {
-  font-size: 10px;
-  font-family: 'IBM Plex Mono', monospace;
-  color: var(--blue);
-  background: rgba(37, 99, 235, 0.08);
-  border: 1px solid rgba(37, 99, 235, 0.2);
-  padding: 2px 7px;
-  border-radius: 4px;
+  gap: 0;
 }
 
 .member-id {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 13px;
   color: var(--muted-2);
+}
+
+.member-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-left: 8px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border);
+}
+
+/* ── 姓名搜尋欄 ── */
+.name-search-wrap {
+  display: flex;
+  align-items: center;
+  position: relative;
+  margin-left: auto;
+}
+
+.name-search-icon {
+  position: absolute;
+  left: 9px;
+  font-size: 12px;
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.name-search-input {
+  appearance: none;
+  background: var(--surface);
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  color: var(--ink);
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 13px;
+  padding: 6px 28px 6px 28px;
+  outline: none;
+  width: 180px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.name-search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.name-search-input::placeholder {
+  color: var(--muted);
+}
+
+.name-search-clear {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 0;
+  line-height: 1;
+}
+
+.name-search-clear:hover {
+  color: var(--accent);
 }
 
 .applicant-nonmember {

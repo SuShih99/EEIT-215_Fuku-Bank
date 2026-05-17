@@ -159,10 +159,12 @@ public class LoanApplicationService {
         // 若主表仍是 PENDING_CONTACT，推進為 IN_CONTACT
         if (loan.getApplicationStatus() == LoanApplicationStatus.PENDING_CONTACT) {
             loan.setApplicationStatus(LoanApplicationStatus.IN_CONTACT);
+            loan.setUpdateTime(log.getContactTime());
         }
         // 客戶放棄時，主表推進為 CANCELLED
         if (contactStatus == LoanContactStatus.DECLINED) {
             loan.setApplicationStatus(LoanApplicationStatus.CANCELLED);
+            loan.setUpdateTime(log.getContactTime());
         }
 
         laRepo.save(loan);
@@ -236,12 +238,16 @@ public class LoanApplicationService {
 
         // 更新填單狀態
         detail.setReviewStatus(LoanReviewStatus.SUBMITTED);
+        detail.setReviewStatus(LoanReviewStatus.SUBMITTED);
         detail.setSubmittedTime(LocalDateTime.now());
 
         // 同步更新主表狀態
         loan.setApplicationStatus(LoanApplicationStatus.PENDING_REVIEW);
 
         // 準備送出的 DTO
+        loan.setApplicationStatus(LoanApplicationStatus.PENDING_REVIEW);
+        loan.setUpdateTime(detail.getSubmittedTime());
+
         LoanRiskRequestDTO riskDto = buildRiskRequest(loan, detail);
 
         // 註冊事務提交後的執行邏輯。
@@ -536,11 +542,11 @@ public class LoanApplicationService {
         LoanApplicationResponseDTO dto = new LoanApplicationResponseDTO();
         dto.setApplicationId(loan.getApplicationId());
         dto.setCustomerId(loan.getCustomerId());
-        // 用 customerId 查出 cif 供前端顯示（Primary Key 查詢，效能无淣）
-        String cif = customerProfileRepository.findById(loan.getCustomerId())
-                .map(p -> p.getCif())
-                .orElse(null);
-        dto.setCif(cif);
+        // 用 customerId 查出 cif 與姓名供前端顯示（Primary Key 查詢，效能无淣）
+        customerProfileRepository.findById(loan.getCustomerId()).ifPresent(p -> {
+            dto.setCif(p.getCif());
+            dto.setMemberName(p.getName());
+        });
         dto.setApplyType(loan.getApplyType());
         dto.setApplyAmount(loan.getApplyAmount());
         dto.setApplyPeriod(loan.getApplyPeriod());
@@ -548,6 +554,7 @@ public class LoanApplicationService {
         dto.setDisbursementAccount(loan.getDisbursementAccount());
         dto.setApplicationStatus(loan.getApplicationStatus());
         dto.setCreateTime(loan.getCreateTime());
+        dto.setUpdateTime(loan.getUpdateTime());
         dto.setLatestContactStatus(loan.getLatestContactStatus());
         dto.setLatestContactTime(loan.getLatestContactTime());
         dto.setDocumentsSubmittedAt(loan.getDocumentsSubmittedAt());
