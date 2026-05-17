@@ -11,7 +11,7 @@ public class RiskAttachmentRequest {
     @Data
     public static class AttachmentDetail {
         private String documentId;
-        private String documentUrl;
+        private String fileUrl;
         private String documentType;
     }
 }

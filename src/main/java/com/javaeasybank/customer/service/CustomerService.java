@@ -23,4 +23,5 @@ public interface CustomerService {
     CustomerRespository.CustomerResponse syncAccountApplicationProfile(
             String customerId,
             CustomerRespository.AccountApplicationProfileSyncRequest request);
+    String findEmailByCustomerId(String customerId);
 }

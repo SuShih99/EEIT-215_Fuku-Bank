@@ -13,6 +13,7 @@ import com.javaeasybank.account.utils.ApplicationNoGenerator;
 import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.customer.repository.CustomerRespository;
 import com.javaeasybank.customer.service.CustomerService;
+import com.javaeasybank.risk.enums.Occupation;
 import com.javaeasybank.risk.service.CreditScoreService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -155,7 +157,17 @@ public class AccountApplicationService {
 
         AccountApplication saved = applicationRepository.save(app);
         syncCustomerProfileFromApplication(saved, request.getAnnualIncome());
-        //creditScoreService.initializeCreditInfo(customerId,request.getBirthday(),request.getOccupation(),request.getAnnualIncome(),request.getFundSource(),request.getIsPep());
+        // 1. 字串安全轉為職業 Enum (模糊匹配)
+        Occupation occupationEnum = Occupation.fromString(request.getOccupation());
+
+        // 2. 將前端傳入的「萬元級距整數」還原為「真實金額 (元)」
+        BigDecimal annualIncomeBigDecimal = BigDecimal.ZERO;
+        if (request.getAnnualIncome() != null) {
+            // 假設前端選 100，這裏轉成 100 * 10000 = 1,000,000 元
+            annualIncomeBigDecimal = BigDecimal.valueOf(request.getAnnualIncome())
+                    .multiply(BigDecimal.valueOf(10000));
+        }
+        creditScoreService.initializeCreditInfo(customerId,request.getBirthday(),occupationEnum,annualIncomeBigDecimal,request.getFundSource(),request.getIsPep());
 
         log.info("Account application submitted: id={}, customer={}, riskFlag={}",
                 saved.getId(), customerId, riskFlag);

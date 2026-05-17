@@ -194,6 +194,69 @@
           </template>
         </a-descriptions>
 
+        <div v-if="drawerTask.attachments" style="margin-top: 20px">
+          <h3
+            style="
+              font-size: 14px;
+              font-weight: 600;
+              color: rgba(0, 0, 0, 0.85);
+              margin-bottom: 12px;
+            "
+          >
+            客戶補件附件
+          </h3>
+          <div class="attachments-container">
+            <a-card
+              v-for="doc in parseAttachments(drawerTask.attachments)"
+              :key="doc.documentId"
+              size="small"
+              style="margin-bottom: 8px; border-radius: 6px"
+            >
+              <div style="display: flex; align-items: center; justify-content: space-between">
+                <div>
+                  <a-tag color="blue">{{ docLabel(doc.documentType) }}</a-tag>
+                  <span style="font-size: 12px; color: #8c8c8c; font-family: monospace">{{
+                    doc.documentId
+                  }}</span>
+                </div>
+
+                <a-button
+                  type="link"
+                  size="small"
+                  :href="doc.fileUrl"
+                  target="_blank"
+                  v-if="doc.fileUrl"
+                >
+                  查看文件
+                </a-button>
+                <span v-else style="color: #bfbfbf; font-size: 12px">無連結</span>
+              </div>
+
+              <div
+                v-if="doc.fileUrl && isImage(doc.fileUrl)"
+                style="
+                  margin-top: 8px;
+                  text-align: center;
+                  background: #fafafa;
+                  padding: 8px;
+                  border-radius: 4px;
+                "
+              >
+                <img
+                  :src="doc.fileUrl"
+                  style="
+                    max-width: 100%;
+                    max-height: 150px;
+                    object-fit: contain;
+                    border: 1px solid #f0f0f0;
+                  "
+                  alt="補件預覽"
+                />
+              </div>
+            </a-card>
+          </div>
+        </div>
+
         <a-descriptions
           v-if="drawerTask.status === 'COMPLETED'"
           title="審核結果"
@@ -428,6 +491,35 @@ function priorityColor(p) {
 }
 
 onMounted(fetchTasks)
+
+// 解析資料庫存進來的 attachments JSON 字串
+function parseAttachments(attachmentsStr) {
+  if (!attachmentsStr) return []
+  try {
+    return JSON.parse(attachmentsStr)
+  } catch (e) {
+    console.error('解析補件資料失敗:', e)
+    return []
+  }
+}
+
+// 證件中文標籤對照表
+function docLabel(type) {
+  return (
+    {
+      ID_CARD: '身分證',
+      INCOME_PROOF: '收入證明',
+      PROPERTY_CERT: '不動產權狀',
+      TAX_STATEMENT: '扣繳憑單',
+    }[type] || type
+  )
+}
+
+// 判斷是否為圖片，用來決定要不要秀預覽圖
+function isImage(url) {
+  if (!url) return false
+  return /\.(jpg|jpeg|png|gif|webp)$/i.test(url)
+}
 </script>
 
 <style scoped>

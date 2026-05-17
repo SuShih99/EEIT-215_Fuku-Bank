@@ -329,6 +329,13 @@ public class CustomerServiceImpl implements CustomerService {
                 .orElseThrow(() -> new BusinessException("查無此客戶編號：" + cif));
         return convertToResponse(profile);
     }
+    @Override
+    public String findEmailByCustomerId(String customerId) {
+        CustomerProfile profile = customerProfileRepository.findById(customerId)
+                .orElseThrow(() -> new BusinessException("查無此客戶"));
+
+        return profile.getEmail();
+    }
 
     @Override
     @Transactional
