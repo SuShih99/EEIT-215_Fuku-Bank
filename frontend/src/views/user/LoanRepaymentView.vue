@@ -160,7 +160,7 @@
             </div>
             <div class="result-meta">
               <span>扣款帳戶餘額</span>
-              <span>$ {{ fmt(lastResult.fromAccountBalance) }}</span>
+              <span>$ {{ fmt(lastResult.sourceAccountBalance) }}</span>
             </div>
           </div>
           <button class="btn-reload" @click="afterSuccess">繼續還款 / 查看明細</button>

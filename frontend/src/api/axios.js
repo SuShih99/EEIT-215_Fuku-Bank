@@ -16,7 +16,10 @@ api.interceptors.request.use(
     const requestUrl = config.url || ''
     const isCustomerApi =
       requestUrl.startsWith('/api/customer/') ||
-      requestUrl.startsWith('/user/')
+      requestUrl.startsWith('/user/') ||
+      requestUrl.startsWith('/api/loan-applications/') ||
+      requestUrl.startsWith('/api/loan-accounts/') ||
+      requestUrl.startsWith('/api/loan-documents/')
 
     if (token && isCustomerApi) {
       config.headers.Authorization = `Bearer ${token}`
