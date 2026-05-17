@@ -4,6 +4,7 @@ import com.javaeasybank.account.dto.request.FavoriteAccountRequest;
 import com.javaeasybank.account.dto.request.FavoriteAccountUpdateRequest;
 import com.javaeasybank.account.dto.response.FavoriteAccountResponse;
 import com.javaeasybank.account.entity.FavoriteAccount;
+import com.javaeasybank.account.enums.TransferBank;
 import com.javaeasybank.account.repository.FavoriteAccountRepository;
 import com.javaeasybank.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -30,15 +31,19 @@ public class FavoriteAccountService {
 
     @Transactional
     public FavoriteAccountResponse create(String customerId, FavoriteAccountRequest request) {
-        if (favoriteAccountRepository.existsByCustomerIdAndAccountNumber(customerId, request.getAccountNumber())) {
+        TransferBank bank = TransferBank.fromCode(request.getBankCode());
+        String bankCode = bank.getCode();
+        if (favoriteAccountRepository.existsByCustomerIdAndBankCodeAndAccountNumber(
+                customerId, bankCode, request.getAccountNumber())) {
             throw new BusinessException("此帳號已在常用名單中");
         }
 
         FavoriteAccount entity = new FavoriteAccount();
         entity.setCustomerId(customerId);
+        entity.setBankCode(bankCode);
         entity.setAccountNumber(request.getAccountNumber());
         entity.setAlias(request.getAlias());
-        entity.setBankName(request.getBankName());
+        entity.setBankName(bank.getDisplayName());
 
         FavoriteAccount saved = favoriteAccountRepository.save(entity);
         log.info("Customer {} added favorite account: {}", customerId, request.getAccountNumber());
@@ -51,6 +56,15 @@ public class FavoriteAccountService {
                 .orElseThrow(() -> new BusinessException("常用帳號不存在"));
 
         if (request.getAlias() != null) entity.setAlias(request.getAlias());
+        if (request.getBankCode() != null) {
+            TransferBank bank = TransferBank.fromCode(request.getBankCode());
+            if (favoriteAccountRepository.existsByCustomerIdAndBankCodeAndAccountNumberAndIdNot(
+                    customerId, bank.getCode(), entity.getAccountNumber(), id)) {
+                throw new BusinessException("此帳號已在常用名單中");
+            }
+            entity.setBankCode(bank.getCode());
+            entity.setBankName(bank.getDisplayName());
+        }
         if (request.getBankName() != null) entity.setBankName(request.getBankName());
 
         FavoriteAccount saved = favoriteAccountRepository.save(entity);

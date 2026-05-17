@@ -30,4 +30,10 @@ public class CardBillResponseDto {
 
     private String accountNumber;
     private BigDecimal creditLimit;
+
+    private BigDecimal cashbackAmount;
+
+    private Boolean rewardPosted;
+
+    private String rewardReferenceId;
 }

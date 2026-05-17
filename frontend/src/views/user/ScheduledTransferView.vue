@@ -83,7 +83,7 @@
       <a-list v-else :data-source="favorites" :loading="favLoading" size="small">
         <template #renderItem="{ item }">
           <a-list-item>
-            <a-list-item-meta :title="item.alias" :description="item.accountNumber" />
+            <a-list-item-meta :title="item.alias" :description="favoriteDescription(item)" />
             <template #actions>
               <a-button size="small" type="link" @click="pickFavorite(item)">選用</a-button>
             </template>
@@ -188,6 +188,11 @@ async function handleCancel(id) {
 function pickFavorite(item) {
   form.value.toAccount = item.accountNumber
   showFavPicker.value = false
+}
+
+function favoriteDescription(item) {
+  const bank = item.bankName ? `${item.bankName} ${item.bankCode || ''}`.trim() : item.bankCode
+  return bank ? `${bank} ${item.accountNumber}` : item.accountNumber
 }
 
 function statusColor(s) {

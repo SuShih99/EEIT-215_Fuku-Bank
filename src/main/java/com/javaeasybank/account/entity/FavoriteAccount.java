@@ -8,7 +8,13 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "FAVORITE_ACCOUNT")
+@Table(
+        name = "FAVORITE_ACCOUNT",
+        uniqueConstraints = @UniqueConstraint(
+                name = "UQ_FAV_CUST_BANK_ACCT",
+                columnNames = {"customer_id", "bank_code", "account_number"}
+        )
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,6 +26,9 @@ public class FavoriteAccount {
 
     @Column(name = "customer_id", nullable = false, length = 20)
     private String customerId;
+
+    @Column(name = "bank_code", nullable = false, length = 10)
+    private String bankCode;
 
     @Column(name = "account_number", nullable = false, length = 20)
     private String accountNumber;

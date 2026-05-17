@@ -29,19 +29,23 @@ public class CardAccount {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Integer id;
 
+    @Column(name = "account_number", length = 20)
     private String accountNumber;
 
     @Column(name = "credit_limit", precision = 15, scale = 2)
     private BigDecimal creditLimit;
 
+    @Column(name = "statement_day")
     private Integer statementDay;
 
+    @Column(name = "due_days")
     private Integer dueDays;
 
     @ManyToOne
-    @JoinColumn(name = "customer_id")
+    @JoinColumn(name = "customer_id", nullable = false)
     private CustomerProfile customer;
 
     @OneToMany(mappedBy = "cardAccount")

@@ -6,8 +6,8 @@ import com.javaeasybank.customer.entity.CustomerProfile;
 import com.javaeasybank.customer.repository.CustomerAuthRepository;
 import com.javaeasybank.customer.repository.CustomerProfileRepository;
 import com.javaeasybank.customer.util.TaiwanIdValidator;
-import com.javaeasybank.risk.enums.BlacklistType;
 import com.javaeasybank.risk.service.BlackListService;
+import com.javaeasybank.risk.service.CreditScoreService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -25,8 +25,9 @@ public class CustomerServiceImpl implements CustomerService {
 
     private final CustomerProfileRepository customerProfileRepository;
     private final CustomerAuthRepository customerAuthRepository;
+    //風控暫時用
+    private final CreditScoreService creditSCoreService;
 
-    private final BlackListService blackListService;
     // 加入 JdbcTemplate 依賴，用於執行原生 SQL
     private final JdbcTemplate jdbcTemplate;
 
@@ -36,13 +37,13 @@ public class CustomerServiceImpl implements CustomerService {
     private final SecureRandom secureRandom = new SecureRandom();
 
     public CustomerServiceImpl(CustomerProfileRepository customerProfileRepository,
-                               CustomerAuthRepository customerAuthRepository,
+                               CustomerAuthRepository customerAuthRepository, CreditScoreService creditSCoreService,
                                JdbcTemplate jdbcTemplate,
                                BlackListService blackListService) {
         this.customerProfileRepository = customerProfileRepository;
         this.customerAuthRepository = customerAuthRepository;
+        this.creditSCoreService = creditSCoreService;
         this.jdbcTemplate = jdbcTemplate;
-        this.blackListService = blackListService;
     }
 
     // ===========================
@@ -91,14 +92,11 @@ public class CustomerServiceImpl implements CustomerService {
         String yymm = LocalDate.now().format(DateTimeFormatter.ofPattern("yyMM"));
         profile.setCif(yymm + "-" + generateAlphanumeric(8));
 
-        if(blackListService.isBlacklisted(BlacklistType.PHONE, request.getPhone())){
-            throw new BusinessException("此電話號碼已在黑名單中，無法新增");
-        }
-
         profile.setStatus("ACTIVE");
         profile.setIsPep(Boolean.TRUE.equals(profile.getIsPep()));
 
         CustomerProfile saved = customerProfileRepository.save(profile);
+        //creditSCoreService.initializeCreditInfo(profile.getCustomerId(),profile.getBirthday());
         return convertToResponse(saved);
     }
 
@@ -110,10 +108,6 @@ public class CustomerServiceImpl implements CustomerService {
         ensureIdNumberAvailable(customerId, request.getIdNumber());
         ensureEmailAvailable(customerId, request.getEmail());
         ensurePhoneAvailable(customerId, request.getPhone());
-
-        if (request.getPhone() != null && blackListService.isBlacklisted(BlacklistType.PHONE, request.getPhone())) {
-            throw new BusinessException("此電話號碼已在黑名單中，無法修改");
-        }
 
         if (request.getIdNumber() != null) {
             profile.setIdNumber(request.getIdNumber());

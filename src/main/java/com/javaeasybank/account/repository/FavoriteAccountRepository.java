@@ -12,7 +12,14 @@ public interface FavoriteAccountRepository extends JpaRepository<FavoriteAccount
 
     List<FavoriteAccount> findByCustomerIdOrderByCreatedAtDesc(String customerId);
 
-    boolean existsByCustomerIdAndAccountNumber(String customerId, String accountNumber);
+    boolean existsByCustomerIdAndBankCodeAndAccountNumber(String customerId, String bankCode, String accountNumber);
+
+    boolean existsByCustomerIdAndBankCodeAndAccountNumberAndIdNot(
+            String customerId,
+            String bankCode,
+            String accountNumber,
+            Long id
+    );
 
     Optional<FavoriteAccount> findByIdAndCustomerId(Long id, String customerId);
 }

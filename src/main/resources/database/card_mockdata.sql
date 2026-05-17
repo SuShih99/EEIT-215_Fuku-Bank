@@ -1,21 +1,62 @@
 -- ============================================================
 -- Card Module Mock Data (重新生成版)
--- 依賴：customer_profile 表必須先有資料
+-- 依賴：customer_profile 與 ACCOUNT 表必須先有資料
 -- ============================================================
 
 -- ===== 清除舊資料（依 FK 順序由下往上刪）=====
 DELETE FROM CARD_TRANSACTION;
 DELETE FROM CARD_BILL;
 DELETE FROM CREDIT_CARD;
+DELETE FROM CARD_ACCOUNT;
 DELETE FROM CARD_APPLICATION_ITEM;
 DELETE FROM CARD_APPLICATION;
 DELETE FROM MERCHANT;
 DELETE FROM CARD_TYPE;
 
+IF OBJECT_ID('tempdb..#card_mock_customers') IS NOT NULL DROP TABLE #card_mock_customers;
+
+DECLARE @eligibleCardCustomerCount INT;
+
+SELECT @eligibleCardCustomerCount = COUNT(*)
+FROM ACCOUNT a
+JOIN CUSTOMER_PROFILE p ON p.customer_id = a.customer_id
+WHERE a.account_type = 'CHECKING'
+  AND a.currency = 'TWD'
+  AND a.status = 'ACTIVE'
+  AND p.status = 'ACTIVE';
+
+IF @eligibleCardCustomerCount = 0
+    THROW 51201, 'card_mockdata.sql requires customers with ACTIVE TWD CHECKING accounts. Run account_mockdata.sql first.', 1;
+
+;WITH eligible_customers AS (
+    SELECT
+        ROW_NUMBER() OVER (ORDER BY a.customer_id) AS rn,
+        a.customer_id
+    FROM ACCOUNT a
+    JOIN CUSTOMER_PROFILE p ON p.customer_id = a.customer_id
+    WHERE a.account_type = 'CHECKING'
+      AND a.currency = 'TWD'
+      AND a.status = 'ACTIVE'
+      AND p.status = 'ACTIVE'
+),
+card_slots AS (
+    SELECT TOP (50)
+        ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS slot
+    FROM sys.all_objects
+)
+SELECT
+    s.slot,
+    e.customer_id
+INTO #card_mock_customers
+FROM card_slots s
+JOIN eligible_customers e
+  ON e.rn = ((s.slot - 1) % @eligibleCardCustomerCount) + 1;
+
 -- ===== 重置 IDENTITY 種子 =====
 DBCC CHECKIDENT ('CARD_TYPE', RESEED, 0);
 DBCC CHECKIDENT ('CARD_APPLICATION', RESEED, 0);
 DBCC CHECKIDENT ('CARD_APPLICATION_ITEM', RESEED, 0);
+DBCC CHECKIDENT ('CARD_ACCOUNT', RESEED, 0);
 DBCC CHECKIDENT ('CREDIT_CARD', RESEED, 0);
 DBCC CHECKIDENT ('CARD_TRANSACTION', RESEED, 0);
 DBCC CHECKIDENT ('CARD_BILL', RESEED, 0);
@@ -82,6 +123,11 @@ INSERT INTO CARD_APPLICATION (application_id, customer_id, apply_date, status, r
 (29, 'W2K6T9N5', GETDATE(), 'COMPLETED', N'信用良好'),
 (30, 'X8C3R7M4', GETDATE(), 'COMPLETED', N'信用良好');
 SET IDENTITY_INSERT CARD_APPLICATION OFF;
+
+UPDATE ca
+SET ca.customer_id = cmc.customer_id
+FROM CARD_APPLICATION ca
+JOIN #card_mock_customers cmc ON cmc.slot = ca.application_id;
 
 -- ===== 4. CARD_APPLICATION_ITEM =====
 SET IDENTITY_INSERT CARD_APPLICATION_ITEM ON;
@@ -174,6 +220,47 @@ INSERT INTO CREDIT_CARD
 (49, 'W6M2C8D5', 9, NULL, '4000000010000049', '2031-01-28', 27662, 'BLOCKED'),
 (50, 'X9N5T3Q7', 10, NULL, '4000000010000050', '2031-02-28', 44008, 'ACTIVE');
 SET IDENTITY_INSERT CREDIT_CARD OFF;
+
+UPDATE c
+SET c.customer_id = cmc.customer_id
+FROM CREDIT_CARD c
+JOIN #card_mock_customers cmc ON cmc.slot = c.card_id;
+
+IF EXISTS (
+    SELECT 1
+    FROM CREDIT_CARD c
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM ACCOUNT a
+        WHERE a.customer_id = c.customer_id
+          AND a.account_type = 'CHECKING'
+          AND a.currency = 'TWD'
+          AND a.status = 'ACTIVE'
+    )
+)
+    THROW 51202, 'card_mockdata.sql generated a credit card customer without an ACTIVE TWD CHECKING account.', 1;
+
+-- ===== 5-1. CARD_ACCOUNT =====
+-- One card account per mock card/customer so bills can resolve customer names through card_account.customer.
+INSERT INTO CARD_ACCOUNT (account_number, credit_limit, statement_day, due_days, customer_id)
+SELECT
+    CONCAT('801', RIGHT(CONCAT('00000000000', CAST(card_id AS VARCHAR(11))), 11)),
+    CASE
+        WHEN current_debt + 50000 < 80000 THEN 80000
+        ELSE current_debt + 50000
+    END,
+    25,
+    14,
+    customer_id
+FROM CREDIT_CARD;
+
+UPDATE c
+SET
+    c.card_account_id = ca.id,
+    c.credit_card_account_number = ca.account_number
+FROM CREDIT_CARD c
+JOIN CARD_ACCOUNT ca
+  ON ca.account_number = CONCAT('801', RIGHT(CONCAT('00000000000', CAST(c.card_id AS VARCHAR(11))), 11));
 
 -- ===== 6. CARD_TRANSACTION（200 筆）=====
 SET IDENTITY_INSERT CARD_TRANSACTION ON;
@@ -436,3 +523,15 @@ INSERT INTO CARD_BILL
 (49, 49, '2026-01', '2026-01-25', '2026-02-10', 7000, 700, 0, 'UNPAID'),
 (50, 50, '2026-03', '2026-03-25', '2026-04-10', 2000, 200, 2000, 'PAID');
 SET IDENTITY_INSERT CARD_BILL OFF;
+
+UPDATE b
+SET b.card_account_id = c.card_account_id
+FROM CARD_BILL b
+JOIN CREDIT_CARD c ON c.card_id = b.card_id;
+
+-- Keep the newest mock transactions unbilled so admin bill generation still has data to process.
+UPDATE t
+SET t.bill_id = b.bill_id
+FROM CARD_TRANSACTION t
+JOIN CARD_BILL b ON b.card_id = t.card_id
+WHERE t.txn_id <= 150;

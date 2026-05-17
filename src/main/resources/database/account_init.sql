@@ -257,13 +257,14 @@ GO
 CREATE TABLE [FAVORITE_ACCOUNT] (
     [id]                BIGINT IDENTITY(1,1) PRIMARY KEY,           -- 自增 PK
     [customer_id]       VARCHAR(20)     NOT NULL,                   -- 客戶 ID
+    [bank_code]         VARCHAR(10)     NOT NULL,                   -- 銀行代號
     [account_number]    VARCHAR(20)     NOT NULL,                   -- 收款帳號
     [alias]             NVARCHAR(50)    NOT NULL,                   -- 備註名稱
     [bank_name]         NVARCHAR(50)    NULL,                       -- 銀行名稱
     [created_at]        DATETIME2       NOT NULL DEFAULT GETDATE(), -- 建立時間
     [updated_at]        DATETIME2       NOT NULL DEFAULT GETDATE(), -- 更新時間
 
-    CONSTRAINT UQ_FAV_CUST_ACCT UNIQUE ([customer_id], [account_number])
+    CONSTRAINT UQ_FAV_CUST_BANK_ACCT UNIQUE ([customer_id], [bank_code], [account_number])
 );
 GO
 

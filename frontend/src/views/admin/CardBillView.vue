@@ -53,6 +53,16 @@ const columns = [
     key: 'paidAmount',
   },
   {
+    title: '本期回饋金',
+    dataIndex: 'cashbackAmount',
+    key: 'cashbackAmount',
+  },
+  {
+    title: '回饋狀態',
+    dataIndex: 'rewardPosted',
+    key: 'rewardPosted',
+  },
+  {
     title: '剩餘應繳',
     dataIndex: 'remainingAmount',
     key: 'remainingAmount',
@@ -99,8 +109,8 @@ const fetchBills = async (page = 1) => {
 
 const handleGenerateBills = async () => {
   try {
-    const response = await generateBills()
-    message.success(response.message)
+    const count = await generateBills()
+    message.success(`成功產生 ${count} 筆帳單`)
     await fetchBills()
   } catch (error) {
     console.log(error)
@@ -146,7 +156,6 @@ onMounted(() => {
       @change="handleTableChange"
     >
       <template #bodyCell="{ column, record }">
-        
         <!-- 帳單金額 -->
         <template v-if="column.dataIndex === 'totalAmount'">
           NT$
@@ -164,6 +173,17 @@ onMounted(() => {
           NT$
           {{ Number(record.paidAmount).toLocaleString() }}
         </template>
+        <!-- 本期回饋金 -->
+        <template v-else-if="column.dataIndex === 'cashbackAmount'">
+          NT$
+          {{ Number(record.cashbackAmount || 0).toLocaleString() }}
+        </template>
+
+        <!-- 回饋狀態 -->
+        <template v-else-if="column.dataIndex === 'rewardPosted'">
+          <a-tag color="green" v-if="record.rewardPosted"> 已入帳 </a-tag>
+          <a-tag color="default" v-else> 未入帳 </a-tag>
+        </template>
 
         <!-- 剩餘應繳 -->
         <template v-else-if="column.dataIndex === 'remainingAmount'">
@@ -172,7 +192,7 @@ onMounted(() => {
         </template>
 
         <!-- 帳單狀態 -->
-        <template v-if="column.key === 'billStatus'">
+        <template v-else-if="column.key === 'billStatus'">
           <a-tag color="green" v-if="record.billStatus === 'PAID'"> 已繳費 </a-tag>
 
           <a-tag color="orange" v-else-if="record.billStatus === 'UNPAID'"> 未繳費 </a-tag>

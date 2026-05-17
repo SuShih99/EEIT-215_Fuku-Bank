@@ -247,22 +247,13 @@ function normalizeToAccount() {
 
 function selectFavorite(item) {
   form.value.toAccount = item.accountNumber
-  const bankCode = findBankCodeByName(item.bankName)
-  if (bankCode) form.value.toBankCode = bankCode
+  if (item.bankCode) form.value.toBankCode = item.bankCode
   showFavorites.value = false
 }
 
-function findBankCodeByName(bankName) {
-  if (!bankName) return null
-  const normalized = bankName.trim()
-  const found = banks.value.find(
-    (bank) => bank.name === normalized || bank.label?.includes(normalized),
-  )
-  return found?.code || null
-}
-
 function favoriteDescription(item) {
-  return item.bankName ? `${item.bankName} ${item.accountNumber}` : item.accountNumber
+  const bank = item.bankName ? `${item.bankName} ${item.bankCode || ''}`.trim() : item.bankCode
+  return bank ? `${bank} ${item.accountNumber}` : item.accountNumber
 }
 
 async function handleTransfer() {

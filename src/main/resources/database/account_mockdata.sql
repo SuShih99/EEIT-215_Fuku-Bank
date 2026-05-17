@@ -341,9 +341,10 @@ BEGIN
     WHERE account_type <> 'BUSINESS';
 END;
 
-INSERT INTO FAVORITE_ACCOUNT (customer_id, account_number, alias, bank_name, created_at, updated_at)
+INSERT INTO FAVORITE_ACCOUNT (customer_id, bank_code, account_number, alias, bank_name, created_at, updated_at)
 SELECT TOP (12)
     customer_id,
+    CASE rn % 4 WHEN 0 THEN '808' WHEN 1 THEN '812' WHEN 2 THEN '700' ELSE '004' END,
     CASE rn % 4
         WHEN 0 THEN '808' + RIGHT(REPLICATE('0', 13) + CAST(7000000000 + rn AS VARCHAR(13)), 13)
         WHEN 1 THEN '812' + RIGHT(REPLICATE('0', 13) + CAST(7000000000 + rn AS VARCHAR(13)), 13)

@@ -61,8 +61,8 @@ const router = createRouter({
           component: () => import('../views/user/CardView.vue'),
         },
         {
-          path:'card-applications',
-          name:'user-card-applications',
+          path: 'card-applications',
+          name: 'user-card-applications',
           component: () => import('../views/user/CardApplicationForm.vue'),
         },
         {
@@ -71,7 +71,7 @@ const router = createRouter({
           component: () => import('../views/user/CardTxnView.vue'),
         },
         {
-          path:'linepay/confirm',
+          path: 'linepay/confirm',
           component: () => import('../views/user/LinePayConfirmView.vue'),
         },
         {
@@ -267,7 +267,7 @@ const router = createRouter({
         // 貸款功能相關
         {
           path: 'loan-apply',
-          name: 'loan-apply',  // 保留舊 name 防止其他地方引用失效
+          name: 'loan-apply', // 保留舊 name 防止其他地方引用失效
           redirect: { name: 'user-loan-apply' }, // 重導到客戶端路由
         },
         {

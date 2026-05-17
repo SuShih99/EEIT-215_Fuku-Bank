@@ -16,7 +16,7 @@ export async function getFavoriteAccounts() {
 
 /**
  * 新增常用帳號
- * @param {Object} data - { accountNumber, alias, bankName }
+ * @param {Object} data - { accountNumber, bankCode, alias, bankName }
  */
 export async function addFavoriteAccount(data) {
   const res = await api.post(BASE, data)
@@ -26,7 +26,7 @@ export async function addFavoriteAccount(data) {
 /**
  * 更新常用帳號
  * @param {Number} id - 常用帳號 ID
- * @param {Object} data - { alias, bankName }
+ * @param {Object} data - { alias, bankCode, bankName }
  */
 export async function updateFavoriteAccount(id, data) {
   const res = await api.put(`${BASE}/${id}`, data)

@@ -43,7 +43,7 @@ public class FavoriteAccountController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<FavoriteAccountResponse>> update(
             @PathVariable Long id,
-            @RequestBody FavoriteAccountUpdateRequest body,
+            @Valid @RequestBody FavoriteAccountUpdateRequest body,
             HttpServletRequest request) {
         String customerId = jwtUtil.resolveCustomerId(request);
         FavoriteAccountResponse response = favoriteAccountService.update(customerId, id, body);

@@ -14,14 +14,49 @@ import com.javaeasybank.creditcard.entity.CreditCard;
 public interface CardBillMapper {
 
 
-    @Mapping(target = "customerName", source = "cardAccount.customer.name")
-    @Mapping(target = "accountNumber", source = "cardAccount.accountNumber")
-    @Mapping(target = "creditCardAccountNumber", source = "cardAccount.accountNumber")
-    @Mapping(target = "creditLimit", source = "cardAccount.creditLimit")
-    @Mapping(target = "availableCredit", expression = "java(calculateAvailableCredit(bill.getCardAccount()))")
+    @Mapping(target = "customerName", expression = "java(resolveCustomerName(bill))")
+    @Mapping(target = "accountNumber", expression = "java(resolveAccountNumber(bill))")
+    @Mapping(target = "creditCardAccountNumber", expression = "java(resolveAccountNumber(bill))")
+    @Mapping(target = "creditLimit", expression = "java(resolveCreditLimit(bill))")
+    @Mapping(target = "availableCredit", expression = "java(calculateAvailableCredit(resolveCardAccount(bill)))")
     CardBillResponseDto toDto(CardBill bill);
 
     List<CardBillResponseDto> toDtoList(List<CardBill> bills);
+
+    default CardAccount resolveCardAccount(CardBill bill) {
+        if (bill == null) {
+            return null;
+        }
+
+        if (bill.getCardAccount() != null) {
+            return bill.getCardAccount();
+        }
+
+        return bill.getCard() == null ? null : bill.getCard().getCardAccount();
+    }
+
+    default String resolveCustomerName(CardBill bill) {
+        CardAccount cardAccount = resolveCardAccount(bill);
+        if (cardAccount != null && cardAccount.getCustomer() != null) {
+            return cardAccount.getCustomer().getName();
+        }
+
+        if (bill != null && bill.getCard() != null && bill.getCard().getCustomer() != null) {
+            return bill.getCard().getCustomer().getName();
+        }
+
+        return null;
+    }
+
+    default String resolveAccountNumber(CardBill bill) {
+        CardAccount cardAccount = resolveCardAccount(bill);
+        return cardAccount == null ? null : cardAccount.getAccountNumber();
+    }
+
+    default BigDecimal resolveCreditLimit(CardBill bill) {
+        CardAccount cardAccount = resolveCardAccount(bill);
+        return cardAccount == null ? null : cardAccount.getCreditLimit();
+    }
 
     default BigDecimal calculateAvailableCredit(CardAccount cardAccount) {
         if (cardAccount == null || cardAccount.getCreditLimit() == null) {

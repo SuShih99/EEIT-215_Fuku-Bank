@@ -12,6 +12,7 @@ public class FavoriteAccountResponse {
 
     private Long id;
     private String accountNumber;
+    private String bankCode;
     private String alias;
     private String bankName;
     private String createdAt;
@@ -22,6 +23,7 @@ public class FavoriteAccountResponse {
         return FavoriteAccountResponse.builder()
                 .id(entity.getId())
                 .accountNumber(entity.getAccountNumber())
+                .bankCode(entity.getBankCode())
                 .alias(entity.getAlias())
                 .bankName(entity.getBankName())
                 .createdAt(entity.getCreatedAt() != null ? entity.getCreatedAt().format(FMT) : null)

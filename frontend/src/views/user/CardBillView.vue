@@ -66,6 +66,7 @@ const fetchBills = async () => {
       ...item,
       dueDate: dayjs(item.dueDate).format('YYYY-MM-DD'),
     }))
+    .sort((a, b) => dayjs(b.billingMonth).valueOf() - dayjs(a.billingMonth).valueOf())
 
     pagination.value.total = res.totalElements
   } catch (error) {
@@ -83,6 +84,7 @@ const fetchUnbilledTransactions = async () => {
       ...item,
       transactionDate: dayjs(item.transactionDate).format('YYYY-MM-DD HH:mm'),
     }))
+    .sort((a, b) => dayjs(b.txnDate).valueOf() - dayjs(a.txnDate).valueOf())
   } catch (error) {
     console.error('Failed to fetch unbilled transactions:', error)
     message.error(error.response?.data?.message || '無法獲取未出帳交易')

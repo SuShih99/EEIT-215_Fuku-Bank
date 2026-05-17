@@ -77,6 +77,9 @@ CREATE TABLE [CARD_BILL] (
     minimum_payment DECIMAL(15,2),
     paid_amount DECIMAL(15,2),
     bill_status NVARCHAR(20),
+    cashback_amount DECIMAL(15,2) DEFAULT 0,
+    reward_posted BIT DEFAULT 0,
+    reward_reference_id VARCHAR(100),
     FOREIGN KEY (card_id) REFERENCES CREDIT_CARD(card_id),
     FOREIGN KEY (card_account_id) REFERENCES CARD_ACCOUNT(id)
 );
@@ -93,6 +96,8 @@ CREATE TABLE [CARD_TRANSACTION] (
     txn_type NVARCHAR(20),
     txn_date DATETIME2,
     description NVARCHAR(200),
+    channel NVARCHAR(50),
+    external_txn_id VARCHAR(100),
     FOREIGN KEY (card_id) REFERENCES CREDIT_CARD(card_id),
     FOREIGN KEY (merchant_id) REFERENCES MERCHANT(merchant_id),
     FOREIGN KEY (bill_id) REFERENCES CARD_BILL(bill_id),

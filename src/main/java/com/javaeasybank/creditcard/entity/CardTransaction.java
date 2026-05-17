@@ -16,6 +16,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,45 +25,48 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@Table(name = "CARD_TRANSACTION")
 @Getter
 @Setter
 public class CardTransaction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "txn_id")
     private Integer txnId;
 
-    @Column(precision = 15, scale = 2)
+    @Column(name = "txn_amount", precision = 15, scale = 2, nullable = false)
     private BigDecimal txnAmount;
 
-    // 交易回饋
-    @Column(precision = 15, scale = 2)
+    @Column(name = "cashback_rate", precision = 15, scale = 2)
     private BigDecimal cashbackRate;
 
-    // 交易回饋金額
-    @Column(precision = 15, scale = 2)
+    @Column(name = "cashback_amount", precision = 15, scale = 2)
     private BigDecimal cashbackAmount;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "txn_type", length = 20)
     private TxnType txnType;
 
+    @Column(name = "txn_date")
     private LocalDateTime txnDate;
 
-    @Column(length = 200, columnDefinition = "NVARCHAR(200)")
+    @Column(name = "description", length = 200, columnDefinition = "NVARCHAR(200)")
     private String description;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "channel", length = 50)
     private TransactionChannel channel;
 
+    @Column(name = "external_txn_id", length = 100)
     private String externalTxnId;
 
-    // 退款沖銷用
     @ManyToOne
     @JoinColumn(name = "ref_txn_id")
     private CardTransaction refTxn;
 
     @ManyToOne
-    @JoinColumn(name = "card_id")
+    @JoinColumn(name = "card_id", nullable = false)
     private CreditCard card;
 
     @ManyToOne
@@ -73,12 +77,10 @@ public class CardTransaction {
     @JoinColumn(name = "bill_id")
     private CardBill bill;
 
-    // 預設交易時間
     @PrePersist
     public void prePersist() {
         if (this.txnDate == null) {
             this.txnDate = LocalDateTime.now();
         }
-
     }
 }
