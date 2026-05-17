@@ -13,6 +13,7 @@ import java.util.List;
 @Setter
 public class LoanAccountResponseDTO {
     private String accountId;
+    private String accountNumber;
     private String applicationId;
     private String customerId;   // 內部識別，不對外顯示
     private String cif;          // 對外顯示用的顧客識別碼

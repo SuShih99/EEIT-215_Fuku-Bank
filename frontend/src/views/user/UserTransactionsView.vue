@@ -38,6 +38,8 @@
           <option value="CARD_PAYMENT">信用卡繳款</option>
           <option value="CARD_SETTLEMENT">信用卡結算</option>
           <option value="CARD_REWARD">信用卡回饋</option>
+          <option value="LOAN_DISBURSEMENT">貸款撥款</option>
+          <option value="LOAN_REPAYMENT">貸款還款</option>
         </select>
       </label>
     </div>
@@ -74,7 +76,7 @@
               </td>
               <td class="align-right">{{ formatNum(record.balanceAfter) }}</td>
               <td>{{ record.currency || '-' }}</td>
-              <td class="note-cell">{{ record.note || '-' }}</td>
+              <td class="note-cell">{{ displayNote(record) }}</td>
             </tr>
           </tbody>
         </table>
@@ -228,7 +230,16 @@ function txTypeLabel(type) {
     CARD_SETTLEMENT: '信用卡結算',
     CARD_REWARD: '信用卡回饋',
   }
+  map.LOAN_DISBURSEMENT = '貸款撥款'
+  map.LOAN_REPAYMENT = '貸款還款'
   return map[type] || type || '-'
+}
+
+function displayNote(record) {
+  if (!record) return '-'
+  if (record.transactionType === 'LOAN_DISBURSEMENT') return '貸款核准撥款'
+  if (record.transactionType === 'LOAN_REPAYMENT') return '貸款還款'
+  return record.note || '-'
 }
 
 function formatNum(value) {

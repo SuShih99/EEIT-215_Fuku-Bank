@@ -271,6 +271,7 @@ function fmtDateTime(d) {
 // ── 可送出條件 ──
 const canSubmit = computed(() =>
   form.value.fromAccountNumber &&
+  selectedLoan.value?.accountNumber &&
   form.value.amount > 0 &&
   selectedLoan.value &&
   !submitting.value
@@ -321,7 +322,7 @@ async function submitRepayment() {
   try {
     const body = {
       applicationId:     selectedLoan.value.applicationId,   // 讓 Loan 模組同步更新進度
-      loanAccountNumber: selectedLoan.value.accountId,
+      loanAccountNumber: selectedLoan.value.accountNumber,
       fromAccountNumber: form.value.fromAccountNumber,
       amount:            form.value.amount,
       note:              form.value.note || null,
@@ -364,7 +365,7 @@ async function loadHistory(page = 0) {
   historyLoading.value = true
   try {
     const params = {
-      loanAccountNumber: selectedLoan.value.accountId,
+      loanAccountNumber: selectedLoan.value.accountNumber,
       page,
       size: 10,
     }

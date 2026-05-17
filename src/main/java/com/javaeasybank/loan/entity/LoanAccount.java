@@ -19,6 +19,7 @@ public class LoanAccount {
 
     @Id
     private String accountId; // 帳戶ID
+    private String accountNumber;
 
     private String applicationId; // 申請編號
     private String customerId; // 用戶ID

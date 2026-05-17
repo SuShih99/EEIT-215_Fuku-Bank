@@ -105,7 +105,6 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th></th>
                 <th>帳戶編號</th>
                 <th>客戶 CIF</th>
                 <th>類型</th>
@@ -117,126 +116,73 @@
                 <th>下次繳款日</th>
                 <th>狀態</th>
                 <th>撥款日</th>
+                <th class="text-center">還款時間表</th>
               </tr>
             </thead>
             <tbody>
-              <template v-for="acc in pagedAccounts" :key="acc.accountId">
-                <!-- 主列 -->
-                <tr
-                  class="data-row"
-                  :class="{ 'row-expanded': expandedId === acc.accountId, 'row-overdue': acc.accountStatus === 'OVERDUE' }"
-                  @click="toggleRepayments(acc.accountId)"
-                >
-                  <td class="expand-cell">
-                    <span class="expand-icon" :class="{ rotated: expandedId === acc.accountId }">▶</span>
-                  </td>
-                  <td>
-                    <span class="mono text-sm">{{ acc.accountId }}</span>
-                  </td>
-                  <td>
-                    <span class="mono cif-tag">{{ acc.cif || '—' }}</span>
-                  </td>
-                  <td>
-                    <span class="type-badge" :class="'tb-' + acc.applyType">
-                      {{ LOAN_TYPE_NAME[acc.applyType] || acc.applyType }}
-                    </span>
-                  </td>
-                  <td class="text-right mono">
-                    {{ formatAmount(acc.principalAmount) }}
-                  </td>
-                  <td class="text-right mono">
-                    {{ formatDecimal(acc.monthlyPayment) }}
-                  </td>
-                  <td class="text-right mono">
-                    {{ formatRate(acc.rate) }}
-                  </td>
-                  <td class="text-center">
-                    <div class="period-cell">
-                      <span class="period-text">{{ acc.paidPeriods }} / {{ acc.confirmedPeriod }}</span>
-                      <div class="mini-bar-wrap">
-                        <div
-                          class="mini-bar-fill"
-                          :class="progressClass(acc)"
-                          :style="{ width: progressPct(acc) + '%' }"
-                        ></div>
-                      </div>
+              <tr
+                v-for="acc in pagedAccounts"
+                :key="acc.accountId"
+                class="data-row"
+                :class="{ 'row-overdue': acc.accountStatus === 'OVERDUE' }"
+              >
+                <td>
+                  <span class="mono text-sm">{{ acc.accountId }}</span>
+                </td>
+                <td>
+                  <span class="mono cif-tag">{{ acc.cif || '—' }}</span>
+                </td>
+                <td>
+                  <span class="type-badge" :class="'tb-' + acc.applyType">
+                    {{ LOAN_TYPE_NAME[acc.applyType] || acc.applyType }}
+                  </span>
+                </td>
+                <td class="text-right mono">
+                  {{ formatAmount(acc.principalAmount) }}
+                </td>
+                <td class="text-right mono">
+                  {{ formatDecimal(acc.monthlyPayment) }}
+                </td>
+                <td class="text-right mono">
+                  {{ formatRate(acc.rate) }}
+                </td>
+                <td class="text-center">
+                  <div class="period-cell">
+                    <span class="period-text">{{ acc.paidPeriods }} / {{ acc.confirmedPeriod }}</span>
+                    <div class="mini-bar-wrap">
+                      <div
+                        class="mini-bar-fill"
+                        :class="progressClass(acc)"
+                        :style="{ width: progressPct(acc) + '%' }"
+                      ></div>
                     </div>
-                  </td>
-                  <td class="text-right mono">
-                    {{ formatDecimal(acc.remainingPrincipal) }}
-                  </td>
-                  <td>
-                    <span
-                      class="mono text-sm"
-                      :class="{ 'overdue-text': acc.accountStatus === 'OVERDUE' }"
-                    >
-                      {{ acc.nextPaymentDate ? formatDate(acc.nextPaymentDate) : '—' }}
-                    </span>
-                  </td>
-                  <td>
-                    <span class="status-badge" :class="statusClass(acc.accountStatus)">
-                      {{ statusLabel(acc.accountStatus) }}
-                    </span>
-                  </td>
-                  <td>
-                    <span class="mono text-sm muted">{{ formatDate(acc.startDate) }}</span>
-                  </td>
-                </tr>
-
-                <!-- 展開列：還款時間表 -->
-                <tr v-if="expandedId === acc.accountId" class="repayment-row">
-                  <td colspan="12">
-                    <div class="repayment-section">
-                      <div v-if="repaymentLoading" class="rep-loading">
-                        <span class="spin">⟳</span> 載入還款明細中…
-                      </div>
-                      <template v-else-if="repayments.length > 0">
-                        <div class="rep-header">
-                          <span class="rep-title">還款時間表</span>
-                          <span class="rep-subtitle">共 {{ repayments.length }} 期</span>
-                        </div>
-                        <div class="rep-table-wrap">
-                          <table class="rep-table">
-                            <thead>
-                              <tr>
-                                <th>期</th>
-                                <th>應繳日</th>
-                                <th>實繳日</th>
-                                <th class="text-right">月繳總額</th>
-                                <th class="text-right">本金</th>
-                                <th class="text-right">利息</th>
-                                <th class="text-right">剩餘本金</th>
-                                <th>狀態</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              <tr
-                                v-for="rp in repayments"
-                                :key="rp.repaymentId"
-                                :class="repRowClass(rp.repaymentStatus)"
-                              >
-                                <td class="mono text-center">{{ rp.periodIndex }}</td>
-                                <td class="mono">{{ formatDate(rp.scheduledDate) }}</td>
-                                <td class="mono">{{ rp.paidDate ? formatDate(rp.paidDate) : '—' }}</td>
-                                <td class="mono text-right">{{ formatDecimal(rp.totalAmount) }}</td>
-                                <td class="mono text-right">{{ formatDecimal(rp.principalPortion) }}</td>
-                                <td class="mono text-right muted">{{ formatDecimal(rp.interestPortion) }}</td>
-                                <td class="mono text-right">{{ formatDecimal(rp.remainingAfter) }}</td>
-                                <td>
-                                  <span class="rep-status" :class="repStatusClass(rp.repaymentStatus)">
-                                    {{ repStatusLabel(rp.repaymentStatus) }}
-                                  </span>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </template>
-                      <div v-else class="rep-loading">尚無還款明細</div>
-                    </div>
-                  </td>
-                </tr>
-              </template>
+                  </div>
+                </td>
+                <td class="text-right mono">
+                  {{ formatDecimal(acc.remainingPrincipal) }}
+                </td>
+                <td>
+                  <span
+                    class="mono text-sm"
+                    :class="{ 'overdue-text': acc.accountStatus === 'OVERDUE' }"
+                  >
+                    {{ acc.nextPaymentDate ? formatDate(acc.nextPaymentDate) : '—' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="status-badge" :class="statusClass(acc.accountStatus)">
+                    {{ statusLabel(acc.accountStatus) }}
+                  </span>
+                </td>
+                <td>
+                  <span class="mono text-sm muted">{{ formatDate(acc.startDate) }}</span>
+                </td>
+                <td class="text-center">
+                  <button class="schedule-btn" @click.stop="openRepaymentModal(acc)">
+                    📋 查看
+                  </button>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -272,6 +218,105 @@
     </div>
 
   </div>
+
+  <!-- ── 還款時間表 Modal ── -->
+  <teleport to="body">
+    <transition name="modal-fade">
+      <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
+        <div class="modal-box">
+
+          <!-- Modal Header -->
+          <div class="modal-header">
+            <div class="modal-title-group">
+              <span class="modal-title">還款時間表</span>
+              <span v-if="modalAccount" class="modal-subtitle">
+                帳戶 {{ modalAccount.accountId }}
+                <span class="type-badge" :class="'tb-' + modalAccount.applyType" style="margin-left:8px;">
+                  {{ LOAN_TYPE_NAME[modalAccount.applyType] || modalAccount.applyType }}
+                </span>
+              </span>
+            </div>
+            <button class="modal-close-btn" @click="closeModal">✕</button>
+          </div>
+
+          <!-- Modal 摘要列 -->
+          <div v-if="modalAccount" class="modal-summary">
+            <div class="summary-item">
+              <span class="summary-label">本金</span>
+              <span class="summary-value mono">{{ formatAmount(modalAccount.principalAmount) }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">月繳</span>
+              <span class="summary-value mono">{{ formatDecimal(modalAccount.monthlyPayment) }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">年利率</span>
+              <span class="summary-value mono">{{ formatRate(modalAccount.rate) }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">期數進度</span>
+              <span class="summary-value mono">{{ modalAccount.paidPeriods }} / {{ modalAccount.confirmedPeriod }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">剩餘本金</span>
+              <span class="summary-value mono">{{ formatDecimal(modalAccount.remainingPrincipal) }}</span>
+            </div>
+          </div>
+
+          <!-- Modal Body -->
+          <div class="modal-body">
+            <div v-if="repaymentLoading" class="rep-loading">
+              <span class="spin">⟳</span> 載入還款明細中…
+            </div>
+            <template v-else-if="repayments.length > 0">
+              <div class="rep-header">
+                <span class="rep-title">共 {{ repayments.length }} 期</span>
+              </div>
+              <div class="rep-table-wrap">
+                <table class="rep-table">
+                  <thead>
+                    <tr>
+                      <th>期</th>
+                      <th>應繳日</th>
+                      <th>實繳日</th>
+                      <th class="text-right">月繳總額</th>
+                      <th class="text-right">本金</th>
+                      <th class="text-right">利息</th>
+                      <th class="text-right">剩餘本金</th>
+                      <th>狀態</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      v-for="rp in repayments"
+                      :key="rp.repaymentId"
+                      :class="repRowClass(rp.repaymentStatus)"
+                    >
+                      <td class="mono text-center">{{ rp.periodIndex }}</td>
+                      <td class="mono">{{ formatDate(rp.scheduledDate) }}</td>
+                      <td class="mono">{{ rp.paidDate ? formatDate(rp.paidDate) : '—' }}</td>
+                      <td class="mono text-right">{{ formatDecimal(rp.totalAmount) }}</td>
+                      <td class="mono text-right">{{ formatDecimal(rp.principalPortion) }}</td>
+                      <td class="mono text-right muted">{{ formatDecimal(rp.interestPortion) }}</td>
+                      <td class="mono text-right">{{ formatDecimal(rp.remainingAfter) }}</td>
+                      <td>
+                        <span class="rep-status" :class="repStatusClass(rp.repaymentStatus)">
+                          {{ repStatusLabel(rp.repaymentStatus) }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </template>
+            <div v-else class="rep-loading">尚無還款明細</div>
+          </div>
+
+        </div>
+      </div>
+    </transition>
+  </teleport>
+
 </template>
 
 <script setup>
@@ -316,11 +361,14 @@ const error           = ref('')
 const currentStatus   = ref(null)
 const selectedTypes   = ref([])
 const typeDropdownOpen = ref(false)
-const expandedId      = ref(null)
 const repayments      = ref([])
 const repaymentLoading = ref(false)
 const currentPage     = ref(1)
 const pageSize        = 15
+
+// Modal 狀態
+const showModal    = ref(false)
+const modalAccount = ref(null)
 
 // ── 篩選 ──
 const filteredAccounts = computed(() => {
@@ -358,18 +406,14 @@ const pageList = computed(() => {
 function setStatus(val) {
   currentStatus.value = val
   currentPage.value   = 1
-  expandedId.value    = null
   repayments.value    = []
 }
 
 async function fetchAccounts() {
   loading.value  = true
   error.value    = ''
-  expandedId.value = null
   repayments.value = []
   try {
-    const params = currentStatus.value ? { status: currentStatus.value } : {}
-    // 取全部，前端篩選；若需後端篩選也可帶 status param
     const res = await api.get('/api/admin/loan-accounts', { params: {} })
     accounts.value = res.data.data || []
   } catch (e) {
@@ -379,23 +423,27 @@ async function fetchAccounts() {
   }
 }
 
-async function toggleRepayments(accountId) {
-  if (expandedId.value === accountId) {
-    expandedId.value  = null
-    repayments.value  = []
-    return
-  }
-  expandedId.value      = accountId
+async function openRepaymentModal(acc) {
+  modalAccount.value    = acc
   repayments.value      = []
   repaymentLoading.value = true
+  showModal.value       = true
+  document.body.style.overflow = 'hidden'
   try {
-    const res = await api.get(`/api/admin/loan-accounts/${accountId}/repayments`)
+    const res = await api.get(`/api/admin/loan-accounts/${acc.accountId}/repayments`)
     repayments.value = res.data.data || []
   } catch {
     repayments.value = []
   } finally {
     repaymentLoading.value = false
   }
+}
+
+function closeModal() {
+  showModal.value    = false
+  modalAccount.value = null
+  repayments.value   = []
+  document.body.style.overflow = ''
 }
 
 // ── helpers ──
@@ -659,11 +707,9 @@ onMounted(fetchAccounts)
 
 .data-row {
   border-bottom: 1px solid var(--border);
-  cursor: pointer;
   transition: background 0.1s;
 }
 .data-row:hover      { background: var(--surface-2); }
-.data-row.row-expanded { background: rgba(92,107,95,0.06); }
 .data-row.row-overdue  { background: rgba(166,90,77,0.04); }
 
 .data-table td {
@@ -673,16 +719,6 @@ onMounted(fetchAccounts)
 }
 .data-table td.text-right  { text-align: right; }
 .data-table td.text-center { text-align: center; }
-
-/* 展開圖示 */
-.expand-cell { width: 30px; }
-.expand-icon {
-  display: inline-block;
-  font-size: 10px;
-  color: var(--muted-2);
-  transition: transform 0.2s;
-}
-.expand-icon.rotated { transform: rotate(90deg); }
 
 /* Mono / text helpers */
 .mono  { font-family: 'IBM Plex Mono', monospace; }
@@ -746,14 +782,6 @@ onMounted(fetchAccounts)
 .prog-active  { background: var(--primary); }
 .prog-overdue { background: var(--red); }
 .prog-done    { background: var(--green); }
-
-/* ── 展開區：還款時間表 ── */
-.repayment-row td { padding: 0; border-bottom: 2px solid var(--border); }
-
-.repayment-section {
-  padding: 16px 24px 20px;
-  background: rgba(92,107,95,0.04);
-}
 
 .rep-header {
   display: flex; align-items: baseline; gap: 10px;
@@ -859,4 +887,86 @@ onMounted(fetchAccounts)
 /* ── 下拉動畫 ── */
 .drop-enter-active, .drop-leave-active { transition: all 0.15s ease; }
 .drop-enter-from, .drop-leave-to       { opacity: 0; transform: translateY(-6px); }
+
+/* ── 查看按鈕 ── */
+.schedule-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 6px;
+  font-size: 12px; font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--surface); color: var(--primary);
+  cursor: pointer; transition: all 0.15s;
+  white-space: nowrap;
+}
+.schedule-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* ── Modal 遮罩 ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+
+/* ── Modal 本體 ── */
+.modal-box {
+  background: #FDFAF6;
+  border: 1px solid #D6CEC3;
+  border-radius: 16px;
+  width: 100%; max-width: 860px;
+  max-height: 85vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  overflow: hidden;
+}
+
+/* Modal Header */
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 24px 16px;
+  border-bottom: 1px solid #D6CEC3;
+  background: #EAE4DA;
+  flex-shrink: 0;
+}
+.modal-title-group { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.modal-title { font-size: 16px; font-weight: 700; color: #2B2B2B; }
+.modal-subtitle { font-size: 12px; color: #6E6259; display: flex; align-items: center; }
+.modal-close-btn {
+  width: 30px; height: 30px; border-radius: 8px;
+  border: 1px solid #D6CEC3; background: #FDFAF6;
+  color: #6E6259; font-size: 13px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; flex-shrink: 0;
+}
+.modal-close-btn:hover { border-color: #A65A4D; color: #A65A4D; background: rgba(166,90,77,0.08); }
+
+/* Modal 摘要 */
+.modal-summary {
+  display: flex; gap: 0; flex-shrink: 0;
+  border-bottom: 1px solid #D6CEC3;
+  background: #FDFAF6;
+}
+.summary-item {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 12px 20px;
+  border-right: 1px solid #D6CEC3;
+}
+.summary-item:last-child { border-right: none; }
+.summary-label { font-size: 10px; font-weight: 600; color: #6E6259; text-transform: uppercase; letter-spacing: 0.06em; }
+.summary-value { font-size: 13px; font-weight: 600; color: #2B2B2B; }
+
+/* Modal Body */
+.modal-body {
+  flex: 1; overflow-y: auto; padding: 20px 24px 24px;
+}
+
+/* Modal 動畫 */
+.modal-fade-enter-active, .modal-fade-leave-active { transition: all 0.2s ease; }
+.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
+.modal-fade-enter-from .modal-box, .modal-fade-leave-to .modal-box { transform: scale(0.96) translateY(8px); }
+.modal-fade-enter-active .modal-box, .modal-fade-leave-active .modal-box { transition: transform 0.2s ease; }
 </style>
