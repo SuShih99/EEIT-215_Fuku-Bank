@@ -23,7 +23,7 @@ public class CardPaymentService {
             CreditCardPaymentRequest paymentRequest) {
 
         //防止負數
-        if (paymentRequest.getAmount().compareTo(BigDecimal.ZERO)<=0) {
+        if (paymentRequest.getAmount() == null || paymentRequest.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException("繳費金額必須大於 0");
         }
         return accountIntegrationService.payCreditCard(customerId, paymentRequest);

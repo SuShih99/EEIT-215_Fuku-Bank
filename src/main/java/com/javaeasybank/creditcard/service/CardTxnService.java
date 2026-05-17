@@ -1,6 +1,7 @@
 package com.javaeasybank.creditcard.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.springframework.data.domain.Page;
@@ -19,8 +20,11 @@ import com.javaeasybank.creditcard.enums.TransactionChannel;
 import com.javaeasybank.creditcard.enums.TxnType;
 import com.javaeasybank.creditcard.mapper.CardTxnMapper;
 import com.javaeasybank.creditcard.repository.CardTxnRepository;
+import com.javaeasybank.creditcard.repository.CardTxnSpecification;
 import com.javaeasybank.creditcard.repository.CreditCardRepository;
 import com.javaeasybank.creditcard.repository.MerchantRepository;
+
+import org.springframework.data.jpa.domain.Specification;
 
 import lombok.RequiredArgsConstructor;
 
@@ -281,6 +285,17 @@ public class CardTxnService {
     public Page<CardTxnResponseDto> getUnbilledBillsByCustomerId(String customerId, Pageable pageable) {
         return cardTxnRepository.findByCard_Customer_CustomerIdAndBillIsNull(customerId, pageable)
                 .map(mapper::toDto);
+    }
+
+    public Page<CardTxnResponseDto> search(String keyword,
+            TxnType txnType,
+            LocalDate startDate,
+            LocalDate endDate,
+            Pageable pageable) {
+        Specification<CardTransaction> spec = CardTxnSpecification.search(keyword, txnType, startDate, endDate);
+
+        return cardTxnRepository.findAll(spec, pageable)
+                .map(this::toResponseDto);
     }
 
 }

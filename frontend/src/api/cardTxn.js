@@ -4,12 +4,9 @@ const unwrap = (res) => res.data.data
 //建立一個URL
 const BASE_URL = 'api/admin/card-txns'
 //查全部交易
-export const getTransactions = (page=0, size=10) => {
+export const getTransactions = (params) => {
     return api.get(BASE_URL,{
-        params:{
-            page,
-            size
-        },
+        params
     }).then(unwrap);
 
 };

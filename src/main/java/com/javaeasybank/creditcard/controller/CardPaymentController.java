@@ -18,6 +18,7 @@ import com.javaeasybank.common.dto.response.ApiResponse;
 import com.javaeasybank.common.util.SecurityUtil;
 import com.javaeasybank.creditcard.service.CardPaymentService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -32,7 +33,7 @@ public class CardPaymentController {
     @PostMapping
     public ResponseEntity<ApiResponse<CreditCardPaymentResponse>> payCreditCard(
             @RequestHeader("Authorization") String authHeader,
-            @RequestBody CreditCardPaymentRequest paymentRequest) {
+            @Valid @RequestBody CreditCardPaymentRequest paymentRequest) {
 
         String customerId = securityUtil.getCustomerIdFromHeader(authHeader);
         CreditCardPaymentResponse response = paymentService.processPayment(customerId, paymentRequest);

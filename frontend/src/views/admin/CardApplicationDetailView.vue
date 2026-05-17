@@ -8,6 +8,7 @@ import {
   getApplicationById,
 } from '@/api/cardApplication'
 import { useRoute } from 'vue-router'
+import dayjs from 'dayjs'
 
 const loading = ref(false)
 
@@ -146,7 +147,7 @@ onMounted(() => {
 
         <a-col :span="6">
           <strong>申請日期：</strong>
-          {{ applicationInfo.applyDate }}
+          {{ dayjs(applicationInfo.applyDate).format('YYYY-MM-DD HH:mm') }}
         </a-col>
 
         <a-col :span="6">
@@ -174,7 +175,7 @@ onMounted(() => {
         <!-- 審核時間 -->
         <template v-if="column.dataIndex === 'reviewDate'">
           <span v-if="record.reviewDate">
-            {{ new Date(record.reviewDate).toLocaleString() }}
+            {{ dayjs(record.reviewDate).format('YYYY-MM-DD HH:mm') }}
           </span>
 
           <span v-else> - </span>

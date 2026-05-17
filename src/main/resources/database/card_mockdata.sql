@@ -241,7 +241,56 @@ IF EXISTS (
     THROW 51202, 'card_mockdata.sql generated a credit card customer without an ACTIVE TWD CHECKING account.', 1;
 
 -- ===== 5-1. CARD_ACCOUNT =====
--- One card account per mock card/customer so bills can resolve customer names through card_account.customer.
+-- Keep one card account per mock card, and mirror each payment account into ACCOUNT.
+;WITH missing_payment_accounts AS (
+    SELECT
+        CONCAT('801', RIGHT(CONCAT('00000000000', CAST(c.card_id AS VARCHAR(11))), 11)) AS account_number,
+        customer_id,
+        ROW_NUMBER() OVER (ORDER BY c.card_id) AS rn
+    FROM CREDIT_CARD c
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM ACCOUNT a
+        WHERE a.account_number = CONCAT('801', RIGHT(CONCAT('00000000000', CAST(c.card_id AS VARCHAR(11))), 11))
+          AND a.account_type = 'CREDIT_CARD'
+          AND a.currency = 'TWD'
+    )
+)
+INSERT INTO ACCOUNT (
+    account_number, customer_id, account_type, currency, balance, liability,
+    interest_rate, status, parent_account_number, created_at, changed_at, created_by, changed_by
+)
+SELECT
+    account_number,
+    customer_id,
+    'CREDIT_CARD',
+    'TWD',
+    0.0000,
+    0.0000,
+    NULL,
+    'ACTIVE',
+    NULL,
+    GETDATE(),
+    GETDATE(),
+    'card-mock',
+    'card-mock'
+FROM missing_payment_accounts;
+
+UPDATE a
+SET
+    a.customer_id = c.customer_id,
+    a.account_type = 'CREDIT_CARD',
+    a.currency = 'TWD',
+    a.liability = 0.0000,
+    a.interest_rate = NULL,
+    a.status = 'ACTIVE',
+    a.changed_at = GETDATE(),
+    a.changed_by = 'card-mock'
+FROM ACCOUNT a
+JOIN CREDIT_CARD c
+  ON a.account_number = CONCAT('801', RIGHT(CONCAT('00000000000', CAST(c.card_id AS VARCHAR(11))), 11));
+
+-- One card account per mock card so bill generation keeps its per-card mock shape.
 INSERT INTO CARD_ACCOUNT (account_number, credit_limit, statement_day, due_days, customer_id)
 SELECT
     CONCAT('801', RIGHT(CONCAT('00000000000', CAST(card_id AS VARCHAR(11))), 11)),
