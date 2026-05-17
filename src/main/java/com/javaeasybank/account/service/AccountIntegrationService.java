@@ -172,12 +172,13 @@ public class AccountIntegrationService {
         // 使用 afterCommit 確保帳務事務先行提交，再開啟 Loan 側獨立事務
         if (request.getApplicationId() != null && !request.getApplicationId().isBlank()) {
             String appId = request.getApplicationId();
+            String disbursedLoanAccountNumber = loanAccount.getAccountNumber();
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
                     log.info("[Disbursement] 帳務事務提交，通知 Loan 模組 applicationId={}", appId);
                     try {
-                        loanApplicationService.handleAccountDisbursedCallback(appId);
+                        loanApplicationService.handleAccountDisbursedCallback(appId, disbursedLoanAccountNumber);
                     } catch (Exception e) {
                         log.error("[Disbursement] Loan 回調失敗 applicationId={}", appId, e);
                         // TODO（第五部）：寫入補傳表，搭配排程重試

@@ -385,15 +385,21 @@ public class LoanApplicationService {
 
         // ACCOUNT 模組撥款確認後，同步建立貸款帳戶
         if ("ACCOUNT".equals(caller)) {
-            loanAccountService.createOnDisbursement(applicationId);
+            loanAccountService.createOnDisbursement(applicationId, dto.getLoanAccountNumber());
         }
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleAccountDisbursedCallback(String applicationId) {
+        handleAccountDisbursedCallback(applicationId, null);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void handleAccountDisbursedCallback(String applicationId, String loanAccountNumber) {
         LoanStatusCallbackRequestDTO callbackDto = new LoanStatusCallbackRequestDTO();
         callbackDto.setCallerModule("ACCOUNT");
         callbackDto.setNewStatus(LoanApplicationStatus.DISBURSED);
+        callbackDto.setLoanAccountNumber(loanAccountNumber);
         callbackDto.setNote("account afterCommit: disbursement completed");
         handleStatusCallback(applicationId, callbackDto);
     }

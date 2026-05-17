@@ -10,7 +10,8 @@ import java.util.regex.Pattern;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
-@EnableRetry
+import org.springframework.scheduling.annotation.EnableAsync;
+
 @EnableAsync
 @EnableJpaAuditing
 @SpringBootApplication
@@ -18,7 +19,7 @@ public class JavaEasyBankApplication {
 
     public static void main(String[] args) {
         // 1. 在 Spring 啟動前先重置資料庫
-        //restoreDatabase();
+        restoreDatabase();
 
         // 2. 正式啟動 Spring
         SpringApplication.run(JavaEasyBankApplication.class, args);

@@ -57,6 +57,10 @@ public class LoanAccountService {
      * 具備冪等保護：帳戶已存在時直接略過，不拋錯。
      */
     public void createOnDisbursement(String applicationId) {
+        createOnDisbursement(applicationId, null);
+    }
+
+    public void createOnDisbursement(String applicationId, String loanAccountNumber) {
 
         // 冪等保護：重複回調時不重複建帳
         if (loanAccountRepo.findByApplicationId(applicationId).isPresent()) {
@@ -83,6 +87,7 @@ public class LoanAccountService {
 
         LoanAccount account = new LoanAccount();
         account.setAccountId(generateId("ACC"));
+        account.setAccountNumber(loanAccountNumber);
         account.setApplicationId(applicationId);
         account.setCustomerId(loan.getCustomerId());
         account.setApplyType(loan.getApplyType());
@@ -156,6 +161,7 @@ public class LoanAccountService {
     private LoanAccountResponseDTO toResponseDTO(LoanAccount account) {
         LoanAccountResponseDTO dto = new LoanAccountResponseDTO();
         dto.setAccountId(account.getAccountId());
+        dto.setAccountNumber(account.getAccountNumber());
         dto.setApplicationId(account.getApplicationId());
         dto.setCustomerId(account.getCustomerId());
         String cif = customerProfileRepository.findById(account.getCustomerId())
