@@ -1,5 +1,8 @@
 package com.javaeasybank.risk.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum Occupation {
     LEGISLATOR_MANAGER("民意代表/高階主管", EmploymentStatus.EMPLOYED),
     PROFESSIONAL("專業人員", EmploymentStatus.EMPLOYED),
@@ -22,6 +25,4 @@ public enum Occupation {
         this.defaultStatus = defaultStatus;
     }
 
-    public String getDesc() { return desc; }
-    public EmploymentStatus getDefaultStatus() { return defaultStatus; }
 }

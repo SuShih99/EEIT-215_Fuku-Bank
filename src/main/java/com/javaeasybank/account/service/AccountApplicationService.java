@@ -155,6 +155,7 @@ public class AccountApplicationService {
 
         AccountApplication saved = applicationRepository.save(app);
         syncCustomerProfileFromApplication(saved, request.getAnnualIncome());
+        //creditScoreService.initializeCreditInfo(customerId,request.getBirthday(),request.getOccupation(),request.getAnnualIncome(),request.getFundSource(),request.getIsPep());
 
         log.info("Account application submitted: id={}, customer={}, riskFlag={}",
                 saved.getId(), customerId, riskFlag);

@@ -13,7 +13,7 @@ import java.util.Optional;
 public interface ReviewTaskRepository extends JpaRepository<ReviewTask, Long> {
 
     // 依 businessId 找對應任務（補件通知用）
-    Optional<ReviewTask> findFirstByBusinessId(String businessId);
+    Optional<ReviewTask> findFirstByBusinessIdAndStatusOrderByCreateAtDesc(String businessId, String status);
 
     @Query("SELECT t FROM ReviewTask t LEFT JOIN FETCH t.riskEventLog WHERE " +
             "(:status IS NULL OR t.status = :status) AND " +

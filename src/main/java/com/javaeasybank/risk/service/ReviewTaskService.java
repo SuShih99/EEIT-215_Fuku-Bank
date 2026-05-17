@@ -1,6 +1,7 @@
 package com.javaeasybank.risk.service;
 
 import com.javaeasybank.common.exception.BusinessException;
+import com.javaeasybank.risk.dto.request.RiskAttachmentRequest;
 import com.javaeasybank.risk.dto.response.ReviewTaskResponse;
 import com.javaeasybank.risk.enums.BusinessScene;
 import com.javaeasybank.risk.enums.Disposition;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -129,14 +131,20 @@ public class ReviewTaskService {
     }
 
     @Transactional
-    public void attachDocuments(String businessId, Object documents) {
-        ReviewTask task = rtRepos.findFirstByBusinessId(businessId).orElse(null);
+    public void attachDocuments(String businessId, List<RiskAttachmentRequest.AttachmentDetail> documents) {
+        ReviewTask task = rtRepos.findFirstByBusinessIdAndStatusOrderByCreateAtDesc(businessId,"PENDING").orElse(null);
         if (task == null) {
             log.warn("[ReviewTask] 找不到對應任務，略過補件附件 businessId={}", businessId);
             return;
         }
         try {
             task.setAttachments(objectMapper.writeValueAsString(documents));
+            // 動態提高該任務的優先級（Priority）
+            //這樣這筆案子就會在前端列表彈到最上方，提醒審核人員：「客戶補件了，請優先覆審！」
+            if (task.getPriority() != null && task.getPriority() > 2) {
+                task.setPriority(2);
+                log.info("[ReviewTask] 客戶已完成補件，動態提升任務優先級至 2 (High Priority)");
+            }
             rtRepos.save(task);
             log.info("[ReviewTask] 補件附件已更新 taskId={} businessId={}", task.getTaskId(), businessId);
         } catch (Exception e) {

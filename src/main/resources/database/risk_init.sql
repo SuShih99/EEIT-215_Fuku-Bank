@@ -1,23 +1,3 @@
-IF
-OBJECT_ID('risk_event_log', 'U') IS NOT NULL
-DROP TABLE risk_event_log;
-GO
-
-IF
-OBJECT_ID('review_task', 'U') IS NOT NULL
-DROP TABLE review_task;
-GO
-
-IF
-OBJECT_ID('black_list', 'U') IS NOT NULL
-DROP TABLE black_list;
-GO
-
-IF
-OBJECT_ID('customer_credit_info', 'U') IS NOT NULL
-DROP TABLE customer_credit_info;
-GO
-
 CREATE TABLE RISK_EVENT_LOG
 (
     log_id             bigint IDENTITY (1, 1) NOT NULL,
@@ -78,17 +58,21 @@ CREATE
 NONCLUSTERED INDEX idx_bl_lookup ON BLACK_LIST (list_type, list_value)
 GO
 
-CREATE TABLE CUSTOMER_CREDIT_INFO
+CREATE TABLE customer_credit_info
 (
-    customer_id     varchar(20) NOT NULL,
+    customer_id     varchar(20)                             NOT NULL,
     annual_income   decimal(15, 2),
-    occupation      varchar(20),
+    occupation      nvarchar(50),
+    job             nvarchar(100),
     external_score  int,
     other_bank_debt decimal(15, 2),
     has_real_estate bit,
+    fund_source     varchar(30),
+    is_pep          bit
+        CONSTRAINT DF_customer_credit_info_is_pep DEFAULT 0 NOT NULL,
     final_score     int,
     risk_level      varchar(10),
-    last_updated_at datetime    NOT NULL,
+    last_updated_at datetime                                NOT NULL,
     CONSTRAINT pk_customer_credit_info PRIMARY KEY (customer_id)
 )
     GO
