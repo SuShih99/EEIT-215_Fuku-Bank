@@ -229,7 +229,7 @@
                 <a-button
                   type="link"
                   size="small"
-                  :href="doc.fileUrl"
+                  :href="getFileUrl(doc.fileUrl)"
                   target="_blank"
                   v-if="doc.fileUrl"
                 >
@@ -249,7 +249,7 @@
                 "
               >
                 <img
-                  :src="doc.fileUrl"
+                  :src="getFileUrl(doc.fileUrl)"
                   style="
                     max-width: 100%;
                     max-height: 150px;
@@ -371,9 +371,10 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { message } from 'ant-design-vue'
 import { ReloadOutlined } from '@ant-design/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import { BASE_URL as SERVER_URL } from '@/api/axios'
 import axios from 'axios'
 
-const BASE_URL = '/api/risk/reviewtask'
+const API_PREFIX = '/api/risk/reviewtask'
 
 const tasks = ref([])
 const loading = ref(false)
@@ -423,7 +424,7 @@ async function fetchTasks() {
     if (filters.scene) params.scene = filters.scene
     if (filters.priority) params.priority = filters.priority
 
-    const res = await axios.get(BASE_URL, { params, withCredentials: true })
+    const res = await axios.get(API_PREFIX, { params, withCredentials: true })
     const page = res.data.data
     tasks.value = page.content
     // 確保 page.number 是有效數字，若為 undefined/null 則預設為 0
@@ -445,7 +446,7 @@ async function submitDecision() {
   submitting.value = true
   try {
     await axios.put(
-      `${BASE_URL}/${currentTask.value.taskId}/decision`,
+      `${API_PREFIX}/${currentTask.value.taskId}/decision`,
       { reviewResult: form.reviewResult, adminComment: form.adminComment },
       { withCredentials: true },
     )
@@ -494,7 +495,7 @@ async function handleReviewAction(task) {
   // 若已在處理中（自己鎖的）則直接開 Modal
   if (task.status !== 'PROCESSING') {
     try {
-      await axios.put(`${BASE_URL}/${task.taskId}/start`, {}, { withCredentials: true })
+      await axios.put(`${API_PREFIX}/${task.taskId}/start`, {}, { withCredentials: true })
       await fetchTasks()
       // 取得最新 task 物件
       const updated = tasks.value.find((t) => t.taskId === task.taskId)
@@ -601,6 +602,13 @@ function docLabel(type) {
       TAX_STATEMENT: '扣繳憑單',
     }[type] || type
   )
+}
+
+// 處理檔案與圖片網址
+function getFileUrl(url) {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return SERVER_URL + url
 }
 
 function occupationLabel(o) {
