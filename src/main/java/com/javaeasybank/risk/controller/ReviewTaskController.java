@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +22,7 @@ public class ReviewTaskController {
     final ReviewTaskService reviewTaskService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('CISO', 'CFDM')")
     public ResponseEntity<ApiResponse<Page<ReviewTaskResponse>>> findAll(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) BusinessScene scene,
@@ -32,6 +34,7 @@ public class ReviewTaskController {
     }
 
     @PutMapping("/{taskId}/decision")
+    @PreAuthorize("hasAnyRole('CISO', 'CFDM')")
     public ResponseEntity<ApiResponse<Void>> makeDecision(
             @PathVariable Long taskId,
             @RequestBody @Valid ReviewDecisionRequest request) {
@@ -42,6 +45,7 @@ public class ReviewTaskController {
 
 
     @PutMapping("/{taskId}/start")
+    @PreAuthorize("hasAnyRole('CISO', 'CFDM')")
     public ResponseEntity<ApiResponse<Void>> startProcessing(
             @PathVariable Long taskId,
             Authentication authentication) { // 👈 1. 注入當前登入用戶的驗證資訊

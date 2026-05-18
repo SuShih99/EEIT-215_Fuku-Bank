@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -29,4 +30,6 @@ public class LoanApplicationResponseDTO {
     private LoanContactStatus latestContactStatus;
     private LocalDateTime latestContactTime;
     private LocalDateTime documentsSubmittedAt;  // 客戶送出補件時間，null = 尚未送出
+    private List<String> requiredDocuments;
+    private String reviewComment;
 }
