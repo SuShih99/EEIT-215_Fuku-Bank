@@ -1,6 +1,7 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted,watch } from 'vue'
 import { message, Modal } from 'ant-design-vue'
+import { SearchOutlined, SyncOutlined } from '@ant-design/icons-vue'
 import { getTransactions, refundTransaction } from '@/api/cardTxn'
 import dayjs from 'dayjs'
 
@@ -11,6 +12,16 @@ const pagination = ref({
   pageSize: 10,
   total: 0,
 })
+
+const keyword = ref('')
+const txnType = ref(null)
+const dateRange = ref([])
+
+const txnTypeOptions = [
+  { label: '全部', value: null },
+  { label: '消費', value: 'PURCHASE' },
+  { label: '刷退', value: 'REFUND' },
+]
 
 const columns = [
   {
@@ -85,8 +96,18 @@ const fetchCardTxns = async () => {
   loading.value = true
 
   try {
-    const res = await getTransactions(pagination.value.current - 1, pagination.value.pageSize)
-
+    const res = await getTransactions({
+      page: pagination.value.current - 1,
+      size: pagination.value.pageSize,
+      keyword:keyword.value,
+      txnType: txnType.value,
+      startDate: dateRange.value?.[0]
+        ? dayjs(dateRange.value[0]).format('YYYY-MM-DD')
+        : null,
+      endDate: dateRange.value?.[1]
+        ? dayjs(dateRange.value[1]).format('YYYY-MM-DD')
+        : null,
+    })
     transactions.value = res.content
     console.log(res.content)
 
@@ -96,6 +117,19 @@ const fetchCardTxns = async () => {
   } finally {
     loading.value = false
   }
+}
+// 搜尋
+const handleSearch = () => {
+  pagination.value.current = 1
+  fetchCardTxns()
+}
+// 重設
+const handleReset = () => {
+  keyword.value = ''
+  dateRange.value = []
+  txnType.value = null
+  pagination.value.current = 1
+  fetchCardTxns()
 }
 
 //刷退
@@ -127,6 +161,14 @@ const isRefunded = (record) => {
   return record.refunded === true
 }
 
+watch([keyword, txnType, dateRange], () => {
+  pagination.value.current = 1
+  fetchCardTxns()
+})
+
+
+
+
 onMounted(() => {
   fetchCardTxns()
 })
@@ -140,6 +182,39 @@ onMounted(() => {
       <p class="text-gray-400 mt-1">Credit Card Transactions</p>
     </div>
 
+    <!-- Search -->
+
+    <div class="action-bar">
+      <a-input
+        v-model:value="keyword"
+        placeholder="搜尋客戶姓名 / 商家 / 描述"
+        allow-clear
+        style="width: 260px"
+        @pressEnter="handleSearch"
+      >
+        <template #prefix><SearchOutlined /></template>
+      </a-input>
+
+      <a-range-picker v-model:value="dateRange" format="YYYY-MM-DD" />
+
+      <a-select
+        v-model:value="txnType"
+        :options="txnTypeOptions"
+        placeholder="交易類型"
+        allow-clear
+        style="width: 140px"
+      />
+
+      <a-button type="primary" @click="handleSearch">
+        <template #icon><SearchOutlined /></template>
+        搜尋
+      </a-button>
+
+      <a-button @click="handleReset">
+        <template #icon><SyncOutlined /></template>
+        重設
+      </a-button>
+    </div>
     <!-- Table -->
     <a-card>
       <a-table
@@ -199,3 +274,12 @@ onMounted(() => {
     </a-card>
   </div>
 </template>
+<style>
+.action-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+</style>

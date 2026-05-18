@@ -15,14 +15,14 @@
                 </button>
                 <button class="demo-mode-badge" @click="triggerIdleAlert">Demo 模式</button>
               </div>
-              
+
               <button
                 class="avatar-btn"
                 aria-label="前往會員中心"
                 @click="$router.push({ name: 'user-profile' })"
               >
                 <img v-if="avatarSrc" :src="avatarSrc" class="user-avatar" alt="使用者大頭照" />
-                <span v-else class="user-avatar avatar-placeholder" aria-hidden="true">{{ customerInitial }}</span>
+                <img v-else src="/default_photo.png" class="user-avatar" alt="預設大頭照" />
               </button>
               <span class="user-name">{{ customerName }}</span>
               <button class="logout-btn" @click="handleLogout">登出</button>
@@ -167,7 +167,9 @@ const customerInitial = computed(() => (customerAuthStore.customer?.name || '會
 const avatarSrc = computed(() => {
   const url = customerAuthStore.customer?.avatarUrl
   if (!url) return null
-  return url.startsWith('http') ? url : BASE_URL + url
+  if (url.startsWith('http')) return url
+  if (url.startsWith('/uploads/')) return BASE_URL + url
+  return url
 })
 
 const menus = [
@@ -229,7 +231,7 @@ const menus = [
     svg: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
     route: 'user-profile',
     children: [
-      { label: '密碼修改', desc: '變更登入密碼', route: 'user-profile' },
+      { label: '密碼與帳號修改', desc: '變更登入密碼與使用者帳號', route: 'user-security-password' },
       { label: '登入紀錄', desc: '查看近期登入活動', route: 'user-security-login-records' },
       { label: '裝置管理', desc: '管理已授權裝置', route: 'user-security-devices' },
     ],
@@ -336,12 +338,12 @@ function stopGraceTimer() {
 
 onMounted(() => {
   document.addEventListener('click', closeOnOutsideClick)
-  
+
   // 每 1 秒更新倒數
   secondTimer = setInterval(() => {
     if (idleModal.visible) return
     if (isTimerPaused.value) return // 暫停時不動作
-    
+
     if (countdown.value > 0) {
       countdown.value--
     } else {

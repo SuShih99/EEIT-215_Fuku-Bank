@@ -71,9 +71,10 @@ async function applyCardType() {
   if (!selectedCardType.value) return
 
   try {
-    // 在這裡呼叫申辦信用卡的 API，傳入 selectedCardType.value.cardTypeId
-    // 例如：await createCardApplication({ cardTypeId: selectedCardType.value.cardTypeId })
     await createCardApplication({ cardTypeId: selectedCardType.value.cardTypeId })
+
+    appliedCardTypeIds.value.push(selectedCardType.value.cardTypeId)
+
     message.success(`成功申辦 ${selectedCardType.value.cardTypeName}！`)
     closeApplyModal()
   } catch (error) {

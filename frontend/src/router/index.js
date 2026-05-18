@@ -95,6 +95,11 @@ const router = createRouter({
           component: () => import('../views/user/EPassbookView.vue'),
         },
         {
+          path: 'security/password',
+          name: 'user-security-password',
+          component: () => import('../views/user/SecurityPasswordSettingsView.vue'),
+        },
+        {
           path: 'security/login-records',
           name: 'user-security-login-records',
           component: () => import('../views/user/SecurityLoginRecordsView.vue'),

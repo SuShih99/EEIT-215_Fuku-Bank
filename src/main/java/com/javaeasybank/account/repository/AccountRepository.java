@@ -77,7 +77,9 @@ public interface AccountRepository extends JpaRepository<Account, String> {
               AND (:status IS NULL OR a.status = :status)
               AND (:accountType IS NULL OR a.accountType = :accountType)
               AND (:currency IS NULL OR a.currency = :currency)
-            ORDER BY a.createdAt DESC
+            ORDER BY 
+              CASE WHEN a.accountType = com.javaeasybank.account.enums.AccountType.CHECKING THEN 0 ELSE 1 END,
+              a.createdAt DESC
             """)
     Page<Account> searchAdminAccounts(
             @Param("customerId") String customerId,

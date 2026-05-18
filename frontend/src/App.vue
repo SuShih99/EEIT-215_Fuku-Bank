@@ -25,5 +25,6 @@ const themeConfig = {
 body {
   margin: 0;
   padding: 0;
+  background-color: #f5f1ea !important;
 }
 </style>

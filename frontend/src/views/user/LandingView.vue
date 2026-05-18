@@ -8,8 +8,14 @@
       <div class="header-inner">
         <JbLogo size="sm" clickable @navigate="$router.push('/')" />
         <nav class="header-nav" aria-label="主導覽">
-          <button class="jb-btn jb-btn-secondary jb-btn-sm" @click="$router.push('/login')">登入</button>
-          <button class="jb-btn jb-btn-primary jb-btn-sm" @click="$router.push('/register')">立即開戶</button>
+          <template v-if="isLoggedIn">
+            <span class="header-greeting">{{ customer?.name || '您好' }}</span>
+            <button class="jb-btn jb-btn-primary jb-btn-sm" @click="$router.push('/user/home')">進入帳戶</button>
+          </template>
+          <template v-else>
+            <button class="jb-btn jb-btn-secondary jb-btn-sm" @click="$router.push('/login')">登入</button>
+            <button class="jb-btn jb-btn-primary jb-btn-sm" @click="$router.push('/register')">立即開戶</button>
+          </template>
         </nav>
       </div>
     </header>
@@ -106,6 +112,11 @@
 <script setup>
 import { onMounted } from 'vue'
 import JbLogo from '@/components/JbLogo.vue'
+import { useCustomerAuthStore } from '@/stores/customerAuth'
+import { storeToRefs } from 'pinia'
+
+const customerAuthStore = useCustomerAuthStore()
+const { isLoggedIn, customer } = storeToRefs(customerAuthStore)
 
 const previewItems = [
   {
@@ -206,7 +217,17 @@ onMounted(() => {
 
 .header-nav {
   display: flex;
+  align-items: center;
   gap: var(--space-2);
+}
+
+.header-greeting {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  color: var(--text-primary);
+  font-weight: 600;
+  letter-spacing: 1px;
+  margin-right: var(--space-3);
 }
 
 /* === Hero === */
@@ -304,9 +325,9 @@ onMounted(() => {
 
 .section-eyebrow {
   font-family: var(--font-display);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
-  letter-spacing: 5px;
+  letter-spacing: 6px;
   color: var(--text-disabled);
   text-transform: uppercase;
   margin-bottom: var(--space-2);
@@ -314,7 +335,7 @@ onMounted(() => {
 
 .section-heading {
   font-family: var(--font-heading);
-  font-size: 28px;
+  font-size: 38px;
   font-weight: 700;
   letter-spacing: 6px;
   margin-bottom: var(--space-3);
@@ -328,7 +349,7 @@ onMounted(() => {
 }
 
 .section-sub {
-  font-size: var(--text-body);
+  font-size: 17px;
   color: var(--text-secondary);
 }
 
@@ -377,14 +398,14 @@ onMounted(() => {
 }
 
 .preview-card h3 {
-  font-size: var(--text-body);
+  font-size: 17px;
   font-weight: 600;
   margin-bottom: var(--space-2);
   letter-spacing: 1px;
 }
 
 .preview-card p {
-  font-size: var(--text-sm);
+  font-size: 15px;
   color: var(--text-secondary);
   line-height: var(--leading);
 }
@@ -414,7 +435,7 @@ onMounted(() => {
 
 .value-num {
   font-family: var(--font-display);
-  font-size: 36px;
+  font-size: 48px;
   font-weight: 400;
   color: var(--border);
   display: block;
@@ -424,15 +445,15 @@ onMounted(() => {
 }
 
 .value-item h3 {
-  font-size: var(--text-h3);
+  font-size: 22px;
   margin-bottom: var(--space-2);
   letter-spacing: 2px;
 }
 
 .value-item p {
-  font-size: var(--text-sm);
+  font-size: 16px;
   color: var(--text-secondary);
-  line-height: 1.8;
+  line-height: 1.9;
 }
 
 /* === CTA === */
@@ -452,6 +473,7 @@ onMounted(() => {
 }
 
 .cta-card h2 {
+  font-size: 36px;
   margin-bottom: var(--space-3);
   letter-spacing: 4px;
 }

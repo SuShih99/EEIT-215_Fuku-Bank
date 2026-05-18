@@ -7,7 +7,7 @@
           <!-- ── Header ── -->
           <div class="modal-header">
             <div class="header-left">
-              <span class="modal-icon">📞</span>
+              <span class="modal-icon"><i class="fa-solid fa-square-phone"></i></span>
               <div>
                 <div class="modal-title">聯繫紀錄</div>
                 <div class="modal-sub">
@@ -18,7 +18,7 @@
                 </div>
               </div>
             </div>
-            <button class="close-btn" @click="close">✕</button>
+            <button class="close-btn" @click="close"><i class="fa-solid fa-x"></i></button>
           </div>
 
           <div class="modal-body">
@@ -42,7 +42,7 @@
 
                 <!-- Empty -->
                 <div v-else-if="logs.length === 0" class="log-empty">
-                  <div class="empty-icon">📭</div>
+                  <div class="empty-icon"><i class="fa-solid fa-inbox"></i></div>
                   <p>尚無聯繫紀錄</p>
                 </div>
 
@@ -60,13 +60,13 @@
                         {{ STATUS_LABEL[log.contactStatus] || log.contactStatus }}
                       </span>
                       <span class="log-channel" :class="'ch-' + log.contactChannel">
-                        {{ CHANNEL_ICON[log.contactChannel] }} {{ log.contactChannel }}
+                        <i :class="CHANNEL_ICON[log.contactChannel]"></i> {{ log.contactChannel }}
                       </span>
                     </div>
                     <div class="log-note" v-if="log.note">{{ log.note }}</div>
                     <div class="log-note empty-note" v-else>（無備注）</div>
                     <div class="log-meta">
-                      <span class="log-emp">👤 {{ log.empId || '—' }}</span>
+                      <span class="log-emp"><i class="fa-solid fa-user"></i> {{ log.empId || '—' }}</span>
                       <span class="log-time">{{ formatDateTime(log.contactTime) }}</span>
                     </div>
                   </div>
@@ -80,7 +80,7 @@
                 <!-- Alert -->
                 <transition name="alert-fade">
                   <div v-if="formAlert.show" class="form-alert" :class="'alert-' + formAlert.type">
-                    <span>{{ formAlert.type === 'success' ? '✅' : '❌' }}</span>
+                    <span><i :class="formAlert.type === 'success' ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark'"></i></span>
                     <span>{{ formAlert.msg }}</span>
                   </div>
                 </transition>
@@ -130,7 +130,7 @@
                           @click="form.contactChannel = ch.value"
                           type="button"
                         >
-                          {{ ch.icon }} {{ ch.label }}
+                          <i :class="ch.icon"></i> {{ ch.label }}
                         </button>
                       </div>
                       <span class="field-err" v-if="submitted && !form.contactChannel">請選擇聯繫管道</span>
@@ -215,11 +215,11 @@ const CONTACT_STATUS_OPTIONS = [
   { value: 'DECLINED',      label: '已放棄'  },
 ]
 const CHANNEL_OPTIONS = [
-  { value: 'PHONE', label: '電話', icon: '📞' },
-  { value: 'EMAIL', label: 'Email', icon: '✉️' },
-  { value: 'SMS',   label: 'SMS',  icon: '💬' },
+  { value: 'PHONE', label: '電話', icon: 'fa-solid fa-square-phone' },
+  { value: 'EMAIL', label: 'Email', icon: 'fa-solid fa-envelope'    },
+  { value: 'SMS',   label: 'SMS',  icon: 'fa-solid fa-comment-sms'  },
 ]
-const CHANNEL_ICON = { PHONE: '📞', EMAIL: '✉️', SMS: '💬' }
+const CHANNEL_ICON = { PHONE: 'fa-solid fa-square-phone', EMAIL: 'fa-solid fa-envelope', SMS: 'fa-solid fa-comment-sms' }
 
 // ── State ──
 const logs        = ref([])

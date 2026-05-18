@@ -41,7 +41,7 @@
           :class="{ open: typeDropdownOpen, active: selectedTypes.length > 0 }"
           @click="typeDropdownOpen = !typeDropdownOpen"
         >
-          <span class="trigger-icon">🏷</span>
+          <span class="trigger-icon"><i class="fa-solid fa-filter"></i></span>
           <span v-if="selectedTypes.length === 0">貸款類型</span>
           <span v-else-if="selectedTypes.length === 1">{{ LOAN_TYPE_NAME[selectedTypes[0]] }}</span>
           <span v-else>已選 {{ selectedTypes.length }} 種</span>
@@ -96,7 +96,7 @@
 
       <!-- 姓名模糊搜尋 -->
       <div class="name-search-wrap">
-        <span class="name-search-icon">🔍</span>
+        <span class="name-search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
         <input
           class="name-search-input"
           type="text"
@@ -109,7 +109,7 @@
           class="name-search-clear"
           @click="nameQuery = ''; currentPage = 1"
           title="清除"
-        >✕</button>
+        ><i class="fa-solid fa-x"></i></button>
       </div>
 
       <!-- 結果摘要 -->
@@ -124,7 +124,7 @@
     </div>
 
     <!-- ── 錯誤提示 ── -->
-    <div v-if="error" class="alert-error"><span>⚠️</span> {{ error }}</div>
+    <div v-if="error" class="alert-error"><span><i class="fa-solid fa-triangle-exclamation"></i></span> {{ error }}</div>
 
     <!-- ── Table Card ── -->
     <div class="table-card">
@@ -162,7 +162,7 @@
 
       <!-- Empty -->
       <div v-else-if="filteredApplications.length === 0" class="empty-state">
-        <div class="empty-icon">📭</div>
+        <div class="empty-icon"><i class="fa-solid fa-inbox"></i></div>
         <p>此條件下目前沒有申請記錄</p>
       </div>
 
@@ -219,8 +219,8 @@
               <div v-else class="applicant-nonmember">
                 <div class="nm-name">{{ app.applicantName || '—' }}</div>
                 <div class="nm-meta">
-                  <span v-if="app.applicantPhone">📞 {{ app.applicantPhone }}</span>
-                  <span v-if="app.applicantEmail" class="nm-email">✉ {{ app.applicantEmail }}</span>
+                  <span v-if="app.applicantPhone"><i class="fa-solid fa-square-phone"></i> {{ app.applicantPhone }}</span>
+                  <span v-if="app.applicantEmail" class="nm-email"><i class="fa-solid fa-envelope"></i> {{ app.applicantEmail }}</span>
                 </div>
               </div>
             </td>
@@ -235,7 +235,7 @@
             <!-- 金額 -->
             <td>
               <div class="amount">{{ formatAmount(displayAmount(app)) }}</div>
-              <div class="confirmed-hint" v-if="isConfirmedValue(app)">✓ 確認值</div>
+              <div class="confirmed-hint" v-if="isConfirmedValue(app)"><i class="fa-solid fa-check"></i> 確認值</div>
             </td>
 
             <!-- 期數 -->
@@ -282,7 +282,7 @@
                     @click="openContactModal(app)"
                     title="聯繫紀錄"
                   >
-                    📞
+                    <i class="fa-solid fa-phone-volume"></i>
                   </button>
                   <!-- 審核填單：需 permLevel >= 2 (CFDM 主管以上) -->
                   <button
@@ -292,7 +292,7 @@
                     :disabled="!canApprove"
                     :title="canApprove ? '審核填單' : '權限不足：需主管 (CFDM) 以上才能審核'"
                   >
-                    🗂
+                    <i class="fa-solid fa-user-check"></i>
                   </button>
                   <!-- 補件文件 -->
                   <button
@@ -300,7 +300,7 @@
                     @click="openDocModal(app)"
                     title="補件文件"
                   >
-                    📎
+                    <i class="fa-solid fa-folder"></i>
                   </button>
                 </div>
               </td>
@@ -1057,10 +1057,11 @@ onUnmounted(() => clearInterval(refreshTimer))
 }
 
 .dropdown-item input[type='checkbox']:checked + .check-box::after {
-  content: '✓';
+  content: '\f00c';
+  font-family: 'Font Awesome 6 Free';
   font-size: 10px;
   color: #fff;
-  font-weight: 700;
+  font-weight: 900;
   line-height: 1;
 }
 

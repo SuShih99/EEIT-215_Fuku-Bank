@@ -404,7 +404,17 @@ public class AccountIntegrationService {
     public CreditCardPaymentResponse payCreditCard(String customerId, CreditCardPaymentRequest request) {
         BigDecimal amount = normalizePositiveAmount(request.getAmount(), "信用卡繳款金額");
         String fromAccountNumber = normalizeAccountNumber(request.getFromAccountNumber());
-        String creditCardAccountNumber = normalizeAccountNumber(request.getCreditCardAccountNumber());
+
+        // 直接用 customerId 從 account 表查出 CREDIT_CARD 帳戶，
+        // 避免前端傳入的 creditCardAccountNumber 是 CardAccount.accountNumber（不在 account 表）
+        String creditCardAccountNumber = accountRepository
+                .findAllByCustomerIdAndAccountTypeAndCurrencyAndStatus(
+                        customerId, AccountType.CREDIT_CARD, Currency.TWD, AccountStatus.ACTIVE)
+                .stream()
+                .findFirst()
+                .map(Account::getAccountNumber)
+                .orElseThrow(() -> new AccountException("CREDIT_CARD_ACCOUNT_NOT_FOUND", "找不到有效的信用卡繳款帳戶"));
+
         Map<String, Account> accounts = lockAccounts(
                 fromAccountNumber,
                 creditCardAccountNumber);

@@ -58,8 +58,8 @@ CREATE TABLE #mock_accounts (
 
 -- Bank business accounts used by loan/card/account integrations.
 INSERT INTO #mock_accounts VALUES
-('909000000001', 'BANK_INTERNAL', 'BUSINESS', 'TWD', 999999999999.0000, 0.0000, NULL, 'ACTIVE', NULL, '2026-01-01 09:00:00', '2026-05-13 09:00:00', 'system', 'mock'),
-('909000000002', 'BANK_INTERNAL', 'BUSINESS', 'TWD', 0.0000, 0.0000, NULL, 'ACTIVE', NULL, '2026-01-01 09:00:00', '2026-05-13 09:00:00', 'system', 'mock');
+('909000000001', 'BANK_INTERNAL', 'BUSINESS', 'TWD', 999999999999.0000, 0.0000, NULL, 'ACTIVE', NULL, '2026-01-01 09:00:00', '2026-05-13 09:00:00', N'總行', N'總行'),
+('909000000002', 'BANK_INTERNAL', 'BUSINESS', 'TWD', 0.0000, 0.0000, NULL, 'ACTIVE', NULL, '2026-01-01 09:00:00', '2026-05-13 09:00:00', N'總行', N'總行');
 
 -- One TWD checking account per customer.
 INSERT INTO #mock_accounts (
@@ -78,8 +78,8 @@ SELECT
     NULL,
     DATEADD(DAY, -120 + rn, CAST('2026-05-13 09:00:00' AS DATETIME2)),
     CAST('2026-05-13 09:00:00' AS DATETIME2),
-    'mock',
-    'mock'
+    N'總行',
+    N'總行'
 FROM #customers;
 
 -- Foreign currency savings accounts for customers who applied for FX services.
@@ -102,8 +102,8 @@ SELECT
     NULL,
     DATEADD(DAY, -90 + rn, CAST('2026-05-13 09:00:00' AS DATETIME2)),
     CAST('2026-05-13 09:00:00' AS DATETIME2),
-    'mock',
-    'mock'
+    N'總行',
+    N'總行'
 FROM #customers
 WHERE rn <= 24 AND status = 'ACTIVE';
 
@@ -128,8 +128,8 @@ SELECT
     NULL,
     DATEADD(DAY, -75 + rn, CAST('2026-05-13 09:00:00' AS DATETIME2)),
     CAST('2026-05-13 09:00:00' AS DATETIME2),
-    'mock',
-    'mock'
+    N'總行',
+    N'總行'
 FROM #customers
 WHERE rn <= 12 AND status = 'ACTIVE';
 
@@ -150,8 +150,8 @@ SELECT
     '070' + RIGHT(REPLICATE('0', 9) + CAST(rn AS VARCHAR(9)), 9),
     DATEADD(DAY, -45 + rn, CAST('2026-05-13 09:00:00' AS DATETIME2)),
     CAST('2026-05-13 09:00:00' AS DATETIME2),
-    'mock',
-    'mock'
+    N'總行',
+    N'總行'
 FROM #customers
 WHERE rn <= 10 AND status = 'ACTIVE';
 
@@ -172,8 +172,8 @@ SELECT
     NULL,
     DATEADD(DAY, -35 + rn, CAST('2026-05-13 09:00:00' AS DATETIME2)),
     CAST('2026-05-13 09:00:00' AS DATETIME2),
-    'mock',
-    'mock'
+    N'總行',
+    N'總行'
 FROM #customers
 WHERE rn <= 8 AND status = 'ACTIVE';
 
@@ -194,8 +194,8 @@ SELECT
     NULL,
     DATEADD(DAY, -20 + rn, CAST('2026-05-13 09:00:00' AS DATETIME2)),
     CAST('2026-05-13 09:00:00' AS DATETIME2),
-    'mock',
-    'mock'
+    N'總行',
+    N'總行'
 FROM #customers
 WHERE rn <= 5 AND status = 'ACTIVE';
 
@@ -336,7 +336,7 @@ BEGIN
         status,
         N'Mock data initial status',
         created_at,
-        'mock'
+        N'總行'
     FROM #mock_accounts
     WHERE account_type <> 'BUSINESS';
 END;

@@ -13,6 +13,7 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -109,6 +110,36 @@ public class EmailService {
         // 使用溫和的主旨，不使用「風控」、「審核」、「攔截」等字眼
         sendEmail(to, "Java Easy Bank - 轉帳交易處理進度通知", html);
     }
+    //月結信用卡帳單
+    public void sendCardBillStatementEmail(
+        String to,
+        String customerName,
+        String billingMonth,
+        BigDecimal totalAmount,
+        BigDecimal minimumPayment,
+        LocalDate dueDate,
+        Integer billId) {
+
+    Context context = new Context();
+
+    context.setVariable("customerName", customerName);
+    context.setVariable("billingMonth", billingMonth);
+    context.setVariable("totalAmount", totalAmount);
+    context.setVariable("minimumPayment", minimumPayment);
+    context.setVariable("dueDate", dueDate);
+    context.setVariable("billId", billId);
+
+    String html = templateEngine.process(
+            "mail/card-bill-statement",
+            context
+    );
+
+    sendEmail(
+            to,
+            "Java Easy Bank - 信用卡月結帳單通知",
+            html
+    );
+}
 
     public void sendLoanDocumentRequiredNotification(
             String to,

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>信用卡月結帳單通知</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f6f8; font-family:Arial, 'Microsoft JhengHei', sans-serif; color:#333;">
+
+<div style="max-width:640px; margin:0 auto; background-color:#ffffff; padding:32px;">
+
+    <h2 style="margin-top:0; color:#1f3a5f;">
+        Java Easy Bank 信用卡月結帳單通知
+    </h2>
+
+    <p>
+        親愛的 <strong th:text="${customerName}">客戶</strong> 您好：
+    </p>
+
+    <p>
+        您的信用卡帳單已完成結算，以下為本期帳單摘要：
+    </p>
+
+    <table style="width:100%; border-collapse:collapse; margin:24px 0;">
+        <tr>
+            <td style="padding:12px; border:1px solid #ddd; background-color:#f8f9fa;">帳單月份</td>
+            <td style="padding:12px; border:1px solid #ddd;" th:text="${billingMonth}">2026-05</td>
+        </tr>
+        <tr>
+            <td style="padding:12px; border:1px solid #ddd; background-color:#f8f9fa;">本期應繳金額</td>
+            <td style="padding:12px; border:1px solid #ddd;">
+                NT$ <span th:text="${totalAmount}">0</span>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:12px; border:1px solid #ddd; background-color:#f8f9fa;">最低應繳金額</td>
+            <td style="padding:12px; border:1px solid #ddd;">
+                NT$ <span th:text="${minimumPayment}">0</span>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:12px; border:1px solid #ddd; background-color:#f8f9fa;">繳款截止日</td>
+            <td style="padding:12px; border:1px solid #ddd;" th:text="${dueDate}">2026-06-01</td>
+        </tr>
+    </table>
+
+    <p style="font-size:14px; color:#666;">
+        請於繳款截止日前完成繳款，以維持良好的信用紀錄。
+    </p>
+
+    <p style="font-size:14px; color:#666;">
+        若您已完成繳款，請忽略此通知。
+    </p>
+
+    <hr style="border:none; border-top:1px solid #eee; margin:32px 0;">
+
+    <p style="font-size:12px; color:#999;">
+        本信件由系統自動發送，請勿直接回覆。<br>
+        Java Easy Bank
+    </p>
+
+</div>
+
+</body>
+</html>

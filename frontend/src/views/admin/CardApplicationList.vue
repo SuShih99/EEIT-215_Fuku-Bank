@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { message, Modal } from 'ant-design-vue'
+import { SearchOutlined,SyncOutlined } from '@ant-design/icons-vue'
 import {
   getApplications,
   deleteApplication,
@@ -9,7 +10,7 @@ import {
 } from '@/api/cardApplication'
 import { useRouter } from 'vue-router'
 import dayjs from 'dayjs'
-import { DownOutlined, SearchOutlined,SyncOutlined } from '@ant-design/icons-vue'
+
 
 const router = useRouter()
 

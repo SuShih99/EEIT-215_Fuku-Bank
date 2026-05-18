@@ -876,7 +876,7 @@ onMounted(async () => {
 
 .eyebrow {
   font-family: var(--font-display);
-  font-size: var(--text-xs);
+  font-size: 14px;
   letter-spacing: 0.2em;
   color: var(--text-disabled);
   margin-bottom: var(--space-2);
@@ -884,7 +884,7 @@ onMounted(async () => {
 
 .page-title {
   font-family: var(--font-heading);
-  font-size: var(--text-h1);
+  font-size: 52px;
   color: var(--text-primary);
   margin-bottom: var(--space-3);
 }
@@ -898,13 +898,24 @@ onMounted(async () => {
 
 .page-subtitle {
   color: var(--text-secondary);
+  font-size: 16px;
+}
+
+.helper-text {
+  margin-top: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(92, 107, 95, 0.06);
+  border-left: 3px solid var(--primary);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.6;
 }
 
 .mock-btn {
   margin-top: var(--space-3);
-  padding: 6px 16px;
-  font-size: var(--text-xs);
+  padding: 8px 20px;
+  font-size: 13px;
   font-family: var(--font-body);
   font-weight: 500;
   color: var(--accent);
@@ -950,14 +961,14 @@ onMounted(async () => {
 }
 
 .stepper-dot {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   border: 2px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-disabled);
   background: var(--bg-card);
@@ -979,7 +990,7 @@ onMounted(async () => {
 }
 
 .stepper-label {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--text-disabled);
   text-align: center;
   white-space: nowrap;

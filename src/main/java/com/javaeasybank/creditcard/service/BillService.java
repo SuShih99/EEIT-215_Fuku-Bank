@@ -17,6 +17,7 @@ import com.javaeasybank.account.dto.response.CashResponse;
 import com.javaeasybank.account.service.AccountIntegrationService;
 import com.javaeasybank.account.service.TransferService;
 import com.javaeasybank.common.exception.BusinessException;
+import com.javaeasybank.common.service.EmailService;
 import com.javaeasybank.creditcard.dto.CardBillResponseDto;
 import com.javaeasybank.creditcard.entity.CardAccount;
 import com.javaeasybank.creditcard.entity.CardBill;
@@ -42,6 +43,7 @@ public class BillService {
     private final CardTxnRepository cardTransactionRepository;
     private final TransferService transferService;
     private final AccountIntegrationService accountIntegrationService;
+    private final EmailService emailService;
 
     // 查帳單
 
@@ -100,6 +102,15 @@ public class BillService {
             bill.setRewardPosted(false);
 
             CardBill savedBill = cardBillRepository.save(bill);
+
+            emailService.sendCardBillStatementEmail(
+                    cardAccount.getCustomer().getEmail(),
+                    cardAccount.getCustomer().getName(),
+                    billingMonth,
+                    total,
+                    minimumPayment,
+                    savedBill.getDueDate(),
+                    savedBill.getBillId());
 
             postCashbackReward(savedBill, cardAccount, cashbackAmount, billingMonth);
 

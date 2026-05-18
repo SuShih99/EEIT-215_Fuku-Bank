@@ -164,7 +164,6 @@ const stats = computed(() => {
 // ── 快捷入口：依角色切換 ──
 const businessShortcuts = [
   { label: '帳戶管理',   desc: '查看與管理帳戶',    route: '/admin/accounts',          icon: BankOutlined,    bg: '#e6f7ff', color: '#1890ff' },
-  { label: '交易操作',   desc: '存款/提款/轉帳/沖正', route: '/admin/transfers',        icon: DollarOutlined,  bg: '#f6ffed', color: '#52c41a' },
   { label: '交易紀錄',   desc: '查看所有交易紀錄',    route: '/admin/trans-logs',       icon: FileTextOutlined,bg: '#fff7e6', color: '#fa8c16' },
   { label: '貸款管理',   desc: '審核貸款申請',       route: '/admin/loan-applications', icon: AuditOutlined,   bg: '#f9f0ff', color: '#722ed1' },
   { label: '風險事件',   desc: '監控異常風險',       route: '/admin/risk-events',       icon: AlertOutlined,   bg: '#fff1f0', color: '#f5222d' },
@@ -228,6 +227,7 @@ function formatDate(d) {
   if (!d) return ''
   return new Date(d).toLocaleString('zh-TW')
 }
+
 
 // ── 載入資料 ──
 async function loadStats() {
@@ -396,19 +396,24 @@ onUnmounted(() => {
 /* ── 快捷入口 ── */
 .shortcut-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 14px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
   margin-bottom: 28px;
 }
 
 .shortcut-card {
   background: #fff;
-  border-radius: 10px;
-  padding: 20px 16px;
+  border-radius: 14px;
+  padding: 28px 16px 24px;
   text-align: center;
   cursor: pointer;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 130px;
 }
 
 .shortcut-card:hover {

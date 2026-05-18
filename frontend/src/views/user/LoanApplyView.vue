@@ -48,7 +48,7 @@
             class="showcase-card"
             :class="{ active: showcaseIndex === LOAN_TYPE_LIST.indexOf(t) }"
           >
-            <div class="sc-icon">{{ t.icon }}</div>
+            <div class="sc-icon"><i :class="t.icon"></i></div>
             <div class="sc-name">{{ t.name }}</div>
             <div class="sc-rate" v-if="rateRules?.types?.[t.key]">
               年利率低至 <strong>{{ (rateRules.types[t.key].baseRate * 100).toFixed(1) }}%</strong>
@@ -193,7 +193,7 @@
                   :class="{ selected: form.applyType === t.key, ['tc-' + t.key]: true }"
                   @click="onTypeSelect(t.key)"
                 >
-                  <span class="tc-icon">{{ t.icon }}</span>
+                  <span class="tc-icon"><i :class="t.icon"></i></span>
                   <span class="tc-name">{{ t.name }}</span>
                   <span class="tc-rate" v-if="rateRules?.types?.[t.key]">
                     {{ (rateRules.types[t.key].baseRate * 100).toFixed(1) }}% 起
@@ -362,13 +362,13 @@ const BASE_URL = 'http://localhost:8080'
 const router = useRouter()
 
 const LOAN_TYPE_LIST = [
-  { key: 'PERSONAL', name: '個人信貸', icon: '💳', desc: '靈活周轉，快速撥款到帳'      },
-  { key: 'CAR',      name: '汽車貸款', icon: '🚗', desc: '購車首選，利率優惠方案'      },
-  { key: 'MOTOR',    name: '機車貸款', icon: '🛵', desc: '輕鬆入手，分期無壓力'        },
-  { key: 'STUDENT',  name: '學貸',     icon: '🎓', desc: '安心就學，低利固定利率'      },
-  { key: 'BUSINESS', name: '創業貸款', icon: '🏢', desc: '創業圓夢，專業諮詢服務'      },
-  { key: 'HOUSE',    name: '房屋貸款', icon: '🏠', desc: '長期低利，安心置產的最佳選擇' },
-  { key: 'LAND',     name: '土地貸款', icon: '🌍', desc: '土地投資，靈活運用資金'      },
+  { key: 'PERSONAL', name: '個人信貸', icon: 'fa-solid fa-address-card',  desc: '靈活周轉，快速撥款到帳'      },
+  { key: 'CAR',      name: '汽車貸款', icon: 'fa-solid fa-car',           desc: '購車首選，利率優惠方案'      },
+  { key: 'MOTOR',    name: '機車貸款', icon: 'fa-solid fa-motorcycle',    desc: '輕鬆入手，分期無壓力'        },
+  { key: 'STUDENT',  name: '學貸',     icon: 'fa-solid fa-user-graduate', desc: '安心就學，低利固定利率'      },
+  { key: 'BUSINESS', name: '創業貸款', icon: 'fa-solid fa-briefcase',     desc: '創業圓夢，專業諮詢服務'      },
+  { key: 'HOUSE',    name: '房屋貸款', icon: 'fa-solid fa-house-chimney', desc: '長期低利，安心置產的最佳選擇' },
+  { key: 'LAND',     name: '土地貸款', icon: 'fa-solid fa-earth-asia',    desc: '土地投資，靈活運用資金'      },
 ]
 const LOAN_TYPE_MAP = Object.fromEntries(LOAN_TYPE_LIST.map(t => [t.key, t.name]))
 
@@ -1146,4 +1146,45 @@ onUnmounted(() => clearInterval(showcaseTimer))
 .aic-val.green {
   color: var(--primary); font-family: 'IBM Plex Mono', monospace; font-weight: 600;
 }
+
+/* ── 表單步驟字體 +2px ── */
+.step-header .back-btn      { font-size: 15px; }
+.step-header .step-indicator { font-size: 14px; }
+
+.form-main .ai-label         { font-size: 13px; }
+.form-main .ai-value         { font-size: 16px; }
+.form-main .form-error-banner { font-size: 15px; }
+.form-main .section-label    { font-size: 13px; }
+.form-main .field label      { font-size: 14px; }
+.form-main .err-msg          { font-size: 13px; }
+.form-main .field-hint       { font-size: 13px; }
+.form-main .field input      { font-size: 16px; }
+.form-main .field-textarea   { font-size: 16px; }
+.form-main .id-notice        { font-size: 14px; }
+.form-main .notice-icon      { font-size: 15px; }
+.form-main .input-prefix     { font-size: 16px; }
+.form-main .tc-name          { font-size: 13px; }
+.form-main .tc-rate          { font-size: 12px; }
+.form-main .period-btn       { font-size: 15px; }
+.form-main .period-placeholder { font-size: 15px; }
+.form-main .acct-loading     { font-size: 15px; }
+.form-main .acct-empty-title { font-size: 15px; }
+.form-main .acct-empty-sub   { font-size: 14px; }
+.form-main .acct-error       { font-size: 15px; }
+.form-main .acct-select      { font-size: 15px; }
+.form-main .acct-select-caret { font-size: 13px; }
+.form-main .aic-row          { font-size: 14px; }
+.form-main .btn-submit       { font-size: 17px; }
+
+.rate-sidebar .rate-card-label { font-size: 13px; }
+.rate-sidebar .rate-big        { font-size: 46px; }
+.rate-sidebar .rate-unit       { font-size: 24px; }
+.rate-sidebar .rate-empty      { font-size: 38px; }
+.rate-sidebar .rb-row          { font-size: 14px; }
+.rate-sidebar .rb-total        { font-size: 15px; }
+.rate-sidebar .rh-row          { font-size: 14px; }
+.rate-sidebar .rh-val          { font-size: 17px; }
+.rate-sidebar .rh-note         { font-size: 12px; }
+.rate-sidebar .tip-title       { font-size: 13px; }
+.rate-sidebar .rate-tips li    { font-size: 13px; }
 </style>

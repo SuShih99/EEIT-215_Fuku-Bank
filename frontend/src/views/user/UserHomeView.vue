@@ -53,7 +53,7 @@
             <p class="profile-meta-id">帳號 {{ maskedId }}</p>
           </div>
         </div>
-        
+
         <div class="profile-divider"></div>
 
         <div class="profile-details">
@@ -81,11 +81,11 @@
             <p class="asset-overview-subtitle">淨資產（折合臺幣）</p>
           </div>
           <button class="toggle-visibility-btn" @click="showAmounts = !showAmounts" :aria-label="showAmounts ? '隱藏金額' : '顯示金額'">
-            <svg v-if="showAmounts" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+            <svg v-if="showAmounts" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <svg v-else width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
           </button>
         </div>
-        
+
         <div class="asset-main-amount">
           <span class="asset-currency-symbol">$</span>
           <span class="asset-total-amount">{{ formatMoney(Math.round(assetData.netAsset)) }}</span>
@@ -354,7 +354,9 @@ const customerInitial = computed(() => (customerAuthStore.customer?.name || '會
 const avatarSrc = computed(() => {
   const url = customerAuthStore.customer?.avatarUrl
   if (!url) return null
-  return url.startsWith('http') ? url : BASE_URL + url
+  if (url.startsWith('http')) return url
+  if (url.startsWith('/uploads/')) return BASE_URL + url
+  return url
 })
 const maskedId = computed(() => {
   const id = customerAuthStore.customer?.username || 'user0001'
@@ -493,7 +495,7 @@ function generateMockLine(months) {
   for (let i = months; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
     labels.push(`${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}`)
-    
+
     if (i === 0) {
       twdData.push(currentTwd)
       fxData.push(currentFx)
@@ -601,23 +603,23 @@ async function fetchExchangeRates() {
   try {
     const res = await api.get('/api/public/exchange-rates')
     const rates = res.data.data.rates
-    
+
     // Update timestamp
     const d = new Date()
     exchangeTime.value = `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-    
+
     // Convert base 1 TWD = X currency to 1 currency = Y TWD
     exchangeRates.value = exchangeRates.value.map(currency => {
       const rateToTwd = rates[currency.code]
       if (!rateToTwd) return currency
-      
+
       const midRate = 1 / rateToTwd
       const sell = (midRate * 0.995).toFixed(4)
       const buy = (midRate * 1.005).toFixed(4)
-      
+
       return { ...currency, sell, buy }
     })
-    
+
     // 匯率更新後，重新計算外幣資產
     calculateAssets()
   } catch (e) {
@@ -902,6 +904,9 @@ onMounted(async () => {
 }
 
 .toggle-visibility-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
   color: var(--text-secondary);

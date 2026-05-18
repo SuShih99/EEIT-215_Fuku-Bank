@@ -14,16 +14,10 @@
     <section class="exchange-shell">
       <a-form
         class="exchange-form"
-        :class="{ breathing: rateBreathing }"
         :model="form"
         layout="vertical"
         @finish="handleExchange"
       >
-        <div v-if="rateBreathing" class="exchange-loading-breath">
-          <span class="breath-orb" aria-hidden="true"></span>
-          <strong>匯率更新中</strong>
-        </div>
-
         <div class="form-grid">
           <a-form-item label="轉出帳戶" name="fromAccountNumber" :rules="[{ required: true, message: '請選擇轉出帳戶' }]">
             <a-select
@@ -92,8 +86,12 @@
         </a-button>
       </a-form>
 
-      <aside class="rate-panel">
+      <aside class="rate-panel" :class="{ breathing: rateBreathing }">
         <div class="panel-title">常用匯率</div>
+        <div v-if="rateBreathing" class="rate-loading-breath">
+          <span class="breath-orb" aria-hidden="true"></span>
+          <strong>匯率更新中</strong>
+        </div>
         <div v-if="rateRows.length === 0" class="empty-rate">尚無匯率資料</div>
         <div v-for="row in rateRows" :key="row.code" class="rate-row">
           <span>{{ row.name }} {{ row.code }}</span>
@@ -110,13 +108,30 @@
         </template>
       </a-result>
     </a-modal>
+
+    <!-- 無外幣帳戶提示 modal -->
+    <transition name="modal-fade">
+      <div v-if="showNoForeignModal" class="jb-modal-overlay">
+        <div class="jb-modal jb-card">
+          <h3 class="jb-modal-title">尚未擁有外幣帳戶</h3>
+          <p class="jb-modal-content">您目前沒有任何外幣存款帳戶，無法使用換匯服務。<br/>請先前往開戶申請頁面申請外幣活期存款帳戶。</p>
+          <div class="jb-modal-actions">
+            <button class="jb-btn jb-btn-secondary" @click="goHome">返回首頁</button>
+            <button class="jb-btn jb-btn-primary" @click="goToApply">前往申請</button>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { doExchange, getExchangeRates, getMyAccounts } from '@/api/customerAccount'
+
+const router = useRouter()
 
 const currencyNames = {
   TWD: '臺幣',
@@ -148,6 +163,7 @@ const showResult = ref(false)
 const resultStatus = ref('success')
 const resultTitle = ref('')
 const resultSub = ref('')
+const showNoForeignModal = ref(false)
 
 const exchangeAccounts = computed(() =>
   accounts.value.filter(a => a.status === 'ACTIVE' && a.accountType !== 'LOAN'),
@@ -206,8 +222,26 @@ const rateRows = computed(() => ['USD', 'JPY', 'EUR', 'GBP', 'CNY']
 
 onMounted(async () => {
   await Promise.all([loadAccounts(), loadRates()])
+
+  // 檢查是否有外幣帳戶（非 TWD 且 ACTIVE）
+  const hasForeignAccount = accounts.value.some(
+    a => a.status === 'ACTIVE' && a.currency !== 'TWD' && a.accountType !== 'LOAN'
+  )
+  if (!hasForeignAccount) {
+    showNoForeignModal.value = true
+    return
+  }
+
   pickDefaultAccounts()
 })
+
+function goToApply() {
+  router.push({ name: 'user-account-application' })
+}
+
+function goHome() {
+  router.push({ name: 'user-home' })
+}
 
 async function loadAccounts() {
   try {
@@ -377,41 +411,7 @@ h2 {
 }
 
 .exchange-shell > form {
-  position: relative;
-  overflow: hidden;
   padding: 28px;
-}
-
-.exchange-form.breathing {
-  animation: exchangeBreath 1.55s ease-in-out infinite;
-}
-
-.exchange-loading-breath {
-  position: absolute;
-  inset: 0;
-  z-index: 4;
-  display: grid;
-  place-items: center;
-  gap: 10px;
-  color: var(--primary-dark);
-  text-align: center;
-  background: rgba(255, 249, 239, 0.64);
-  backdrop-filter: blur(1px);
-}
-
-.exchange-loading-breath strong {
-  font-family: var(--font-heading);
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.breath-orb {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  border: 1px solid rgba(92, 107, 95, 0.28);
-  background: radial-gradient(circle, rgba(92, 107, 95, 0.28), rgba(92, 107, 95, 0.06) 64%, transparent 68%);
-  animation: breathOrb 1.55s ease-in-out infinite;
 }
 
 .form-grid {
@@ -471,8 +471,42 @@ h2 {
 }
 
 .rate-panel {
+  position: relative;
+  overflow: hidden;
   align-self: start;
   padding: 22px;
+}
+
+.rate-panel.breathing {
+  animation: exchangeBreath 1.55s ease-in-out infinite;
+}
+
+.rate-loading-breath {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  color: var(--primary-dark);
+  text-align: center;
+  background: rgba(255, 249, 239, 0.68);
+  backdrop-filter: blur(1px);
+}
+
+.rate-loading-breath strong {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.breath-orb {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 1px solid rgba(92, 107, 95, 0.28);
+  background: radial-gradient(circle, rgba(92, 107, 95, 0.28), rgba(92, 107, 95, 0.06) 64%, transparent 68%);
+  animation: breathOrb 1.55s ease-in-out infinite;
 }
 
 .panel-title {
@@ -548,6 +582,74 @@ h2 {
     opacity: 1;
     transform: scale(1);
   }
+}
+
+/* === Modal Styles === */
+.jb-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(43, 43, 43, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.jb-modal {
+  width: 90%;
+  max-width: 400px;
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  border-radius: 12px;
+  background: rgba(255, 249, 239, 0.96);
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  box-shadow: 0 12px 36px rgba(63, 74, 66, 0.12);
+}
+.jb-modal-title {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+.jb-modal-content {
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.6;
+}
+.jb-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+.modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.2s var(--ease); }
+.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
+.jb-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+.jb-btn-primary {
+  background: var(--primary);
+  color: white;
+}
+.jb-btn-primary:hover {
+  background: var(--primary-dark);
+}
+.jb-btn-secondary {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.jb-btn-secondary:hover {
+  border-color: var(--text-primary);
+  color: var(--text-primary);
 }
 
 @media (max-width: 860px) {
