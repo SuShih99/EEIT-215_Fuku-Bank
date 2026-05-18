@@ -78,7 +78,7 @@
         </template>
       </template>
 
-      <template #expandedRowRender="{ record }">
+      <!--<template #expandedRowRender="{ record }">
         <div class="metadata-detail">
           <h4 class="detail-title">原始元數據 (JSON Metadata)</h4>
           <div v-if="record.metaData" class="json-code-box">
@@ -86,7 +86,7 @@
           </div>
           <a-empty v-else description="此事件無附加元數據資訊" :image="false" />
         </div>
-      </template>
+      </template>-->
     </a-table>
   </div>
 </template>

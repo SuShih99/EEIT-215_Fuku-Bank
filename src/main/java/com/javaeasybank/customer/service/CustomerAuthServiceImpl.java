@@ -336,7 +336,7 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
                     customerId,
                     Occupation.fromString(profile.getOccupation()),
                     BigDecimal.valueOf(profile.getAnnualIncome()* 10000L),
-                    profile.getFundSource()!= null ? FundSource.valueOf(profile.getFundSource()): null,
+                    profile.getFundSource()!= null ? mapChineseToEnum(profile.getFundSource()): null,
                     profile.getIsPep()
             );
         } else {
@@ -496,6 +496,36 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
             }
         }
         throw new BusinessException(userErrorMessage);
+    }
+
+    private FundSource mapChineseToEnum(String label) {
+        if (label == null || label.trim().isEmpty()) {
+            return null;
+        }
+
+        switch (label.trim()) {
+            case "薪資":
+                return FundSource.SALARY;
+            case "經營事業收入":
+                return FundSource.BUSINESS_INCOME;
+            case "退休(職)金":
+                return FundSource.RETIREMENT;
+            case "遺產繼承(含贈與)":
+                return FundSource.INHERITANCE;
+            case "理財投資":
+            case "買賣房地產":  // 外部映射：歸類到投資
+            case "租金收入":    // 外部映射：歸類到投資
+                return FundSource.INVESTMENT;
+            case "其他":
+                return FundSource.OTHER;
+            default:
+                // 容錯機制：如果前端傳來的是原始的 Enum 字串（如 "SALARY"），依然能正常解析
+                try {
+                    return FundSource.valueOf(label);
+                } catch (IllegalArgumentException e) {
+                    return FundSource.OTHER; // 真的找不到就給其他
+                }
+        }
     }
 
     private void upsertDevice(String customerId, String ipAddress, String userAgent) {

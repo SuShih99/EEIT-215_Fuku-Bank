@@ -19,9 +19,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -103,7 +105,7 @@ public class ReviewTaskService {
             if (request.getRequiredDocuments() != null && !request.getRequiredDocuments().isEmpty()) {
                 // 序列化存入，例如 ["INCOME_CERT","PROPERTY_CERT"]
                 task.setRequiredDocumentsJson(objectMapper.writeValueAsString(request.getRequiredDocuments()));
-            }else {
+            } else {
                 // APPROVED / REJECTED：結案，清除 substatus
                 task.setSubstatus(null);
                 task.setProcessedAt(LocalDateTime.now());
@@ -129,33 +131,45 @@ public class ReviewTaskService {
             case RETURNED -> Disposition.RETURN;
         };
 
+        List<String> requiredDocs = null;
+        if (task.getRequiredDocumentsJson() != null) {
+            requiredDocs = objectMapper.readValue(
+                    task.getRequiredDocumentsJson(),
+                    new TypeReference<List<String>>() {}
+            );
+        }
         callbackService.notify(
                 eventLog.getCallbackUrl(),
                 disposition,
-                eventLog);
+                eventLog, requiredDocs, task.getAdminComment());
     }
 
     @Transactional
-    public void startProcessing(Long taskId) {
+    public void startProcessing(Long taskId, String currentAuditor) {
         ReviewTask task = rtRepos.findById(taskId)
                 .orElseThrow(() -> new EntityNotFoundException("找不到審核任務：" + taskId));
 
-        // 同時攔截 PROCESSING 和 COMPLETED
-        if ("PROCESSING".equals(task.getStatus()) || "COMPLETED".equals(task.getStatus())) {
-            throw new BusinessException("該案件已被其他人處理或已結案");
-        }
-        // 只允許 PENDING 狀態鎖定
-        if (!"PENDING".equals(task.getStatus())) {
-            throw new BusinessException("該案件狀態異常，無法鎖定");
+        // 1. 如果已經是 PROCESSING，且鎖定人不是自己，才阻擋
+        if ("PROCESSING".equals(task.getStatus())) {
+            if (task.getAssignee() != null && !task.getAssignee().equals(currentAuditor)) {
+                throw new BusinessException("該案件已被其他審核人員處理中");
+            }
+            // 如果已經是 PROCESSING 且 assignee 就是自己，直接 return 即可，不需重複處理
+            return;
         }
 
-        // 取得目前登入的風控人員帳號
-        String currentAuditor = SecurityContextHolder.getContext().getAuthentication().getName();
+        // 2. 如果是已結案，絕對不允許再處理
+        if ("COMPLETED".equals(task.getStatus())) {
+            throw new BusinessException("該案件已結案，無法重新審核");
+        }
 
-        // 鎖定案件
+        //
+        // 只要不是已結案，且沒被別的管理員鎖定，不論原本是 PENDING 還是補件狀態（如 WAITING_DOCUMENT）
+        // 當管理員點擊「開始審核」時，都允許強制覆蓋為當前管理員
         task.setStatus("PROCESSING");
         task.setSubstatus("IN_REVIEW");
-        task.setAssignee(currentAuditor); // 提早綁定審核人
+        task.setAssignee(currentAuditor);
+
         rtRepos.save(task);
 
         log.info("[ReviewTask] 案件已被鎖定開始處理 taskId={} auditor={}", taskId, currentAuditor);
@@ -163,22 +177,26 @@ public class ReviewTaskService {
 
     @Transactional
     public void attachDocuments(String businessId, List<RiskAttachmentRequest.AttachmentDetail> documents) {
-        ReviewTask task = rtRepos.findFirstByBusinessIdAndStatusOrderByCreateAtDesc(businessId,"PENDING").orElse(null);
+        ReviewTask task = rtRepos.findFirstByBusinessIdAndStatusOrderByCreateAtDesc(businessId, "PENDING").orElse(null);
         if (task == null) {
-            log.warn("[ReviewTask] 找不到對應任務，略過補件附件 businessId={}", businessId);
+            log.warn("[ReviewTask] 找不到對應 PENDING 任務，略過補件附件 businessId={}", businessId);
             return;
         }
         try {
             task.setAttachments(objectMapper.writeValueAsString(documents));
-            // 動態提高該任務的優先級（Priority）
-            //這樣這筆案子就會在前端列表彈到最上方，提醒審核人員：「客戶補件了，請優先覆審！」
+
+            task.setSubstatus("RESUBMITTED");
+
+            // 如果原本是低優先級(>2)，動態提升任務優先級至 2；若原本就是高風險(1或2)則保持不變
             if (task.getPriority() != null && task.getPriority() > 2) {
-                task.setSubstatus("RESUBMITTED");
                 task.setPriority(2);
                 log.info("[ReviewTask] 客戶已完成補件，動態提升任務優先級至 2 (High Priority)");
             }
+
+            task.setAssignee(null);
+
             rtRepos.save(task);
-            log.info("[ReviewTask] 補件附件已更新 taskId={} businessId={}", task.getTaskId(), businessId);
+            log.info("[ReviewTask] 補件附件已更新，案件已成功釋放。taskId={} businessId={}", task.getTaskId(), businessId);
         } catch (Exception e) {
             log.error("[ReviewTask] 補件附件序列化失敗 businessId={}", businessId, e);
         }

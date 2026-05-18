@@ -164,15 +164,23 @@ const rules = computed(() => ({
   reason: [{ required: true, message: '請輸入原因', trigger: 'blur' }],
 }))
 
+function formatDate(value) {
+  if (!value) return '—'
+  const d = new Date(value)
+  if (isNaN(d)) return value
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 const columns = [
   { title: '類型', dataIndex: 'listType', key: 'listType', width: 120 },
   { title: '資料', dataIndex: 'listValue', key: 'listValue' },
   { title: '原因', dataIndex: 'reason', key: 'reason', ellipsis: true },
   { title: '啟用狀態', dataIndex: 'status', key: 'status', width: 100 },
   { title: '資料來源', dataIndex: 'source', key: 'source', ellipsis: true },
-  { title: '建立時間', dataIndex: 'createdAt', key: 'createdAt', width: 160 },
-  { title: '解封時間', dataIndex: 'expireAt', key: 'expireAt', width: 160 },
-  { title: '更新時間', dataIndex: 'updatedAt', key: 'updatedAt', width: 160 },
+  { title: '建立時間', dataIndex: 'createdAt', key: 'createdAt', width: 160, customRender: ({ text }) => formatDate(text) },
+  { title: '解封時間', dataIndex: 'expireAt', key: 'expireAt', width: 160, customRender: ({ text }) => formatDate(text) },
+  { title: '更新時間', dataIndex: 'updatedAt', key: 'updatedAt', width: 160, customRender: ({ text }) => formatDate(text) },
   { title: '操作', key: 'action', width: 80, fixed: 'right' },
 ]
 

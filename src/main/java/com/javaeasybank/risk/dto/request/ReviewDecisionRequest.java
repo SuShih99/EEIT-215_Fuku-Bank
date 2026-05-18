@@ -4,10 +4,12 @@ import com.javaeasybank.loan.enums.LoanDocumentType;
 import com.javaeasybank.risk.enums.ReviewResult;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
 @Getter
+@Setter
 public class ReviewDecisionRequest {
     /**
      * 最終決策：APPROVED / REJECTED

@@ -336,14 +336,12 @@ public class LoanApplicationService {
 
         // 更新填單狀態
         detail.setReviewStatus(LoanReviewStatus.SUBMITTED);
-        detail.setReviewStatus(LoanReviewStatus.SUBMITTED);
         detail.setSubmittedTime(LocalDateTime.now());
 
         // 同步更新主表狀態
         loan.setApplicationStatus(LoanApplicationStatus.PENDING_REVIEW);
 
         // 準備送出的 DTO
-        loan.setApplicationStatus(LoanApplicationStatus.PENDING_REVIEW);
         loan.setUpdateTime(detail.getSubmittedTime());
 
         LoanRiskRequestDTO riskDto = buildRiskRequest(loan, detail);
@@ -404,6 +402,28 @@ public class LoanApplicationService {
         String caller = dto.getCallerModule();
 
         if ("RISK".equals(caller)) {
+            // 前置狀態：必須是 PENDING_REVIEW, RETURNED
+            if (loan.getApplicationStatus() != LoanApplicationStatus.PENDING_REVIEW
+                    && loan.getApplicationStatus() != LoanApplicationStatus.RETURNED) {
+                throw new BusinessException(
+                        "申請目前狀態為 " + loan.getApplicationStatus() + "，無法套用風控回調");
+            }
+            // 目標狀態允許 APPROVED / REJECTED / RETURNED
+            if (dto.getNewStatus() != LoanApplicationStatus.APPROVED
+                    && dto.getNewStatus() != LoanApplicationStatus.REJECTED
+                    && dto.getNewStatus() != LoanApplicationStatus.RETURNED) {
+                throw new BusinessException("風控回調目標狀態不合法：" + dto.getNewStatus());
+            }
+
+            // 1. 只要有傳入備註就更新 (不論狀態為何)
+            if (dto.getAdminComment() != null && !dto.getAdminComment().isBlank()) {
+                String comment = dto.getAdminComment();
+                // 安全機制：若超過 50 字則截斷，避免資料庫報錯導致事務回滾
+                if (comment.length() > 50) {
+                    comment = comment.substring(0, 47) + "...";
+                }
+                loan.setReviewComment(comment);
+            }
 
             // 攔截風控傳過來的「退回補件」通知
             if (dto.getNewStatus() == LoanApplicationStatus.RETURNED) {
@@ -414,7 +434,19 @@ public class LoanApplicationService {
                 // 清空先前的送出時間，這樣前端網銀的「補件上傳按鈕」才會再度亮起允許客戶操作！
                 loan.setDocumentsSubmittedAt(null);
                 loan.setUpdateTime(LocalDateTime.now());
-                laRepo.save(loan);
+
+                List<String> docs = dto.getRequiredDocuments();
+                if (docs != null && docs.size() == 1) {
+                    String raw = docs.get(0).trim();
+                    if (raw.startsWith("[")) {
+                        // 對方傳了 JSON 字串，手動 parse
+                        raw = raw.replaceAll("[\\[\\]\"]", "");
+                        docs = List.of(raw.split(",\\s*"));
+                    }
+                }
+                if (docs != null && !docs.isEmpty()) {
+                    loan.setRequiredDocuments(String.join(",", docs));
+                }
 
                 String email = customerService.findEmailByCustomerId(loan.getCustomerId());
                 log.info("[LoanCallback] 準備發送補件通知 email={}, applicationId={}", email, loan.getApplicationId());
@@ -490,6 +522,8 @@ public class LoanApplicationService {
         loan.setApplicationStatus(dto.getNewStatus());
         loan.setUpdateTime(LocalDateTime.now());
         laRepo.save(loan);
+        // 強制寫入以確保後續邏輯或回傳能讀到最新值
+        laRepo.flush();
 
         // ACCOUNT 模組撥款確認後，同步建立貸款帳戶
         if ("ACCOUNT".equals(caller)) {
@@ -734,6 +768,11 @@ public class LoanApplicationService {
         dto.setLatestContactStatus(loan.getLatestContactStatus());
         dto.setLatestContactTime(loan.getLatestContactTime());
         dto.setDocumentsSubmittedAt(loan.getDocumentsSubmittedAt());
+        // 帶入補件要求（風控退回時由 handleStatusCallback 寫入）
+        if (loan.getRequiredDocuments() != null && !loan.getRequiredDocuments().isBlank()) {
+            dto.setRequiredDocuments(List.of(loan.getRequiredDocuments().split(",")));
+        }
+        dto.setReviewComment(loan.getReviewComment());
         // 帶入二次填單確認值（有填單才有值，否則 null）
         reviewDetailRepo.findByApplicationId(loan.getApplicationId()).ifPresent(review -> {
             dto.setConfirmedAmount(review.getConfirmedAmount());

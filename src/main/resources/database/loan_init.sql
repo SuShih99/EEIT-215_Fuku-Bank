@@ -23,6 +23,8 @@ CREATE TABLE loan_application
     latest_contact_time     DATETIME2      NULL,
     update_time             DATETIME2      NULL,
     documents_submitted_at  DATETIME2      NULL,     -- 客戶送出補件的時間（NULL = 尚未送出）
+    admin_comment         VARCHAR(50) NULL,
+    requiredDocumentsJson NVARCHAR(MAX) NULL,
     CONSTRAINT PK_LOAN_APPLICATION PRIMARY KEY (application_id)
 );
 
