@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,7 @@ import com.javaeasybank.creditcard.enums.BillStatus;
 import com.javaeasybank.creditcard.mapper.CardBillMapper;
 import com.javaeasybank.creditcard.repository.CardAccountRepository;
 import com.javaeasybank.creditcard.repository.CardBillRepository;
+import com.javaeasybank.creditcard.repository.CardBillSpecification;
 import com.javaeasybank.creditcard.repository.CardTxnRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -44,11 +46,17 @@ public class BillService {
     private final TransferService transferService;
     private final AccountIntegrationService accountIntegrationService;
     private final EmailService emailService;
+    private final CardBillPDFService cardBillPDFService;
 
     // 查帳單
 
-    public Page<CardBillResponseDto> getBills(Pageable pageable) {
-        return cardBillRepository.findAll(pageable).map(cardBillMapper::toDto);
+    public Page<CardBillResponseDto> getBills(String customerName,
+        String billingMonth,
+        BillStatus billStatus,
+        Pageable pageable) {
+        Specification<CardBill> spec =
+            CardBillSpecification.search(customerName, billingMonth, billStatus);
+        return cardBillRepository.findAll(spec,pageable).map(cardBillMapper::toDto);
     }
 
     // 產生帳單
@@ -103,14 +111,34 @@ public class BillService {
 
             CardBill savedBill = cardBillRepository.save(bill);
 
-            emailService.sendCardBillStatementEmail(
-                    cardAccount.getCustomer().getEmail(),
+            /*
+             * 寄文字格式
+             * emailService.sendCardBillStatementEmail(
+             * cardAccount.getCustomer().getEmail(),
+             * cardAccount.getCustomer().getName(),
+             * billingMonth,
+             * total,
+             * minimumPayment,
+             * savedBill.getDueDate(),
+             * savedBill.getBillId());
+             */
+            String idNumber = cardAccount.getCustomer().getIdNumber();
+            String pdfPassword = getIdNumberLast4(idNumber);
+
+            byte[] pdfBytes = cardBillPDFService.generateBillPdf(
                     cardAccount.getCustomer().getName(),
                     billingMonth,
                     total,
                     minimumPayment,
                     savedBill.getDueDate(),
-                    savedBill.getBillId());
+                    pdfPassword);
+
+            emailService.sendEmailWithAttachment(
+                    cardAccount.getCustomer().getEmail(),
+                    "Java Easy Bank - 信用卡月結帳單",
+                    "您的信用卡月結帳單已產生，PDF 附件請使用身分證字號末 4 碼開啟。",
+                    "card-bill-" + billingMonth + ".pdf",
+                    pdfBytes);
 
             postCashbackReward(savedBill, cardAccount, cashbackAmount, billingMonth);
 
@@ -129,6 +157,14 @@ public class BillService {
 
     private long resolveDueDays(CardAccount cardAccount) {
         return cardAccount.getDueDays() == null ? 14L : cardAccount.getDueDays().longValue();
+    }
+
+    private String getIdNumberLast4(String idNumber) {
+        if (idNumber == null || idNumber.length() < 4) {
+            throw new BusinessException("客戶身分證字號資料不完整，無法產生 PDF 密碼");
+        }
+
+        return idNumber.substring(idNumber.length() - 4);
     }
 
     private void postCashbackReward(

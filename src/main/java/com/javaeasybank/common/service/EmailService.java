@@ -4,6 +4,7 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.mail.javamail.MimeMessagePreparator;
@@ -111,6 +112,7 @@ public class EmailService {
         sendEmail(to, "Java Easy Bank - 轉帳交易處理進度通知", html);
     }
     //月結信用卡帳單
+    @Async
     public void sendCardBillStatementEmail(
         String to,
         String customerName,
@@ -160,5 +162,35 @@ public class EmailService {
     }
 
     public void sendAccountLockedNotification(String to, String username,String ipAddress) {}
+
+    //郵件附件
+    @Async
+    public void sendEmailWithAttachment(
+        String to,
+        String subject,
+        String content,
+        String filename,
+        byte[] attachmentBytes) {
+
+    try {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+        helper.setFrom(fromEmail);
+        helper.setTo(to);
+        helper.setSubject(subject);
+        helper.setText(content, true);
+
+        helper.addAttachment(
+                filename,
+                new ByteArrayResource(attachmentBytes)
+        );
+
+        mailSender.send(message);
+
+    } catch (Exception e) {
+        log.error("Failed to send email with attachment to {}: {}", to, e.getMessage());
+    }
+}
 }
 
