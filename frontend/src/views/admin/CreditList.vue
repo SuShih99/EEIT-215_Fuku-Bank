@@ -34,6 +34,9 @@
             {{ riskLabel(record.riskLevel) }}
           </a-tag>
         </template>
+        <template v-if="column.key === 'lastUpdatedAt'">
+          {{ formatDate(record.lastUpdatedAt) }}
+        </template>
         <template v-if="column.key === 'action'">
           <a-button type="link" class="action-btn" @click="viewDetail(record.customerId)">
             查看完整評分
@@ -117,6 +120,12 @@ function riskLabel(r) {
 
 function riskColor(r) {
   return { HIGH: 'red', MEDIUM: 'orange', LOW: 'green' }[r] || 'default'
+}
+
+function formatDate(val) {
+  if (!val) return '—'
+  const cleanStr = val.replace('T', ' ').replace(/-/g, '/')
+  return cleanStr.substring(0, 16)
 }
 
 onMounted(fetchCredits)

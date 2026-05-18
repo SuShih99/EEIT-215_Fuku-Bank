@@ -25,8 +25,12 @@
       >
         <a-descriptions-item label="客戶 ID">{{ credit?.customerId }}</a-descriptions-item>
         <a-descriptions-item label="客戶姓名">{{ credit?.customerName }}</a-descriptions-item>
-        <a-descriptions-item label="風險等級">{{ riskLabel(credit?.riskLevel) }}</a-descriptions-item>
-        <a-descriptions-item label="最後更新">{{ credit?.lastUpdatedAt }}</a-descriptions-item>
+        <a-descriptions-item label="風險等級">{{
+          riskLabel(credit?.riskLevel)
+        }}</a-descriptions-item>
+        <a-descriptions-item label="最後更新">{{
+          formatDate(credit?.lastUpdatedAt)
+        }}</a-descriptions-item>
       </a-descriptions>
 
       <a-descriptions title="評分詳情" bordered :column="2" size="default">
@@ -40,10 +44,16 @@
           {{ occupationLabel(credit?.occupation) }}
         </a-descriptions-item>
         <a-descriptions-item label="年收入">
-          {{ credit?.annualIncome ? '$ ' + Number(credit.annualIncome).toLocaleString('zh-TW') : '—' }}
+          {{
+            credit?.annualIncome ? '$ ' + Number(credit.annualIncome).toLocaleString('zh-TW') : '—'
+          }}
         </a-descriptions-item>
         <a-descriptions-item label="他行負債">
-          {{ credit?.otherBankDebt ? '$ ' + Number(credit.otherBankDebt).toLocaleString('zh-TW') : '—' }}
+          {{
+            credit?.otherBankDebt
+              ? '$ ' + Number(credit.otherBankDebt).toLocaleString('zh-TW')
+              : '—'
+          }}
         </a-descriptions-item>
         <a-descriptions-item label="有無不動產">
           {{ credit?.hasRealEstate ? '是' : '否' }}
@@ -110,6 +120,12 @@ function occupationLabel(o) {
   )
 }
 
+function formatDate(val) {
+  if (!val) return '—'
+  const cleanStr = val.replace('T', ' ').replace(/-/g, '/')
+  return cleanStr.substring(0, 16)
+}
+
 onMounted(fetchDetail)
 </script>
 
@@ -120,8 +136,8 @@ onMounted(fetchDetail)
   flex-direction: column;
   gap: 16px;
   background-color: #ffffff; /* 補回乾淨純白底 */
-  padding: 24px;             /* 補回四周留白襯托空間 */
-  border-radius: 8px;        /* 邊緣細緻圓角 */
+  padding: 24px; /* 補回四周留白襯托空間 */
+  border-radius: 8px; /* 邊緣細緻圓角 */
 }
 
 /* 放大頁頭標題 */

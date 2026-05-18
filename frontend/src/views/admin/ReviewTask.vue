@@ -83,6 +83,9 @@
       :custom-row="(record) => ({ onClick: () => onRowClick(record) })"
     >
       <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'createAt'">
+          {{ formatDate(record.createAt) }}
+        </template>
         <template v-if="column.key === 'priority'">
           <a-tag :color="priorityColor(record.priority)">P{{ record.priority }}</a-tag>
         </template>
@@ -651,6 +654,12 @@ function occupationLabel(o) {
       OTHER: '其他',
     }[o] || o
   )
+}
+
+function formatDate(val) {
+  if (!val) return '—'
+  const cleanStr = val.replace('T', ' ').replace(/-/g, '/')
+  return cleanStr.substring(0, 16)
 }
 
 // 判斷是否為圖片，用來決定要不要秀預覽圖

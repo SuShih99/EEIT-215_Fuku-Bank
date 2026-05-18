@@ -73,6 +73,9 @@
         <template v-else-if="column.key === 'eventType'">
           <a-tag color="blue">{{ eventTypeMap[record.eventType] || record.eventType }}</a-tag>
         </template>
+        <template v-else-if="column.key === 'createdAt'">
+          {{ formatDate(record.createdAt) }}
+        </template>
       </template>
 
       <template #expandedRowRender="{ record }">
@@ -191,6 +194,12 @@ const formatJson = (data) => {
   }
   // 如果已經是物件則直接格式化
   return JSON.stringify(data, null, 2)
+}
+
+function formatDate(val) {
+  if (!val) return '—'
+  const cleanStr = val.replace('T', ' ').replace(/-/g, '/')
+  return cleanStr.substring(0, 16)
 }
 
 onMounted(() => loadData())
