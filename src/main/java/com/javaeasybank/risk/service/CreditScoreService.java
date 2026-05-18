@@ -1,7 +1,7 @@
 package com.javaeasybank.risk.service;
 
+import com.javaeasybank.account.enums.FundSource;
 import com.javaeasybank.risk.dto.request.RiskReviewRequest;
-import com.javaeasybank.risk.enums.FundSource;
 import com.javaeasybank.risk.enums.Occupation;
 import com.javaeasybank.risk.utils.CreditMockUtils;
 import com.javaeasybank.risk.enums.RiskLevel;
@@ -29,10 +29,19 @@ public class CreditScoreService {
     private final CustomerCreditRepository ccRepos;
 
     @Transactional
-    public CustomerCreditInfo initializeCreditInfo(String customerId, LocalDate birthday, Occupation occupation, BigDecimal annualIncome, FundSource fundSource, Boolean isPep, String job) {
-        CustomerCreditInfo info = CreditMockUtils.generateMockInfo(customerId, birthday, occupation, annualIncome, fundSource, isPep, job);
-        score(info);
-        return ccRepos.save(info);
+    public CustomerCreditInfo initializeCreditInfo(String customerId, LocalDate birthday, Occupation occupation, BigDecimal annualIncome, FundSource fundSource, Boolean isPep) {
+        CustomerCreditInfo ccInfo = new CustomerCreditInfo();
+        ccInfo.setCustomerId(customerId);
+        ccInfo.setOccupation(occupation);
+        ccInfo.setAnnualIncome(annualIncome);
+        ccInfo.setFundSource(fundSource);
+
+        // 💡 寫入開戶拿到的真實資料 (防呆處理)
+        ccInfo.setIsPep(isPep != null ? isPep : false);
+        //ccInfo.setJobTitle(job); // 儲存詳細職稱作未來稽核(KYC)使用
+        CreditMockUtils.fillMissingFields(ccInfo, birthday);
+        score(ccInfo);
+        return ccRepos.save(ccInfo);
     }
 
     /**
@@ -40,26 +49,26 @@ public class CreditScoreService {
      */
     @Transactional
     public CustomerCreditInfo rescore(String customerId) {
-        CustomerCreditInfo info = ccRepos.findById(customerId)
+        CustomerCreditInfo ccInfo = ccRepos.findById(customerId)
                 .orElseThrow(() -> new IllegalArgumentException("CustomerCreditInfo not found: " + customerId));
-        score(info);
+        score(ccInfo);
         log.info("[CreditScore] 評分結果 customerId={} finalScore={} riskLevel={}",
-                customerId, info.getFinalScore(), info.getRiskLevel());
-        return ccRepos.save(info);
+                customerId, ccInfo.getFinalScore(), ccInfo.getRiskLevel());
+        return ccRepos.save(ccInfo);
     }
 
     /**
      * 計算 finalScore 並設定 riskLevel，直接修改傳入的 info 物件
      */
-    private void score(CustomerCreditInfo info) {
-        int total = scoreExternalCredit(info.getExternalScore())
-                + scoreDebtRatio(info.getAnnualIncome(), info.getOtherBankDebt())
-                + scoreOccupation(info.getOccupation())
-                + scoreRealEstate(info.getHasRealEstate())
-                + scoreFundSource(info.getFundSource());
+    private void score(CustomerCreditInfo ccInfo) {
+        int total = scoreExternalCredit(ccInfo.getExternalScore())
+                + scoreDebtRatio(ccInfo.getAnnualIncome(), ccInfo.getOtherBankDebt())
+                + scoreOccupation(ccInfo.getOccupation())
+                + scoreRealEstate(ccInfo.getHasRealEstate())
+                + scoreFundSource(ccInfo.getFundSource());
 
-        info.setFinalScore(total);
-        info.setRiskLevel(resolveRiskLevel(total));
+        ccInfo.setFinalScore(total);
+        ccInfo.setRiskLevel(resolveRiskLevel(ccInfo, total));
     }
 
     /**
@@ -117,7 +126,13 @@ public class CreditScoreService {
      * finalScore → RiskLevel
      * ≥ 70 → LOW，40-69 → MEDIUM，< 40 → HIGH
      */
-    private RiskLevel resolveRiskLevel(int finalScore) {
+    private RiskLevel resolveRiskLevel(CustomerCreditInfo ccInfo, int finalScore) {
+
+        // 優先攔截 PEP 身份
+        if (Boolean.TRUE.equals(ccInfo.getIsPep())) {
+            log.warn("[RiskControl] 客戶 {} 為政治敏感人物(PEP)，強制歸類為 HIGH 風險等級", ccInfo.getCustomerId());
+            return RiskLevel.HIGH;
+        }
         if (finalScore >= 70) return RiskLevel.LOW;
         if (finalScore >= 40) return RiskLevel.MEDIUM;
         return RiskLevel.HIGH;
@@ -130,8 +145,8 @@ public class CreditScoreService {
         if (fundSource == null) return 0;
         return switch (fundSource) {
             case SALARY -> 5;   // 薪資收入，最穩定
-            case PENSION -> 4;   // 退休金，穩定
-            case BUSINESS -> 3;   // 營業收入，有波動
+            case RETIREMENT -> 4;   // 退休金，穩定
+            case BUSINESS_INCOME -> 3;   // 營業收入，有波動
             case SAVINGS -> 3;   // 儲蓄
             case INVESTMENT -> 2;   // 投資收益，波動大
             case INHERITANCE -> 1;   // 繼承，一次性
@@ -180,7 +195,7 @@ public class CreditScoreService {
                 && dto.getOtherBankDebt() == null && dto.getOccupation() == null
                 && dto.getHasRealEstate() == null) {
             log.info("[CreditScore] 選填欄位皆為 null，沿用資料庫既有資料（不覆蓋）");
-        }else {
+        } else {
             // 只要有欄位被覆蓋，就必須重新計算分數與風險等級
             score(info);
             log.info("[CreditScore] 欄位覆蓋後重新評分：finalScore={}, riskLevel={}",

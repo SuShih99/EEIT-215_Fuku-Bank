@@ -97,12 +97,22 @@
             </span>
           </div>
 
-          <!-- 卡片底部：申請時間 + 補交文件 -->
+          <!-- 卡片底部：申請時間 + 補交文件 / 查看貸款帳戶 -->
           <div class="card-footer">
             <span class="footer-item">
               🕐 申請時間：{{ formatTime(app.createTime) }}
             </span>
+            <!-- 已撥款：跳轉貸款帳戶頁面 -->
             <button
+              v-if="app.applicationStatus === 'DISBURSED'"
+              class="btn-loan-account"
+              @click="$router.push({ name: 'user-loan-accounts' })"
+            >
+              🏦 查看貸款帳戶
+            </button>
+            <!-- 其他狀態：補交文件 -->
+            <button
+              v-else
               class="btn-resubmit"
               :class="{ active: docPanelId === app.applicationId }"
               @click="toggleDocPanel(app)"
@@ -705,6 +715,24 @@ onMounted(load)
   border-top: 1px solid var(--border);
 }
 .footer-item { font-size: 12px; color: var(--muted); }
+
+/* Loan account button（已撥款） */
+.btn-loan-account {
+  padding: 6px 16px;
+  background: rgba(30,160,180,0.10);
+  color: #107080;
+  border: 1.5px solid #107080;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.btn-loan-account:hover {
+  background: #107080;
+  color: #fff;
+}
 
 /* Resubmit button */
 .btn-resubmit {

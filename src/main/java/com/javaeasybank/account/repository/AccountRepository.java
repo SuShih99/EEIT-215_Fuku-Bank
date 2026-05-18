@@ -35,6 +35,12 @@ public interface AccountRepository extends JpaRepository<Account, String> {
 
     Page<Account> findByCustomerIdAndAccountTypeNotIn(String customerId, Collection<AccountType> accountTypes, Pageable pageable);
 
+    Page<Account> findByAccountTypeNotOrderByCreatedAtDesc(AccountType accountType, Pageable pageable);
+
+    List<Account> findAllByAccountNumberInAndAccountType(Collection<String> accountNumbers, AccountType accountType);
+
+    boolean existsByAccountNumberAndAccountType(String accountNumber, AccountType accountType);
+
     /**
      * 根據帳戶狀態篩選帳戶並進行分頁。
      *
@@ -43,6 +49,8 @@ public interface AccountRepository extends JpaRepository<Account, String> {
      * @return 包含帳戶實體的分頁列表。
      */
     Page<Account> findByStatus(AccountStatus status, Pageable pageable);
+
+    Page<Account> findByStatusAndAccountTypeNot(AccountStatus status, AccountType accountType, Pageable pageable);
 
     /**
      * 根據帳戶類型和貨幣篩選帳戶並進行分頁。
@@ -53,6 +61,33 @@ public interface AccountRepository extends JpaRepository<Account, String> {
      * @return 包含帳戶實體的分頁列表。
      */
     Page<Account> findByAccountTypeAndCurrency(AccountType accountType, Currency currency, Pageable pageable);
+
+    @Query("""
+            SELECT a
+            FROM Account a
+            WHERE a.accountType NOT IN :excludedTypes
+              AND (:customerId IS NULL OR LOWER(a.customerId) LIKE LOWER(CONCAT('%', :customerId, '%')))
+              AND (:customerName IS NULL OR EXISTS (
+                    SELECT 1
+                    FROM CustomerProfile cp
+                    WHERE cp.customerId = a.customerId
+                      AND LOWER(cp.name) LIKE LOWER(CONCAT('%', :customerName, '%'))
+              ))
+              AND (:accountNumber IS NULL OR a.accountNumber LIKE CONCAT('%', :accountNumber, '%'))
+              AND (:status IS NULL OR a.status = :status)
+              AND (:accountType IS NULL OR a.accountType = :accountType)
+              AND (:currency IS NULL OR a.currency = :currency)
+            ORDER BY a.createdAt DESC
+            """)
+    Page<Account> searchAdminAccounts(
+            @Param("customerId") String customerId,
+            @Param("customerName") String customerName,
+            @Param("accountNumber") String accountNumber,
+            @Param("status") AccountStatus status,
+            @Param("accountType") AccountType accountType,
+            @Param("currency") Currency currency,
+            @Param("excludedTypes") Collection<AccountType> excludedTypes,
+            Pageable pageable);
 
     boolean existsByCustomerIdAndAccountType(String customerId, AccountType accountType);
 

@@ -1,6 +1,7 @@
 package com.javaeasybank.risk.controller;
 
 import com.javaeasybank.common.dto.response.ApiResponse;
+import com.javaeasybank.risk.dto.request.RiskAttachmentRequest;
 import com.javaeasybank.risk.dto.request.RiskReviewRequest;
 import com.javaeasybank.risk.dto.response.RiskReviewResponse;
 import com.javaeasybank.risk.service.ReviewTaskService;
@@ -38,9 +39,16 @@ public class RiskReviewController {
     @PatchMapping("/{businessId}/attachments")
     public ResponseEntity<ApiResponse<Void>> attachDocuments(
             @PathVariable String businessId,
-            @RequestBody Map<String, Object> body) {
+            @RequestBody RiskAttachmentRequest request) {
 
-        reviewTaskService.attachDocuments(businessId, body.get("documents"));
+        log.info("[RiskAPI] 收到補件通知 businessId={}, 檔案數量={}",
+                businessId, request.getDocuments() != null ? request.getDocuments().size() : 0);
+
+        if (request.getDocuments() == null || request.getDocuments().isEmpty()) {
+            return ResponseEntity.badRequest().body(ApiResponse.fail("補件清單不可為空"));
+        }
+
+        reviewTaskService.attachDocuments(businessId, request.getDocuments());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

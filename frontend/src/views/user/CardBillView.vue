@@ -288,109 +288,149 @@ onMounted(() => {
 </template>
 <style scoped>
 .bill-page {
+  max-width: 960px;
+  margin: 0 auto;
   padding: 24px;
 }
 
 .page-title {
-  font-size: 28px;
-  font-weight: bold;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+  font-size: var(--text-h2);
+  font-weight: 600;
+  line-height: var(--leading-heading);
 }
 
 .bill-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .bill-card {
-  background: white;
-  border-radius: 16px;
+  border-radius: 12px;
+  background: rgba(255, 249, 239, 0.92);
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  box-shadow: 0 12px 36px rgba(63, 74, 66, 0.08);
   padding: 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
 .bill-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  gap: 16px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(214, 206, 195, 0.8);
 }
 
 .label {
-  color: #999;
-  font-size: 14px;
+  color: var(--text-secondary);
+  font-size: 13px;
 }
 
 .value {
+  color: var(--text-primary);
   font-size: 22px;
-  font-weight: bold;
+  font-weight: 700;
 }
 
 .bill-body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .info-row {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #f0f0f0;
-  padding-bottom: 8px;
+  gap: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(214, 206, 195, 0.64);
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.info-row strong {
+  color: var(--text-primary);
+  font-weight: 600;
+  text-align: right;
 }
 
 .status {
+  flex-shrink: 0;
   padding: 6px 14px;
   border-radius: 999px;
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .status.PAID {
-  background: #e8f7ee;
-  color: #1f9254;
+  background: rgba(92, 107, 95, 0.12);
+  color: var(--primary-dark);
 }
 
 .status.UNPAID {
-  background: #fff7e6;
-  color: #d48806;
+  background: rgba(196, 164, 124, 0.18);
+  color: #7b5a2f;
+}
+
+.status.PARTIAL {
+  background: rgba(92, 107, 95, 0.08);
+  color: var(--primary);
 }
 
 .status.OVERDUE {
-  background: #fff1f0;
-  color: #cf1322;
+  background: var(--accent-light);
+  color: var(--accent);
 }
 
 .loading,
 .empty {
   text-align: center;
-  margin-top: 40px;
-  color: #999;
+  margin-top: 16px;
+  padding: 32px 20px;
+  color: var(--text-secondary);
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  border-radius: 12px;
+  background: rgba(255, 249, 239, 0.92);
+  box-shadow: 0 12px 36px rgba(63, 74, 66, 0.06);
 }
 
 .payment-section {
   margin-top: 20px;
+  padding: 16px;
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  border-radius: 8px;
+  background: rgba(250, 250, 247, 0.84);
 }
 
 .quick-actions {
   display: flex;
   gap: 12px;
   margin-bottom: 12px;
+  flex-wrap: wrap;
 }
 
 .quick-btn {
-  border: none;
-  background: #f3f0e8;
-  color: #8b6b3f;
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  background: rgba(255, 249, 239, 0.72);
+  color: var(--primary-dark);
   padding: 8px 14px;
-  border-radius: 10px;
+  border-radius: 8px;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 600;
+  transition:
+    border-color var(--duration) var(--ease),
+    background var(--duration) var(--ease);
 }
 
 .quick-btn:hover {
-  background: #e7dcc7;
+  border-color: var(--primary);
+  background: var(--primary-light);
 }
 
 .pay-row {
@@ -400,52 +440,134 @@ onMounted(() => {
 
 .pay-input {
   flex: 1;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 10px;
-  font-size: 16px;
+  min-height: 44px;
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text-primary);
+  background: rgba(250, 250, 247, 0.92);
+  font-family: var(--font-body);
+  font-size: 15px;
+  outline: none;
+  transition:
+    border-color var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease);
+}
+
+.pay-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
 }
 
 .pay-btn {
-  border: none;
+  min-height: 44px;
+  border: 1px solid var(--primary);
   background: #3e5c4b;
   color: white;
   padding: 10px 20px;
-  border-radius: 10px;
+  border-radius: 8px;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 600;
+  transition:
+    background var(--duration) var(--ease),
+    border-color var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease);
 }
 
 .pay-btn:hover {
-  opacity: 0.9;
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  box-shadow: 0 4px 16px rgba(107, 95, 80, 0.1);
 }
 .account-select {
-  margin-bottom: 12px;
+  margin: 18px 0 12px;
 }
 
 .account-dropdown {
   width: 100%;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 10px;
-  font-size: 16px;
+  min-height: 44px;
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text-primary);
+  background: rgba(250, 250, 247, 0.92);
+  font-family: var(--font-body);
+  font-size: 15px;
+  outline: none;
+  transition:
+    border-color var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease);
+}
+
+.account-dropdown:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
 }
 .tabs {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   margin-bottom: 20px;
+  padding: 6px;
+  width: fit-content;
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  border-radius: 12px;
+  background: rgba(255, 249, 239, 0.72);
+  box-shadow: 0 12px 36px rgba(63, 74, 66, 0.06);
 }
 
 .tab-btn {
-  border: none;
+  border: 1px solid transparent;
   padding: 10px 20px;
-  border-radius: 999px;
+  border-radius: 8px;
   cursor: pointer;
-  background: #f0f0f0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-weight: 600;
+  transition:
+    background var(--duration) var(--ease),
+    color var(--duration) var(--ease),
+    border-color var(--duration) var(--ease);
+}
+
+.tab-btn:hover {
+  color: var(--primary-dark);
+  background: var(--primary-light);
 }
 
 .tab-btn.active {
-  background: #3e5c4b;
+  background: var(--primary);
+  border-color: var(--primary);
   color: white;
+}
+
+@media (max-width: 640px) {
+  .bill-page {
+    padding: 16px 0;
+  }
+
+  .tabs {
+    width: 100%;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 10px 12px;
+  }
+
+  .bill-header,
+  .info-row,
+  .pay-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .info-row strong {
+    text-align: left;
+  }
+
+  .pay-btn {
+    width: 100%;
+  }
 }
 </style>

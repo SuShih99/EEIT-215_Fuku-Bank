@@ -39,10 +39,13 @@ public class RiskCheckService {
         // 處理來自 Account 模組的預判警告 (如：頻率過高、日限額接近)
         if (request.getContext() != null && request.getContext().containsKey("internalWarning")) {
             String warning = String.valueOf(request.getContext().get("internalWarning"));
-            log.warn("[RiskCheck] 收到業務模組預警: {}", warning);
+            // 拆單是高風險
+            RiskLevel level = warning.contains("拆單") || warning.contains("頻繁")
+                    ? RiskLevel.HIGH
+                    : RiskLevel.MEDIUM;
 
             RiskEventLog eventLog = buildAndSaveLog(
-                    request, RiskLevel.MEDIUM, Disposition.MANUAL_REVIEW, warning);
+                    request, level, Disposition.MANUAL_REVIEW, warning);
             return buildManualReviewResponse(eventLog, request);
         }
         // 2. 金額閾值判斷

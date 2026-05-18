@@ -70,6 +70,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return requestPath.startsWith("/api/customer/")
                 || requestPath.startsWith("/user/")
                 || requestPath.startsWith("/api/loan-applications/")
+                || requestPath.startsWith("/api/loan-accounts/")
                 || requestPath.startsWith("/api/loan-documents/");
     }
 }

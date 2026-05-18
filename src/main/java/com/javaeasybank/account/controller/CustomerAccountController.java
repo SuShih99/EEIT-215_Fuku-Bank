@@ -93,13 +93,10 @@ public class CustomerAccountController {
             List<Predicate> predicates = new ArrayList<>();
 
             if (accountNumber != null && !accountNumber.isBlank()) {
-                if (!ownedAccounts.contains(accountNumber)) {
+                if (!ownedAccounts.contains(accountNumber.trim())) {
                     throw new BusinessException("帳戶不存在或不屬於您");
                 }
-                predicates.add(cb.or(
-                        cb.equal(root.get("accountNumber"), accountNumber),
-                        cb.equal(root.get("counterpartAccount"), accountNumber)
-                ));
+                predicates.add(cb.equal(root.get("accountNumber"), accountNumber.trim()));
             } else {
                 predicates.add(root.get("accountNumber").in(ownedAccounts));
             }

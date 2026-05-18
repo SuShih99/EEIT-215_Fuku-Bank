@@ -589,4 +589,6 @@ PRINT N'account_mockdata.sql completed: customer accounts and 500 transaction lo
 DROP TABLE #tx_accounts;
 DROP TABLE #mock_accounts;
 DROP TABLE #customers;
+
+SET NOCOUNT OFF;
 GO

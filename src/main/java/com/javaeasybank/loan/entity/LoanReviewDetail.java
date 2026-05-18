@@ -17,25 +17,35 @@ import java.time.LocalDateTime;
 public class LoanReviewDetail {
 
     @Id
-    private String reviewId;               // review_id (PK)
+    // 填單ID
+    private String reviewId;
 
-    private String applicationId;          // application_id (FK)
+    // 申請ID
+    private String applicationId;
 
+    // 確認金額/期數/利率
     @Column(precision = 18, scale = 2)
     private BigDecimal confirmedAmount;
     private Integer confirmedPeriod;
     @Column(precision = 10, scale = 6)
     private BigDecimal confirmedRate;
-    @Column(columnDefinition = "NVARCHAR(255)")
-    private String collateralNote;         // 擔保品資料
 
+    // 擔保品備註
+    private String collateralNote;
+
+    // 填單人員ID
     private String empId;
+
+    // 填單時間
     private LocalDateTime reviewTime;
 
+    // 填單狀態
     @Enumerated(EnumType.STRING)
     private LoanReviewStatus reviewStatus;
 
+    // 送審時間
     private LocalDateTime submittedTime;
-    @Column(columnDefinition = "NVARCHAR(255)")
+
+    // 送審備註
     private String reviewNote;
 }

@@ -223,4 +223,6 @@ IF EXISTS (
     THROW 51004, 'customer_insert.sql generated invalid cif format.', 1;
 
 PRINT N'customer_insert.sql mock data completed: 50 customer profiles.';
+
+SET NOCOUNT OFF;
 GO

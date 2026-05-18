@@ -40,6 +40,8 @@ public class ReviewTask {
      * 任務進度：PENDING(待處理), PROCESSING(處理中), COMPLETED(已結案)
      */
     private String status;
+
+    private String substatus;
     /**
      * 最終決策：APPROVED, REJECTED
      */
@@ -71,6 +73,5 @@ public class ReviewTask {
 
     @Version // 樂觀鎖預防併發衝突
     private Long version;
-
 
 }

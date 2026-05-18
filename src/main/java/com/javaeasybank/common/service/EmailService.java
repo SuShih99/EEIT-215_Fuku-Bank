@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.mail.javamail.MimeMessagePreparator;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
@@ -139,5 +140,25 @@ public class EmailService {
             html
     );
 }
+
+    public void sendLoanDocumentRequiredNotification(
+            String to,
+            String referenceId,
+            String loanType,
+            BigDecimal amount) {
+
+        Context context = new Context();
+        context.setVariable("time", LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        context.setVariable("referenceId", referenceId);
+        context.setVariable("loanType", loanType);
+        context.setVariable("amount", amount);
+
+        String html = templateEngine.process("mail/loan-document-required", context);
+
+        sendEmail(to, "Java Easy Bank - 貸款申請補件通知", html);
+    }
+
+    public void sendAccountLockedNotification(String to, String username,String ipAddress) {}
 }
 

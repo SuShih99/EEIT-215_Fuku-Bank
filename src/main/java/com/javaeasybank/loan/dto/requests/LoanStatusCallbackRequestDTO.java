@@ -13,4 +13,5 @@ public class LoanStatusCallbackRequestDTO {
     private LoanApplicationStatus newStatus;  // 目標狀態
     private String callerModule;              // 呼叫方識別："RISK" | "ACCOUNT"
     private String note;                      // 備註（選填，例如風控拒絕原因）
+    private String loanAccountNumber;
 }

@@ -25,8 +25,6 @@ public class CustomerServiceImpl implements CustomerService {
 
     private final CustomerProfileRepository customerProfileRepository;
     private final CustomerAuthRepository customerAuthRepository;
-    //風控暫時用
-    private final CreditScoreService creditSCoreService;
 
     // 加入 JdbcTemplate 依賴，用於執行原生 SQL
     private final JdbcTemplate jdbcTemplate;
@@ -38,11 +36,9 @@ public class CustomerServiceImpl implements CustomerService {
 
     public CustomerServiceImpl(CustomerProfileRepository customerProfileRepository,
                                CustomerAuthRepository customerAuthRepository, CreditScoreService creditSCoreService,
-                               JdbcTemplate jdbcTemplate,
-                               BlackListService blackListService) {
+                               JdbcTemplate jdbcTemplate) {
         this.customerProfileRepository = customerProfileRepository;
         this.customerAuthRepository = customerAuthRepository;
-        this.creditSCoreService = creditSCoreService;
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -96,7 +92,6 @@ public class CustomerServiceImpl implements CustomerService {
         profile.setIsPep(Boolean.TRUE.equals(profile.getIsPep()));
 
         CustomerProfile saved = customerProfileRepository.save(profile);
-        //creditSCoreService.initializeCreditInfo(profile.getCustomerId(),profile.getBirthday());
         return convertToResponse(saved);
     }
 
@@ -334,6 +329,13 @@ public class CustomerServiceImpl implements CustomerService {
                 .orElseThrow(() -> new BusinessException("查無此客戶編號：" + cif));
         return convertToResponse(profile);
     }
+    @Override
+    public String findEmailByCustomerId(String customerId) {
+        CustomerProfile profile = customerProfileRepository.findById(customerId)
+                .orElseThrow(() -> new BusinessException("查無此客戶"));
+
+        return profile.getEmail();
+    }
 
     @Override
     @Transactional
@@ -426,17 +428,28 @@ public class CustomerServiceImpl implements CustomerService {
         if (request.getIdFrontUrl() != null) profile.setIdFrontUrl(request.getIdFrontUrl());
         if (request.getIdBackUrl() != null) profile.setIdBackUrl(request.getIdBackUrl());
         if (request.getSecondIdUrl() != null) profile.setSecondIdUrl(request.getSecondIdUrl());
-        if (request.getLatestAccountApplicationId() != null) profile.setLatestAccountApplicationId(request.getLatestAccountApplicationId());
-        if (request.getLatestAccountApplicationNo() != null) profile.setLatestAccountApplicationNo(request.getLatestAccountApplicationNo());
-        if (request.getLatestAppliedAccountType() != null) profile.setLatestAppliedAccountType(request.getLatestAppliedAccountType());
-        if (request.getLatestAppliedCurrency() != null) profile.setLatestAppliedCurrency(request.getLatestAppliedCurrency());
-        if (request.getLatestAccountApplicationStatus() != null) profile.setLatestAccountApplicationStatus(request.getLatestAccountApplicationStatus());
-        if (request.getLatestAccountApplicationRiskFlag() != null) profile.setLatestAccountApplicationRiskFlag(request.getLatestAccountApplicationRiskFlag());
-        if (request.getLatestAccountApplicationReviewedAt() != null) profile.setLatestAccountApplicationReviewedAt(request.getLatestAccountApplicationReviewedAt());
-        if (request.getLatestAccountApplicationReviewedBy() != null) profile.setLatestAccountApplicationReviewedBy(request.getLatestAccountApplicationReviewedBy());
-        if (request.getLatestAccountApplicationRejectReason() != null) profile.setLatestAccountApplicationRejectReason(request.getLatestAccountApplicationRejectReason());
-        if (request.getCreatedAccountNumber() != null) profile.setCreatedAccountNumber(request.getCreatedAccountNumber());
-        if (request.getAccountApplicationSyncedAt() != null) profile.setAccountApplicationSyncedAt(request.getAccountApplicationSyncedAt());
+        if (request.getLatestAccountApplicationId() != null)
+            profile.setLatestAccountApplicationId(request.getLatestAccountApplicationId());
+        if (request.getLatestAccountApplicationNo() != null)
+            profile.setLatestAccountApplicationNo(request.getLatestAccountApplicationNo());
+        if (request.getLatestAppliedAccountType() != null)
+            profile.setLatestAppliedAccountType(request.getLatestAppliedAccountType());
+        if (request.getLatestAppliedCurrency() != null)
+            profile.setLatestAppliedCurrency(request.getLatestAppliedCurrency());
+        if (request.getLatestAccountApplicationStatus() != null)
+            profile.setLatestAccountApplicationStatus(request.getLatestAccountApplicationStatus());
+        if (request.getLatestAccountApplicationRiskFlag() != null)
+            profile.setLatestAccountApplicationRiskFlag(request.getLatestAccountApplicationRiskFlag());
+        if (request.getLatestAccountApplicationReviewedAt() != null)
+            profile.setLatestAccountApplicationReviewedAt(request.getLatestAccountApplicationReviewedAt());
+        if (request.getLatestAccountApplicationReviewedBy() != null)
+            profile.setLatestAccountApplicationReviewedBy(request.getLatestAccountApplicationReviewedBy());
+        if (request.getLatestAccountApplicationRejectReason() != null)
+            profile.setLatestAccountApplicationRejectReason(request.getLatestAccountApplicationRejectReason());
+        if (request.getCreatedAccountNumber() != null)
+            profile.setCreatedAccountNumber(request.getCreatedAccountNumber());
+        if (request.getAccountApplicationSyncedAt() != null)
+            profile.setAccountApplicationSyncedAt(request.getAccountApplicationSyncedAt());
     }
 
     private void normalizeApplicationDerivedFields(CustomerProfile profile) {

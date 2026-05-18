@@ -311,6 +311,41 @@ FROM CREDIT_CARD c
 JOIN CARD_ACCOUNT ca
   ON ca.account_number = CONCAT('801', RIGHT(CONCAT('00000000000', CAST(c.card_id AS VARCHAR(11))), 11));
 
+-- ===== 5-2. 同步 CARD_ACCOUNT 的 account_number 至 ACCOUNT 表 =====
+-- account_mockdata.sql 只替前 8 名客戶建 CREDIT_CARD 帳戶，
+-- 此處將所有持卡客戶的 CARD_ACCOUNT.account_number 同步寫入 ACCOUNT 表，
+-- 確保 payCreditCard() 能透過 customerId 查到對應的 CREDIT_CARD 帳戶。
+DELETE FROM [ACCOUNT]
+WHERE account_type = 'CREDIT_CARD'
+  AND account_number IN (
+      SELECT account_number FROM CARD_ACCOUNT
+  );
+
+INSERT INTO [ACCOUNT] (
+    account_number, customer_id, account_type, currency,
+    balance, liability, interest_rate, status,
+    parent_account_number, created_at, changed_at, created_by, changed_by
+)
+SELECT
+    ca.account_number,
+    ca.customer_id,
+    'CREDIT_CARD',
+    'TWD',
+    0.0000,
+    0.0000,
+    NULL,
+    'ACTIVE',
+    NULL,
+    GETDATE(),
+    GETDATE(),
+    'mock',
+    'mock'
+FROM CARD_ACCOUNT ca
+WHERE NOT EXISTS (
+    SELECT 1 FROM [ACCOUNT] a
+    WHERE a.account_number = ca.account_number
+);
+
 -- ===== 6. CARD_TRANSACTION（200 筆）=====
 SET IDENTITY_INSERT CARD_TRANSACTION ON;
 INSERT INTO CARD_TRANSACTION

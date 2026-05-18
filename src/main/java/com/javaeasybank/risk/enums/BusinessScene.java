@@ -4,7 +4,7 @@ public enum BusinessScene {
     GENERAL,
     TRANSFER_REVIEW,
     LOAN_APPLY,
-    LOGIN,
+    LOGIN_CHECK,
     CREATE_CUSTOMER,
     UPDATE_CUSTOMER,
 }

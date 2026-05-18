@@ -1,6 +1,6 @@
 package com.javaeasybank.risk.entity;
 
-import com.javaeasybank.risk.enums.FundSource;
+import com.javaeasybank.account.enums.FundSource;
 import com.javaeasybank.risk.enums.Occupation;
 import com.javaeasybank.risk.enums.RiskLevel;
 import jakarta.persistence.*;
@@ -25,10 +25,11 @@ public class CustomerCreditInfo {
     private BigDecimal annualIncome = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "occupation", length = 20)
+    @Column(name = "occupation", length = 50, columnDefinition = "NVARCHAR(50)")
     // 職業
     private Occupation occupation;
-
+    //風控
+    @Column(name = "job", length = 100, columnDefinition = "NVARCHAR(100)")
     private String  job;
 
     // --- 信用維度 (模擬聯徵/外部資料) ---
@@ -42,8 +43,11 @@ public class CustomerCreditInfo {
     private Boolean hasRealEstate = false;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "fund_source", length = 20)
+    @Column(name = "fund_source", length = 30)
     private FundSource fundSource;
+
+    @Column(name = "is_pep", columnDefinition = "BIT NOT NULL DEFAULT 0")
+    private Boolean isPep = false;
 
     // --- 評分結果 (Service計算後回填) ---
 

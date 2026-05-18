@@ -68,8 +68,10 @@ public class AuthController {
 
     // ===== 確認登入狀態（給前端路由守衛用）=====
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<Void>> me() {
-        return ResponseEntity.ok(ApiResponse.success(null));
+    public ResponseEntity<ApiResponse<AuthRespository.AuthEmpResponse>> me(Authentication authentication) {
+        String email = authentication.getName();
+        AuthRespository.AuthEmpResponse employee = authEmpService.getEmpByEmail(email);
+        return ResponseEntity.ok(ApiResponse.success(employee));
     }
 
     // ===== 登出 =====

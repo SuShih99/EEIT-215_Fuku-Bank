@@ -57,6 +57,10 @@ public class LoanAccountService {
      * 具備冪等保護：帳戶已存在時直接略過，不拋錯。
      */
     public void createOnDisbursement(String applicationId) {
+        createOnDisbursement(applicationId, null);
+    }
+
+    public void createOnDisbursement(String applicationId, String loanAccountNumber) {
 
         // 冪等保護：重複回調時不重複建帳
         if (loanAccountRepo.findByApplicationId(applicationId).isPresent()) {
@@ -64,6 +68,7 @@ public class LoanAccountService {
             return;
         }
 
+        log.info("[Disbursement] Step-A 查詢申請與填單 applicationId={}", applicationId);
         LoanApplication loan = loanApplicationRepo.findById(applicationId)
                 .orElseThrow(() -> new BusinessException("找不到申請編號：" + applicationId));
 
@@ -73,13 +78,16 @@ public class LoanAccountService {
         BigDecimal principal    = detail.getConfirmedAmount();
         Integer    periods      = detail.getConfirmedPeriod();
         BigDecimal annualRate   = detail.getConfirmedRate();
-        // 改用 AmortizationCalculator，移除內嵌公式
+        log.info("[Disbursement] Step-B 計算月付金 principal={} annualRate={} periods={}",
+                principal, annualRate, periods);
         BigDecimal monthlyPmt   = AmortizationCalculator.calcMonthlyPayment(principal, annualRate, periods);
+        log.info("[Disbursement] Step-B 完成 monthlyPmt={}", monthlyPmt);
 
         LocalDate startDate = LocalDate.now();
 
         LoanAccount account = new LoanAccount();
-        account.setAccountId(generateId("ACC"));
+        account.setAccountId(generateId("LAC"));
+        account.setAccountNumber(loanAccountNumber);
         account.setApplicationId(applicationId);
         account.setCustomerId(loan.getCustomerId());
         account.setApplyType(loan.getApplyType());
@@ -94,12 +102,14 @@ public class LoanAccountService {
         account.setAccountStatus(LoanAccountStatus.ACTIVE);
         account.setCreateTime(LocalDateTime.now());
 
+        log.info("[Disbursement] Step-C 儲存 LoanAccount accountId={}", account.getAccountId());
         loanAccountRepo.save(account);
-        log.info("[Disbursement] 帳戶建立完成 accountId={} applicationId={}",
-                account.getAccountId(), applicationId);
+        log.info("[Disbursement] Step-C 完成 applicationId={}", applicationId);
 
+        log.info("[Disbursement] Step-D 預排還款明細 periods={}", periods);
         // 預排 N 期還款明細
         loanRepaymentService.createSchedule(account);
+        log.info("[Disbursement] Step-D 完成 applicationId={}", applicationId);
     }
 
     // ===客戶查詢===
@@ -151,6 +161,7 @@ public class LoanAccountService {
     private LoanAccountResponseDTO toResponseDTO(LoanAccount account) {
         LoanAccountResponseDTO dto = new LoanAccountResponseDTO();
         dto.setAccountId(account.getAccountId());
+        dto.setAccountNumber(account.getAccountNumber());
         dto.setApplicationId(account.getApplicationId());
         dto.setCustomerId(account.getCustomerId());
         String cif = customerProfileRepository.findById(account.getCustomerId())

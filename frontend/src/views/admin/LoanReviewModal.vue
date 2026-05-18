@@ -518,23 +518,23 @@ function formatDateTime(d) {
 <style scoped>
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css');
 
-/* ── Variables ── */
+/* ── Variables（對齊 admin-theme）── */
 .modal-overlay {
-  --accent: #A65A4D;
-  --accent-dim: rgba(166, 90, 77, 0.10);
-  --accent-lt: rgba(166, 90, 77, 0.20);
-  --surface: #FDFAF6;
-  --surface-2: #EAE4DA;
-  --border: #D6CEC3;
-  --border-2: #C4BBB0;
+  --accent: #5C6B5F;
+  --accent-dim: rgba(92, 107, 95, 0.10);
+  --accent-lt: rgba(92, 107, 95, 0.20);
+  --surface: #ffffff;
+  --surface-2: #f0f2f0;
+  --border: #dde1de;
+  --border-2: #c8cdc9;
   --ink: #2B2B2B;
-  --ink-2: #3D3530;
-  --muted: #A89A8E;
-  --muted-2: #6E6259;
+  --ink-2: #333333;
+  --muted: #8c9891;
+  --muted-2: #5a6a5e;
   --primary: #5C6B5F;
-  --primary-dk: #3F4A42;
-  --red: #A65A4D;
-  --green: #5C6B5F;
+  --primary-dk: #4A574D;
+  --red: #C0392B;
+  --green: #4A8C5C;
   --gold: #8C7355;
 }
 
@@ -785,8 +785,8 @@ function formatDateTime(d) {
 
 .type-PERSONAL {
   color: #7A5C3A;
-  border-color: #D6CEC3;
-  background: #F5F1EA;
+  border-color: #dde1de;
+  background: #f4f5f7;
 }
 
 .type-CAR {
@@ -820,9 +820,9 @@ function formatDateTime(d) {
 }
 
 .type-LAND {
-  color: #6E6259;
-  border-color: #D6CEC3;
-  background: #EAE4DA;
+  color: #5a6a5e;
+  border-color: #dde1de;
+  background: #f0f2f0;
 }
 
 /* Skeleton */
@@ -840,7 +840,7 @@ function formatDateTime(d) {
 }
 
 .sk {
-  background: linear-gradient(90deg, #EAE4DA 25%, #D6CEC3 50%, #EAE4DA 75%);
+  background: linear-gradient(90deg, #e8eae8 25%, #d5dad6 50%, #e8eae8 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
   border-radius: 4px;
@@ -946,7 +946,7 @@ function formatDateTime(d) {
 
 .field-input.error {
   border-color: var(--red);
-  box-shadow: 0 0 0 3px rgba(166, 90, 77, 0.12);
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.12);
 }
 
 .field-textarea {
@@ -1087,9 +1087,9 @@ function formatDateTime(d) {
 }
 
 .alert-error {
-  background: rgba(166, 90, 77, 0.08);
-  border: 1px solid rgba(166, 90, 77, 0.3);
-  color: var(--accent);
+  background: rgba(192, 57, 43, 0.08);
+  border: 1px solid rgba(192, 57, 43, 0.3);
+  color: var(--red);
 }
 
 /* Validate error */

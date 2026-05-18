@@ -38,4 +38,12 @@ public class ReviewTaskController {
         reviewTaskService.makeDecision(taskId, request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
+
+    @PutMapping("/{taskId}/start")
+    public ResponseEntity<ApiResponse<Void>> startProcessing(
+            @PathVariable Long taskId) {
+
+        reviewTaskService.startProcessing(taskId);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
 }

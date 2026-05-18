@@ -277,6 +277,12 @@ const router = createRouter({
           component: () => import('../views/admin/LoanApplicationView.vue'),
         },
         {
+          path: 'loan-accounts',
+          name: 'admin-loan-accounts',
+          meta: { requiresBusiness: true },
+          component: () => import('../views/admin/LoanAccountAdminView.vue'),
+        },
+        {
           path: 'blacklist',
           name: 'admin-blacklist',
           meta: { requiresBusiness: true },

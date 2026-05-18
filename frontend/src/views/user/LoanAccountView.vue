@@ -81,29 +81,51 @@
             </div>
           </div>
 
-          <!-- 核心資訊格：4欄 × 2列 -->
-          <div class="info-grid">
-            <div class="info-cell">
-              <span class="info-label">貸款本金</span>
-              <span class="info-val accent">$ {{ formatAmount(acc.principalAmount) }}</span>
-            </div>
-            <div class="info-cell">
-              <span class="info-label">月繳金額</span>
-              <span class="info-val">$ {{ formatDecimal(acc.monthlyPayment) }}</span>
-            </div>
-            <div class="info-cell">
-              <span class="info-label">年利率</span>
-              <span class="info-val">{{ formatRate(acc.rate) }}</span>
-            </div>
-            <div class="info-cell">
-              <span class="info-label">貸款期數</span>
-              <span class="info-val">{{ acc.confirmedPeriod }} 期</span>
-            </div>
-            <div class="info-cell">
-              <span class="info-label">已繳期數</span>
-              <!-- 進度條：已繳 / 總期數 -->
-              <span class="info-val">
-                {{ acc.paidPeriods }} / {{ acc.confirmedPeriod }}
+          <!-- ── 主體：圓形圖（左）+ 資訊列（右）── -->
+          <div class="card-body">
+
+            <!-- 左：圓形還款進度圖 + 期數進度 -->
+            <div class="circle-section">
+              <!-- 圓形圖：圈內只顯示百分比 -->
+              <div class="circle-chart-wrap">
+                <svg viewBox="0 0 120 120" class="circle-svg">
+                  <circle cx="60" cy="60" r="48" fill="none" stroke="var(--surface-2)" stroke-width="10"/>
+                  <circle
+                    cx="60" cy="60" r="48"
+                    fill="none"
+                    :stroke="progressStroke(acc)"
+                    stroke-width="10"
+                    stroke-linecap="round"
+                    stroke-dasharray="301.59"
+                    :stroke-dashoffset="301.59 * (1 - paidRatio(acc))"
+                    transform="rotate(-90 60 60)"
+                    style="transition: stroke-dashoffset 0.6s ease;"
+                  />
+                </svg>
+                <div class="circle-center-text">
+                  <span class="cctext-pct" :style="{ color: progressStroke(acc) }">
+                    {{ Math.round(paidRatio(acc) * 100) }}%
+                  </span>
+                  <span class="cctext-paid-label">已還清</span>
+                </div>
+              </div>
+              <!-- 圓圈下方：剩餘本金 / 貸款本金 -->
+              <div class="circle-principal">
+                <span class="circle-principal-remaining" :style="{ color: progressStroke(acc) }">
+                  $ {{ formatDecimal(acc.remainingPrincipal) }}
+                </span>
+                <span class="circle-principal-sep">/</span>
+                <span class="circle-principal-total">$ {{ formatDecimal(acc.principalAmount) }}</span>
+              </div>
+              <div class="circle-label">剩餘本金 / 貸款本金</div>
+              <!-- 期數進度條 -->
+              <div class="period-progress">
+                <div class="period-progress-header">
+                  <span class="period-label">已繳期數</span>
+                  <span class="period-val" :style="{ color: progressStroke(acc) }">
+                    {{ acc.paidPeriods }} / {{ acc.confirmedPeriod }}
+                  </span>
+                </div>
                 <span class="progress-bar-wrap">
                   <span
                     class="progress-bar-fill"
@@ -111,23 +133,42 @@
                     :class="progressClass(acc)"
                   ></span>
                 </span>
-              </span>
+              </div>
             </div>
-            <div class="info-cell">
-              <span class="info-label">剩餘本金</span>
-              <span class="info-val">$ {{ formatDecimal(acc.remainingPrincipal) }}</span>
+
+            <!-- 右：資訊列 -->
+            <div class="info-rows">
+              <!-- 貸款條件 -->
+              <div class="info-row">
+                <span class="info-row-label">貸款期數</span>
+                <span class="info-row-val">{{ acc.confirmedPeriod }} 期</span>
+              </div>
+              <div class="info-row">
+                <span class="info-row-label">年利率</span>
+                <span class="info-row-val">
+                  {{ formatRate(acc.rate) }}
+                  <span class="info-row-sub" v-if="acc.rate != null">月利率 {{ formatMonthlyRate(acc.rate) }}</span>
+                </span>
+              </div>
+              <div class="info-row">
+                <span class="info-row-label">月繳金額</span>
+                <span class="info-row-val">$ {{ formatDecimal(acc.monthlyPayment) }}</span>
+              </div>
+              <!-- 分隔線 -->
+              <div class="info-divider"></div>
+              <!-- 還款進度 -->
+              <div class="info-row">
+                <span class="info-row-label">撥款日</span>
+                <span class="info-row-val mono">{{ formatDate(acc.startDate) }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-row-label">下次繳款日</span>
+                <span class="info-row-val mono" :class="{ 'overdue-text': isOverdue(acc) }">
+                  {{ acc.nextPaymentDate ? formatDate(acc.nextPaymentDate) : '—' }}
+                </span>
+              </div>
             </div>
-            <div class="info-cell">
-              <span class="info-label">撥款日</span>
-              <span class="info-val mono">{{ formatDate(acc.startDate) }}</span>
-            </div>
-            <div class="info-cell">
-              <span class="info-label">下次繳款日</span>
-              <!-- PAID_OFF 時顯示「—」 -->
-              <span class="info-val mono" :class="{ 'overdue-text': isOverdue(acc) }">
-                {{ acc.nextPaymentDate ? formatDate(acc.nextPaymentDate) : '—' }}
-              </span>
-            </div>
+
           </div>
 
           <!-- ── 還款時間表（展開區） ── -->
@@ -233,13 +274,27 @@ function repStatusClass(st) { return REPAYMENT_STATUS[st]?.cls   || '' }
 
 // ── helper：還款進度 ──
 function progressPct(acc) {
-  if (!acc.confirmedPeriod) return 0
-  return Math.round((acc.paidPeriods / acc.confirmedPeriod) * 100)
+  const paid = Number(acc.paidPeriods || 0)
+  const total = Number(acc.confirmedPeriod || 0)
+  if (!total) return 0
+  return Math.min(100, Math.max(0, Math.round((paid / total) * 100)))
 }
 function progressClass(acc) {
   if (acc.accountStatus === 'OVERDUE')  return 'prog-overdue'
   if (acc.accountStatus === 'PAID_OFF') return 'prog-done'
   return 'prog-active'
+}
+
+// ── helper：圓形進度圖 ──
+function paidRatio(acc) {
+  if (!acc.principalAmount || acc.principalAmount === 0) return 0
+  const paid = acc.principalAmount - (acc.remainingPrincipal ?? acc.principalAmount)
+  return Math.min(1, Math.max(0, paid / acc.principalAmount))
+}
+function progressStroke(acc) {
+  if (acc.accountStatus === 'OVERDUE')  return '#A65A4D'
+  if (acc.accountStatus === 'PAID_OFF') return '#4A8C5C'
+  return '#5C6B5F'
 }
 
 // ── helper：逾期判斷（用於下次繳款日變紅）──
@@ -263,6 +318,9 @@ function formatDecimal(n) {
 }
 function formatRate(r) {
   return r != null ? (r * 100).toFixed(2) + ' %' : '—'
+}
+function formatMonthlyRate(r) {
+  return r != null ? ((r / 12) * 100).toFixed(4) + ' %' : '—'
 }
 function formatDate(d) {
   if (!d) return '—'
@@ -495,49 +553,155 @@ onMounted(loadAccounts)
   background: rgba(92,107,95,0.08);
 }
 
-/* ── 資訊格 ── */
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1px;
-  background: var(--border);
+/* ── 卡片主體（左圓圖 + 右資訊列）── */
+.card-body {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 20px 20px;
   border-bottom: 1px solid var(--border);
 }
-@media (max-width: 640px) {
-  .info-grid { grid-template-columns: 1fr 1fr; }
-}
 
-.info-cell {
-  background: var(--surface);
-  padding: 14px 16px;
+/* 左：圓形區塊 */
+.circle-section {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
 }
-.info-label {
-  font-size: 10px;
-  color: var(--muted-2);
+.circle-chart-wrap {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+.circle-svg {
+  width: 120px;
+  height: 120px;
+  display: block;
+}
+.circle-center-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.cctext-pct {
+  font-size: 22px;
+  font-weight: 800;
   font-family: 'IBM Plex Mono', monospace;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  line-height: 1;
 }
-.info-val {
+.cctext-paid-label {
+  font-size: 11px;
+  color: var(--muted-2);
+  font-weight: 500;
+}
+/* 圓圈下方：金額行 */
+.circle-principal {
+  margin-top: 10px;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.circle-principal-remaining {
   font-size: 14px;
-  font-weight: 600;
-  color: var(--ink);
+  font-weight: 700;
+}
+.circle-principal-sep {
+  font-size: 12px;
+  color: var(--muted-2);
+}
+.circle-principal-total {
+  font-size: 12px;
+  color: var(--muted-2);
+}
+.circle-label {
+  margin-top: 3px;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  text-align: center;
+}
+.period-progress {
+  margin-top: 12px;
+  width: 120px;
   display: flex;
   flex-direction: column;
   gap: 5px;
 }
-.info-val.accent {
-  color: var(--primary);
+.period-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.period-label {
+  font-size: 10px;
+  color: var(--muted-2);
   font-family: 'IBM Plex Mono', monospace;
 }
-.info-val.mono { font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+.period-val {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* 右：資訊列 */
+.info-rows {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.info-row-label {
+  font-size: 12px;
+  color: var(--muted-2);
+  flex-shrink: 0;
+}
+.info-row-val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.info-row-val.mono { font-family: 'IBM Plex Mono', monospace; }
+.info-row-sub {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--muted-2);
+  font-family: 'IBM Plex Mono', monospace;
+}
+.info-divider {
+  border-top: 1px dashed var(--border);
+  margin: 2px 0;
+}
 .overdue-text { color: var(--red) !important; }
+
+@media (max-width: 520px) {
+  .card-body { flex-direction: column; align-items: center; }
+  .info-rows  { width: 100%; }
+}
 
 /* 進度條 */
 .progress-bar-wrap {
+  display: block;
   height: 4px;
   background: var(--surface-2);
   border-radius: 2px;
@@ -545,6 +709,7 @@ onMounted(loadAccounts)
   width: 100%;
 }
 .progress-bar-fill {
+  display: block;
   height: 100%;
   border-radius: 2px;
   transition: width 0.4s ease;

@@ -28,6 +28,7 @@ public class CallbackService {
         String newStatus = switch (disposition) {
             case PASS -> "APPROVED";
             case REJECT -> "REJECTED";
+            case RETURN ->  "RETURNED";
             default -> throw new IllegalArgumentException("不應該 callback MANUAL_REVIEW");
         };
 

@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
  * 儲存了帳戶的詳細資訊，包括帳號、客戶 ID、帳戶類型、餘額、狀態等。
  */
 @Entity
-@Table(name = "ACCOUNT")
+@Table(name = "account")
 @Getter
 @Setter
 @NoArgsConstructor

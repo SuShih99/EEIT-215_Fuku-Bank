@@ -87,7 +87,7 @@
           <a-tag :color="priorityColor(record.priority)">P{{ record.priority }}</a-tag>
         </template>
         <template v-if="column.key === 'status'">
-          <a-badge :status="statusBadge(record.status)" :text="statusLabel(record.status)" />
+          <a-badge :status="statusBadge(record)" :text="statusLabel(record)" />
         </template>
         <template v-if="column.key === 'riskLevel'">
           <a-tag v-if="record.riskLevel" :color="riskColor(record.riskLevel)">{{
@@ -101,7 +101,7 @@
             v-if="record.status !== 'COMPLETED'"
             type="link"
             size="small"
-            @click.stop="openDecisionModal(record)"
+            @click.stop="handleReviewAction(record)"
             >審核</a-button
           >
           <span v-else style="color: #bfbfbf; font-size: 13px">已結案</span>
@@ -133,10 +133,7 @@
             <a-tag :color="priorityColor(drawerTask.priority)">P{{ drawerTask.priority }}</a-tag>
           </a-descriptions-item>
           <a-descriptions-item label="狀態">
-            <a-badge
-              :status="statusBadge(drawerTask.status)"
-              :text="statusLabel(drawerTask.status)"
-            />
+            <a-badge :status="statusBadge(drawerTask)" :text="statusLabel(drawerTask)" />
           </a-descriptions-item>
           <a-descriptions-item label="建立時間">{{ drawerTask.createAt }}</a-descriptions-item>
           <a-descriptions-item label="結案時間">{{
@@ -163,36 +160,108 @@
                 : '—'
             }}
           </a-descriptions-item>
-          <a-descriptions-item label="風控原因">{{
-            drawerTask.triggerReason || '—'
-          }}</a-descriptions-item>
-
-          <!-- 展開 metaData -->
-          <template v-if="parsedMeta(drawerTask.metaData)">
-            <a-descriptions-item label="最終分數">
-              {{ parsedMeta(drawerTask.metaData)?.finalScore ?? '—' }}
+          <template v-if="drawerTrigger">
+            <a-descriptions-item label="綜合評分">
+              {{ drawerTrigger.finalScore ?? '—' }}
+            </a-descriptions-item>
+            <a-descriptions-item label="聯徵分數">
+              {{ drawerTrigger.externalScore ?? '—' }}
+            </a-descriptions-item>
+            <a-descriptions-item label="職業">
+              {{ occupationLabel(drawerTrigger.occupation) }}
             </a-descriptions-item>
             <a-descriptions-item label="年收入">
               {{
-                parsedMeta(drawerTask.metaData)?.annualIncome
-                  ? '$ ' +
-                    Number(parsedMeta(drawerTask.metaData).annualIncome).toLocaleString('zh-TW')
+                drawerTrigger.annualIncome != null
+                  ? '$ ' + Number(drawerTrigger.annualIncome).toLocaleString('zh-TW')
                   : '—'
               }}
             </a-descriptions-item>
             <a-descriptions-item label="他行負債">
               {{
-                parsedMeta(drawerTask.metaData)?.otherBankDebt
-                  ? '$ ' +
-                    Number(parsedMeta(drawerTask.metaData).otherBankDebt).toLocaleString('zh-TW')
+                drawerTrigger.otherBankDebt != null
+                  ? '$ ' + Number(drawerTrigger.otherBankDebt).toLocaleString('zh-TW')
                   : '—'
               }}
             </a-descriptions-item>
             <a-descriptions-item label="有不動產">
-              {{ parsedMeta(drawerTask.metaData)?.hasRealEstate ? '是' : '否' }}
+              {{ drawerTrigger.hasRealEstate ? '是' : '否' }}
+            </a-descriptions-item>
+            <a-descriptions-item label="PEP 人士">
+              <a-tag :color="drawerTrigger.isPep ? 'red' : 'default'">
+                {{ drawerTrigger.isPep ? '是' : '否' }}
+              </a-tag>
+            </a-descriptions-item>
+          </template>
+          <template v-else>
+            <a-descriptions-item label="風控原因">
+              {{ drawerTask.triggerReason || '—' }}
             </a-descriptions-item>
           </template>
         </a-descriptions>
+
+        <div v-if="drawerTask.attachments" style="margin-top: 20px">
+          <h3
+            style="
+              font-size: 14px;
+              font-weight: 600;
+              color: rgba(0, 0, 0, 0.85);
+              margin-bottom: 12px;
+            "
+          >
+            客戶補件附件
+          </h3>
+          <div class="attachments-container">
+            <a-card
+              v-for="doc in parseAttachments(drawerTask.attachments)"
+              :key="doc.documentId"
+              size="small"
+              style="margin-bottom: 8px; border-radius: 6px"
+            >
+              <div style="display: flex; align-items: center; justify-content: space-between">
+                <div>
+                  <a-tag color="blue">{{ docLabel(doc.documentType) }}</a-tag>
+                  <span style="font-size: 12px; color: #8c8c8c; font-family: monospace">{{
+                    doc.documentId
+                  }}</span>
+                </div>
+
+                <a-button
+                  type="link"
+                  size="small"
+                  :href="getFileUrl(doc.fileUrl)"
+                  target="_blank"
+                  v-if="doc.fileUrl"
+                >
+                  查看文件
+                </a-button>
+                <span v-else style="color: #bfbfbf; font-size: 12px">無連結</span>
+              </div>
+
+              <div
+                v-if="doc.fileUrl && isImage(doc.fileUrl)"
+                style="
+                  margin-top: 8px;
+                  text-align: center;
+                  background: #fafafa;
+                  padding: 8px;
+                  border-radius: 4px;
+                "
+              >
+                <img
+                  :src="getFileUrl(doc.fileUrl)"
+                  style="
+                    max-width: 100%;
+                    max-height: 150px;
+                    object-fit: contain;
+                    border: 1px solid #f0f0f0;
+                  "
+                  alt="補件預覽"
+                />
+              </div>
+            </a-card>
+          </div>
+        </div>
 
         <a-descriptions
           v-if="drawerTask.status === 'COMPLETED'"
@@ -237,12 +306,29 @@
     <a-modal
       v-model:open="modalVisible"
       title="審核決策"
-      ok-text="送出決策"
       cancel-text="取消"
       :confirm-loading="submitting"
-      @ok="submitDecision"
       @cancel="resetForm"
     >
+      <template #footer>
+        <a-button @click="handleCancel">取消</a-button>
+        <a-tooltip
+          :title="
+            currentTask?.assignee !== currentUser?.email
+              ? '此任務由 ' + currentTask?.assignee + ' 鎖定，您無法送出決策'
+              : ''
+          "
+        >
+          <a-button
+            type="primary"
+            :loading="submitting"
+            :disabled="currentTask?.assignee !== currentUser?.email"
+            @click="submitDecision"
+          >
+            送出決策
+          </a-button>
+        </a-tooltip>
+      </template>
       <a-descriptions :column="2" bordered size="small" style="margin-bottom: 16px">
         <a-descriptions-item label="任務 ID">#{{ currentTask?.taskId }}</a-descriptions-item>
         <a-descriptions-item label="業務編號">{{ currentTask?.businessId }}</a-descriptions-item>
@@ -252,9 +338,16 @@
             riskLabel(currentTask?.riskLevel)
           }}</a-tag>
         </a-descriptions-item>
-        <a-descriptions-item label="風控原因" :span="2">{{
-          currentTask?.triggerReason
-        }}</a-descriptions-item>
+        <a-descriptions-item label="風控原因" :span="2">
+          <template v-if="currentTrigger">
+            <a-tag>分數 {{ currentTrigger.finalScore }}</a-tag>
+            <a-tag :color="riskColor(currentTrigger.riskLevel)">{{
+              riskLabel(currentTrigger.riskLevel)
+            }}</a-tag>
+            <a-tag>{{ occupationLabel(currentTrigger.occupation) }}</a-tag>
+          </template>
+          <span v-else>{{ currentTask?.triggerReason || '—' }}</span>
+        </a-descriptions-item>
       </a-descriptions>
 
       <a-form :model="form" layout="vertical">
@@ -277,9 +370,11 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { message } from 'ant-design-vue'
 import { ReloadOutlined } from '@ant-design/icons-vue'
+import { useAuthStore } from '@/stores/auth'
+import { BASE_URL as SERVER_URL } from '@/api/axios'
 import axios from 'axios'
 
-const BASE_URL = '/api/risk/reviewtask'
+const API_PREFIX = '/api/risk/reviewtask'
 
 const tasks = ref([])
 const loading = ref(false)
@@ -288,6 +383,9 @@ const modalVisible = ref(false)
 const drawerVisible = ref(false)
 const currentTask = ref(null)
 const drawerTask = ref(null)
+
+const authStore = useAuthStore()
+const currentUser = computed(() => authStore.user)
 
 const filters = reactive({ status: undefined, scene: undefined, priority: undefined })
 const pagination = reactive({
@@ -326,7 +424,7 @@ async function fetchTasks() {
     if (filters.scene) params.scene = filters.scene
     if (filters.priority) params.priority = filters.priority
 
-    const res = await axios.get(BASE_URL, { params, withCredentials: true })
+    const res = await axios.get(API_PREFIX, { params, withCredentials: true })
     const page = res.data.data
     tasks.value = page.content
     // 確保 page.number 是有效數字，若為 undefined/null 則預設為 0
@@ -348,7 +446,7 @@ async function submitDecision() {
   submitting.value = true
   try {
     await axios.put(
-      `${BASE_URL}/${currentTask.value.taskId}/decision`,
+      `${API_PREFIX}/${currentTask.value.taskId}/decision`,
       { reviewResult: form.reviewResult, adminComment: form.adminComment },
       { withCredentials: true },
     )
@@ -371,7 +469,13 @@ function handleTableChange(pag) {
   fetchTasks()
 }
 
+const handleCancel = () => {
+  resetForm()
+  modalVisible.value = false // 如果 modalVisible 是 ref，記得加 .value
+}
+
 function onRowClick(record) {
+  console.log('onRowClick', record)
   drawerTask.value = record
   drawerVisible.value = true
 }
@@ -387,25 +491,55 @@ function resetForm() {
   currentTask.value = null
 }
 
-const handleReviewAction = (task) => {
-  openDecisionModal(task)
+async function handleReviewAction(task) {
+  // 若已在處理中（自己鎖的）則直接開 Modal
+  if (task.status !== 'PROCESSING') {
+    try {
+      await axios.put(`${API_PREFIX}/${task.taskId}/start`, {}, { withCredentials: true })
+      await fetchTasks()
+      // 取得最新 task 物件
+      const updated = tasks.value.find((t) => t.taskId === task.taskId)
+      currentTask.value = updated || task
+    } catch (e) {
+      if (e.response?.status === 409) {
+        message.error('該案件已由他人鎖定，請重新整理')
+      } else {
+        message.error('鎖定失敗：' + (e.response?.data?.message || e.message))
+      }
+      fetchTasks()
+      return
+    }
+  } else {
+    currentTask.value = task
+  }
+  openDecisionModal(currentTask.value)
   drawerVisible.value = false
 }
 
-function parsedMeta(metaData) {
-  if (!metaData) return null
-  try {
-    return JSON.parse(metaData)
-  } catch {
-    return null
+function statusLabel(record) {
+  if (record.status === 'PENDING') {
+    return (
+      {
+        NEW: '待處理',
+        WAITING_DOCUMENT: '待補件',
+        RESUBMITTED: '已補件',
+      }[record.substatus] || '待處理'
+    )
   }
+  return { PROCESSING: '處理中', COMPLETED: '已結案' }[record.status] || record.status
 }
 
-function statusLabel(s) {
-  return { PENDING: '待處理', PROCESSING: '處理中', COMPLETED: '已結案' }[s] || s
-}
-function statusBadge(s) {
-  return { PENDING: 'warning', PROCESSING: 'processing', COMPLETED: 'success' }[s] || 'default'
+function statusBadge(record) {
+  if (record.status === 'PENDING') {
+    return (
+      {
+        NEW: 'warning',
+        WAITING_DOCUMENT: 'error',
+        RESUBMITTED: 'processing',
+      }[record.substatus] || 'warning'
+    )
+  }
+  return { PROCESSING: 'processing', COMPLETED: 'success' }[record.status] || 'default'
 }
 function sceneLabel(s) {
   return (
@@ -428,6 +562,79 @@ function priorityColor(p) {
 }
 
 onMounted(fetchTasks)
+
+// 解析資料庫存進來的 attachments JSON 字串
+function parseAttachments(attachmentsStr) {
+  if (!attachmentsStr) return []
+  try {
+    return JSON.parse(attachmentsStr)
+  } catch (e) {
+    console.error('解析補件資料失敗:', e)
+    return []
+  }
+}
+
+const drawerTrigger = computed(() => {
+  if (!drawerTask.value?.triggerReason) return null
+  try {
+    const parsed = JSON.parse(drawerTask.value.triggerReason)
+    return typeof parsed === 'object' ? parsed : null
+  } catch {
+    return null
+  }
+})
+
+const currentTrigger = computed(() => {
+  if (!currentTask.value?.triggerReason) return null
+  try {
+    return JSON.parse(currentTask.value.triggerReason)
+  } catch {
+    return null
+  }
+})
+// 證件中文標籤對照表
+function docLabel(type) {
+  return (
+    {
+      ID_CARD: '身分證',
+      INCOME_PROOF: '收入證明',
+      PROPERTY_CERT: '不動產權狀',
+      TAX_STATEMENT: '扣繳憑單',
+    }[type] || type
+  )
+}
+
+// 處理檔案與圖片網址
+function getFileUrl(url) {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return SERVER_URL + url
+}
+
+function occupationLabel(o) {
+  return (
+    {
+      LEGISLATOR_MANAGER: '民意代表／高階主管',
+      PROFESSIONAL: '專業人員',
+      TECHNICIAN: '技術員及助理專業人員',
+      CLERICAL: '事務支援人員',
+      SERVICE_SALES: '服務及銷售工作人員',
+      AGRICULTURAL: '農林漁牧業生產人員',
+      CRAFT_WORKER: '技藝有關工作人員',
+      MACHINE_OPERATOR: '機械設備操作及組裝人員',
+      ELEMENTARY: '基層技術工及勞力工',
+      MILITARY: '軍人',
+      NONE: '無',
+      OTHER: '其他',
+    }[o] || o
+  )
+}
+
+// 判斷是否為圖片，用來決定要不要秀預覽圖
+function isImage(url) {
+  if (!url) return false
+  return /\.(jpg|jpeg|png|gif|webp)$/i.test(url)
+}
 </script>
 
 <style scoped>

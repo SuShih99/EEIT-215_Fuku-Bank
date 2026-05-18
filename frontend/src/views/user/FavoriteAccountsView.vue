@@ -30,24 +30,65 @@
     </a-card>
 
     <!-- 常用帳號列表 -->
-    <a-card class="list-card" style="margin-top: 20px">
-      <a-table :dataSource="favorites" :columns="columns" :loading="loading"
-               rowKey="id" :pagination="{ pageSize: 10 }">
-        <template #emptyText>
-          <div style="padding: 32px 0; color: #999;">尚無常用帳號</div>
-        </template>
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'action'">
-            <a-space>
-              <a-button size="small" @click="startEdit(record)">編輯</a-button>
-              <a-popconfirm title="確定要刪除此常用帳號？" @confirm="handleDelete(record.id)">
-                <a-button size="small" danger>刪除</a-button>
-              </a-popconfirm>
-            </a-space>
-          </template>
-        </template>
-      </a-table>
-    </a-card>
+    <section class="list-card">
+      <div class="overflow-x-auto rounded-[16px] bg-white/60 p-4">
+        <table class="w-full min-w-[820px] border-collapse text-left text-[14px] text-[var(--text-primary)]">
+          <thead class="bg-[rgba(245,241,234,0.84)]">
+            <tr>
+              <th class="rounded-tl-[10px] border-b border-[rgba(214,206,195,0.72)] px-4 py-3 font-semibold">帳號</th>
+              <th class="border-b border-[rgba(214,206,195,0.72)] px-4 py-3 font-semibold">銀行代號</th>
+              <th class="border-b border-[rgba(214,206,195,0.72)] px-4 py-3 font-semibold">備註名稱</th>
+              <th class="border-b border-[rgba(214,206,195,0.72)] px-4 py-3 font-semibold">銀行名稱</th>
+              <th class="border-b border-[rgba(214,206,195,0.72)] px-4 py-3 font-semibold">建立時間</th>
+              <th class="rounded-tr-[10px] border-b border-[rgba(214,206,195,0.72)] px-4 py-3 font-semibold">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="loading">
+              <td colspan="6" class="border-b border-[rgba(214,206,195,0.42)] px-4 py-14 text-center text-[var(--text-secondary)]">
+                資料載入中
+              </td>
+            </tr>
+            <tr v-else-if="favorites.length === 0">
+              <td colspan="6" class="border-b border-[rgba(214,206,195,0.42)] px-4 py-14 text-center text-[var(--text-secondary)]">
+                尚無常用帳號
+              </td>
+            </tr>
+            <template v-else>
+              <tr
+                v-for="record in favorites"
+                :key="record.id"
+                class="transition-colors hover:bg-[rgba(92,107,95,0.045)]"
+              >
+                <td class="border-b border-[rgba(214,206,195,0.42)] px-4 py-3 font-medium">{{ record.accountNumber }}</td>
+                <td class="border-b border-[rgba(214,206,195,0.42)] px-4 py-3">{{ record.bankCode || '-' }}</td>
+                <td class="border-b border-[rgba(214,206,195,0.42)] px-4 py-3">{{ record.alias || '-' }}</td>
+                <td class="border-b border-[rgba(214,206,195,0.42)] px-4 py-3">{{ record.bankName || '-' }}</td>
+                <td class="border-b border-[rgba(214,206,195,0.42)] px-4 py-3">{{ record.createdAt || '-' }}</td>
+                <td class="border-b border-[rgba(214,206,195,0.42)] px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <button
+                      type="button"
+                      class="rounded-[8px] border border-[rgba(214,206,195,0.86)] bg-white/50 px-3 py-1.5 text-[13px] font-medium text-[var(--primary-dark)] transition hover:border-[var(--primary)] hover:bg-[var(--primary-light)]"
+                      @click="startEdit(record)"
+                    >
+                      編輯
+                    </button>
+                    <button
+                      type="button"
+                      class="rounded-[8px] border border-[rgba(166,90,77,0.32)] bg-[rgba(166,90,77,0.08)] px-3 py-1.5 text-[13px] font-medium text-[var(--accent)] transition hover:bg-[rgba(166,90,77,0.14)]"
+                      @click="confirmDelete(record.id)"
+                    >
+                      刪除
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
     <!-- 編輯 Modal -->
     <a-modal v-model:open="showEdit" title="編輯常用帳號" @ok="handleUpdate" :confirmLoading="updating">
@@ -92,15 +133,6 @@ const bankLoading = ref(false)
 const adding = ref(false)
 const updating = ref(false)
 const showEdit = ref(false)
-
-const columns = [
-  { title: '帳號', dataIndex: 'accountNumber', key: 'accountNumber', width: 180 },
-  { title: '銀行代號', dataIndex: 'bankCode', key: 'bankCode', width: 110 },
-  { title: '備註名稱', dataIndex: 'alias', key: 'alias' },
-  { title: '銀行名稱', dataIndex: 'bankName', key: 'bankName' },
-  { title: '建立時間', dataIndex: 'createdAt', key: 'createdAt', width: 180 },
-  { title: '操作', key: 'action', width: 160 },
-]
 
 const bankSelectOptions = computed(() =>
   banks.value.map((bank) => ({
@@ -206,29 +238,113 @@ async function handleDelete(id) {
     message.error(e?.response?.data?.message || '刪除失敗')
   }
 }
+
+function confirmDelete(id) {
+  if (window.confirm('確定要刪除此常用帳號？')) {
+    handleDelete(id)
+  }
+}
 </script>
 
 <style scoped>
-.favorite-accounts-page { max-width: 1040px; margin: 0 auto; padding: 32px 28px; }
-h2 { margin-bottom: 28px; color: #1a1a2e; }
-.form-card { border-radius: 12px; }
-.form-card :deep(.ant-card-body) { padding: 44px 48px; }
+.favorite-accounts-page {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+h2 {
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+
+.form-card {
+  border-radius: 12px;
+  background: rgba(255, 249, 239, 0.92);
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  box-shadow: 0 12px 36px rgba(63, 74, 66, 0.08);
+}
+
+.form-card :deep(.ant-card-body) {
+  padding: 28px;
+}
+
 .favorite-form {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  column-gap: 42px;
-  row-gap: 28px;
+  column-gap: 24px;
+  row-gap: 18px;
 }
+
 .favorite-form :deep(.ant-form-item) {
   margin-inline-end: 0;
   margin-bottom: 0;
 }
+
 .favorite-form :deep(.ant-form-item-label) {
-  padding-right: 10px;
+  padding-right: 8px;
 }
+
+.favorite-form :deep(.ant-form-item-label > label) {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.favorite-form :deep(.ant-input),
+.favorite-form :deep(.ant-select-selector) {
+  border-color: rgba(198, 188, 174, 0.92);
+  border-radius: 8px;
+  background: rgba(250, 250, 247, 0.84);
+}
+
+.favorite-form :deep(.ant-input:focus),
+.favorite-form :deep(.ant-input-focused),
+.favorite-form :deep(.ant-select-focused .ant-select-selector) {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.favorite-form :deep(.ant-btn-primary),
+.favorite-accounts-page :deep(.ant-modal .ant-btn-primary) {
+  border-color: var(--primary);
+  background: var(--primary);
+  box-shadow: 0 6px 14px rgba(63, 74, 66, 0.14);
+}
+
+.favorite-form :deep(.ant-btn-primary:hover),
+.favorite-accounts-page :deep(.ant-modal .ant-btn-primary:hover) {
+  border-color: var(--primary-dark);
+  background: var(--primary-dark);
+}
+
 .submit-item {
-  margin-left: 12px;
+  margin-left: 0;
 }
-.list-card { border-radius: 12px; }
+
+.list-card {
+  margin-top: 24px;
+  padding: 24px;
+  border-radius: 12px;
+  background: rgba(255, 249, 239, 0.92);
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  box-shadow: 0 12px 36px rgba(63, 74, 66, 0.08);
+}
+
+@media (max-width: 640px) {
+  .favorite-accounts-page {
+    padding: 16px 0;
+  }
+
+  .form-card :deep(.ant-card-body) {
+    padding: 20px;
+  }
+
+  .favorite-form,
+  .favorite-form :deep(.ant-form-item),
+  .favorite-form :deep(.ant-input),
+  .favorite-form :deep(.ant-select) {
+    width: 100% !important;
+  }
+}
 </style>

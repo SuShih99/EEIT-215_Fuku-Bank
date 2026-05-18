@@ -1,23 +1,3 @@
-IF
-OBJECT_ID('risk_event_log', 'U') IS NOT NULL
-DROP TABLE risk_event_log;
-GO
-
-IF
-OBJECT_ID('review_task', 'U') IS NOT NULL
-DROP TABLE review_task;
-GO
-
-IF
-OBJECT_ID('black_list', 'U') IS NOT NULL
-DROP TABLE black_list;
-GO
-
-IF
-OBJECT_ID('customer_credit_info', 'U') IS NOT NULL
-DROP TABLE customer_credit_info;
-GO
-
 CREATE TABLE RISK_EVENT_LOG
 (
     log_id             bigint IDENTITY (1, 1) NOT NULL,
@@ -46,11 +26,10 @@ CREATE TABLE REVIEW_TASK
     assignee      VARCHAR(255) NULL,
     admin_comment VARCHAR(255) NULL,
     priority      INT      DEFAULT 0,
-    attachments   NVARCHAR(MAX) NULL,
     create_at     DATETIME DEFAULT GETDATE(), -- 自動記錄建立時間
     processed_at  DATETIME NULL,
-    version       BIGINT       DEFAULT 0,
-    attachments   NVARCHAR(MAX) NULL,             -- 補件文件清單（JSON 陣列，null = 尚未收到補件）
+    version       BIGINT   DEFAULT 0,
+    attachments   NVARCHAR(MAX) NULL,         -- 補件文件清單（JSON 陣列，null = 尚未收到補件）
     CONSTRAINT pk_review_task PRIMARY KEY (task_id)
 )
     GO
@@ -78,14 +57,18 @@ CREATE
 NONCLUSTERED INDEX idx_bl_lookup ON BLACK_LIST (list_type, list_value)
 GO
 
-CREATE TABLE CUSTOMER_CREDIT_INFO
+CREATE TABLE customer_credit_info
 (
     customer_id     varchar(20) NOT NULL,
     annual_income   decimal(15, 2),
-    occupation      varchar(20),
+    occupation      nvarchar(50),
+    job             nvarchar(100),
     external_score  int,
     other_bank_debt decimal(15, 2),
     has_real_estate bit,
+    fund_source     varchar(30),
+    is_pep          bit
+        CONSTRAINT DF_customer_credit_info_is_pep DEFAULT 0 NOT NULL,
     final_score     int,
     risk_level      varchar(10),
     last_updated_at datetime    NOT NULL,

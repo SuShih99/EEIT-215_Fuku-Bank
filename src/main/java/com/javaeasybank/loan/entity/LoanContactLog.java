@@ -17,19 +17,26 @@ import java.time.LocalDateTime;
 public class LoanContactLog {
 
     @Id
-    private String logId;                  // log_id (PK)
+    // 紀錄ID
+    private String logId;
 
-    private String applicationId;          // application_id (FK)
+    // 申請ID
+    private String applicationId;
 
-    private String empId;                  // 聯繫人員
+    //  聯繫人員ID
+    private String empId;
 
+    // 聯繫狀態
     @Enumerated(EnumType.STRING)
     private LoanContactStatus contactStatus;
 
+    // 聯繫管道
     @Enumerated(EnumType.STRING)
     private LoanContactChannel contactChannel;
 
+    // 聯繫時間
     private LocalDateTime contactTime;
-    @Column(columnDefinition = "NVARCHAR(255)")
+
+    // 備註
     private String note;
 }

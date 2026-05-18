@@ -42,7 +42,11 @@
               <a-menu-item key="loan-applications" @click="$router.push({ name: 'loan-applications' })">
                 <template #icon><AuditOutlined /></template>
                 <span>貸款申請管理</span>
-                </a-menu-item>
+              </a-menu-item>
+              <a-menu-item key="admin-loan-accounts" @click="$router.push({ name: 'admin-loan-accounts' })">
+                <template #icon><FundOutlined /></template>
+                <span>貸款帳戶管理</span>
+              </a-menu-item>
             </a-menu-item-group>
 
             <a-menu-item-group title="信用卡業務">
@@ -145,7 +149,7 @@ import { Modal } from 'ant-design-vue'
 import { onMounted, onUnmounted } from 'vue'
 import {
   HomeOutlined, TeamOutlined, UserOutlined, SettingOutlined, LogoutOutlined,
-  BankOutlined, ProfileOutlined, AuditOutlined,
+  BankOutlined, ProfileOutlined, AuditOutlined, FundOutlined,
   AppstoreAddOutlined, SolutionOutlined, CreditCardOutlined, AlertOutlined, StopOutlined, CheckCircleOutlined
 } from '@ant-design/icons-vue'
 

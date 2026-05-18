@@ -8,6 +8,7 @@ import com.javaeasybank.customer.repository.CustomerRespository;
 import com.javaeasybank.customer.entity.CustomerAuth;
 import com.javaeasybank.customer.entity.CustomerProfile;
 import com.javaeasybank.customer.repository.CustomerAuthRepository;
+import com.javaeasybank.customer.LoginRiskClient;
 import com.javaeasybank.customer.repository.CustomerDeviceRepository;
 import com.javaeasybank.customer.repository.CustomerLoginLogRepository;
 import com.javaeasybank.customer.repository.CustomerProfileRepository;
@@ -43,14 +44,16 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
+    private final LoginRiskClient loginRiskClient;
+    private final LoginAuditService loginAuditService;
 
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
 
-    @Value("${app.demo.password-reset-email:nnor.0023067@gmail.com}")
+    @Value("${app.demo.password-reset-email:hmi550843@gmail.com}")
     private String demoPasswordResetEmail;
 
-    @Value("${app.demo.verification-email:nnor.0023067@gmail.com}")
+    @Value("${app.demo.verification-email:hmi550843@gmail.com}")
     private String demoVerificationEmail;
 
     // 用於產生隨機英數
@@ -61,12 +64,14 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
     private final SecureRandom secureRandom = new SecureRandom();
 
     public CustomerAuthServiceImpl(CustomerAuthRepository customerAuthRepository,
-                                   CustomerProfileRepository customerProfileRepository,
-                                   CustomerLoginLogRepository customerLoginLogRepository,
-                                   CustomerDeviceRepository customerDeviceRepository,
-                                   PasswordEncoder passwordEncoder,
-                                   JwtUtil jwtUtil,
-                                   EmailService emailService) {
+            CustomerProfileRepository customerProfileRepository,
+            CustomerLoginLogRepository customerLoginLogRepository,
+            CustomerDeviceRepository customerDeviceRepository,
+            PasswordEncoder passwordEncoder,
+            JwtUtil jwtUtil,
+            EmailService emailService,
+            LoginRiskClient loginRiskClient,
+            LoginAuditService loginAuditService) {
         this.customerAuthRepository = customerAuthRepository;
         this.customerProfileRepository = customerProfileRepository;
         this.customerLoginLogRepository = customerLoginLogRepository;
@@ -74,6 +79,8 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.emailService = emailService;
+        this.loginRiskClient = loginRiskClient;
+        this.loginAuditService = loginAuditService;
     }
 
     // ===========================
@@ -154,7 +161,8 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
     // 登入
     // ===========================
     @Override
-    public CustomerRespository.LoginResponse login(CustomerRespository.LoginRequest request, String ipAddress, String userAgent) {
+    public CustomerRespository.LoginResponse login(CustomerRespository.LoginRequest request, String ipAddress,
+            String userAgent) {
         String deviceName = resolveDeviceName(userAgent);
         String location = (ipAddress == null || ipAddress.isBlank() ? "未知位置" : ipAddress) + " / " + deviceName;
 
@@ -163,7 +171,8 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
                 .orElse(null);
 
         if (auth == null) {
-            recordLogin(null, request.getUsername(), "失敗", "帳號或密碼錯誤", ipAddress, userAgent, deviceName);
+            loginAuditService.recordLogin(null, request.getUsername(), "失敗", "帳號或密碼錯誤", ipAddress, userAgent,
+                    deviceName);
             throw new BusinessException("帳號或密碼錯誤");
         }
 
@@ -173,35 +182,37 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
         String email = (profile != null) ? profile.getEmail() : null;
 
         // 2. 檢查狀態
+        if ("LOCKED".equals(auth.getStatus())) {
+            loginAuditService.recordLogin(auth.getCustomerId(), auth.getUsername(),
+                    "失敗", "帳號已鎖定", ipAddress, userAgent, deviceName);
+            loginRiskClient.recordLoginEvent(auth.getCustomerId(), ipAddress, "FAILURE", "帳號已鎖定");
+            throw new BusinessException("帳號已暫時鎖定，請聯繫客服解鎖");
+        }
+
         if ("PENDING".equals(auth.getStatus())) {
-            recordLogin(auth.getCustomerId(), auth.getUsername(), "失敗", "帳號尚未驗證", ipAddress, userAgent, deviceName);
+            loginAuditService.recordLogin(auth.getCustomerId(), auth.getUsername(), "失敗", "帳號尚未驗證", ipAddress,
+                    userAgent, deviceName);
             throw new BusinessException("帳號尚未驗證，請先至信箱收取驗證信");
         }
         if (!"ACTIVE".equals(auth.getStatus())
                 || profile == null
                 || !"ACTIVE".equals(profile.getStatus())) {
-            recordLogin(auth.getCustomerId(), auth.getUsername(), "失敗", "帳號已被停用", ipAddress, userAgent, deviceName);
+            loginAuditService.recordLogin(auth.getCustomerId(), auth.getUsername(), "失敗", "帳號已被停用", ipAddress,
+                    userAgent, deviceName);
+            loginRiskClient.recordLoginEvent(auth.getCustomerId(), ipAddress, "FAILURE", "帳號已被停用");
             throw new BusinessException("此帳號已被停用");
         }
 
         // 3. 驗密碼
         if (!passwordEncoder.matches(request.getPassword(), auth.getPasswordHash())) {
-            recordLogin(auth.getCustomerId(), auth.getUsername(), "失敗", "帳號或密碼錯誤", ipAddress, userAgent, deviceName);
-            if (email != null) {
-                emailService.sendLoginNotification(email, auth.getUsername(), false, location);
-            }
-            throw new BusinessException("帳號或密碼錯誤");
+            handleLoginFailure(auth, email, location, "帳號或密碼錯誤", ipAddress, userAgent, deviceName, "帳號或密碼錯誤");
         }
 
         // 4. 驗證身分證字號
         if (request.getIdNumber() != null && !request.getIdNumber().isEmpty()) {
             String loginIdNumber = TaiwanIdValidator.normalize(request.getIdNumber());
-            if (profile == null || !profile.getIdNumber().equals(loginIdNumber)) {
-                recordLogin(auth.getCustomerId(), auth.getUsername(), "失敗", "身分證字號不正確", ipAddress, userAgent, deviceName);
-                if (email != null) {
-                    emailService.sendLoginNotification(email, auth.getUsername(), false, location);
-                }
-                throw new BusinessException("身分證字號不正確");
+            if (!profile.getIdNumber().equals(loginIdNumber)) {
+                handleLoginFailure(auth, email, location, "身分證字號不正確", ipAddress, userAgent, deviceName, "身分證字號不正確");
             }
         }
 
@@ -209,7 +220,9 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
         auth.setLastLoginDate(LocalDateTime.now());
         customerAuthRepository.save(auth);
         upsertDevice(auth.getCustomerId(), ipAddress, userAgent);
-        recordLogin(auth.getCustomerId(), auth.getUsername(), "成功", null, ipAddress, userAgent, deviceName);
+        loginAuditService.recordLogin(auth.getCustomerId(), auth.getUsername(), "成功", null, ipAddress, userAgent,
+                deviceName);
+        loginRiskClient.recordLoginEvent(auth.getCustomerId(), ipAddress, "SUCCESS", "登入成功");
 
         // 6. 產生 JWT
         String token = jwtUtil.generateToken(auth.getUsername(), "CUSTOMER", auth.getCustomerId());
@@ -259,7 +272,8 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
     // ===========================
     @Override
     @Transactional
-    public CustomerRespository.CustomerResponse updateProfile(String customerId, CustomerRespository.ProfileUpdateRequest request) {
+    public CustomerRespository.CustomerResponse updateProfile(String customerId,
+            CustomerRespository.ProfileUpdateRequest request) {
         CustomerProfile profile = customerProfileRepository.findById(customerId)
                 .orElseThrow(() -> new BusinessException("查無此客戶"));
 
@@ -343,15 +357,14 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
         auth.setResetToken(resetToken);
         auth.setResetTokenExpiry(LocalDateTime.now().plusMinutes(30));
         customerAuthRepository.save(auth);
-        recordLogin(
+        loginAuditService.recordLogin(
                 profile.getCustomerId(),
                 auth.getUsername(),
                 "成功",
                 "密碼重設連結已發送",
                 null,
                 "Password reset request",
-                "安全中心 / 密碼重設"
-        );
+                "安全中心 / 密碼重設");
 
         // 組成重設連結
         String resetLink = frontendUrl + "/reset-password?token=" + resetToken;
@@ -376,15 +389,14 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
         auth.setResetToken(null);
         auth.setResetTokenExpiry(null);
         customerAuthRepository.save(auth);
-        recordLogin(
+        loginAuditService.recordLogin(
                 auth.getCustomerId(),
                 auth.getUsername(),
                 "成功",
                 "密碼已完成變更",
                 null,
                 "Password reset completed",
-                "安全中心 / 密碼重設"
-        );
+                "安全中心 / 密碼重設");
     }
 
     // ===========================
@@ -395,11 +407,11 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
     public void seedAuthTestData() {
         // 為已有的 seed 客戶資料建立對應的 customer_auth
         String[][] data = {
-            {"X7K9P2M4", "mingwang85"},
-            {"V4L6T1Y8", "hualin90"},
-            {"D3H8F5G2", "chienchen78"},
-            {"B9W1C7R5", "yachang95"},
-            {"P6M4N2Q8", "chihlee82"},
+                { "X7K9P2M4", "mingwang85" },
+                { "V4L6T1Y8", "hualin90" },
+                { "D3H8F5G2", "chienchen78" },
+                { "B9W1C7R5", "yachang95" },
+                { "P6M4N2Q8", "chihlee82" },
         };
 
         for (String[] d : data) {
@@ -419,22 +431,34 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
     // ===========================
     // 私有方法
     // ===========================
-    private void recordLogin(String customerId,
-                             String username,
-                             String result,
-                             String failReason,
-                             String ipAddress,
-                             String userAgent,
-                             String deviceName) {
-        CustomerLoginLog log = new CustomerLoginLog();
-        log.setCustomerId(customerId);
-        log.setUsername(truncate(username == null || username.isBlank() ? "UNKNOWN" : username, 50));
-        log.setResult(result);
-        log.setFailReason(truncate(failReason, 200));
-        log.setIpAddress(truncate(ipAddress, 45));
-        log.setUserAgent(truncate(userAgent, 512));
-        log.setDeviceName(truncate(deviceName, 120));
-        customerLoginLogRepository.save(log);
+    private void handleLoginFailure(CustomerAuth auth, String email, String location, String failReason,
+            String ipAddress, String userAgent, String deviceName, String userErrorMessage) {
+        // 取得最近 30 分鐘內的失敗次數 (不含本次)
+        int recentFailures = customerLoginLogRepository.countRecentFailures(
+                auth.getCustomerId(),
+                LocalDateTime.now().minusMinutes(30));
+
+        // 紀錄本次失敗
+        loginAuditService.recordLogin(auth.getCustomerId(), auth.getUsername(), "失敗", failReason, ipAddress, userAgent,
+                deviceName);
+
+        // 如果加上本次是第 5 次 (recentFailures 原本為 4)
+        if (recentFailures >= 4) {
+            auth.setStatus("LOCKED");
+            customerAuthRepository.save(auth);
+            loginRiskClient.recordLoginEvent(auth.getCustomerId(), ipAddress, "LOCK", "觸發多次失敗鎖定");
+            if (email != null) {
+                emailService.sendAccountLockedNotification(email, auth.getUsername(), location);
+            }
+            throw new BusinessException("登入失敗次數過多，帳號已暫時鎖定，請聯繫客服解鎖");
+        } else if (recentFailures >= 2) {
+            // 第 3 次失敗開始發送警示 (recentFailures=2 代表前面 2 次失敗，本次第 3 次)
+            loginRiskClient.recordLoginEvent(auth.getCustomerId(), ipAddress, "WARNING", "登入三次失敗警告");
+            if (email != null) {
+                emailService.sendLoginNotification(email, auth.getUsername(), false, location);
+            }
+        }
+        throw new BusinessException(userErrorMessage);
     }
 
     private void upsertDevice(String customerId, String ipAddress, String userAgent) {
@@ -476,25 +500,35 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
 
     private String resolveBrowserName(String userAgent) {
         String ua = userAgent == null ? "" : userAgent.toLowerCase(Locale.ROOT);
-        if (ua.contains("edg/")) return "Microsoft Edge";
-        if (ua.contains("chrome/") || ua.contains("crios/")) return "Chrome";
-        if (ua.contains("firefox/") || ua.contains("fxios/")) return "Firefox";
-        if (ua.contains("safari/")) return "Safari";
+        if (ua.contains("edg/"))
+            return "Microsoft Edge";
+        if (ua.contains("chrome/") || ua.contains("crios/"))
+            return "Chrome";
+        if (ua.contains("firefox/") || ua.contains("fxios/"))
+            return "Firefox";
+        if (ua.contains("safari/"))
+            return "Safari";
         return "未知瀏覽器";
     }
 
     private String resolveOperatingSystem(String userAgent) {
         String ua = userAgent == null ? "" : userAgent.toLowerCase(Locale.ROOT);
-        if (ua.contains("windows")) return "Windows";
-        if (ua.contains("mac os") || ua.contains("macintosh")) return "macOS";
-        if (ua.contains("iphone") || ua.contains("ipad")) return "iOS";
-        if (ua.contains("android")) return "Android";
-        if (ua.contains("linux")) return "Linux";
+        if (ua.contains("windows"))
+            return "Windows";
+        if (ua.contains("mac os") || ua.contains("macintosh"))
+            return "macOS";
+        if (ua.contains("iphone") || ua.contains("ipad"))
+            return "iOS";
+        if (ua.contains("android"))
+            return "Android";
+        if (ua.contains("linux"))
+            return "Linux";
         return "未知系統";
     }
 
     private String truncate(String value, int maxLength) {
-        if (value == null) return null;
+        if (value == null)
+            return null;
         return value.length() <= maxLength ? value : value.substring(0, maxLength);
     }
 

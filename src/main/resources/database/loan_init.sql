@@ -73,6 +73,7 @@ CREATE TABLE loan_review_detail
 CREATE TABLE loan_account
 (
     account_id          NVARCHAR(50)   NOT NULL,
+    account_number      NVARCHAR(14)   NULL,
     application_id      NVARCHAR(50)   NOT NULL,
     customer_id         NVARCHAR(50)   NOT NULL,
     apply_type          NVARCHAR(50)   NULL,

@@ -55,25 +55,65 @@
     </a-card>
 
     <!-- 預約列表 -->
-    <a-card class="list-card" title="我的預約轉帳" style="margin-top: 20px">
-      <a-table :dataSource="schedules" :columns="columns" :loading="loading"
-               rowKey="id" :pagination="{ pageSize: 10 }">
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'amount'">
-            {{ formatNum(record.amount) }} TWD
-          </template>
-          <template v-else-if="column.key === 'status'">
-            <a-tag :color="statusColor(record.status)">{{ statusLabel(record.status) }}</a-tag>
-          </template>
-          <template v-else-if="column.key === 'action'">
-            <a-popconfirm title="確定要取消此預約？" @confirm="handleCancel(record.id)"
-                          v-if="record.status === 'PENDING'">
-              <a-button size="small" danger>取消</a-button>
-            </a-popconfirm>
-          </template>
-        </template>
-      </a-table>
-    </a-card>
+    <section class="list-card">
+      <div class="list-card-title">我的預約轉帳</div>
+      <div class="overflow-x-auto rounded-[16px] bg-white/60 p-4">
+        <table class="w-full min-w-[900px] border-collapse text-left text-[14px] text-[var(--text-primary)]">
+          <thead class="bg-[rgba(245,241,234,0.84)]">
+            <tr>
+              <th class="rounded-tl-[10px] border-b border-[rgba(214,206,195,0.72)] px-4 py-3 font-semibold">轉出帳戶</th>
+              <th class="border-b border-[rgba(214,206,195,0.72)] px-4 py-3 font-semibold">轉入帳戶</th>
+              <th class="border-b border-[rgba(214,206,195,0.72)] px-4 py-3 font-semibold">金額</th>
+              <th class="border-b border-[rgba(214,206,195,0.72)] px-4 py-3 font-semibold">預約日期</th>
+              <th class="border-b border-[rgba(214,206,195,0.72)] px-4 py-3 font-semibold">備註</th>
+              <th class="border-b border-[rgba(214,206,195,0.72)] px-4 py-3 font-semibold">狀態</th>
+              <th class="rounded-tr-[10px] border-b border-[rgba(214,206,195,0.72)] px-4 py-3 font-semibold">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="loading">
+              <td colspan="7" class="border-b border-[rgba(214,206,195,0.42)] px-4 py-14 text-center text-[var(--text-secondary)]">
+                資料載入中
+              </td>
+            </tr>
+            <tr v-else-if="schedules.length === 0">
+              <td colspan="7" class="border-b border-[rgba(214,206,195,0.42)] px-4 py-14 text-center text-[var(--text-secondary)]">
+                尚無預約轉帳
+              </td>
+            </tr>
+            <template v-else>
+              <tr
+                v-for="record in schedules"
+                :key="record.id"
+                class="transition-colors hover:bg-[rgba(92,107,95,0.045)]"
+              >
+                <td class="border-b border-[rgba(214,206,195,0.42)] px-4 py-3 font-medium">{{ record.fromAccountNumber }}</td>
+                <td class="border-b border-[rgba(214,206,195,0.42)] px-4 py-3">{{ record.toAccountNumber }}</td>
+                <td class="border-b border-[rgba(214,206,195,0.42)] px-4 py-3">{{ formatNum(record.amount) }} TWD</td>
+                <td class="border-b border-[rgba(214,206,195,0.42)] px-4 py-3">{{ record.scheduledDate }}</td>
+                <td class="border-b border-[rgba(214,206,195,0.42)] px-4 py-3">{{ record.note || '-' }}</td>
+                <td class="border-b border-[rgba(214,206,195,0.42)] px-4 py-3">
+                  <span :class="statusBadgeClass(record.status)">
+                    {{ statusLabel(record.status) }}
+                  </span>
+                </td>
+                <td class="border-b border-[rgba(214,206,195,0.42)] px-4 py-3">
+                  <button
+                    v-if="record.status === 'PENDING'"
+                    type="button"
+                    class="rounded-[8px] border border-[rgba(166,90,77,0.32)] bg-[rgba(166,90,77,0.08)] px-3 py-1.5 text-[13px] font-medium text-[var(--accent)] transition hover:bg-[rgba(166,90,77,0.14)]"
+                    @click="confirmCancel(record.id)"
+                  >
+                    取消
+                  </button>
+                  <span v-else class="text-[var(--text-secondary)]">-</span>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
     <!-- 常用帳號選擇 Modal -->
     <a-modal v-model:open="showFavPicker" title="常用帳號" :footer="null" width="480px">
@@ -114,16 +154,6 @@ const showFavPicker = ref(false)
 const twdAccounts = computed(() =>
   accounts.value.filter(a => a.currency === 'TWD' && a.status === 'ACTIVE' && a.accountType !== 'LOAN')
 )
-
-const columns = [
-  { title: '轉出帳戶', dataIndex: 'fromAccountNumber', key: 'fromAccountNumber', ellipsis: true },
-  { title: '轉入帳戶', dataIndex: 'toAccountNumber', key: 'toAccountNumber', ellipsis: true },
-  { title: '金額', key: 'amount', width: 140 },
-  { title: '預約日期', dataIndex: 'scheduledDate', key: 'scheduledDate', width: 120 },
-  { title: '備註', dataIndex: 'note', key: 'note', ellipsis: true },
-  { title: '狀態', key: 'status', width: 100 },
-  { title: '操作', key: 'action', width: 90 },
-]
 
 onMounted(async () => {
   await Promise.all([loadAccounts(), loadSchedules(), loadFavorites()])
@@ -185,6 +215,12 @@ async function handleCancel(id) {
   }
 }
 
+function confirmCancel(id) {
+  if (window.confirm('確定要取消此預約？')) {
+    handleCancel(id)
+  }
+}
+
 function pickFavorite(item) {
   form.value.toAccount = item.accountNumber
   showFavPicker.value = false
@@ -195,14 +231,20 @@ function favoriteDescription(item) {
   return bank ? `${bank} ${item.accountNumber}` : item.accountNumber
 }
 
-function statusColor(s) {
-  const map = { PENDING: 'blue', EXECUTED: 'green', CANCELLED: 'red', FAILED: 'orange' }
-  return map[s] || 'default'
-}
-
 function statusLabel(s) {
   const map = { PENDING: '待執行', EXECUTED: '已執行', CANCELLED: '已取消', FAILED: '執行失敗' }
   return map[s] || s
+}
+
+function statusBadgeClass(s) {
+  const base = 'inline-flex rounded-full px-3 py-1 text-[12px] font-semibold'
+  const map = {
+    PENDING: 'bg-[rgba(92,107,95,0.1)] text-[var(--primary-dark)]',
+    EXECUTED: 'bg-[rgba(92,107,95,0.14)] text-[var(--primary-dark)]',
+    CANCELLED: 'bg-[rgba(166,90,77,0.1)] text-[var(--accent)]',
+    FAILED: 'bg-[rgba(196,164,124,0.18)] text-[#7b5a2f]',
+  }
+  return `${base} ${map[s] || 'bg-[rgba(214,206,195,0.45)] text-[var(--text-secondary)]'}`
 }
 
 function formatNum(v) {
@@ -211,8 +253,87 @@ function formatNum(v) {
 </script>
 
 <style scoped>
-.scheduled-transfer-page { max-width: 960px; margin: 0 auto; padding: 24px; }
-h2 { margin-bottom: 20px; color: #1a1a2e; }
-.form-card { border-radius: 12px; }
-.list-card { border-radius: 12px; }
+.scheduled-transfer-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+h2 {
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+
+.form-card {
+  border-radius: 12px;
+  background: rgba(255, 249, 239, 0.92);
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  box-shadow: 0 12px 36px rgba(63, 74, 66, 0.08);
+}
+
+.list-card {
+  margin-top: 20px;
+  padding: 0 0 24px;
+  border-radius: 12px;
+  background: rgba(255, 249, 239, 0.92);
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  box-shadow: 0 12px 36px rgba(63, 74, 66, 0.08);
+}
+
+.list-card-title {
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(214, 206, 195, 0.72);
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.form-card :deep(.ant-card-head) {
+  color: var(--text-primary);
+  background: transparent;
+  border-bottom-color: rgba(214, 206, 195, 0.72);
+}
+
+.form-card :deep(.ant-card-head-title) {
+  font-weight: 700;
+}
+
+.form-card :deep(.ant-form-item-label > label) {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.form-card :deep(.ant-select-selector),
+.form-card :deep(.ant-input),
+.form-card :deep(.ant-input-number),
+.form-card :deep(.ant-picker) {
+  border-color: rgba(198, 188, 174, 0.92);
+  border-radius: 8px;
+  background: rgba(255, 249, 239, 0.64);
+}
+
+.form-card :deep(.ant-input-number-input) {
+  color: var(--text-primary);
+}
+
+.form-card :deep(.ant-btn-primary) {
+  border-color: var(--primary);
+  background: var(--primary);
+  box-shadow: 0 6px 14px rgba(63, 74, 66, 0.14);
+}
+
+.form-card :deep(.ant-btn-primary:hover) {
+  border-color: var(--primary-dark);
+  background: var(--primary-dark);
+}
+
+@media (max-width: 640px) {
+  .scheduled-transfer-page {
+    padding: 16px 0;
+  }
+
+  .form-card :deep(.ant-col) {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}
 </style>

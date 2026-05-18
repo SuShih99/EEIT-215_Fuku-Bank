@@ -113,19 +113,23 @@ public class RiskReviewService {
             CustomerCreditInfo credit,
             Disposition disposition) {
 
-        RiskEventLog log = buildAndSaveLog(
+        RiskEventLog eventLog = buildAndSaveLog(
                 dto, credit,
                 credit.getFinalScore(),
                 disposition, null);
 
         return switch (disposition) {
             case PASS, REJECT -> {
-                callbackService.notify(dto.getCallbackUrl(), disposition, log);
-                yield buildResponse(log, disposition, null, credit.getFinalScore());
+                callbackService.notify(dto.getCallbackUrl(), disposition, eventLog);
+                yield buildResponse(eventLog, disposition, null, credit.getFinalScore());
             }
             case MANUAL_REVIEW -> {
-                ReviewTask task = reviewTaskService.createTask(log, dto);
-                yield buildResponse(log, disposition, task.getTaskId(), credit.getFinalScore());
+                ReviewTask task = reviewTaskService.createTask(eventLog, dto);
+                yield buildResponse(eventLog, disposition, task.getTaskId(), credit.getFinalScore());
+            }
+            case RETURN -> {
+                log.error("[RiskEngine] 自動風控引擎不應直接計算出退回補件狀態 applicationId={}", dto.getBusinessId());
+                throw new IllegalStateException("自動規則審查不支援直接導向退回補件流程");
             }
         };
     }
@@ -154,8 +158,18 @@ public class RiskReviewService {
 
     private String buildReason(CustomerCreditInfo credit, int finalScore) {
         if (credit == null) return null;
-        return String.format("finalScore=%d riskLevel=%s occupation=%s",
-                finalScore, credit.getRiskLevel(), credit.getOccupation());
+        return String.format(
+                "{\"finalScore\":%d,\"riskLevel\":\"%s\",\"occupation\":\"%s\"," +
+                        "\"annualIncome\":%s,\"externalScore\":%d," +
+                        "\"otherBankDebt\":%s,\"hasRealEstate\":%b,\"isPep\":%b}",
+                finalScore,
+                credit.getRiskLevel(),
+                credit.getOccupation(),
+                credit.getAnnualIncome(),
+                credit.getExternalScore(),
+                credit.getOtherBankDebt(),
+                credit.getHasRealEstate(),
+                credit.getIsPep());
     }
 
     /**
