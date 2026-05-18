@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.DynamicInsert;
-import org.hibernate.annotations.DynamicUpdate;
 import org.springframework.data.domain.Persistable;
 
 import java.time.LocalDate;
@@ -15,8 +13,6 @@ import java.time.LocalDateTime;
 @Table(name = "CUSTOMER_PROFILE")
 @Getter
 @Setter
-@DynamicInsert
-@DynamicUpdate
 public class CustomerProfile implements Persistable<String> {
 
     /** 新建時為 true，@PostPersist / @PostLoad 後設為 false，讓 Spring Data 走 persist() */
