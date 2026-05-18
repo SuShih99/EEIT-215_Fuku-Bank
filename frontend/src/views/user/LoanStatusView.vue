@@ -5,7 +5,7 @@
     <div class="page-header">
       <div class="page-header-inner">
         <div class="page-title-block">
-          <span class="page-icon">📋</span>
+          <span class="page-icon"><i class="fa-solid fa-file-lines"></i></span>
           <div>
             <h1 class="page-title">我的貸款申請</h1>
             <p class="page-subtitle">查看所有已提交的貸款申請狀態</p>
@@ -32,14 +32,14 @@
 
       <!-- ── Error ── -->
       <div v-else-if="error" class="state-block state-error">
-        <span class="state-icon">⚠️</span>
+        <span class="state-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
         <div class="state-text">{{ error }}</div>
         <button class="btn-retry" @click="load">重新載入</button>
       </div>
 
       <!-- ── Empty ── -->
       <div v-else-if="applications.length === 0" class="state-block state-empty">
-        <span class="state-icon">📂</span>
+        <span class="state-icon"><i class="fa-solid fa-inbox"></i></span>
         <div class="state-text">您目前尚未有任何貸款申請紀錄</div>
         <button class="btn-apply-sm" @click="$router.push({ name: 'user-loan-apply' })">
           立即申請貸款
@@ -87,7 +87,7 @@
             :class="contactBannerClass(app.latestContactStatus)"
             v-if="app.latestContactStatus"
           >
-            <span class="contact-banner-icon">{{ contactIcon(app.latestContactStatus) }}</span>
+            <span class="contact-banner-icon"><i :class="contactIcon(app.latestContactStatus)"></i></span>
             <div class="contact-banner-body">
               <span class="contact-banner-label">{{ contactLabel(app.latestContactStatus) }}</span>
               <span class="contact-banner-desc">{{ contactDesc(app.latestContactStatus) }}</span>
@@ -100,7 +100,7 @@
           <!-- 卡片底部：申請時間 + 補交文件 / 查看貸款帳戶 -->
           <div class="card-footer">
             <span class="footer-item">
-              🕐 申請時間：{{ formatTime(app.createTime) }}
+              <i class="fa-solid fa-clock"></i> 申請時間：{{ formatTime(app.createTime) }}
             </span>
             <!-- 已撥款：跳轉貸款帳戶頁面 -->
             <button
@@ -108,7 +108,7 @@
               class="btn-loan-account"
               @click="$router.push({ name: 'user-loan-accounts' })"
             >
-              🏦 查看貸款帳戶
+              查看貸款帳戶
             </button>
             <!-- 其他狀態：補交文件 -->
             <button
@@ -117,7 +117,7 @@
               :class="{ active: docPanelId === app.applicationId }"
               @click="toggleDocPanel(app)"
             >
-              📎 補交文件
+              <i class="fa-solid fa-folder"></i> 補交文件
               <span v-if="docCount(app.applicationId) > 0" class="doc-badge">
                 {{ docCount(app.applicationId) }}
               </span>
@@ -204,7 +204,7 @@
                     </button>
                   </div>
                   <p v-if="uploadError" class="doc-upload-error">{{ uploadError }}</p>
-                  <p v-if="uploadSuccess" class="doc-upload-success">✅ 上傳成功！</p>
+                  <p v-if="uploadSuccess" class="doc-upload-success"><i class="fa-solid fa-circle-check"></i> 上傳成功！</p>
                 </template>
               </div>
 
@@ -293,31 +293,31 @@ const STATUS_MAP = {
 const CONTACT_MAP = {
   NOT_CONTACTED: {
     label:  '尚未聯繫',
-    icon:   '🕐',
+    icon:   'fa-solid fa-clock',
     desc:   '行員將盡快與您聯繫，請保持電話暢通。',
     banner: 'banner-gray',
   },
   ATTEMPTED: {
     label:  '嘗試聯繫中',
-    icon:   '📲',
+    icon:   'fa-solid fa-phone-slash',
     desc:   '行員已嘗試聯繫您，請確認是否有未接來電或訊息。',
     banner: 'banner-blue',
   },
   REACHED: {
     label:  '已成功聯繫',
-    icon:   '✅',
+    icon:   'fa-solid fa-phone-flip',
     desc:   '行員已與您取得聯繫，申請正在進行中。',
     banner: 'banner-green',
   },
   CONFIRMED: {
     label:  '資料已確認',
-    icon:   '📄',
+    icon:   'fa-solid fa-clipboard-check',
     desc:   '行員已確認您的申請資料，即將進入審核流程。',
     banner: 'banner-gold',
   },
   DECLINED: {
     label:  '已放棄申請',
-    icon:   '🚫',
+    icon:   'fa-solid fa-ban',
     desc:   '您已放棄此次申請，如有需要請重新提交。',
     banner: 'banner-red',
   },
@@ -327,7 +327,7 @@ function loanTypeLabel(type)   { return LOAN_TYPE_MAP[type] || type }
 function statusLabel(st)       { return STATUS_MAP[st]?.label || st }
 function statusClass(st)       { return STATUS_MAP[st]?.cls   || '' }
 function contactLabel(ct)      { return CONTACT_MAP[ct]?.label  || ct }
-function contactIcon(ct)       { return CONTACT_MAP[ct]?.icon   || '📋' }
+function contactIcon(ct)       { return CONTACT_MAP[ct]?.icon   || 'fa-solid fa-comment-dots' }
 function contactDesc(ct)       { return CONTACT_MAP[ct]?.desc   || '' }
 function contactBannerClass(ct){ return CONTACT_MAP[ct]?.banner || 'banner-gray' }
 

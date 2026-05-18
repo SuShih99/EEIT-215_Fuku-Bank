@@ -5,7 +5,7 @@
     <div class="page-header">
       <div class="page-header-inner">
         <div class="page-title-block">
-          <span class="page-icon">🏦</span>
+          <span class="page-icon"><i class="fa-solid fa-file-invoice-dollar"></i></span>
           <div>
             <h1 class="page-title">我的貸款帳戶</h1>
             <p class="page-subtitle">查看貸款明細與每期還款進度</p>
@@ -29,14 +29,14 @@
 
       <!-- ── 錯誤 ── -->
       <div v-else-if="error" class="state-block state-error">
-        <span class="state-icon">⚠️</span>
+        <span class="state-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
         <div class="state-text">{{ error }}</div>
         <button class="btn-retry" @click="loadAccounts">重新載入</button>
       </div>
 
       <!-- ── 空狀態 ── -->
       <div v-else-if="accounts.length === 0" class="state-block state-empty">
-        <span class="state-icon">📂</span>
+        <span class="state-icon"><i class="fa-solid fa-inbox"></i></span>
         <div class="state-text">目前尚無貸款帳戶</div>
         <button class="btn-apply" @click="$router.push({ name: 'user-loan-apply' })">
           立即申請貸款

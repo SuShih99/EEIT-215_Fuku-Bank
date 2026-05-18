@@ -5,7 +5,7 @@
     <div class="page-header">
       <div class="page-header-inner">
         <div class="page-title-block">
-          <span class="page-icon">💳</span>
+          <span class="page-icon"><i class="fa-solid fa-coins"></i></span>
           <div>
             <h1 class="page-title">貸款還款</h1>
             <p class="page-subtitle">選擇貸款帳戶與扣款帳戶進行繳款</p>
@@ -165,7 +165,7 @@
       <!-- ── 成功回饋 ── -->
       <transition name="slide">
         <section v-if="lastResult" class="section-card result-card">
-          <div class="result-icon">✅</div>
+          <div class="result-icon"><i class="fa-solid fa-circle-check"></i></div>
           <div class="result-body">
             <div class="result-title">還款成功</div>
             <div class="result-meta">

@@ -6,7 +6,7 @@
     ══════════════════════════════════════════ -->
     <div v-if="step === 'entry'" class="home-wrap">
       <div class="home-left">
-        <div class="home-brand">🏦 Java Easy Bank</div>
+        <div class="home-brand"><i class="fa-solid fa-hand-holding-dollar"></i> Java Easy Bank</div>
         <h1 class="home-title">快速申請<br>專屬貸款方案</h1>
         <p class="home-desc">提供多元貸款方案，快速填寫申請資料，<br>專屬行員將於審核後主動與您聯繫。</p>
 
@@ -48,7 +48,7 @@
             class="showcase-card"
             :class="{ active: showcaseIndex === LOAN_TYPE_LIST.indexOf(t) }"
           >
-            <div class="sc-icon">{{ t.icon }}</div>
+            <div class="sc-icon"><i :class="t.icon"></i></div>
             <div class="sc-name">{{ t.name }}</div>
             <div class="sc-rate" v-if="rateRules?.types?.[t.key]">
               年利率低至 <strong>{{ (rateRules.types[t.key].baseRate * 100).toFixed(1) }}%</strong>
@@ -89,7 +89,7 @@
           <!-- 錯誤提示 -->
           <transition name="fade">
             <div v-if="submitError" class="form-error-banner">
-              ❌ {{ submitError }}
+              <i class="fa-solid fa-circle-xmark"></i> {{ submitError }}
             </div>
           </transition>
 
@@ -119,7 +119,7 @@
 
             <!-- 無符合帳戶 -->
             <div v-else-if="twdCheckingAccounts.length === 0 && !accountsError" class="acct-empty">
-              <span class="acct-empty-icon">⚠️</span>
+              <span class="acct-empty-icon"><i class="fa-solid fa-inbox"></i></span>
               <div>
                 <div class="acct-empty-title">您名下目前沒有正常的台幣活存帳戶</div>
                 <div class="acct-empty-sub">請開立新台幣活存帳戶後再申請貸款</div>
@@ -128,7 +128,7 @@
 
             <!-- 載入錯誤 -->
             <div v-else-if="accountsError" class="acct-error">
-              <span>⚠️</span> {{ accountsError }}
+              <span><i class="fa-solid fa-triangle-exclamation"></i></span> {{ accountsError }}
             </div>
 
             <!-- 下拉選單 -->
@@ -173,7 +173,7 @@
             </div>
 
             <div class="id-notice" style="margin-top: 8px;">
-              <span class="notice-icon">ℹ️</span>
+              <span class="notice-icon"><i class="fa-solid fa-circle-info"></i></span>
               清單僅顯示您名下正常的台幣活存帳戶供選擇。
             </div>
           </div>
@@ -193,7 +193,7 @@
                   :class="{ selected: form.applyType === t.key, ['tc-' + t.key]: true }"
                   @click="onTypeSelect(t.key)"
                 >
-                  <span class="tc-icon">{{ t.icon }}</span>
+                  <span class="tc-icon"><i :class="t.icon"></i></span>
                   <span class="tc-name">{{ t.name }}</span>
                   <span class="tc-rate" v-if="rateRules?.types?.[t.key]">
                     {{ (rateRules.types[t.key].baseRate * 100).toFixed(1) }}% 起
@@ -310,7 +310,7 @@
     ══════════════════════════════════════════ -->
     <div v-else-if="step === 'done'" class="step-wrap">
       <div class="done-card">
-        <div class="done-icon">✅</div>
+        <div class="done-icon"><i class="fa-solid fa-circle-check"></i></div>
         <h2 class="done-title">申請已送出！</h2>
         <p class="done-desc">感謝您的申請，專員將於 3 個工作日內主動與您聯繫。</p>
 
@@ -362,13 +362,13 @@ const BASE_URL = 'http://localhost:8080'
 const router = useRouter()
 
 const LOAN_TYPE_LIST = [
-  { key: 'PERSONAL', name: '個人信貸', icon: '💳', desc: '靈活周轉，快速撥款到帳'      },
-  { key: 'CAR',      name: '汽車貸款', icon: '🚗', desc: '購車首選，利率優惠方案'      },
-  { key: 'MOTOR',    name: '機車貸款', icon: '🛵', desc: '輕鬆入手，分期無壓力'        },
-  { key: 'STUDENT',  name: '學貸',     icon: '🎓', desc: '安心就學，低利固定利率'      },
-  { key: 'BUSINESS', name: '創業貸款', icon: '🏢', desc: '創業圓夢，專業諮詢服務'      },
-  { key: 'HOUSE',    name: '房屋貸款', icon: '🏠', desc: '長期低利，安心置產的最佳選擇' },
-  { key: 'LAND',     name: '土地貸款', icon: '🌍', desc: '土地投資，靈活運用資金'      },
+  { key: 'PERSONAL', name: '個人信貸', icon: 'fa-solid fa-address-card',   desc: '靈活周轉，快速撥款到帳'      },
+  { key: 'CAR',      name: '汽車貸款', icon: 'fa-solid fa-car',            desc: '購車首選，利率優惠方案'      },
+  { key: 'MOTOR',    name: '機車貸款', icon: 'fa-solid fa-motorcycle',     desc: '輕鬆入手，分期無壓力'        },
+  { key: 'STUDENT',  name: '學貸',     icon: 'fa-solid fa-user-graduate',  desc: '安心就學，低利固定利率'      },
+  { key: 'BUSINESS', name: '創業貸款', icon: 'fa-solid fa-briefcase',      desc: '創業圓夢，專業諮詢服務'      },
+  { key: 'HOUSE',    name: '房屋貸款', icon: 'fa-solid fa-house-chimney',  desc: '長期低利，安心置產的最佳選擇' },
+  { key: 'LAND',     name: '土地貸款', icon: 'fa-solid fa-earth-asia',     desc: '土地投資，靈活運用資金'      },
 ]
 const LOAN_TYPE_MAP = Object.fromEntries(LOAN_TYPE_LIST.map(t => [t.key, t.name]))
 
@@ -646,7 +646,7 @@ onUnmounted(() => clearInterval(showcaseTimer))
 .home-left { display: flex; flex-direction: column; gap: 0; min-width: 0; }
 .home-brand {
   display: inline-flex; align-items: center; gap: 8px;
-  font-size: 13px; color: var(--muted-2);
+  font-size: 18px; color: var(--muted-2);
   background: var(--surface); border: 1px solid var(--border);
   padding: 5px 14px; border-radius: 20px;
   margin-bottom: 24px; width: fit-content;
@@ -654,12 +654,12 @@ onUnmounted(() => clearInterval(showcaseTimer))
 }
 .home-title {
   font-family: 'Noto Serif TC', serif;
-  font-size: clamp(28px, 3.5vw, 48px);
+  font-size: clamp(33px, 3.5vw, 53px);
   font-weight: 700; color: var(--ink);
   line-height: 1.25; margin-bottom: 16px;
   white-space: nowrap;
 }
-.home-desc { font-size: 14px; color: var(--muted-2); line-height: 1.8; margin-bottom: 28px; }
+.home-desc { font-size: 19px; color: var(--muted-2); line-height: 1.8; margin-bottom: 28px; }
 
 .home-stats {
   display: flex; align-items: center; gap: 0;
@@ -671,9 +671,9 @@ onUnmounted(() => clearInterval(showcaseTimer))
 .stat-num {
   display: block;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 22px; font-weight: 700; color: var(--primary);
+  font-size: 27px; font-weight: 700; color: var(--primary);
 }
-.stat-label { font-size: 12px; color: var(--muted-2); margin-top: 2px; display: block; white-space: nowrap; }
+.stat-label { font-size: 17px; color: var(--muted-2); margin-top: 2px; display: block; white-space: nowrap; }
 .stat-divider { width: 1px; height: 36px; background: var(--border); flex-shrink: 0; }
 
 .home-actions { display: flex; flex-direction: column; gap: 10px; }
@@ -681,7 +681,7 @@ onUnmounted(() => clearInterval(showcaseTimer))
 .btn-action {
   display: flex; align-items: center; justify-content: space-between;
   padding: 14px 20px; border-radius: 10px;
-  font-size: 14px; font-family: 'Noto Sans TC', sans-serif; font-weight: 500;
+  font-size: 19px; font-family: 'Noto Sans TC', sans-serif; font-weight: 500;
   background: var(--surface); color: var(--ink-2);
   border: 1.5px solid var(--border); cursor: pointer; transition: all 0.15s;
   white-space: nowrap;
@@ -689,7 +689,7 @@ onUnmounted(() => clearInterval(showcaseTimer))
 .btn-action:not(:disabled):hover { border-color: var(--primary); color: var(--primary); }
 .btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
 .coming-tag {
-  font-size: 10px; color: var(--muted);
+  font-size: 15px; color: var(--muted);
   background: var(--surface-2); border: 1px solid var(--border);
   padding: 2px 8px; border-radius: 10px;
   font-family: 'IBM Plex Mono', monospace;
@@ -717,11 +717,11 @@ onUnmounted(() => clearInterval(showcaseTimer))
   border-color: var(--accent);
   box-shadow: 0 0 0 4px var(--accent-dim), 0 8px 32px rgba(166,90,77,0.08);
 }
-.sc-icon  { font-size: 52px; margin-bottom: 12px; }
-.sc-name  { font-family: 'Noto Serif TC', serif; font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
-.sc-rate  { font-size: 14px; color: var(--muted-2); margin-bottom: 8px; }
-.sc-rate strong { font-size: 20px; color: var(--accent); font-family: 'IBM Plex Mono', monospace; }
-.sc-desc  { font-size: 13px; color: var(--muted-2); background: var(--surface-2); border-radius: 8px; padding: 8px 12px; }
+.sc-icon  { font-size: 57px; margin-bottom: 12px; }
+.sc-name  { font-family: 'Noto Serif TC', serif; font-size: 25px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+.sc-rate  { font-size: 19px; color: var(--muted-2); margin-bottom: 8px; }
+.sc-rate strong { font-size: 25px; color: var(--accent); font-family: 'IBM Plex Mono', monospace; }
+.sc-desc  { font-size: 18px; color: var(--muted-2); background: var(--surface-2); border-radius: 8px; padding: 8px 12px; }
 
 .showcase-dots {
   position: absolute; bottom: -28px; left: 50%; transform: translateX(-50%);
@@ -742,14 +742,14 @@ onUnmounted(() => clearInterval(showcaseTimer))
 }
 .back-btn {
   background: none; border: none; cursor: pointer;
-  font-size: 13px; color: var(--muted-2);
+  font-size: 18px; color: var(--muted-2);
   font-family: 'Noto Sans TC', sans-serif;
   padding: 6px 0; transition: color 0.15s;
 }
 .back-btn:hover { color: var(--primary); }
 .step-indicator {
   display: flex; align-items: center; gap: 8px;
-  font-size: 12px; font-family: 'IBM Plex Mono', monospace;
+  font-size: 17px; font-family: 'IBM Plex Mono', monospace;
 }
 .si { color: var(--muted); }
 .si.active { color: var(--primary); font-weight: 600; }
@@ -758,9 +758,9 @@ onUnmounted(() => clearInterval(showcaseTimer))
 
 .step-title {
   font-family: 'Noto Serif TC', serif;
-  font-size: 24px; font-weight: 700; color: var(--ink); margin-bottom: 6px;
+  font-size: 29px; font-weight: 700; color: var(--ink); margin-bottom: 6px;
 }
-.step-desc { font-size: 14px; color: var(--muted-2); margin-bottom: 28px; }
+.step-desc { font-size: 19px; color: var(--muted-2); margin-bottom: 28px; }
 
 /* ── Form Layout ── */
 .form-layout {
@@ -776,7 +776,7 @@ onUnmounted(() => clearInterval(showcaseTimer))
 .form-main {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 1px;
   padding: 28px;
   display: flex; flex-direction: column; gap: 0;
   min-width: 340px;   /* 欄位最小可讀寬度 */
@@ -799,13 +799,13 @@ onUnmounted(() => clearInterval(showcaseTimer))
   gap: 4px;
 }
 .ai-label {
-  font-size: 11px;
+  font-size: 16px;
   color: var(--muted-2);
   font-family: 'IBM Plex Mono', monospace;
   letter-spacing: 0.04em;
 }
 .ai-value {
-  font-size: 14px;
+  font-size: 19px;
   color: var(--ink);
   font-family: 'IBM Plex Mono', monospace;
   font-weight: 600;
@@ -815,7 +815,7 @@ onUnmounted(() => clearInterval(showcaseTimer))
 .applicant-tag {
   display: inline-flex; align-items: center;
   padding: 4px 12px; border-radius: 20px;
-  font-size: 12px; font-weight: 600;
+  font-size: 17px; font-weight: 600;
   margin-bottom: 20px;
   font-family: 'IBM Plex Mono', monospace;
 }
@@ -824,13 +824,13 @@ onUnmounted(() => clearInterval(showcaseTimer))
 .form-error-banner {
   background: rgba(166,90,77,0.08); border: 1px solid rgba(166,90,77,0.25);
   color: var(--red); border-radius: 8px;
-  padding: 10px 14px; font-size: 13px;
+  padding: 10px 14px; font-size: 18px;
   margin-bottom: 16px;
 }
 
 .form-section { margin-bottom: 24px; }
 .section-label {
-  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  font-size: 16px; letter-spacing: 0.12em; text-transform: uppercase;
   font-family: 'IBM Plex Mono', monospace; font-weight: 600;
   color: var(--muted-2); margin-bottom: 14px;
   padding-bottom: 8px; border-bottom: 1px solid var(--border);
@@ -843,7 +843,7 @@ onUnmounted(() => clearInterval(showcaseTimer))
 }
 .field:last-child { margin-bottom: 0; }
 .field label {
-  font-size: 12px; color: var(--muted-2);
+  font-size: 17px; color: var(--muted-2);
   font-family: 'IBM Plex Mono', monospace;
 }
 .req { color: var(--red); margin-left: 2px; }
@@ -852,20 +852,20 @@ onUnmounted(() => clearInterval(showcaseTimer))
   border: 1px solid var(--border-2);
   border-radius: 8px; color: var(--ink);
   font-family: 'Noto Sans TC', sans-serif;
-  font-size: 14px; padding: 10px 14px;
+  font-size: 19px; padding: 10px 14px;
   outline: none; transition: border-color 0.15s, box-shadow 0.15s;
 }
 .field input:focus {
   border-color: var(--primary); box-shadow: 0 0 0 3px rgba(92,107,95,0.12);
 }
 .field-error input { border-color: var(--red); }
-.err-msg { font-size: 11px; color: var(--red); }
-.field-hint { font-size: 11px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
+.err-msg { font-size: 16px; color: var(--red); }
+.field-hint { font-size: 16px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
 .field-textarea {
   width: 100%; background: var(--surface);
   border: 1px solid var(--border-2); border-radius: 8px;
   color: var(--ink); font-family: 'Noto Sans TC', sans-serif;
-  font-size: 14px; padding: 10px 14px; outline: none;
+  font-size: 19px; padding: 10px 14px; outline: none;
   resize: vertical; min-height: 80px;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -878,9 +878,9 @@ onUnmounted(() => clearInterval(showcaseTimer))
   background: var(--accent-dim);
   border: 1px solid var(--accent-lt);
   border-radius: 8px;
-  font-size: 12px; color: var(--muted-2); line-height: 1.5;
+  font-size: 17px; color: var(--muted-2); line-height: 1.5;
 }
-.notice-icon { flex-shrink: 0; font-size: 13px; }
+.notice-icon { flex-shrink: 0; font-size: 18px; }
 
 .field-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .field-grid-3 { display: flex; flex-direction: column; gap: 0; }
@@ -889,7 +889,7 @@ onUnmounted(() => clearInterval(showcaseTimer))
 .input-prefix-wrap { position: relative; }
 .input-prefix {
   position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-  font-size: 14px; color: var(--muted-2);
+  font-size: 19px; color: var(--muted-2);
   font-family: 'IBM Plex Mono', monospace;
   pointer-events: none;
 }
@@ -914,9 +914,9 @@ onUnmounted(() => clearInterval(showcaseTimer))
   border-color: var(--primary); background: rgba(92,107,95,0.08);
   box-shadow: 0 0 0 2px rgba(92,107,95,0.18);
 }
-.tc-icon { font-size: 20px; }
-.tc-name { font-size: 11px; font-weight: 600; color: var(--ink-2); }
-.tc-rate { font-size: 10px; color: var(--primary); font-family: 'IBM Plex Mono', monospace; }
+.tc-icon { font-size: 25px; }
+.tc-name { font-size: 16px; font-weight: 600; color: var(--ink-2); }
+.tc-rate { font-size: 15px; color: var(--primary); font-family: 'IBM Plex Mono', monospace; }
 
 /* Period buttons */
 .period-btns {
@@ -925,7 +925,7 @@ onUnmounted(() => clearInterval(showcaseTimer))
   gap: 8px;
 }
 .period-btn {
-  padding: 7px 14px; border-radius: 8px; font-size: 13px;
+  padding: 7px 14px; border-radius: 8px; font-size: 18px;
   font-family: 'IBM Plex Mono', monospace;
   cursor: pointer; border: 1.5px solid var(--border);
   background: var(--surface); color: var(--muted-2);
@@ -933,7 +933,7 @@ onUnmounted(() => clearInterval(showcaseTimer))
 }
 .period-btn:hover  { border-color: var(--primary); color: var(--primary); }
 .period-btn.active { border-color: var(--primary); background: rgba(92,107,95,0.08); color: var(--primary); font-weight: 600; }
-.period-placeholder { font-size: 13px; color: var(--muted); font-style: italic; padding: 8px 0; }
+.period-placeholder { font-size: 18px; color: var(--muted); font-style: italic; padding: 8px 0; }
 
 /* ── Rate Sidebar ── */
 .rate-sidebar { position: sticky; top: 80px; }
@@ -945,20 +945,20 @@ onUnmounted(() => clearInterval(showcaseTimer))
   box-shadow: 0 2px 12px rgba(0,0,0,0.05);
 }
 .rate-card-label {
-  font-size: 11px; color: var(--muted-2);
+  font-size: 16px; color: var(--muted-2);
   font-family: 'IBM Plex Mono', monospace;
   letter-spacing: 0.1em; text-transform: uppercase;
   margin-bottom: 8px;
 }
 .rate-big {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 44px; font-weight: 700;
+  font-size: 49px; font-weight: 700;
   color: var(--accent); line-height: 1;
   margin-bottom: 16px;
 }
-.rate-unit { font-size: 22px; }
+.rate-unit { font-size: 27px; }
 .rate-empty {
-  font-size: 36px; color: var(--muted); margin-bottom: 16px;
+  font-size: 41px; color: var(--muted); margin-bottom: 16px;
   font-family: 'IBM Plex Mono', monospace;
 }
 
@@ -968,23 +968,23 @@ onUnmounted(() => clearInterval(showcaseTimer))
 }
 .rb-row {
   display: flex; justify-content: space-between;
-  font-size: 12px; color: var(--muted-2);
+  font-size: 17px; color: var(--muted-2);
   font-family: 'IBM Plex Mono', monospace;
   padding: 3px 0;
 }
 .rb-plus  { color: var(--red); }
 .rb-zero  { color: var(--muted); }
 .rb-divider { border-top: 1px solid var(--border); margin: 6px 0; }
-.rb-total { color: var(--ink); font-weight: 600; font-size: 13px; }
+.rb-total { color: var(--ink); font-weight: 600; font-size: 18px; }
 
 .rate-hint { margin-bottom: 12px; }
 .rh-row {
   display: flex; justify-content: space-between; align-items: baseline;
-  font-size: 12px; color: var(--muted-2);
+  font-size: 17px; color: var(--muted-2);
   font-family: 'IBM Plex Mono', monospace;
 }
-.rh-val { font-size: 15px; font-weight: 600; color: var(--ink); }
-.rh-note { font-size: 10px; color: var(--muted); text-align: right; margin-top: 2px; }
+.rh-val { font-size: 20px; font-weight: 600; color: var(--ink); }
+.rh-note { font-size: 15px; color: var(--muted); text-align: right; margin-top: 2px; }
 
 /* 計算公式 */
 .rate-formula {
@@ -995,7 +995,7 @@ onUnmounted(() => clearInterval(showcaseTimer))
   margin-bottom: 12px;
 }
 .formula-title {
-  font-size: 11px; font-weight: 600; color: var(--primary);
+  font-size: 16px; font-weight: 600; color: var(--primary);
   margin-bottom: 8px;
 }
 .formula-row {
@@ -1003,18 +1003,18 @@ onUnmounted(() => clearInterval(showcaseTimer))
   margin-bottom: 6px;
 }
 .formula-label {
-  font-size: 10px; color: var(--muted-2);
+  font-size: 15px; color: var(--muted-2);
   font-family: 'IBM Plex Mono', monospace;
   letter-spacing: 0.05em;
 }
 .formula-val {
-  font-size: 12px; color: var(--ink);
+  font-size: 17px; color: var(--ink);
   font-family: 'IBM Plex Mono', monospace;
 }
 .formula-math { letter-spacing: 0.03em; color: var(--primary); font-weight: 500; }
-.fixed-note   { color: var(--primary); font-size: 11px; }
+.fixed-note   { color: var(--primary); font-size: 16px; }
 .formula-vars {
-  font-size: 10px; color: var(--muted-2);
+  font-size: 15px; color: var(--muted-2);
   font-family: 'IBM Plex Mono', monospace;
   border-top: 1px solid var(--border);
   padding-top: 6px; margin-top: 4px;
@@ -1024,9 +1024,9 @@ onUnmounted(() => clearInterval(showcaseTimer))
 .rate-tips {
   border-top: 1px solid var(--border); padding-top: 14px;
 }
-.tip-title { font-size: 11px; color: var(--muted-2); font-weight: 600; margin-bottom: 8px; }
+.tip-title { font-size: 16px; color: var(--muted-2); font-weight: 600; margin-bottom: 8px; }
 .rate-tips ul { list-style: none; display: flex; flex-direction: column; gap: 5px; }
-.rate-tips li { font-size: 11px; color: var(--muted); line-height: 1.5; padding-left: 10px; position: relative; }
+.rate-tips li { font-size: 16px; color: var(--muted); line-height: 1.5; padding-left: 10px; position: relative; }
 .rate-tips li::before { content: '·'; position: absolute; left: 0; }
 
 /* ── Buttons ── */
@@ -1044,8 +1044,8 @@ onUnmounted(() => clearInterval(showcaseTimer))
   border: 1.5px solid var(--border-2);
 }
 .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
-.btn-lg     { padding: 13px 32px; font-size: 15px; border-radius: 12px; }
-.btn-submit { width: 100%; padding: 13px; font-size: 15px; margin-top: 8px; }
+.btn-lg     { padding: 13px 32px; font-size: 20px; border-radius: 12px; }
+.btn-submit { width: 100%; padding: 13px; font-size: 20px; margin-top: 8px; }
 
 /* ── Done ── */
 .done-card {
@@ -1054,17 +1054,17 @@ onUnmounted(() => clearInterval(showcaseTimer))
   max-width: 540px; margin: 0 auto; text-align: center;
   box-shadow: 0 4px 24px rgba(0,0,0,0.07);
 }
-.done-icon   { font-size: 56px; margin-bottom: 16px; }
-.done-title  { font-family: 'Noto Serif TC', serif; font-size: 26px; font-weight: 700; margin-bottom: 8px; }
-.done-desc   { font-size: 14px; color: var(--muted-2); margin-bottom: 24px; }
+.done-icon   { font-size: 61px; margin-bottom: 16px; }
+.done-title  { font-family: 'Noto Serif TC', serif; font-size: 31px; font-weight: 700; margin-bottom: 8px; }
+.done-desc   { font-size: 19px; color: var(--muted-2); margin-bottom: 24px; }
 .done-id-block {
   background: var(--surface-2); border: 1px solid var(--border);
   border-radius: 10px; padding: 14px 20px;
   margin-bottom: 20px; display: flex; flex-direction: column; gap: 4px;
 }
-.done-id-label { font-size: 11px; color: var(--muted-2); font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.1em; text-transform: uppercase; }
+.done-id-label { font-size: 16px; color: var(--muted-2); font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.1em; text-transform: uppercase; }
 .done-id {
-  font-family: 'IBM Plex Mono', monospace; font-size: 18px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 23px;
   font-weight: 700; color: var(--accent); letter-spacing: 0.05em;
 }
 
@@ -1075,13 +1075,13 @@ onUnmounted(() => clearInterval(showcaseTimer))
 }
 .ds-row {
   display: flex; justify-content: space-between; align-items: center;
-  font-size: 13px; color: var(--muted-2);
+  font-size: 18px; color: var(--muted-2);
 }
 .ds-row span:last-child { color: var(--ink); font-weight: 500; }
 .ds-rate { color: var(--primary) !important; font-family: 'IBM Plex Mono', monospace; }
-.ds-mono { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+.ds-mono { font-family: 'IBM Plex Mono', monospace; font-size: 17px; }
 .ds-note { align-items: flex-start; }
-.ds-note-val { font-size: 12px; color: var(--muted-2); text-align: right; max-width: 200px; white-space: pre-wrap; word-break: break-word; }
+.ds-note-val { font-size: 17px; color: var(--muted-2); text-align: right; max-width: 200px; white-space: pre-wrap; word-break: break-word; }
 
 /* Misc */
 .spin { animation: spin 0.8s linear infinite; display: inline-block; }
@@ -1092,19 +1092,19 @@ onUnmounted(() => clearInterval(showcaseTimer))
 /* ── 入帳帳戶選單 ── */
 .acct-loading {
   display: flex; align-items: center; gap: 8px;
-  font-size: 13px; color: var(--muted-2); padding: 12px 0;
+  font-size: 18px; color: var(--muted-2); padding: 12px 0;
 }
 .acct-empty {
   display: flex; align-items: flex-start; gap: 12px;
   background: rgba(166,90,77,0.06); border: 1px solid rgba(166,90,77,0.2);
   border-radius: 10px; padding: 14px 16px;
 }
-.acct-empty-icon  { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
-.acct-empty-title { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
-.acct-empty-sub   { font-size: 12px; color: var(--muted-2); }
+.acct-empty-icon  { font-size: 25px; flex-shrink: 0; margin-top: 1px; }
+.acct-empty-title { font-size: 18px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
+.acct-empty-sub   { font-size: 17px; color: var(--muted-2); }
 .acct-error {
   display: flex; align-items: center; gap: 8px;
-  font-size: 13px; color: var(--red);
+  font-size: 18px; color: var(--red);
   padding: 10px 14px;
   background: rgba(166,90,77,0.06); border: 1px solid rgba(166,90,77,0.2);
   border-radius: 8px;
@@ -1115,7 +1115,7 @@ onUnmounted(() => clearInterval(showcaseTimer))
   width: 100%; appearance: none;
   background: var(--surface); border: 1px solid var(--border-2);
   border-radius: 8px; color: var(--ink);
-  font-family: 'IBM Plex Mono', monospace; font-size: 13px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 18px;
   padding: 10px 36px 10px 14px;
   outline: none; cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s;
@@ -1126,7 +1126,7 @@ onUnmounted(() => clearInterval(showcaseTimer))
 .field-error .acct-select { border-color: var(--red); }
 .acct-select-caret {
   position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-  font-size: 11px; color: var(--muted-2); pointer-events: none;
+  font-size: 16px; color: var(--muted-2); pointer-events: none;
 }
 
 .acct-info-card {
@@ -1137,13 +1137,28 @@ onUnmounted(() => clearInterval(showcaseTimer))
   display: flex; flex-direction: column; gap: 7px;
 }
 .aic-row {
-  display: flex; justify-content: space-between; align-items: center;
-  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
-.aic-label { color: var(--muted-2); font-family: 'IBM Plex Mono', monospace; }
-.aic-val   { color: var(--ink); font-weight: 500; }
-.aic-val.mono  { font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.04em; }
+
+.aic-label {
+  font-size: 14px;
+  color: var(--muted-2);
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.aic-val {
+  font-size: 15px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
 .aic-val.green {
-  color: var(--primary); font-family: 'IBM Plex Mono', monospace; font-weight: 600;
+  color: var(--green);
+}
+
+.aic-val.mono {
+  font-family: 'IBM Plex Mono', monospace;
 }
 </style>

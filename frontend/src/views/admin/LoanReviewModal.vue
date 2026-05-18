@@ -7,7 +7,7 @@
           <!-- ── Header ── -->
           <div class="modal-header">
             <div class="header-left">
-              <span class="modal-icon">🗂️</span>
+              <span class="modal-icon"><i class="fa-solid fa-file-pen"></i></span>
               <div>
                 <div class="modal-title">審核填單</div>
                 <div class="modal-sub">
@@ -23,7 +23,7 @@
                 </div>
               </div>
             </div>
-            <button class="close-btn" @click="close">✕</button>
+            <button class="close-btn" @click="close"><i class="fa-solid fa-x"></i></button>
           </div>
 
           <div class="modal-body">
@@ -139,7 +139,7 @@
                 <template v-else-if="!reviewLoading">
                   <div class="section-divider"></div>
                   <div class="no-review">
-                    <span class="no-review-icon">📋</span>
+                    <span class="no-review-icon"><i class="fa-solid fa-file-lines"></i></span>
                     <span>尚未建立填單草稿</span>
                   </div>
                 </template>
@@ -155,14 +155,14 @@
                 <!-- Alert -->
                 <transition name="alert-fade">
                   <div v-if="alert.show" class="form-alert" :class="'alert-' + alert.type">
-                    <span>{{ alert.type === 'success' ? '✅' : '❌' }}</span>
+                    <span><i :class="alert.type === 'success' ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark'"></i></span>
                     <span>{{ alert.msg }}</span>
                   </div>
                 </transition>
 
                 <!-- 已送審提示 -->
                 <div v-if="isSubmitted" class="submitted-banner">
-                  <span class="submitted-icon">✅</span>
+                  <span class="submitted-icon"><i class="fa-solid fa-check"></i></span>
                   <div>
                     <div class="submitted-title">此填單已送審</div>
                     <div class="submitted-sub">送審後無法修改，如需調整請洽主管</div>
@@ -239,7 +239,7 @@
 
                   <!-- 差異提示 -->
                   <div class="diff-hints" v-if="hasDiff">
-                    <div class="diff-title">⚠ 與原始申請差異</div>
+                    <div class="diff-title"><i class="fa-solid fa-triangle-exclamation"></i> 與原始申請差異</div>
                     <div class="diff-row" v-if="amountDiff !== null">
                       <span class="diff-label">金額</span>
                       <span class="diff-val" :class="amountDiff > 0 ? 'up' : 'down'">
@@ -276,7 +276,7 @@
                   <button class="btn btn-draft" @click="saveDraft"
                           :disabled="saveLoading || submitLoading">
                     <span v-if="saveLoading" class="spin">⟳</span>
-                    <span v-else>💾</span>
+                    <span v-else><i class="fa-solid fa-floppy-disk"></i></span>
                     儲存草稿
                   </button>
                   <button
@@ -286,13 +286,13 @@
                     :title="!review ? '請先儲存草稿後才能送審' : ''"
                   >
                     <span v-if="submitLoading" class="spin">⟳</span>
-                    <span v-else>🚀</span>
+                    <span v-else><i class="fa-solid fa-paper-plane"></i></span>
                     送審
                   </button>
                 </div>
 
                 <div class="form-hint-row" v-if="!review && !isSubmitted">
-                  <span class="hint-icon">ℹ️</span> 請先儲存草稿，才能執行送審
+                  <span class="hint-icon"><i class="fa-solid fa-circle-info"></i></span> 請先儲存草稿，才能執行送審
                 </div>
 
               </div>

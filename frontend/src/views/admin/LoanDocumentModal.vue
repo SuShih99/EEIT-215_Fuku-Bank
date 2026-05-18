@@ -7,7 +7,7 @@
           <!-- ── Header ── -->
           <div class="modal-header">
             <div class="header-left">
-              <span class="modal-icon">📎</span>
+              <span class="modal-icon"><i class="fa-solid fa-folder"></i></span>
               <div>
                 <div class="modal-title">補件文件</div>
                 <div class="modal-sub">
@@ -18,7 +18,7 @@
                 </div>
               </div>
             </div>
-            <button class="close-btn" @click="close">✕</button>
+            <button class="close-btn" @click="close"><i class="fa-solid fa-x"></i></button>
           </div>
 
           <!-- ── Body ── -->
@@ -34,7 +34,7 @@
 
             <!-- Empty -->
             <div v-else-if="docs.length === 0" class="doc-empty">
-              <div class="empty-icon">📬</div>
+              <div class="empty-icon"><i class="fa-solid fa-inbox"></i></div>
               <p>客戶尚未送出補件</p>
             </div>
 
