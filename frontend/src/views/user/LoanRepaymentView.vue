@@ -65,6 +65,23 @@
         <section v-if="selectedLoan" class="section-card">
           <h2 class="section-title">② 填寫還款資訊</h2>
 
+          <div v-if="currentRepayment" class="current-period-panel">
+            <div class="period-info">
+              <span class="period-label">本次繳款期數</span>
+              <strong>第 {{ currentRepayment.periodIndex }} 期</strong>
+            </div>
+            <div class="period-info">
+              <span class="period-label">應繳日</span>
+              <strong>{{ fmtDate(currentRepayment.scheduledDate) }}</strong>
+            </div>
+            <div class="period-info">
+              <span class="period-label">狀態</span>
+              <strong :class="{ overdue: currentRepayment.repaymentStatus === 'OVERDUE' }">
+                {{ repaymentStatusLabel(currentRepayment.repaymentStatus) }}
+              </strong>
+            </div>
+          </div>
+
           <!-- 選扣款帳戶 -->
           <div class="form-group">
             <label class="form-label">扣款帳戶 <span class="req">*</span></label>
@@ -103,9 +120,10 @@
                 class="form-input"
                 min="1"
                 :max="selectedLoan.remainingPrincipal"
+                readonly
                 placeholder="輸入金額"
               />
-              <button class="btn-preset" @click="form.amount = selectedLoan.monthlyPayment">
+              <button class="btn-preset" @click="fillCurrentRepaymentAmount">
                 填入月繳金額
               </button>
             </div>
@@ -232,6 +250,7 @@ const STATUS_MAP = {
 const loanAccounts  = ref([])
 const loanLoading   = ref(false)
 const selectedLoan  = ref(null)
+const currentRepayment = ref(null)
 
 const debitAccounts = ref([])
 const debitLoading  = ref(false)
@@ -253,6 +272,9 @@ const auth  = () => ({ headers: { Authorization: `Bearer ${token()}` } })
 function statusLabel(st) { return STATUS_MAP[st]?.label || st }
 function statusClass(st) { return STATUS_MAP[st]?.cls   || '' }
 function isOverdue(acc)  { return acc.accountStatus === 'OVERDUE' }
+function repaymentStatusLabel(st) {
+  return { SCHEDULED: '待繳', OVERDUE: '逾期', PAID: '已繳' }[st] || st
+}
 
 function fmt(n) {
   return n != null
@@ -304,15 +326,39 @@ async function loadDebitAccounts() {
 }
 
 // ── 選取貸款 ──
-function selectLoan(acc) {
+async function selectLoan(acc) {
   selectedLoan.value = acc
   // 預填月繳金額
   form.value.amount = acc.monthlyPayment ? Math.round(Number(acc.monthlyPayment)) : null
   form.value.note   = ''
   submitError.value = ''
   lastResult.value  = null
+  currentRepayment.value = null
+  await loadCurrentRepaymentAmount()
   loadDebitAccounts()
   loadHistory()
+}
+
+async function loadCurrentRepaymentAmount() {
+  if (!selectedLoan.value) return
+  try {
+    const res = await api.get(`/api/loan-accounts/${selectedLoan.value.accountId}/repayments`, auth())
+    const repayments = res.data.data || []
+    currentRepayment.value = repayments
+      .filter(rp => rp.repaymentStatus === 'SCHEDULED' || rp.repaymentStatus === 'OVERDUE')
+      .sort((a, b) => Number(a.periodIndex) - Number(b.periodIndex))[0] || null
+    if (currentRepayment.value?.totalAmount != null) {
+      form.value.amount = Math.round(Number(currentRepayment.value.totalAmount))
+    }
+  } catch {
+    currentRepayment.value = null
+  }
+}
+
+function fillCurrentRepaymentAmount() {
+  if (currentRepayment.value?.totalAmount != null) {
+    form.value.amount = Math.round(Number(currentRepayment.value.totalAmount))
+  }
 }
 
 // ── API：送出還款 ──
@@ -344,14 +390,14 @@ async function submitRepayment() {
 // ── 還款成功後重置表單 ──
 function afterSuccess() {
   lastResult.value  = null
-  form.value.amount = selectedLoan.value?.monthlyPayment
-    ? Math.round(Number(selectedLoan.value.monthlyPayment)) : null
+  loadCurrentRepaymentAmount()
   form.value.note   = ''
 }
 
 // ── 取消 / 重置 ──
 function reset() {
   selectedLoan.value = null
+  currentRepayment.value = null
   debitAccounts.value = []
   form.value = { fromAccountNumber: '', amount: null, note: '' }
   submitError.value = ''
@@ -521,6 +567,31 @@ onMounted(async () => {
 .lo-val   { font-size: 13px; font-weight: 600; }
 .lo-val.accent { color: var(--primary); font-family: 'IBM Plex Mono', monospace; }
 .overdue  { color: var(--red); }
+
+.current-period-panel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-2);
+}
+.period-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.period-label {
+  font-size: 11px;
+  color: var(--muted-2);
+}
+.period-info strong {
+  font-size: 14px;
+  color: var(--ink);
+}
 
 /* ── 表單 ── */
 .form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }

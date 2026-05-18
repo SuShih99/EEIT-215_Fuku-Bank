@@ -101,10 +101,12 @@
           <a-tag color="blue">{{ transactionTypeMap[record.transactionType] || record.transactionType }}</a-tag>
         </template>
         <template v-else-if="column.key === 'accountNumber'">
-          <a @click="handleClickAccount(record.accountNumber)" style="font-weight:600">{{ record.accountNumber }}</a>
+          <span v-if="isBusinessAccountLabel(record.accountNumber)" style="font-weight:600">{{ record.accountNumber }}</span>
+          <a v-else @click="handleClickAccount(record.accountNumber)" style="font-weight:600">{{ record.accountNumber }}</a>
         </template>
         <template v-else-if="column.key === 'counterpartAccount'">
-          <a v-if="record.counterpartAccount" @click="handleClickAccount(record.counterpartAccount)">{{ record.counterpartAccount }}</a>
+          <span v-if="isBusinessAccountLabel(record.counterpartAccount)">{{ record.counterpartAccount }}</span>
+          <a v-else-if="record.counterpartAccount" @click="handleClickAccount(record.counterpartAccount)">{{ record.counterpartAccount }}</a>
           <span v-else>-</span>
         </template>
       </template>
@@ -199,6 +201,7 @@ import {
 } from '@/api/account'
 
 const searchType = ref('referenceId')
+const BUSINESS_ACCOUNT_LABEL = '銀行業務帳戶'
 const searchValue = ref('')
 const startDate = ref(null)
 const endDate = ref(null)
@@ -278,6 +281,7 @@ const columns = ref([
     sorter: (a, b) => (a.accountNumber || '').localeCompare(b.accountNumber || ''),
     customRender: ({ text }) => {
       if (!text) return '-'
+      if (isBusinessAccountLabel(text)) return text
       return h('a', { onClick: () => handleClickAccount(text) }, text)
     },
   },
@@ -290,6 +294,7 @@ const columns = ref([
     sorter: (a, b) => (a.counterpartAccount || '').localeCompare(b.counterpartAccount || ''),
     customRender: ({ text }) => {
       if (!text) return '-'
+      if (isBusinessAccountLabel(text)) return text
       return h('a', { onClick: () => handleClickAccount(text) }, text)
     },
   },
@@ -535,7 +540,7 @@ function lookupReferenceId(refId) {
 }
 
 async function handleClickAccount(accountNumber) {
-  if (!accountNumber) return
+  if (!accountNumber || isBusinessAccountLabel(accountNumber)) return
   accountLoading.value = true
   showAccountModal.value = true
   try {
@@ -547,6 +552,10 @@ async function handleClickAccount(accountNumber) {
   } finally {
     accountLoading.value = false
   }
+}
+
+function isBusinessAccountLabel(value) {
+  return value === BUSINESS_ACCOUNT_LABEL
 }
 </script>
 

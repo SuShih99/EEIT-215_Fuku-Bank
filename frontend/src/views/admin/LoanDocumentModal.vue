@@ -267,7 +267,7 @@ function close() {
 }
 .doc-item:hover { background: #f3f6ff; }
 .doc-icon { font-size: 22px; flex-shrink: 0; }
-:deep(.doc-type-icon) { color: #7B4F2E; font-size: 22px; }
+:deep(.doc-type-icon) { color: #5C6B5F; font-size: 22px; }
 .doc-info { flex: 1; min-width: 0; }
 .doc-name {
   display: block;
@@ -310,15 +310,15 @@ function close() {
   transition: background 0.15s;
 }
 .doc-view-btn {
-  background: #f5ede6;
-  color: #7B4F2E;
+  background: rgba(92, 107, 95, 0.10);
+  color: #5C6B5F;
 }
-.doc-view-btn:hover { background: #e8d8c8; }
+.doc-view-btn:hover { background: rgba(92, 107, 95, 0.20); }
 .doc-dl-btn {
-  background: #f5ede6;
-  color: #7B4F2E;
+  background: rgba(92, 107, 95, 0.10);
+  color: #5C6B5F;
 }
-.doc-dl-btn:hover { background: #e8d8c8; }
+.doc-dl-btn:hover { background: rgba(92, 107, 95, 0.20); }
 
 /* ── Footer ── */
 .modal-footer {

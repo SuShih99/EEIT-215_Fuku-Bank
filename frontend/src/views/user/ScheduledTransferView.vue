@@ -55,7 +55,7 @@
     </a-card>
 
     <!-- 預約列表 -->
-    <a-card class="list-card" title="我的預約轉帳" style="margin-top: 20px">
+    <a-card class="list-card" title="我的預約轉帳">
       <a-table :dataSource="schedules" :columns="columns" :loading="loading"
                rowKey="id" :pagination="{ pageSize: 10 }">
         <template #bodyCell="{ column, record }">
@@ -211,8 +211,97 @@ function formatNum(v) {
 </script>
 
 <style scoped>
-.scheduled-transfer-page { max-width: 960px; margin: 0 auto; padding: 24px; }
-h2 { margin-bottom: 20px; color: #1a1a2e; }
-.form-card { border-radius: 12px; }
-.list-card { border-radius: 12px; }
+.scheduled-transfer-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+h2 {
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+
+.form-card,
+.list-card {
+  border-radius: 12px;
+  background: rgba(255, 249, 239, 0.92);
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  box-shadow: 0 12px 36px rgba(63, 74, 66, 0.08);
+}
+
+.list-card {
+  margin-top: 20px;
+}
+
+.form-card :deep(.ant-card-head),
+.list-card :deep(.ant-card-head) {
+  color: var(--text-primary);
+  background: transparent;
+  border-bottom-color: rgba(214, 206, 195, 0.72);
+}
+
+.form-card :deep(.ant-card-head-title),
+.list-card :deep(.ant-card-head-title) {
+  font-weight: 700;
+}
+
+.form-card :deep(.ant-form-item-label > label),
+.list-card :deep(.ant-table-thead > tr > th) {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.form-card :deep(.ant-select-selector),
+.form-card :deep(.ant-input),
+.form-card :deep(.ant-input-number),
+.form-card :deep(.ant-picker) {
+  border-color: rgba(198, 188, 174, 0.92);
+  border-radius: 8px;
+  background: rgba(255, 249, 239, 0.64);
+}
+
+.form-card :deep(.ant-input-number-input) {
+  color: var(--text-primary);
+}
+
+.form-card :deep(.ant-btn-primary) {
+  border-color: var(--primary);
+  background: var(--primary);
+  box-shadow: 0 6px 14px rgba(63, 74, 66, 0.14);
+}
+
+.form-card :deep(.ant-btn-primary:hover) {
+  border-color: var(--primary-dark);
+  background: var(--primary-dark);
+}
+
+.list-card :deep(.ant-table) {
+  color: var(--text-primary);
+  background: transparent;
+}
+
+.list-card :deep(.ant-table-thead > tr > th) {
+  background: rgba(245, 241, 234, 0.74);
+  border-bottom-color: rgba(214, 206, 195, 0.72);
+}
+
+.list-card :deep(.ant-table-tbody > tr > td) {
+  border-bottom-color: rgba(214, 206, 195, 0.42);
+}
+
+.list-card :deep(.ant-table-tbody > tr:hover > td) {
+  background: rgba(92, 107, 95, 0.045);
+}
+
+@media (max-width: 640px) {
+  .scheduled-transfer-page {
+    padding: 16px 0;
+  }
+
+  .form-card :deep(.ant-col) {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}
 </style>

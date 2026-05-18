@@ -274,8 +274,10 @@ function repStatusClass(st) { return REPAYMENT_STATUS[st]?.cls   || '' }
 
 // ── helper：還款進度 ──
 function progressPct(acc) {
-  if (!acc.confirmedPeriod) return 0
-  return Math.round((acc.paidPeriods / acc.confirmedPeriod) * 100)
+  const paid = Number(acc.paidPeriods || 0)
+  const total = Number(acc.confirmedPeriod || 0)
+  if (!total) return 0
+  return Math.min(100, Math.max(0, Math.round((paid / total) * 100)))
 }
 function progressClass(acc) {
   if (acc.accountStatus === 'OVERDUE')  return 'prog-overdue'
@@ -699,6 +701,7 @@ onMounted(loadAccounts)
 
 /* 進度條 */
 .progress-bar-wrap {
+  display: block;
   height: 4px;
   background: var(--surface-2);
   border-radius: 2px;
@@ -706,6 +709,7 @@ onMounted(loadAccounts)
   width: 100%;
 }
 .progress-bar-fill {
+  display: block;
   height: 100%;
   border-radius: 2px;
   transition: width 0.4s ease;

@@ -141,18 +141,42 @@
             <div class="asset-subcard-header">
               <span class="asset-subcard-title">貸款</span>
             </div>
-            <p class="asset-subcard-amount asset-subcard-amount--muted">
+            <!-- 無帳戶 -->
+            <p v-if="sortedLoanAccounts.length === 0" class="asset-subcard-amount asset-subcard-amount--muted">
               {{ showAmounts ? '尚無貸款' : '***' }}
             </p>
+            <!-- 有帳戶：顯示剩餘本金總計 -->
+            <p v-else class="asset-subcard-amount">
+              {{ showAmounts
+                ? '$ ' + sortedLoanAccounts.reduce((s, a) => s + (a.remainingPrincipal || 0), 0).toLocaleString('zh-TW')
+                : '***' }}
+            </p>
             <div class="asset-subcard-details">
-              <div class="asset-subcard-detail">
-                <span>信用貸款</span>
-                <span>—</span>
-              </div>
-              <div class="asset-subcard-detail">
-                <span>房屋貸款</span>
-                <span>—</span>
-              </div>
+              <!-- 依最近繳款日排序，最多顯示 2 筆 -->
+              <template v-if="sortedLoanAccounts.length > 0">
+                <div
+                  v-for="acc in sortedLoanAccounts.slice(0, 2)"
+                  :key="acc.accountId"
+                  class="asset-subcard-detail"
+                >
+                  <span>{{ LOAN_TYPE_MAP[acc.applyType] || acc.applyType }}</span>
+                  <span v-if="showAmounts" :class="{ 'text-overdue': acc.accountStatus === 'OVERDUE' }">
+                    {{ acc.nextPaymentDate ? acc.nextPaymentDate.substring(0, 10) : '—' }}
+                  </span>
+                  <span v-else>***</span>
+                </div>
+              </template>
+              <!-- 無帳戶時顯示預設項目 -->
+              <template v-else>
+                <div class="asset-subcard-detail">
+                  <span>信用貸款</span>
+                  <span>—</span>
+                </div>
+                <div class="asset-subcard-detail">
+                  <span>房屋貸款</span>
+                  <span>—</span>
+                </div>
+              </template>
             </div>
             <div class="asset-subcard-actions loan-subcard-actions">
               <button class="subcard-primary-btn" @click="$router.push({ name: 'user-loan-apply' })">申請貸款</button>
@@ -278,6 +302,31 @@ const onboardFeatures = [
 ]
 
 const accountsList = ref([])
+
+// === 貸款帳戶 ===
+const loanAccounts = ref([])
+
+const LOAN_TYPE_MAP = {
+  PERSONAL: '個人信貸',
+  CAR:      '汽車貸款',
+  MOTOR:    '機車貸款',
+  STUDENT:  '學貸',
+  BUSINESS: '創業貸款',
+  HOUSE:    '房屋貸款',
+  LAND:     '土地貸款',
+}
+
+// 依最近繳款日排序（未結清），最近到期的排最前面
+const sortedLoanAccounts = computed(() => {
+  return [...loanAccounts.value]
+    .filter(a => a.accountStatus !== 'PAID_OFF')
+    .sort((a, b) => {
+      if (!a.nextPaymentDate && !b.nextPaymentDate) return 0
+      if (!a.nextPaymentDate) return 1
+      if (!b.nextPaymentDate) return -1
+      return new Date(a.nextPaymentDate) - new Date(b.nextPaymentDate)
+    })
+})
 
 async function checkAccountStatus() {
   try {
@@ -589,6 +638,13 @@ onMounted(async () => {
     drawDonut()
     drawLine()
     fetchExchangeRates()
+    // 抓取貸款帳戶，依最近繳款日排序顯示
+    try {
+      const res = await api.get('/api/loan-accounts/my')
+      loanAccounts.value = res.data.data || []
+    } catch {
+      loanAccounts.value = []
+    }
   }
 })
 </script>
@@ -932,6 +988,11 @@ onMounted(async () => {
   justify-content: space-between;
   font-size: 13px;
   color: var(--text-secondary);
+}
+
+.text-overdue {
+  color: #C0392B;
+  font-weight: 600;
 }
 
 .asset-subcard-actions {

@@ -30,7 +30,7 @@
     </a-card>
 
     <!-- 常用帳號列表 -->
-    <a-card class="list-card" style="margin-top: 20px">
+    <a-card class="list-card">
       <a-table :dataSource="favorites" :columns="columns" :loading="loading"
                rowKey="id" :pagination="{ pageSize: 10 }">
         <template #emptyText>
@@ -209,26 +209,112 @@ async function handleDelete(id) {
 </script>
 
 <style scoped>
-.favorite-accounts-page { max-width: 1040px; margin: 0 auto; padding: 32px 28px; }
-h2 { margin-bottom: 28px; color: #1a1a2e; }
-.form-card { border-radius: 12px; }
-.form-card :deep(.ant-card-body) { padding: 44px 48px; }
+.favorite-accounts-page {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+h2 {
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+
+.form-card,
+.list-card {
+  border-radius: 12px;
+  background: rgba(255, 249, 239, 0.92);
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  box-shadow: 0 12px 36px rgba(63, 74, 66, 0.08);
+}
+
+.form-card :deep(.ant-card-body) {
+  padding: 28px;
+}
+
 .favorite-form {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  column-gap: 42px;
-  row-gap: 28px;
+  column-gap: 24px;
+  row-gap: 18px;
 }
+
 .favorite-form :deep(.ant-form-item) {
   margin-inline-end: 0;
   margin-bottom: 0;
 }
+
 .favorite-form :deep(.ant-form-item-label) {
-  padding-right: 10px;
+  padding-right: 8px;
 }
+
+.favorite-form :deep(.ant-form-item-label > label),
+.list-card :deep(.ant-table-thead > tr > th) {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.favorite-form :deep(.ant-input),
+.favorite-form :deep(.ant-select-selector) {
+  border-color: rgba(198, 188, 174, 0.92);
+  border-radius: 8px;
+  background: rgba(255, 249, 239, 0.64);
+}
+
+.favorite-form :deep(.ant-btn-primary),
+.favorite-accounts-page :deep(.ant-modal .ant-btn-primary) {
+  border-color: var(--primary);
+  background: var(--primary);
+  box-shadow: 0 6px 14px rgba(63, 74, 66, 0.14);
+}
+
+.favorite-form :deep(.ant-btn-primary:hover),
+.favorite-accounts-page :deep(.ant-modal .ant-btn-primary:hover) {
+  border-color: var(--primary-dark);
+  background: var(--primary-dark);
+}
+
 .submit-item {
-  margin-left: 12px;
+  margin-left: 0;
 }
-.list-card { border-radius: 12px; }
+
+.list-card {
+  margin-top: 20px;
+}
+
+.list-card :deep(.ant-table) {
+  color: var(--text-primary);
+  background: transparent;
+}
+
+.list-card :deep(.ant-table-thead > tr > th) {
+  background: rgba(245, 241, 234, 0.74);
+  border-bottom-color: rgba(214, 206, 195, 0.72);
+}
+
+.list-card :deep(.ant-table-tbody > tr > td) {
+  border-bottom-color: rgba(214, 206, 195, 0.42);
+}
+
+.list-card :deep(.ant-table-tbody > tr:hover > td) {
+  background: rgba(92, 107, 95, 0.045);
+}
+
+@media (max-width: 640px) {
+  .favorite-accounts-page {
+    padding: 16px 0;
+  }
+
+  .form-card :deep(.ant-card-body) {
+    padding: 20px;
+  }
+
+  .favorite-form,
+  .favorite-form :deep(.ant-form-item),
+  .favorite-form :deep(.ant-input),
+  .favorite-form :deep(.ant-select) {
+    width: 100% !important;
+  }
+}
 </style>

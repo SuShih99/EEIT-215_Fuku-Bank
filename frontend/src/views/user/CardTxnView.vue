@@ -1,45 +1,181 @@
+<template>
+  <div class="card-txns">
+    <header class="page-header">
+      <h2>刷卡交易管理</h2>
+      <p>查詢信用卡消費紀錄，或建立測試消費與 LINE Pay 付款。</p>
+    </header>
+
+    <section class="txn-form-panel" aria-label="新增刷卡交易">
+      <div class="panel-heading">
+        <h3>新增刷卡交易</h3>
+        <span>建立一筆信用卡消費紀錄</span>
+      </div>
+
+      <div class="form-grid">
+        <label class="field-shell select-shell">
+          <span class="field-label">信用卡</span>
+          <select v-model="form.cardId" class="field-control">
+            <option disabled value="">請選擇信用卡</option>
+            <option v-for="card in cards" :key="card.cardId" :value="card.cardId">
+              {{ card.cardTypeName || card.cardType?.cardTypeName || '信用卡' }} - {{ card.cardNumber }}
+            </option>
+          </select>
+        </label>
+
+        <label class="field-shell select-shell">
+          <span class="field-label">商家</span>
+          <select v-model="form.merchantId" class="field-control">
+            <option disabled value="">請選擇商家</option>
+            <option
+              v-for="merchant in merchants"
+              :key="merchant.merchantId"
+              :value="merchant.merchantId"
+            >
+              {{ merchant.merchantName }}
+            </option>
+          </select>
+        </label>
+
+        <label class="field-shell">
+          <span class="field-label">金額</span>
+          <input
+            v-model="form.txnAmount"
+            class="field-control"
+            type="number"
+            min="1"
+            placeholder="請輸入交易金額"
+          />
+        </label>
+
+        <label class="field-shell select-shell">
+          <span class="field-label">交易類型</span>
+          <select v-model="form.txnType" class="field-control">
+            <option value="PURCHASE">一般消費</option>
+          </select>
+        </label>
+
+        <label class="field-shell textarea-shell">
+          <span class="field-label">備註</span>
+          <textarea
+            v-model="form.description"
+            class="field-control"
+            rows="3"
+            placeholder="LINE Pay 付款時請填寫付款說明"
+          />
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="primary-action" @click="handleCreateTransaction">
+          新增刷卡交易
+        </button>
+        <button type="button" class="linepay-action" @click="handleLinePay">
+          使用 LINE Pay 付款
+        </button>
+      </div>
+    </section>
+
+    <section class="transactions-panel" aria-label="刷卡交易紀錄">
+      <div class="transactions-header">
+        <h3>刷卡交易紀錄</h3>
+        <span>共 {{ totalElements }} 筆</span>
+      </div>
+
+      <div class="transactions-table-wrap">
+        <table class="transactions-table">
+          <thead>
+            <tr>
+              <th>交易日期</th>
+              <th>商家</th>
+              <th>卡號</th>
+              <th class="align-right">交易金額</th>
+              <th class="align-right">回饋金額</th>
+              <th>類型</th>
+              <th>狀態</th>
+            </tr>
+          </thead>
+          <tbody v-if="transactions.length">
+            <tr v-for="txn in transactions" :key="txn.txnId">
+              <td class="mono-cell">{{ formatDate(txn.txnDate) }}</td>
+              <td>{{ txn.merchantName || '-' }}</td>
+              <td class="mono-cell">{{ txn.cardNumber || '-' }}</td>
+              <td class="amount-cell debit">{{ formatMoney(txn.txnAmount) }}</td>
+              <td class="amount-cell credit">+{{ formatMoney(txn.cashbackAmount) }}</td>
+              <td>
+                <span class="type-pill" :class="txn.txnType === 'REFUND' ? 'refund' : 'purchase'">
+                  {{ txnTypeLabel(txn.txnType) }}
+                </span>
+              </td>
+              <td>
+                <span class="status-pill" :class="{ refunded: isRefunded(txn) }">
+                  {{ statusLabel(txn) }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div v-if="loading" class="transactions-loading-state">
+          <span class="loading-brush" aria-hidden="true"></span>
+          <strong>刷卡交易整理中</strong>
+        </div>
+
+        <div v-else-if="transactions.length === 0" class="transactions-empty-state">
+          <div class="transactions-empty-mark" aria-hidden="true">
+            <svg viewBox="0 0 96 96" role="img" focusable="false">
+              <circle cx="48" cy="48" r="36" fill="rgba(232, 226, 216, 0.76)" />
+              <rect
+                x="23"
+                y="32"
+                width="50"
+                height="34"
+                rx="7"
+                fill="rgba(255, 249, 239, 0.95)"
+                stroke="rgba(198, 188, 174, 0.98)"
+                stroke-width="2"
+              />
+              <path d="M28 43h40" stroke="rgba(92, 107, 95, 0.52)" stroke-width="4" />
+              <path
+                d="M33 55h14M55 55h9"
+                fill="none"
+                stroke="rgba(92, 107, 95, 0.62)"
+                stroke-width="3"
+                stroke-linecap="round"
+              />
+            </svg>
+          </div>
+          <strong>目前沒有刷卡交易</strong>
+          <span>新增交易或完成付款後，紀錄會整理在這裡。</span>
+        </div>
+      </div>
+
+      <div v-if="totalElements > 0" class="transactions-pagination">
+        <span>第 {{ currentPage + 1 }} / {{ displayTotalPages }} 頁</span>
+        <button type="button" :disabled="currentPage === 0" @click="prevPage">上一頁</button>
+        <button type="button" :disabled="currentPage + 1 >= totalPages" @click="nextPage">
+          下一頁
+        </button>
+      </div>
+    </section>
+  </div>
+</template>
+
 <script setup>
-import { ref, onMounted } from 'vue'
-import { getTransactions, createTransaction, getMerchantNames } from '@/api/userCardTxn'
-import { getMyCards } from '@/api/userCard'
-import { requestLinePay } from '@/api/userCardTxn'
+import { computed, onMounted, ref } from 'vue'
+import { message } from 'ant-design-vue'
 import dayjs from 'dayjs'
+import {
+  createTransaction,
+  getMerchantNames,
+  getTransactions,
+  requestLinePay,
+} from '@/api/userCardTxn'
+import { getMyCards } from '@/api/userCard'
 
 const transactions = ref([])
 const loading = ref(false)
 const cards = ref([])
 const merchants = ref([])
-
-const columns = [
-  {
-    key: 'txnDate',
-    label: 'Transaction Date',
-  },
-  {
-    key: 'merchantName',
-    label: 'Merchant',
-  },
-  {
-    key: 'cardNumber',
-    label: 'Card Number',
-  },
-  {
-    key: 'txnAmount',
-    label: 'Amount',
-  },
-  {
-    key: 'cashbackAmount',
-    label: 'Cashback',
-  },
-  {
-    key: 'txnType',
-    label: 'Type',
-  },
-  {
-    key: 'refunded',
-    label: 'Status',
-  },
-]
 
 const form = ref({
   cardId: '',
@@ -53,12 +189,15 @@ const pageSize = ref(10)
 const totalPages = ref(0)
 const totalElements = ref(0)
 
+const displayTotalPages = computed(() => Math.max(totalPages.value || 1, 1))
+
 const fetchCards = async () => {
   try {
     const response = await getMyCards()
-    cards.value = response
+    cards.value = Array.isArray(response) ? response : []
   } catch (error) {
-    console.error('Failed to fetch cards:', error)
+    console.error(error)
+    message.error('讀取信用卡資料失敗')
   }
 }
 
@@ -66,12 +205,12 @@ const fetchTransactions = async () => {
   try {
     loading.value = true
     const response = await getTransactions(currentPage.value, pageSize.value)
-    transactions.value = response.content
-    totalPages.value = response.totalPages
-    totalElements.value = response.totalElements
-    console.log(response.content)
+    transactions.value = Array.isArray(response?.content) ? response.content : []
+    totalPages.value = response?.totalPages ?? 0
+    totalElements.value = response?.totalElements ?? 0
   } catch (error) {
     console.error(error)
+    message.error('讀取刷卡交易失敗')
   } finally {
     loading.value = false
   }
@@ -80,45 +219,35 @@ const fetchTransactions = async () => {
 const fetchMerchantNames = async () => {
   try {
     const response = await getMerchantNames()
-    merchants.value = response
-    console.log(response)
+    merchants.value = Array.isArray(response) ? response : []
   } catch (error) {
-    console.error('Failed to fetch merchant names:', error)
+    console.error(error)
+    message.error('讀取商家資料失敗')
   }
 }
 
 const handleCreateTransaction = async () => {
   try {
     if (!form.value.cardId || !form.value.merchantId || !form.value.txnAmount) {
-      alert('Please fill all required fields')
+      message.warning('請選擇信用卡、商家並輸入交易金額')
       return
     }
 
     await createTransaction(form.value)
-
-    alert('Transaction created successfully')
-
-    // reset form
-    form.value = {
-      cardId: '',
-      merchantId: '',
-      txnAmount: '',
-      txnType: 'PURCHASE',
-      description: '',
-    }
-
-    // refresh table
+    message.success('刷卡交易建立成功')
+    resetForm()
+    currentPage.value = 0
     await fetchTransactions()
   } catch (err) {
     console.error(err)
-    alert(err.response?.data?.message || 'Create transaction failed')
+    message.error(err.response?.data?.message || '建立刷卡交易失敗')
   }
 }
 
 const handleLinePay = async () => {
   try {
     if (!form.value.cardId || !form.value.merchantId || !form.value.txnAmount || !form.value.description.trim()) {
-      alert('Please fill all required fields')
+      message.warning('LINE Pay 付款需選擇信用卡、商家、金額並填寫備註')
       return
     }
 
@@ -129,273 +258,468 @@ const handleLinePay = async () => {
       description: form.value.description,
     })
 
-    console.log(response)
-
     const paymentUrl = response.info?.paymentUrl?.web || response.paymentUrl
     if (response.orderId) {
       sessionStorage.setItem('linepay_order_id', response.orderId)
     }
     if (!paymentUrl) {
-      throw new Error('LINE Pay payment URL not found')
+      throw new Error('找不到 LINE Pay 付款網址')
     }
 
-    // 跳轉 LINE Pay
     window.location.href = paymentUrl
   } catch (err) {
     console.error(err)
-    alert(err.response?.data?.message || 'LINE Pay request failed')
+    message.error(err.response?.data?.message || 'LINE Pay 付款建立失敗')
   }
 }
 
 const nextPage = async () => {
+  if (currentPage.value + 1 >= totalPages.value) return
   currentPage.value++
   await fetchTransactions()
 }
 
 const prevPage = async () => {
+  if (currentPage.value === 0) return
   currentPage.value--
   await fetchTransactions()
 }
 
+function resetForm() {
+  form.value = {
+    cardId: '',
+    merchantId: '',
+    txnAmount: '',
+    txnType: 'PURCHASE',
+    description: '',
+  }
+}
+
+function formatDate(value) {
+  if (!value) return '-'
+  return dayjs(value).format('YYYY/MM/DD HH:mm')
+}
+
+function formatMoney(value) {
+  return `NT$ ${Number(value || 0).toLocaleString('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })}`
+}
+
+function txnTypeLabel(type) {
+  const map = {
+    PURCHASE: '一般消費',
+    REFUND: '刷退',
+  }
+  return map[type] || type || '-'
+}
+
+function isRefunded(txn) {
+  return txn.refunded === true || txn.txnType === 'REFUND'
+}
+
+function statusLabel(txn) {
+  if (txn.txnType === 'REFUND') return '刷退交易'
+  if (txn.refunded) return '已刷退'
+  return '已完成'
+}
+
 onMounted(async () => {
   await fetchCards()
-  fetchTransactions()
-  fetchMerchantNames()
+  await fetchTransactions()
+  await fetchMerchantNames()
 })
 </script>
-<template>
-  <div class="min-h-screen bg-stone-100 p-8">
-    <div class="max-w-7xl mx-auto">
-      <!-- title -->
-      <div class="mb-8">
-        <h1 class="text-4xl font-bold text-stone-700 tracking-wide">Card Transactions</h1>
 
-        <p class="text-stone-500 mt-2">View and manage your transaction history</p>
-      </div>
+<style scoped>
+.card-txns {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
 
-      <!-- create form -->
-      <div class="bg-white border border-stone-200 rounded-3xl shadow-sm p-8 mb-8">
-        <h2 class="text-2xl font-semibold text-stone-700 mb-6">Create Transaction</h2>
+.page-header {
+  margin-bottom: 20px;
+}
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <!-- card id -->
-          <div>
-            <label class="block text-stone-600 mb-2"> Card Number </label>
+.page-header h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
 
-            <select
-              v-model="form.cardId"
-              class="w-full border border-stone-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-stone-400"
-            >
-              <option disabled value="">Please select card</option>
+.page-header p {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  letter-spacing: 0;
+}
 
-              <option v-for="card in cards" :key="card.cardId" :value="card.cardId">
-                {{ card.cardTypeName }}
-                - {{ card.cardNumber }}
-              </option>
-            </select>
-          </div>
+.txn-form-panel,
+.transactions-panel {
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 249, 239, 0.86), rgba(249, 244, 235, 0.72)),
+    url('/washi-texture.png');
+  background-size: auto, 300px 300px;
+  border: 1px solid rgba(214, 206, 195, 0.84);
+  border-radius: 18px;
+  box-shadow: 0 14px 34px rgba(63, 74, 66, 0.08);
+}
 
-          <!-- merchant id -->
-          <div>
-            <label class="block text-stone-600 mb-2"> Merchant </label>
+.txn-form-panel {
+  padding: 18px;
+  margin-bottom: 18px;
+}
 
-            <select
-              v-model="form.merchantId"
-              class="w-full border border-stone-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-stone-400"
-            >
-              <option disabled value="">Please select merchant</option>
+.panel-heading,
+.transactions-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
 
-              <option
-                v-for="merchant in merchants"
-                :key="merchant.merchantId"
-                :value="merchant.merchantId"
-              >
-                {{ merchant.merchantName }}
-              </option>
-            </select>
-          </div>
+.panel-heading h3,
+.transactions-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
 
-          <!-- amount -->
-          <div>
-            <label class="block text-stone-600 mb-2"> Amount </label>
+.panel-heading span,
+.transactions-header span {
+  color: var(--text-secondary);
+  font-size: 13px;
+  letter-spacing: 0;
+}
 
-            <input
-              v-model="form.txnAmount"
-              type="number"
-              placeholder="Enter amount"
-              class="w-full border border-stone-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-stone-400"
-            />
-          </div>
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
 
-          <!-- type -->
-          <div>
-            <label class="block text-stone-600 mb-2"> Transaction Type </label>
+.field-shell {
+  display: flex;
+  align-items: stretch;
+  min-height: 42px;
+  color: var(--text-secondary);
+  background: rgba(255, 249, 239, 0.62);
+  border: 1px solid rgba(198, 188, 174, 0.92);
+  border-radius: 8px;
+}
 
-            <select
-              v-model="form.txnType"
-              class="w-full border border-stone-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-stone-400"
-            >
-              <option value="PURCHASE">PURCHASE</option>
+.textarea-shell {
+  grid-column: 1 / -1;
+}
 
-              <!-- <option value="REFUND">REFUND</option> -->
-            </select>
-          </div>
+.field-label {
+  display: flex;
+  align-items: center;
+  min-width: 82px;
+  padding: 0 12px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+}
 
-          <!-- description -->
-          <div class="md:col-span-2">
-            <label class="block text-stone-600 mb-2"> Description </label>
+.field-control {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  appearance: none;
+  color: var(--text-primary);
+  background: transparent;
+  border: 0;
+  border-left: 1px solid rgba(214, 206, 195, 0.72);
+  border-radius: 0;
+  padding: 0 12px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  letter-spacing: 0;
+  outline: none;
+}
 
-            <textarea
-              v-model="form.description"
-              rows="3"
-              placeholder="Enter description"
-              class="w-full border border-stone-300 rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-stone-400"
-            />
-          </div>
-        </div>
+select.field-control {
+  padding-right: 34px;
+}
 
-        <!-- button -->
-        <div class="mt-8 flex gap-4">
-          <!--normal transaction-->
-          <button
-            @click="handleCreateTransaction"
-            class="min-w-[190px] rounded-2xl bg-stone-400 px-8 py-3 text-base font-medium text-white transition duration-200 hover:bg-stone-500"
-          >
-            Create Transaction
-          </button>
-          <!--line pay-->
-          <button
-            @click="handleLinePay"
-            class="min-w-[190px] rounded-2xl bg-[#06C755] px-8 py-3 text-base font-medium text-white transition duration-200 hover:bg-[#05b34c]"
-          >
-            Pay With LINE Pay
-          </button>
-        </div>
-      </div>
+.select-shell {
+  position: relative;
+}
 
-      <!-- transaction table -->
-      <div class="bg-white border border-stone-200 rounded-3xl shadow-sm p-8">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-2xl font-semibold text-stone-700">Transaction History</h2>
+.select-shell::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid var(--text-secondary);
+  border-bottom: 1.5px solid var(--text-secondary);
+  transform: translateY(-66%) rotate(45deg);
+  pointer-events: none;
+}
 
-          <span class="text-stone-500"> Total {{ totalElements }} </span>
-        </div>
+textarea.field-control {
+  min-height: 84px;
+  padding-top: 10px;
+  resize: vertical;
+}
 
-        <!-- table -->
-        <div class="overflow-x-auto relative">
-          <!-- loading overlay -->
-          <div
-            v-if="loading"
-            class="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-2xl"
-          >
-            <div class="flex items-center gap-3">
-              <!-- spinner -->
-              <div
-                class="w-6 h-6 border-2 border-stone-400 border-t-transparent rounded-full animate-spin"
-              />
+.field-control:focus {
+  box-shadow: inset 0 0 0 2px rgba(92, 107, 95, 0.18);
+}
 
-              <span class="text-stone-600 font-medium"> Loading... </span>
-            </div>
-          </div>
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
 
-          <!-- table -->
+.primary-action,
+.linepay-action {
+  min-height: 38px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
 
-          <table class="w-full min-w-[1000px]">
-            <!-- header -->
-            <thead>
-              <tr class="border-b border-stone-200 text-stone-500">
-                <th v-for="column in columns" :key="column.key" class="text-left py-4 font-medium">
-                  {{ column.label }}
-                </th>
-              </tr>
-            </thead>
+.primary-action {
+  background: var(--primary);
+  box-shadow: 0 6px 14px rgba(63, 74, 66, 0.14);
+}
 
-            <!-- body -->
-            <tbody>
-              <tr
-                v-for="txn in transactions"
-                :key="txn.txnId"
-                class="border-b border-stone-100 hover:bg-stone-50 transition"
-              >
-                <!-- date -->
-                <td class="py-5 text-stone-600 whitespace-nowrap">
-                  {{ dayjs(txn.txnDate).format('YYYY/MM/DD HH:mm') }}
-                </td>
+.primary-action:hover {
+  background: var(--primary-dark);
+}
 
-                <!-- merchant -->
-                <td class="py-5 text-stone-700">
-                  {{ txn.merchantName }}
-                </td>
+.linepay-action {
+  background: #06c755;
+}
 
-                <!-- card -->
-                <td class="py-5 text-stone-700 tracking-widest whitespace-nowrap">
-                  {{ txn.cardNumber }}
-                </td>
+.linepay-action:hover {
+  background: #05b54d;
+}
 
-                <!-- amount -->
-                <td class="py-5 font-medium text-stone-700 whitespace-nowrap">
-                  NT$ {{ txn.txnAmount }}
-                </td>
+.transactions-panel {
+  padding: 0;
+}
 
-                <!-- cashback -->
-                <td class="py-5 text-emerald-600 font-medium whitespace-nowrap">
-                  +{{ txn.cashbackAmount || 0 }}
-                </td>
+.transactions-header {
+  padding: 18px 18px 0;
+}
 
-                <!-- type -->
-                <!-- type -->
-                <td class="py-5">
-                  <span
-                    v-if="txn.txnType === 'PURCHASE'"
-                    class="bg-stone-200 text-stone-700 px-4 py-1 rounded-full text-sm"
-                  >
-                    PURCHASE
-                  </span>
+.transactions-table-wrap {
+  position: relative;
+  overflow-x: auto;
+}
 
-                  <span
-                    v-else-if="txn.txnType === 'REFUND'"
-                    class="bg-red-100 text-red-700 px-4 py-1 rounded-full text-sm"
-                  >
-                    REFUND
-                  </span>
+.transactions-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  color: var(--text-primary);
+  font-size: 14px;
+}
 
-                  <span v-else class="bg-slate-100 text-slate-600 px-4 py-1 rounded-full text-sm">
-                    {{ txn.txnType }}
-                  </span>
-                </td>
-              </tr>
+.transactions-table th {
+  padding: 14px 12px;
+  text-align: left;
+  color: var(--text-primary);
+  font-weight: 700;
+  background: rgba(245, 241, 234, 0.74);
+  border-bottom: 1px solid rgba(214, 206, 195, 0.72);
+  white-space: nowrap;
+}
 
-              <!-- empty -->
-              <tr v-if="transactions.length === 0">
-                <td colspan="7" class="text-center py-12 text-stone-400">No transactions found</td>
-              </tr>
-            </tbody>
-          </table>
-          <!-- pagination -->
-          <div class="flex justify-center items-center gap-4 mt-8">
-            <!-- previous -->
-            <button
-              :disabled="currentPage === 0"
-              @click="prevPage"
-              class="px-4 py-2 border border-stone-300 rounded-xl disabled:opacity-50"
-            >
-              Previous
-            </button>
+.transactions-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid rgba(214, 206, 195, 0.42);
+  vertical-align: middle;
+}
 
-            <!-- page info -->
-            <span class="text-stone-600"> Page {{ currentPage + 1 }} / {{ totalPages }} </span>
+.transactions-table tbody tr:hover {
+  background: rgba(92, 107, 95, 0.045);
+}
 
-            <!-- next -->
-            <button
-              :disabled="currentPage + 1 >= totalPages"
-              @click="nextPage"
-              class="px-4 py-2 border border-stone-300 rounded-xl disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
+.align-right,
+.amount-cell {
+  text-align: right;
+}
+
+.mono-cell {
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+
+.amount-cell {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.amount-cell.credit {
+  color: var(--primary-dark);
+}
+
+.amount-cell.debit {
+  color: var(--accent);
+}
+
+.type-pill,
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.type-pill.purchase,
+.status-pill {
+  color: var(--primary-dark);
+  background: rgba(92, 107, 95, 0.12);
+  border: 1px solid rgba(92, 107, 95, 0.28);
+}
+
+.type-pill.refund,
+.status-pill.refunded {
+  color: var(--accent);
+  background: rgba(166, 90, 77, 0.08);
+  border: 1px solid rgba(166, 90, 77, 0.24);
+}
+
+.transactions-loading-state,
+.transactions-empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  min-height: 210px;
+  padding: 34px 16px 38px;
+  color: var(--text-secondary);
+  text-align: center;
+  background: linear-gradient(180deg, rgba(255, 249, 239, 0.68), rgba(249, 244, 235, 0.5));
+}
+
+.transactions-empty-mark {
+  width: 76px;
+  height: 76px;
+}
+
+.transactions-empty-mark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.transactions-empty-state strong,
+.transactions-loading-state strong {
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.transactions-empty-state span {
+  color: var(--text-secondary);
+  font-size: 14px;
+  letter-spacing: 0;
+}
+
+.loading-brush {
+  width: 72px;
+  height: 18px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(92, 107, 95, 0.34), transparent);
+  animation: brushLoading 1.2s ease-in-out infinite;
+}
+
+@keyframes brushLoading {
+  0%, 100% {
+    opacity: 0.38;
+    transform: scaleX(0.72);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+.transactions-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 16px;
+  color: var(--text-secondary);
+  border-top: 1px solid rgba(214, 206, 195, 0.58);
+}
+
+.transactions-pagination button {
+  min-height: 32px;
+  padding: 4px 10px;
+  color: var(--primary-dark);
+  background: rgba(255, 249, 239, 0.66);
+  border: 1px solid rgba(198, 188, 174, 0.88);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.transactions-pagination button:disabled {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+@media (max-width: 760px) {
+  .card-txns {
+    padding: 20px 12px;
+  }
+
+  .panel-heading,
+  .transactions-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .field-shell {
+    flex-direction: column;
+  }
+
+  .field-label {
+    min-height: 34px;
+  }
+
+  .field-control {
+    border-left: 0;
+    border-top: 1px solid rgba(214, 206, 195, 0.72);
+  }
+
+  .transactions-pagination {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+</style>

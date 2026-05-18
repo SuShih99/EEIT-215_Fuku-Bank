@@ -25,6 +25,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AccountService {
 
+    private static final List<AccountType> ADMIN_EXCLUDED_ACCOUNT_TYPES = List.of(AccountType.BUSINESS);
+
     private final AccountRepository accountRepository;
     private final CustomerProfileRepository customerProfileRepository;
 
@@ -82,6 +84,9 @@ public class AccountService {
     public AccountResponse getAccount(String accountNumber) {
         Account account = accountRepository.findById(accountNumber)
                 .orElseThrow(() -> new AccountException("ACCOUNT_NOT_FOUND", "Account not found: " + accountNumber));
+        if (account.getAccountType() == AccountType.BUSINESS) {
+            throw new AccountException("ACCOUNT_NOT_FOUND", "Account not found: " + accountNumber);
+        }
         return toResponse(account);
     }
 
@@ -94,7 +99,7 @@ public class AccountService {
      */
     @Transactional(readOnly = true)
     public Page<AccountResponse> getAccountsByCustomerId(String customerId, Pageable pageable) {
-        return accountRepository.findByCustomerId(customerId, pageable)
+        return accountRepository.findByCustomerIdAndAccountTypeNotIn(customerId, ADMIN_EXCLUDED_ACCOUNT_TYPES, pageable)
                 .map(this::toResponse);
     }
 
@@ -107,7 +112,7 @@ public class AccountService {
      */
     @Transactional(readOnly = true)
     public Page<AccountResponse> getAccountsByStatus(AccountStatus status, Pageable pageable) {
-        return accountRepository.findByStatus(status, pageable)
+        return accountRepository.findByStatusAndAccountTypeNot(status, AccountType.BUSINESS, pageable)
                 .map(this::toResponse);
     }
 
@@ -121,7 +126,35 @@ public class AccountService {
      */
     @Transactional(readOnly = true)
     public Page<AccountResponse> getAccountsByTypeAndCurrency(AccountType type, Currency currency, Pageable pageable) {
+        if (type == AccountType.BUSINESS) {
+            return Page.empty(pageable);
+        }
         return accountRepository.findByAccountTypeAndCurrency(type, currency, pageable)
+                .map(this::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AccountResponse> searchAdminAccounts(
+            String customerId,
+            String customerName,
+            String accountNumber,
+            AccountStatus status,
+            AccountType type,
+            Currency currency,
+            Pageable pageable) {
+        if (type == AccountType.BUSINESS) {
+            return Page.empty(pageable);
+        }
+
+        return accountRepository.searchAdminAccounts(
+                        normalize(customerId),
+                        normalize(customerName),
+                        normalize(accountNumber),
+                        status,
+                        type,
+                        currency,
+                        ADMIN_EXCLUDED_ACCOUNT_TYPES,
+                        pageable)
                 .map(this::toResponse);
     }
 
@@ -133,7 +166,7 @@ public class AccountService {
      */
     @Transactional(readOnly = true)
     public Page<AccountResponse> getLatest(Pageable pageable) {
-        return accountRepository.findAllByOrderByCreatedAtDesc(pageable)
+        return accountRepository.findByAccountTypeNotOrderByCreatedAtDesc(AccountType.BUSINESS, pageable)
                 .map(this::toResponse);
     }
 
@@ -155,6 +188,9 @@ public class AccountService {
     public AccountResponse updateAccountStatus(String accountNumber, AccountStatus newStatus) {
         Account account = accountRepository.findById(accountNumber)
                 .orElseThrow(() -> new AccountException("ACCOUNT_NOT_FOUND", "Account not found: " + accountNumber));
+        if (account.getAccountType() == AccountType.BUSINESS) {
+            throw new AccountException("ACCOUNT_NOT_FOUND", "Account not found: " + accountNumber);
+        }
 
         AccountStatus currentStatus = account.getStatus();
 
@@ -220,6 +256,13 @@ public class AccountService {
                 .map(cp -> cp.getName())
                 .orElse(null);
         return AccountResponse.fromEntity(account, customerName);
+    }
+
+    private String normalize(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 
     /**

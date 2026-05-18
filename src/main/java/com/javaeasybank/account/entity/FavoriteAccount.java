@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(
-        name = "FAVORITE_ACCOUNT",
+        name = "favorite_account",
         uniqueConstraints = @UniqueConstraint(
                 name = "UQ_FAV_CUST_BANK_ACCT",
                 columnNames = {"customer_id", "bank_code", "account_number"}
