@@ -35,35 +35,39 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        String requestPath = request.getRequestURI();
-        if (!isCustomerApi(requestPath)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
         String authHeader = request.getHeader("Authorization");
 
         // 只處理 Bearer Token，其餘放行
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String requestPath = request.getRequestURI();
             String token = authHeader.substring(7);
 
             if (jwtUtil.validateToken(token)) {
                 String username = jwtUtil.getUsernameFromToken(token);
                 String role = jwtUtil.getRoleFromToken(token);
 
-                // 建立 Spring Security 認證物件
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        username,
-                        null,
-                        List.of(new SimpleGrantedAuthority("ROLE_" + role)));
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                if (shouldAuthenticate(requestPath, role)) {
+                    // 建立 Spring Security 認證物件
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            username,
+                            null,
+                            List.of(new SimpleGrantedAuthority("ROLE_" + role)));
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                // 放入 SecurityContext
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    // 放入 SecurityContext
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
             }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean shouldAuthenticate(String requestPath, String role) {
+        if ("CUSTOMER".equals(role)) {
+            return isCustomerApi(requestPath);
+        }
+        return isAdminApi(requestPath);
     }
 
     private boolean isCustomerApi(String requestPath) {
@@ -72,5 +76,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 || requestPath.startsWith("/api/loan-applications/")
                 || requestPath.startsWith("/api/loan-accounts/")
                 || requestPath.startsWith("/api/loan-documents/");
+    }
+
+    private boolean isAdminApi(String requestPath) {
+        return requestPath.startsWith("/api/")
+                && !requestPath.startsWith("/api/customer/")
+                && !requestPath.startsWith("/api/public/")
+                && !requestPath.startsWith("/api/linepay/");
     }
 }

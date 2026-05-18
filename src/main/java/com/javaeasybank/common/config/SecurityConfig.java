@@ -1,7 +1,9 @@
 package com.javaeasybank.common.config;
 
+import java.time.Duration;
 import java.util.List;
 
+import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -31,6 +33,7 @@ import org.springframework.security.web.access.expression.WebExpressionAuthoriza
 @EnableWebSecurity
 @EnableMethodSecurity  // ← 這行讓 @PreAuthorize 生效
 public class SecurityConfig {
+    private static final Duration ADMIN_SESSION_TIMEOUT = Duration.ofHours(8);
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
@@ -104,6 +107,11 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    ServletContextInitializer sessionTimeoutInitializer() {
+        return servletContext -> servletContext.setSessionTimeout((int) ADMIN_SESSION_TIMEOUT.toMinutes());
     }
 
     /**

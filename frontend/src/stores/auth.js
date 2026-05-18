@@ -18,9 +18,14 @@ export const useAuthStore = defineStore('auth', () => {
    * 設定登入的使用者（登入成功時呼叫）
    */
   function setUser(userData) {
-    user.value = userData
+    const { token, ...profile } = userData
+    if (token) {
+      localStorage.setItem('auth_token', token)
+    }
+
+    user.value = profile
     isLoggedIn.value = true
-    localStorage.setItem('auth_user', JSON.stringify(userData))
+    localStorage.setItem('auth_user', JSON.stringify(profile))
   }
 
   /**
@@ -30,6 +35,7 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
     isLoggedIn.value = false
     localStorage.removeItem('auth_user')
+    localStorage.removeItem('auth_token')
   }
 
   return { user, isLoggedIn, setUser, clearUser }

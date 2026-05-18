@@ -372,7 +372,7 @@ import { message } from 'ant-design-vue'
 import { ReloadOutlined } from '@ant-design/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { BASE_URL as SERVER_URL } from '@/api/axios'
-import axios from 'axios'
+import api from '@/api/axios'
 
 const API_PREFIX = '/api/risk/reviewtask'
 
@@ -424,7 +424,7 @@ async function fetchTasks() {
     if (filters.scene) params.scene = filters.scene
     if (filters.priority) params.priority = filters.priority
 
-    const res = await axios.get(API_PREFIX, { params, withCredentials: true })
+    const res = await api.get(API_PREFIX, { params })
     const page = res.data.data
     tasks.value = page.content
     // 確保 page.number 是有效數字，若為 undefined/null 則預設為 0
@@ -445,10 +445,9 @@ async function submitDecision() {
   }
   submitting.value = true
   try {
-    await axios.put(
+    await api.put(
       `${API_PREFIX}/${currentTask.value.taskId}/decision`,
       { reviewResult: form.reviewResult, adminComment: form.adminComment },
-      { withCredentials: true },
     )
     message.success('決策送出成功')
     modalVisible.value = false
@@ -495,7 +494,7 @@ async function handleReviewAction(task) {
   // 若已在處理中（自己鎖的）則直接開 Modal
   if (task.status !== 'PROCESSING') {
     try {
-      await axios.put(`${API_PREFIX}/${task.taskId}/start`, {}, { withCredentials: true })
+      await api.put(`${API_PREFIX}/${task.taskId}/start`, {})
       await fetchTasks()
       // 取得最新 task 物件
       const updated = tasks.value.find((t) => t.taskId === task.taskId)

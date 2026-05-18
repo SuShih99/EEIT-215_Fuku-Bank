@@ -7,6 +7,7 @@ import com.javaeasybank.auth.service.AuthActionLogService;
 import com.javaeasybank.auth.repository.AuthRespository;
 import com.javaeasybank.auth.service.AuthEmpService;
 import com.javaeasybank.common.dto.response.ApiResponse;
+import com.javaeasybank.common.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
@@ -31,15 +32,18 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final AuthEmpRepository authEmpRepository;
     private final AuthActionLogService actionLogService;
+    private final JwtUtil jwtUtil;
 
     public AuthController(AuthEmpService authEmpService,
                           AuthenticationManager authenticationManager,
                           AuthEmpRepository authEmpRepository,
-                          AuthActionLogService actionLogService) {
+                          AuthActionLogService actionLogService,
+                          JwtUtil jwtUtil) {
         this.authEmpService = authEmpService;
         this.authenticationManager = authenticationManager;
         this.authEmpRepository = authEmpRepository;
         this.actionLogService = actionLogService;
+        this.jwtUtil = jwtUtil;
     }
 
     // ===== 登入（所有人都能打）=====
@@ -66,6 +70,7 @@ public class AuthController {
         // 擷取來源 IP
         String ipAddress = getClientIp(httpRequest);
         AuthRespository.AuthEmpResponse response = authEmpService.login(request, ipAddress);
+        response.setToken(jwtUtil.generateToken(response.getEmail(), response.getRoleCode(), response.getEmpId()));
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
