@@ -84,9 +84,9 @@
             type="button"
             class="jb-btn jb-btn-secondary jb-btn-block jb-btn-lg demo-register-btn"
             :disabled="loading"
-            @click="fillDemoAndRegister"
+            @click="fillDemoAccount"
           >
-            一鍵帶入測試帳號並註冊
+            一鍵帶入測試帳號
           </button>
 
           <button
@@ -155,14 +155,16 @@ function showToast(text, type = 'error') {
   }, 3200)
 }
 
-async function fillDemoAndRegister() {
+async function fillDemoAccount() {
   const currentIndex = Number.parseInt(localStorage.getItem(DEMO_INDEX_KEY) || '0', 10)
   const account = CUSTOMER_DEMO_ACCOUNTS[currentIndex % CUSTOMER_DEMO_ACCOUNTS.length]
   localStorage.setItem(DEMO_INDEX_KEY, String((currentIndex + 1) % CUSTOMER_DEMO_ACCOUNTS.length))
   localStorage.setItem(LAST_REGISTERED_DEMO_ACCOUNT_KEY, JSON.stringify(account))
-  Object.assign(form, account)
+  // 帶入除 email 以外的所有欄位，email 留空讓使用者自行填入
+  const { email: _email, ...rest } = account
+  Object.assign(form, rest)
+  form.email = ''
   await nextTick()
-  await handleRegister()
 }
 
 async function handleRegister() {

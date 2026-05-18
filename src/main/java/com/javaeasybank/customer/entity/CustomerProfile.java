@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.domain.Persistable;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -12,7 +13,21 @@ import java.time.LocalDateTime;
 @Table(name = "CUSTOMER_PROFILE")
 @Getter
 @Setter
-public class CustomerProfile {
+public class CustomerProfile implements Persistable<String> {
+
+    /** 新建時為 true，@PostPersist / @PostLoad 後設為 false，讓 Spring Data 走 persist() */
+    @Transient
+    private boolean isNew = true;
+
+    @Override
+    public String getId() { return customerId; }
+
+    @Override
+    public boolean isNew() { return isNew; }
+
+    @PostPersist
+    @PostLoad
+    void markNotNew() { this.isNew = false; }
 
     @Id
     @Column(name = "customer_id", length = 20, nullable = false)

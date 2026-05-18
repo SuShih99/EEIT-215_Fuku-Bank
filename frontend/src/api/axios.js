@@ -13,6 +13,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('customer_token')
+    const adminToken = localStorage.getItem('auth_token')
     const requestUrl = config.url || ''
     const isCustomerApi =
       requestUrl.startsWith('/api/customer/') ||
@@ -20,9 +21,16 @@ api.interceptors.request.use(
       requestUrl.startsWith('/api/loan-applications/') ||
       requestUrl.startsWith('/api/loan-accounts/') ||
       requestUrl.startsWith('/api/loan-documents/')
+    const isAdminApi =
+      requestUrl.startsWith('/api/') &&
+      !isCustomerApi &&
+      !requestUrl.startsWith('/api/public/') &&
+      !requestUrl.startsWith('/api/linepay/')
 
     if (token && isCustomerApi) {
       config.headers.Authorization = `Bearer ${token}`
+    } else if (adminToken && isAdminApi) {
+      config.headers.Authorization = `Bearer ${adminToken}`
     }
     return config
   },
@@ -47,6 +55,7 @@ api.interceptors.response.use(
       } else {
         // 管理端 401 → 清掉 session，導向管理登入
         localStorage.removeItem('auth_user')
+        localStorage.removeItem('auth_token')
         if (currentRoute.name !== 'admin-login') {
           router.push({ name: 'admin-login' })
         }

@@ -4,6 +4,7 @@ import com.javaeasybank.account.exception.AccountException;
 import com.javaeasybank.common.dto.response.ApiResponse;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -105,6 +106,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
                 .body(ApiResponse.fail("帳號或密碼錯誤"));
+    }
+
+    /**
+     * 攔截 DB 層的 INSERT/UPDATE 行數不符（SQL Server + Hibernate 預設值衝突）
+     * 通常發生在多個 trigger 或 DEFAULT 值設定下，回傳 500
+     */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiResponse<Void>> handleObjectOptimisticLock(ObjectOptimisticLockingFailureException e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.fail("資料寫入失敗，請稍後再試。若問題持續發生請聯繫系統管理員"));
     }
 
     @ExceptionHandler(OptimisticLockingFailureException.class)

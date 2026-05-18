@@ -108,7 +108,7 @@
             :disabled="loading"
             @click="loginAsWangDaming"
           >
-            一般登入
+            登入示範帳號
           </button>
 
           <button
@@ -117,7 +117,7 @@
             :disabled="loading"
             @click="fillTestAccount"
           >
-            一鍵帶入測試帳號並登入
+          一鍵帶入測試帳號
           </button>
 
           <div class="login-divider">
@@ -201,7 +201,7 @@ async function loginAsWangDaming() {
 async function fillTestAccount() {
   const account = getLastRegisteredDemoAccount()
   fillLoginForm(account)
-  await handleLogin(true)
+  // 只填入表單，不自動登入
 }
 
 function fillLoginForm(account) {

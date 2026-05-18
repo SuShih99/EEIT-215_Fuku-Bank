@@ -30,6 +30,7 @@
         <select v-model="txType" class="filter-control" @change="fetchTransactions">
           <option value="">全部類型</option>
           <option value="TRANSFER">轉帳</option>
+          <option value="TRANSFER_FEE">轉帳手續費</option>
           <option value="DEPOSIT">存款</option>
           <option value="WITHDRAW">提款</option>
           <option value="EXCHANGE">換匯</option>
@@ -52,6 +53,7 @@
               <th>日期</th>
               <th>交易編號</th>
               <th>帳號</th>
+              <th>對手方帳號</th>
               <th>類型</th>
               <th>方向</th>
               <th class="align-right">金額</th>
@@ -65,6 +67,7 @@
               <td>{{ formatDate(record.createdAt) }}</td>
               <td class="mono-cell">{{ record.referenceId || '-' }}</td>
               <td class="mono-cell">{{ record.accountNumber || '-' }}</td>
+              <td class="mono-cell">{{ formatCounterpartAccount(record) }}</td>
               <td>{{ txTypeLabel(record.transactionType) }}</td>
               <td>
                 <span class="entry-pill" :class="record.entryType === 'CREDIT' ? 'credit' : 'debit'">
@@ -221,6 +224,7 @@ function formatDate(dateStr) {
 function txTypeLabel(type) {
   const map = {
     TRANSFER: '轉帳',
+    TRANSFER_FEE: '轉帳手續費',
     DEPOSIT: '存款',
     WITHDRAW: '提款',
     EXCHANGE: '換匯',
@@ -239,7 +243,16 @@ function displayNote(record) {
   if (!record) return '-'
   if (record.transactionType === 'LOAN_DISBURSEMENT') return '貸款核准撥款'
   if (record.transactionType === 'LOAN_REPAYMENT') return '貸款還款'
+  if (record.transactionType === 'TRANSFER_FEE') return record.note || '跨行轉帳手續費'
   return record.note || '-'
+}
+
+function formatCounterpartAccount(record) {
+  const account = record?.counterpartAccount
+  if (!account) return '-'
+  const bankCode = record.counterpartBankCode
+  if (record.interbank && bankCode) return `${bankCode}${account}`
+  return account
 }
 
 function formatNum(value) {

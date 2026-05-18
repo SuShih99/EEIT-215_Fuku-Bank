@@ -67,8 +67,8 @@
             :min="1"
             :max="maxAmount"
             style="width: 100%"
-            :formatter="(v) => `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
-            :parser="(v) => v.replace(/,/g, '')"
+            :formatter="formatAmountInput"
+            :parser="parseAmountInput"
             placeholder="請輸入金額"
           />
           <div class="hint" v-if="selectedBalance !== null">
@@ -254,6 +254,18 @@ function selectFavorite(item) {
 function favoriteDescription(item) {
   const bank = item.bankName ? `${item.bankName} ${item.bankCode || ''}`.trim() : item.bankCode
   return bank ? `${bank} ${item.accountNumber}` : item.accountNumber
+}
+
+function parseAmountInput(value) {
+  return String(value || '').replace(/[^\d.]/g, '')
+}
+
+function formatAmountInput(value) {
+  const raw = parseAmountInput(value)
+  if (!raw) return ''
+  const [integerPart, decimalPart] = raw.split('.')
+  const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return decimalPart !== undefined ? `${formattedInteger}.${decimalPart}` : formattedInteger
 }
 
 async function handleTransfer() {

@@ -43,13 +43,13 @@ INSERT INTO AUTH_EMP (emp_id, emp_name, dept_id, role_id, email, password_hash, 
 ('E26004', N'張雅婷', 'DPT002', 'R004', 'yating.chang@javabank.com','$2a$10$1Wa/uOR8VZXCrOwfd9.2ZOtgSeATa0xVvdSsYudUgtCSsQJ0M2cDS', 'ACTIVE', NULL, '2026-12-31'),
 -- 授信審查部
 ('E26005', N'劉冠宇', 'DPT003', 'R005', 'kuanyu.liu@javabank.com',  '$2a$10$1Wa/uOR8VZXCrOwfd9.2ZOtgSeATa0xVvdSsYudUgtCSsQJ0M2cDS', 'ACTIVE', NULL, '2026-12-31'),
-('E26006', N'吳建國', 'DPT003', 'R006', 'chienkuo.wu@javabank.com',   '$2a$10$1Wa/uOR8VZXCrOwfd9.2ZOtgSeATa0xVvdSsYudUgtCSsQJ0M2cDS', 'SUSPENDED', NULL, '2024-01-01'), -- 離職停用
+('E26006', N'吳建國', 'DPT003', 'R006', 'chienkuo.wu@javabank.com',   '$2a$10$1Wa/uOR8VZXCrOwfd9.2ZOtgSeATa0xVvdSsYudUgtCSsQJ0M2cDS', 'ACTIVE', NULL, '2026-12-31'),
 ('E26007', N'李志明', 'DPT003', 'R007', 'chihming.lee@javabank.com',   '$2a$10$1Wa/uOR8VZXCrOwfd9.2ZOtgSeATa0xVvdSsYudUgtCSsQJ0M2cDS', 'ACTIVE', NULL, '2026-12-31'),
 -- 營運企劃部
 ('E26008', N'趙宇軒', 'DPT004', 'R008', 'yuhsuan.chao@javabank.com','$2a$10$1Wa/uOR8VZXCrOwfd9.2ZOtgSeATa0xVvdSsYudUgtCSsQJ0M2cDS', 'ACTIVE', '2026-06-30', '2026-06-30'), -- 約聘人員
 ('E26009', N'黃志成', 'DPT004', 'R009', 'chihcheng.huang@javabank.com', '$2a$10$1Wa/uOR8VZXCrOwfd9.2ZOtgSeATa0xVvdSsYudUgtCSsQJ0M2cDS', 'ACTIVE', NULL, '2026-12-31'),
 -- 資訊安全部
-('E26010', N'蔡宗翰', 'DPT005', 'R010', 'tsunghan.tsai@javabank.com', '$2a$10$1Wa/uOR8VZXCrOwfd9.2ZOtgSeATa0xVvdSsYudUgtCSsQJ0M2cDS', 'LOCKED', NULL, '2026-12-31'), -- 密碼鎖定
+('E26010', N'蔡宗翰', 'DPT005', 'R010', 'tsunghan.tsai@javabank.com', '$2a$10$1Wa/uOR8VZXCrOwfd9.2ZOtgSeATa0xVvdSsYudUgtCSsQJ0M2cDS', 'ACTIVE', NULL, '2026-12-31'),
 ('E26011', N'鄭文華', 'DPT005', 'R011', 'wenhua.cheng@javabank.com','$2a$10$1Wa/uOR8VZXCrOwfd9.2ZOtgSeATa0xVvdSsYudUgtCSsQJ0M2cDS', 'ACTIVE', NULL, '2026-12-31'),
 ('E26012', N'管理員甲', 'DPT005', 'R012', 'admin.a@javabank.com', '$2a$10$1Wa/uOR8VZXCrOwfd9.2ZOtgSeATa0xVvdSsYudUgtCSsQJ0M2cDS', 'ACTIVE', NULL, '2026-12-31'),
 ('E26013', N'管理員乙', 'DPT005', 'R013', 'admin.b@javabank.com', '$2a$10$1Wa/uOR8VZXCrOwfd9.2ZOtgSeATa0xVvdSsYudUgtCSsQJ0M2cDS', 'ACTIVE', NULL, '2026-12-31');

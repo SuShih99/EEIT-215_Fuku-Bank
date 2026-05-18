@@ -6,6 +6,7 @@ import com.javaeasybank.risk.enums.RiskLevel;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Nationalized;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -29,6 +30,7 @@ public class CustomerCreditInfo {
     // 職業
     private Occupation occupation;
     //風控
+    @Nationalized
     @Column(name = "job", length = 100, columnDefinition = "NVARCHAR(100)")
     private String  job;
 

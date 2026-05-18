@@ -42,5 +42,6 @@ public class AuthRespository {
         private LocalDateTime contractEndDate;
         private LocalDateTime permissionExpire;
         private LocalDateTime lastLoginDate;
+        private String token;
     }
 }

@@ -292,7 +292,7 @@ public class AccountIntegrationService {
         if (amount.compareTo(liabilityBefore) > 0) {
             throw new AccountException("LOAN_OVERPAYMENT_NOT_ALLOWED", "還款金額不可大於剩餘負債");
         }
-        ExactLoanRepayment exactRepayment = validateExactLoanRepaymentAmount(
+        LoanRepaymentPlan repaymentPlan = validateLoanRepaymentAmount(
                 loanAccountNumber,
                 request.getApplicationId(),
                 amount);
@@ -315,8 +315,8 @@ public class AccountIntegrationService {
                 EntryType.CREDIT, TransactionType.LOAN_REPAYMENT, amount,
                 collectionBefore, bankCollection.getBalance(), note));
         // Keep accounting and loan schedule state in the same transaction.
-        if (exactRepayment.applicationId() != null && !exactRepayment.applicationId().isBlank()) {
-            loanRepaymentService.processRepayment(exactRepayment.applicationId());
+        if (repaymentPlan.applicationId() != null && !repaymentPlan.applicationId().isBlank()) {
+            loanRepaymentService.processRepayments(repaymentPlan.applicationId(), repaymentPlan.periodsToPay());
         }
 
         return toLoanTransactionResponse(
@@ -802,7 +802,7 @@ public CreditCardPaymentResponse payCreditCard(String customerId, CreditCardPaym
         }
     }
 
-    private ExactLoanRepayment validateExactLoanRepaymentAmount(
+    private LoanRepaymentPlan validateLoanRepaymentAmount(
             String loanAccountNumber,
             String applicationId,
             BigDecimal amount) {
@@ -812,26 +812,39 @@ public CreditCardPaymentResponse payCreditCard(String customerId, CreditCardPaym
                 && !applicationId.trim().equals(loanModuleAccount.getApplicationId())) {
             throw new AccountException("LOAN_APPLICATION_MISMATCH", "貸款申請與貸款帳戶不符");
         }
-
-        LoanRepayment currentRepayment = loanRepaymentRepository.findByAccountIdAndRepaymentStatusIn(
+        List<LoanRepayment> pendingRepayments = loanRepaymentRepository.findByAccountIdAndRepaymentStatusIn(
                         loanModuleAccount.getAccountId(),
                         List.of(LoanRepaymentStatus.SCHEDULED, LoanRepaymentStatus.OVERDUE))
                 .stream()
-                .min((first, second) -> first.getPeriodIndex().compareTo(second.getPeriodIndex()))
-                .orElseThrow(() -> new AccountException("LOAN_REPAYMENT_NOT_FOUND", "查無待繳貸款期別"));
+                .sorted((first, second) -> first.getPeriodIndex().compareTo(second.getPeriodIndex()))
+                .toList();
+        if (pendingRepayments.isEmpty()) {
+            throw new AccountException("LOAN_REPAYMENT_NOT_FOUND", "找不到待繳貸款期數");
+        }
 
-        BigDecimal expectedAmount = zeroIfNull(currentRepayment.getTotalAmount()).setScale(
+        BigDecimal cumulativeAmount = BigDecimal.ZERO.setScale(Currency.TWD.getDecimalPlaces(), RoundingMode.HALF_UP);
+        int periodsToPay = 0;
+        for (LoanRepayment repayment : pendingRepayments) {
+            cumulativeAmount = cumulativeAmount.add(zeroIfNull(repayment.getTotalAmount()))
+                    .setScale(Currency.TWD.getDecimalPlaces(), RoundingMode.HALF_UP);
+            periodsToPay++;
+            if (amount.compareTo(cumulativeAmount) == 0) {
+                return new LoanRepaymentPlan(loanModuleAccount.getApplicationId(), periodsToPay);
+            }
+            if (amount.compareTo(cumulativeAmount) < 0) {
+                break;
+            }
+        }
+
+        BigDecimal currentAmount = zeroIfNull(pendingRepayments.get(0).getTotalAmount()).setScale(
                 Currency.TWD.getDecimalPlaces(),
                 RoundingMode.HALF_UP);
-        if (amount.compareTo(expectedAmount) != 0) {
-            throw new AccountException(
-                    "LOAN_REPAYMENT_AMOUNT_MISMATCH",
-                    "還款金額必須等於本期應繳金額 " + expectedAmount.toPlainString());
-        }
-        return new ExactLoanRepayment(loanModuleAccount.getApplicationId());
+        throw new AccountException(
+                "LOAN_REPAYMENT_AMOUNT_MISMATCH",
+                "還款金額必須等於本期或連續多期應繳總額，目前本期應繳 " + currentAmount.toPlainString());
     }
 
-    private record ExactLoanRepayment(String applicationId) {
+    private record LoanRepaymentPlan(String applicationId, int periodsToPay) {
     }
 
     private BigDecimal normalizePositiveAmount(BigDecimal amount, String label) {

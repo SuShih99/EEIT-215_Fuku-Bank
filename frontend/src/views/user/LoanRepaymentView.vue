@@ -119,8 +119,7 @@
                 v-model.number="form.amount"
                 class="form-input"
                 min="1"
-                :max="selectedLoan.remainingPrincipal"
-                readonly
+                step="1"
                 placeholder="輸入金額"
               />
               <button class="btn-preset" @click="fillCurrentRepaymentAmount">
@@ -295,6 +294,7 @@ const canSubmit = computed(() =>
   form.value.fromAccountNumber &&
   selectedLoan.value?.accountNumber &&
   form.value.amount > 0 &&
+  (!currentRepayment.value?.totalAmount || Number(form.value.amount) >= Number(currentRepayment.value.totalAmount)) &&
   selectedLoan.value &&
   !submitting.value
 )
