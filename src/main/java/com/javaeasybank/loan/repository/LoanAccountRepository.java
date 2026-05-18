@@ -9,12 +9,11 @@ import java.util.Optional;
 
 public interface LoanAccountRepository extends JpaRepository<LoanAccount, String> {
 
-    // 依 applicationId 查單筆
     Optional<LoanAccount> findByApplicationId(String applicationId);
 
-    // 依 customerId 查該客戶所有貸款帳戶，按建立時間降序
+    Optional<LoanAccount> findByAccountNumber(String accountNumber);
+
     List<LoanAccount> findByCustomerIdOrderByCreateTimeDesc(String customerId);
 
-    // 行員端：依帳戶狀態查詢，按建立時間降序
     List<LoanAccount> findByAccountStatusOrderByCreateTimeDesc(LoanAccountStatus accountStatus);
 }

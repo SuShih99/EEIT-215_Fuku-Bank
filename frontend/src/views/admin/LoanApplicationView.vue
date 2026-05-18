@@ -680,22 +680,22 @@ onUnmounted(() => clearInterval(refreshTimer))
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css');
 
 .loan-admin {
-  /* ── 配色依據 ── */
-  --accent: #A65A4D;
-  --accent-dim: rgba(166, 90, 77, 0.10);
-  --accent-lt: rgba(166, 90, 77, 0.20);
-  --bg: #F5F1EA;
-  --surface: #FDFAF6;
-  --surface-2: #EAE4DA;
-  --border: #D6CEC3;
-  --border-2: #C4BBB0;
+  /* ── 配色依據：對齊 admin-theme ── */
+  --accent: #5C6B5F;
+  --accent-dim: rgba(92, 107, 95, 0.10);
+  --accent-lt: rgba(92, 107, 95, 0.20);
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --surface-2: #f0f2f0;
+  --border: #dde1de;
+  --border-2: #c8cdc9;
   --ink: #2B2B2B;
-  --ink-2: #3D3530;
-  --muted: #A89A8E;
-  --muted-2: #6E6259;
+  --ink-2: #333333;
+  --muted: #8c9891;
+  --muted-2: #5a6a5e;
   --primary: #5C6B5F;
-  --primary-dk: #3F4A42;
-  --red: #A65A4D;
+  --primary-dk: #4A574D;
+  --red: #C0392B;
   --green: #4A8C5C;
   --yellow: #8C7355;
   --amber: #C49A3C;
@@ -1194,8 +1194,8 @@ onUnmounted(() => clearInterval(refreshTimer))
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(166, 90, 77, 0.08);
-  border: 1px solid rgba(166, 90, 77, 0.25);
+  background: rgba(192, 57, 43, 0.08);
+  border: 1px solid rgba(192, 57, 43, 0.25);
   color: var(--red);
   padding: 10px 16px;
   border-radius: 8px;
@@ -1288,7 +1288,7 @@ onUnmounted(() => clearInterval(refreshTimer))
 }
 
 .sk {
-  background: linear-gradient(90deg, #EAE4DA 25%, #D6CEC3 50%, #EAE4DA 75%);
+  background: linear-gradient(90deg, #e8eae8 25%, #d5dad6 50%, #e8eae8 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
   border-radius: 4px;
@@ -1408,7 +1408,7 @@ onUnmounted(() => clearInterval(refreshTimer))
 }
 
 .data-row:hover td {
-  background: rgba(166, 90, 77, 0.04);
+  background: rgba(92, 107, 95, 0.04);
 }
 
 .td-action {
@@ -1648,9 +1648,9 @@ onUnmounted(() => clearInterval(refreshTimer))
 }
 
 .status-red {
-  color: var(--accent);
-  border-color: rgba(166, 90, 77, 0.4);
-  background: rgba(166, 90, 77, 0.08);
+  color: var(--red);
+  border-color: rgba(192, 57, 43, 0.4);
+  background: rgba(192, 57, 43, 0.08);
 }
 
 .status-teal {

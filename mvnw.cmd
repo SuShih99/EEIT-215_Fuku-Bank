@@ -89,20 +89,40 @@ if (-not (Test-Path -Path $MAVEN_M2_PATH)) {
 }
 
 $MAVEN_WRAPPER_DISTS = $null
-if ((Get-Item $MAVEN_M2_PATH).Target[0] -eq $null) {
+$MAVEN_M2_ITEM = Get-Item $MAVEN_M2_PATH
+if ($null -eq $MAVEN_M2_ITEM.Target -or $MAVEN_M2_ITEM.Target.Count -eq 0 -or $MAVEN_M2_ITEM.Target[0] -eq $null) {
   $MAVEN_WRAPPER_DISTS = "$MAVEN_M2_PATH/wrapper/dists"
 } else {
-  $MAVEN_WRAPPER_DISTS = (Get-Item $MAVEN_M2_PATH).Target[0] + "/wrapper/dists"
+  $MAVEN_WRAPPER_DISTS = $MAVEN_M2_ITEM.Target[0] + "/wrapper/dists"
 }
 
 $MAVEN_HOME_PARENT = "$MAVEN_WRAPPER_DISTS/$distributionUrlNameMain"
 $MAVEN_HOME_NAME = ([System.Security.Cryptography.SHA256]::Create().ComputeHash([byte[]][char[]]$distributionUrl) | ForEach-Object {$_.ToString("x2")}) -join ''
 $MAVEN_HOME = "$MAVEN_HOME_PARENT/$MAVEN_HOME_NAME"
 
-if (Test-Path -Path "$MAVEN_HOME" -PathType Container) {
+$MAVEN_HOME_CMD_EXISTS = $false
+try {
+  $MAVEN_HOME_CMD_EXISTS = Test-Path -Path "$MAVEN_HOME/bin/$MVN_CMD" -PathType Leaf -ErrorAction Stop
+} catch {
+  $MAVEN_HOME_CMD_EXISTS = $false
+}
+
+if ((Test-Path -Path "$MAVEN_HOME" -PathType Container) -and $MAVEN_HOME_CMD_EXISTS) {
   Write-Verbose "found existing MAVEN_HOME at $MAVEN_HOME"
   Write-Output "MVN_CMD=$MAVEN_HOME/bin/$MVN_CMD"
   exit $?
+}
+
+$ALT_MAVEN_HOME_PARENT = "$MAVEN_WRAPPER_DISTS/$($distributionUrlName -replace '\.[^.]*$','')"
+if (Test-Path -Path "$ALT_MAVEN_HOME_PARENT" -PathType Container) {
+  $ALT_MAVEN_CMD = Get-ChildItem -Path "$ALT_MAVEN_HOME_PARENT" -Recurse -Filter $MVN_CMD -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName -like "*\bin\$MVN_CMD" } |
+    Select-Object -First 1
+  if ($ALT_MAVEN_CMD) {
+    Write-Verbose "found existing alternate MAVEN_HOME at $($ALT_MAVEN_CMD.Directory.Parent.FullName)"
+    Write-Output "MVN_CMD=$($ALT_MAVEN_CMD.FullName)"
+    exit $?
+  }
 }
 
 if (! $distributionUrlNameMain -or ($distributionUrlName -eq $distributionUrlNameMain)) {

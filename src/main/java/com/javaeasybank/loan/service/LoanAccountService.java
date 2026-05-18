@@ -86,7 +86,7 @@ public class LoanAccountService {
         LocalDate startDate = LocalDate.now();
 
         LoanAccount account = new LoanAccount();
-        account.setAccountId(generateId("ACC"));
+        account.setAccountId(generateId("LAC"));
         account.setAccountNumber(loanAccountNumber);
         account.setApplicationId(applicationId);
         account.setCustomerId(loan.getCustomerId());

@@ -19,7 +19,7 @@ public class JavaEasyBankApplication {
 
     public static void main(String[] args) {
         // 1. 在 Spring 啟動前先重置資料庫
-        restoreDatabase();
+//        restoreDatabase();
 
         // 2. 正式啟動 Spring
         SpringApplication.run(JavaEasyBankApplication.class, args);

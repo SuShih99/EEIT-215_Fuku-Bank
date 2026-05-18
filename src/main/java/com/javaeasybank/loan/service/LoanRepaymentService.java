@@ -1,6 +1,8 @@
 package com.javaeasybank.loan.service;
 
 import com.javaeasybank.common.exception.BusinessException;
+import com.javaeasybank.account.entity.Account;
+import com.javaeasybank.account.repository.AccountRepository;
 import com.javaeasybank.loan.dto.response.LoanRepaymentResponseDTO;
 import com.javaeasybank.loan.entity.LoanAccount;
 import com.javaeasybank.loan.entity.LoanRepayment;
@@ -37,6 +39,9 @@ public class LoanRepaymentService {
     @Autowired
     private LoanApplicationRepository loanApplicationRepo;
 
+    @Autowired
+    private AccountRepository accountRepo;
+
     public void createSchedule(LoanAccount account) {
         List<AmortizationCalculator.RepaymentRow> rows = AmortizationCalculator.buildSchedule(
                 account.getRemainingPrincipal(),
@@ -67,19 +72,30 @@ public class LoanRepaymentService {
     public void processRepayment(String applicationId) {
         LoanAccount account = loanAccountRepo.findByApplicationId(applicationId)
                 .orElseThrow(() -> new BusinessException("Loan account not found applicationId=" + applicationId));
+        processRepayment(account);
+    }
 
-        List<LoanRepayment> pending = repaymentRepo.findByAccountIdAndRepaymentStatusIn(
-                account.getAccountId(),
-                List.of(LoanRepaymentStatus.SCHEDULED, LoanRepaymentStatus.OVERDUE));
+    public void processRepaymentByAccountId(String accountId) {
+        LoanAccount account = loanAccountRepo.findById(accountId)
+                .orElseThrow(() -> new BusinessException("Loan account not found accountId=" + accountId));
+        validateAccountingAlreadyDeducted(account);
+        processRepayment(account);
+    }
 
-        if (pending.isEmpty()) {
-            log.warn("[Repayment] no pending repayment found accountId={}", account.getAccountId());
-            return;
+    private void validateAccountingAlreadyDeducted(LoanAccount account) {
+        Account accountingLoanAccount = accountRepo.findById(account.getAccountNumber())
+                .orElseThrow(() -> new BusinessException("Accounting loan account not found accountNumber="
+                        + account.getAccountNumber()));
+        LoanRepayment current = getCurrentPendingRepayment(account);
+        if (accountingLoanAccount.getLiability() == null
+                || accountingLoanAccount.getLiability().compareTo(current.getRemainingAfter()) != 0) {
+            throw new BusinessException("帳務負債與待補同步期別不一致，無法補同步");
         }
+    }
 
-        LoanRepayment current = pending.stream()
-                .min(Comparator.comparing(LoanRepayment::getPeriodIndex))
-                .get();
+    private void processRepayment(LoanAccount account) {
+        List<LoanRepayment> pending = getPendingRepayments(account);
+        LoanRepayment current = getCurrentPendingRepayment(account, pending);
 
         current.setRepaymentStatus(LoanRepaymentStatus.PAID);
         current.setPaidDate(LocalDate.now());
@@ -118,6 +134,27 @@ public class LoanRepaymentService {
                 account.getPaidPeriods(),
                 account.getConfirmedPeriod(),
                 account.getAccountStatus());
+    }
+
+    private List<LoanRepayment> getPendingRepayments(LoanAccount account) {
+        List<LoanRepayment> pending = repaymentRepo.findByAccountIdAndRepaymentStatusIn(
+                account.getAccountId(),
+                List.of(LoanRepaymentStatus.SCHEDULED, LoanRepaymentStatus.OVERDUE));
+        if (pending.isEmpty()) {
+            log.warn("[Repayment] no pending repayment found accountId={}", account.getAccountId());
+            throw new BusinessException("No pending repayment found accountId=" + account.getAccountId());
+        }
+        return pending;
+    }
+
+    private LoanRepayment getCurrentPendingRepayment(LoanAccount account) {
+        return getCurrentPendingRepayment(account, getPendingRepayments(account));
+    }
+
+    private LoanRepayment getCurrentPendingRepayment(LoanAccount account, List<LoanRepayment> pending) {
+        return pending.stream()
+                .min(Comparator.comparing(LoanRepayment::getPeriodIndex))
+                .orElseThrow(() -> new BusinessException("No pending repayment found accountId=" + account.getAccountId()));
     }
 
     @Transactional(readOnly = true)

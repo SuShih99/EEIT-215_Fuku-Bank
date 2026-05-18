@@ -48,4 +48,12 @@ public class LoanAccountAdminController {
         return ResponseEntity.ok(ApiResponse.success(
                 loanRepaymentService.getByAccountId(accountId)));
     }
+
+    @PostMapping("/{accountId}/repayments/sync-paid")
+    public ResponseEntity<ApiResponse<List<LoanRepaymentResponseDTO>>> syncPaidRepayment(
+            @PathVariable String accountId) {
+        loanRepaymentService.processRepaymentByAccountId(accountId);
+        return ResponseEntity.ok(ApiResponse.success(
+                loanRepaymentService.getByAccountId(accountId)));
+    }
 }

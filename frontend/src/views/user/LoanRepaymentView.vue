@@ -103,9 +103,10 @@
                 class="form-input"
                 min="1"
                 :max="selectedLoan.remainingPrincipal"
+                readonly
                 placeholder="輸入金額"
               />
-              <button class="btn-preset" @click="form.amount = selectedLoan.monthlyPayment">
+              <button class="btn-preset" @click="fillCurrentRepaymentAmount">
                 填入月繳金額
               </button>
             </div>
@@ -232,6 +233,7 @@ const STATUS_MAP = {
 const loanAccounts  = ref([])
 const loanLoading   = ref(false)
 const selectedLoan  = ref(null)
+const currentRepayment = ref(null)
 
 const debitAccounts = ref([])
 const debitLoading  = ref(false)
@@ -304,15 +306,39 @@ async function loadDebitAccounts() {
 }
 
 // ── 選取貸款 ──
-function selectLoan(acc) {
+async function selectLoan(acc) {
   selectedLoan.value = acc
   // 預填月繳金額
   form.value.amount = acc.monthlyPayment ? Math.round(Number(acc.monthlyPayment)) : null
   form.value.note   = ''
   submitError.value = ''
   lastResult.value  = null
+  currentRepayment.value = null
+  await loadCurrentRepaymentAmount()
   loadDebitAccounts()
   loadHistory()
+}
+
+async function loadCurrentRepaymentAmount() {
+  if (!selectedLoan.value) return
+  try {
+    const res = await api.get(`/api/loan-accounts/${selectedLoan.value.accountId}/repayments`, auth())
+    const repayments = res.data.data || []
+    currentRepayment.value = repayments
+      .filter(rp => rp.repaymentStatus === 'SCHEDULED' || rp.repaymentStatus === 'OVERDUE')
+      .sort((a, b) => Number(a.periodIndex) - Number(b.periodIndex))[0] || null
+    if (currentRepayment.value?.totalAmount != null) {
+      form.value.amount = Math.round(Number(currentRepayment.value.totalAmount))
+    }
+  } catch {
+    currentRepayment.value = null
+  }
+}
+
+function fillCurrentRepaymentAmount() {
+  if (currentRepayment.value?.totalAmount != null) {
+    form.value.amount = Math.round(Number(currentRepayment.value.totalAmount))
+  }
 }
 
 // ── API：送出還款 ──
@@ -344,14 +370,14 @@ async function submitRepayment() {
 // ── 還款成功後重置表單 ──
 function afterSuccess() {
   lastResult.value  = null
-  form.value.amount = selectedLoan.value?.monthlyPayment
-    ? Math.round(Number(selectedLoan.value.monthlyPayment)) : null
+  loadCurrentRepaymentAmount()
   form.value.note   = ''
 }
 
 // ── 取消 / 重置 ──
 function reset() {
   selectedLoan.value = null
+  currentRepayment.value = null
   debitAccounts.value = []
   form.value = { fromAccountNumber: '', amount: null, note: '' }
   submitError.value = ''

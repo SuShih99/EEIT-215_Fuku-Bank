@@ -313,23 +313,23 @@ function formatDateTime(d) {
 <style scoped>
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css');
 
-/* ── Variables ── */
+/* ── Variables（對齊 admin-theme）── */
 .modal-overlay {
-  --accent:     #A65A4D;
-  --accent-dim: rgba(166, 90, 77, 0.10);
-  --accent-lt:  rgba(166, 90, 77, 0.20);
-  --surface:    #FDFAF6;
-  --surface-2:  #EAE4DA;
-  --border:     #D6CEC3;
-  --border-2:   #C4BBB0;
+  --accent:     #5C6B5F;
+  --accent-dim: rgba(92, 107, 95, 0.10);
+  --accent-lt:  rgba(92, 107, 95, 0.20);
+  --surface:    #ffffff;
+  --surface-2:  #f0f2f0;
+  --border:     #dde1de;
+  --border-2:   #c8cdc9;
   --ink:        #2B2B2B;
-  --ink-2:      #3D3530;
-  --muted:      #A89A8E;
-  --muted-2:    #6E6259;
+  --ink-2:      #333333;
+  --muted:      #8c9891;
+  --muted-2:    #5a6a5e;
   --primary:    #5C6B5F;
-  --primary-dk: #3F4A42;
-  --red:        #A65A4D;
-  --green:      #5C6B5F;
+  --primary-dk: #4A574D;
+  --red:        #C0392B;
+  --green:      #4A8C5C;
   --gold:       #8C7355;
 }
 
@@ -426,7 +426,7 @@ function formatDateTime(d) {
 .log-loading { padding: 14px 18px; display: flex; flex-direction: column; gap: 12px; }
 .log-skel    { display: flex; flex-direction: column; gap: 6px; }
 .sk {
-  background: linear-gradient(90deg, #EAE4DA 25%, #D6CEC3 50%, #EAE4DA 75%);
+  background: linear-gradient(90deg, #e8eae8 25%, #d5dad6 50%, #e8eae8 75%);
   background-size: 200% 100%; animation: shimmer 1.4s infinite;
   border-radius: 4px; flex-shrink: 0;
 }
@@ -467,7 +467,7 @@ function formatDateTime(d) {
 .badge-blue  { color: #3F5F5A; border-color: #9BBAB6; background: #EEF3F2; }
 .badge-green { color: var(--primary-dk); border-color: #A5B8A9; background: #ECF0EC; }
 .badge-gold  { color: var(--gold); border-color: #C4B090; background: #F5EFE6; }
-.badge-red   { color: var(--accent); border-color: rgba(166,90,77,0.4); background: rgba(166,90,77,0.08); }
+.badge-red   { color: var(--red); border-color: rgba(192,57,43,0.4); background: rgba(192,57,43,0.08); }
 
 .log-channel {
   font-size: 11px; font-family: 'IBM Plex Mono', monospace;
@@ -550,7 +550,7 @@ function formatDateTime(d) {
   overflow: hidden;
 }
 .alert-success { background: rgba(92,107,95,0.08); border: 1px solid rgba(92,107,95,0.3); color: var(--primary-dk); }
-.alert-error   { background: rgba(166,90,77,0.08); border: 1px solid rgba(166,90,77,0.3); color: var(--accent); }
+.alert-error   { background: rgba(192,57,43,0.08); border: 1px solid rgba(192,57,43,0.3); color: var(--red); }
 
 /* Submit */
 .submit-btn {

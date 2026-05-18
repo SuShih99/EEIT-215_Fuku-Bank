@@ -480,22 +480,22 @@ onMounted(fetchAccounts)
 </script>
 
 <style scoped>
-/* ── CSS 變數（與 LoanApplicationView 同一設計語言）── */
+/* ── CSS 變數（對齊 admin-theme）── */
 .loan-account-admin {
-  --accent:      #A65A4D;
-  --accent-dim:  rgba(166, 90, 77, 0.08);
+  --accent:      #5C6B5F;
+  --accent-dim:  rgba(92, 107, 95, 0.10);
   --primary:     #5C6B5F;
-  --pk:          #3F4A42;
-  --bg:          #F5F1EA;
-  --surface:     #FDFAF6;
-  --surface-2:   #EAE4DA;
-  --border:      #D6CEC3;
+  --pk:          #4A574D;
+  --bg:          #f4f5f7;
+  --surface:     #ffffff;
+  --surface-2:   #f0f2f0;
+  --border:      #dde1de;
   --ink:         #2B2B2B;
-  --ink-2:       #444;
-  --muted:       #A89A8E;
-  --muted-2:     #6E6259;
+  --ink-2:       #333333;
+  --muted:       #8c9891;
+  --muted-2:     #5a6a5e;
   --green:       #4A8C5C;
-  --red:         #A65A4D;
+  --red:         #C0392B;
   --amber:       #C49A3C;
   --yellow:      #C49A3C;
 
@@ -710,7 +710,7 @@ onMounted(fetchAccounts)
   transition: background 0.1s;
 }
 .data-row:hover      { background: var(--surface-2); }
-.data-row.row-overdue  { background: rgba(166,90,77,0.04); }
+.data-row.row-overdue  { background: rgba(192,57,43,0.04); }
 
 .data-table td {
   padding: 11px 14px;
@@ -760,9 +760,9 @@ onMounted(fetchAccounts)
   border-radius: 20px;
   white-space: nowrap;
 }
-.st-active  { background: rgba(74,140,92,0.12);  color: #1a7a40; }
-.st-overdue { background: rgba(166,90,77,0.12);  color: var(--red); }
-.st-paidoff { background: rgba(80,80,80,0.08);   color: #555; }
+.st-active  { background: rgba(74,140,92,0.12);   color: #1a7a40; }
+.st-overdue { background: rgba(192,57,43,0.12);   color: var(--red); }
+.st-paidoff { background: rgba(80,80,80,0.08);    color: #555; }
 
 /* 期數進度格 */
 .period-cell {
@@ -830,7 +830,7 @@ onMounted(fetchAccounts)
 .rep-table tr:last-child td { border-bottom: none; }
 
 .rrow-paid    td { color: var(--muted); }
-.rrow-overdue    { background: rgba(166,90,77,0.04); }
+.rrow-overdue    { background: rgba(192,57,43,0.04); }
 .rrow-overdue td { color: var(--red); }
 
 .rep-status {
@@ -914,8 +914,8 @@ onMounted(fetchAccounts)
 
 /* ── Modal 本體 ── */
 .modal-box {
-  background: #FDFAF6;
-  border: 1px solid #D6CEC3;
+  background: #ffffff;
+  border: 1px solid #dde1de;
   border-radius: 16px;
   width: 100%; max-width: 860px;
   max-height: 85vh;
@@ -928,35 +928,35 @@ onMounted(fetchAccounts)
 .modal-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 18px 24px 16px;
-  border-bottom: 1px solid #D6CEC3;
-  background: #EAE4DA;
+  border-bottom: 1px solid #dde1de;
+  background: #f0f2f0;
   flex-shrink: 0;
 }
 .modal-title-group { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .modal-title { font-size: 16px; font-weight: 700; color: #2B2B2B; }
-.modal-subtitle { font-size: 12px; color: #6E6259; display: flex; align-items: center; }
+.modal-subtitle { font-size: 12px; color: #5a6a5e; display: flex; align-items: center; }
 .modal-close-btn {
   width: 30px; height: 30px; border-radius: 8px;
-  border: 1px solid #D6CEC3; background: #FDFAF6;
-  color: #6E6259; font-size: 13px;
+  border: 1px solid #dde1de; background: #ffffff;
+  color: #5a6a5e; font-size: 13px;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
   transition: all 0.15s; flex-shrink: 0;
 }
-.modal-close-btn:hover { border-color: #A65A4D; color: #A65A4D; background: rgba(166,90,77,0.08); }
+.modal-close-btn:hover { border-color: #4A574D; color: #4A574D; background: rgba(92,107,95,0.08); }
 
 /* Modal 摘要 */
 .modal-summary {
   display: flex; gap: 0; flex-shrink: 0;
-  border-bottom: 1px solid #D6CEC3;
-  background: #FDFAF6;
+  border-bottom: 1px solid #dde1de;
+  background: #ffffff;
 }
 .summary-item {
   display: flex; flex-direction: column; gap: 3px;
   padding: 12px 20px;
-  border-right: 1px solid #D6CEC3;
+  border-right: 1px solid #dde1de;
 }
 .summary-item:last-child { border-right: none; }
-.summary-label { font-size: 10px; font-weight: 600; color: #6E6259; text-transform: uppercase; letter-spacing: 0.06em; }
+.summary-label { font-size: 10px; font-weight: 600; color: #5a6a5e; text-transform: uppercase; letter-spacing: 0.06em; }
 .summary-value { font-size: 13px; font-weight: 600; color: #2B2B2B; }
 
 /* Modal Body */
