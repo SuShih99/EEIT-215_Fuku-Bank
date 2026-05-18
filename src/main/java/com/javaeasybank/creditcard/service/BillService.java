@@ -10,7 +10,9 @@ import java.time.YearMonth;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,8 +60,17 @@ public class BillService {
             String billingMonth,
             BillStatus billStatus,
             Pageable pageable) {
+
         Specification<CardBill> spec = CardBillSpecification.search(customerName, billingMonth, billStatus);
-        return cardBillRepository.findAll(spec, pageable).map(cardBillMapper::toDto);
+        Pageable sortedPageable = PageRequest.of(
+            pageable.getPageNumber(),
+            pageable.getPageSize(),
+            Sort.by(
+                    Sort.Order.desc("billingMonth"),
+                    Sort.Order.desc("billId")
+            )
+    );
+        return cardBillRepository.findAll(spec, sortedPageable).map(cardBillMapper::toDto);
     }
 
     // 產生帳單
