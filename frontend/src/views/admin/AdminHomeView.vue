@@ -5,7 +5,7 @@
       <div class="welcome-text">
         <h1>{{ greeting }}，{{ userName }}</h1>
         <p class="welcome-sub">
-          角色：<a-tag color="blue">{{ userRole }}</a-tag>
+          角色：<a-tag class="role-tag-muted">{{ userRole }}</a-tag>
           <span v-if="lastLogin" class="last-login">上次登入：{{ lastLogin }}</span>
         </p>
       </div>
@@ -62,7 +62,7 @@
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'transactionType'">
-            <a-tag :color="typeColor(record.transactionType)">
+            <a-tag class="transaction-type-tag">
               {{ typeLabel(record.transactionType) }}
             </a-tag>
           </template>
@@ -140,38 +140,40 @@ const customerCount = ref(0)
 const employeeCount = ref(0)
 const todayTransCount = ref(0)
 const statsLoading = ref(true)
+const mutedIconBg = 'rgba(92, 107, 95, 0.1)'
+const mutedIconColor = '#5C6B5F'
 
 // ── 統計卡片：依角色切換 ──
 const stats = computed(() => {
   if (isCISO.value) {
     // 資安長視角：稽核數據
     return [
-      { label: '員工總人數', value: employeeCount.value, icon: TeamOutlined,        bg: '#fff7e6', color: '#fa8c16', loading: statsLoading.value },
-      { label: '今日系統登入', value: todayTransCount.value || '—',  icon: AccountBookOutlined, bg: '#e6f7ff', color: '#1890ff', loading: false },
-      { label: '系統可用率',   value: '99.9%',                       icon: AlertOutlined,       bg: '#f6ffed', color: '#52c41a', loading: false },
-      { label: '高風險操作',   value: '0',                            icon: AuditOutlined,       bg: '#fff1f0', color: '#f5222d', loading: false },
+      { label: '員工總人數', value: employeeCount.value, icon: TeamOutlined,        bg: mutedIconBg, color: mutedIconColor, loading: statsLoading.value },
+      { label: '今日系統登入', value: todayTransCount.value || '—',  icon: AccountBookOutlined, bg: mutedIconBg, color: mutedIconColor, loading: false },
+      { label: '系統可用率',   value: '99.9%',                       icon: AlertOutlined,       bg: mutedIconBg, color: mutedIconColor, loading: false },
+      { label: '高風險操作',   value: '0',                            icon: AuditOutlined,       bg: mutedIconBg, color: mutedIconColor, loading: false },
     ]
   }
   // 業務人員視角：業務數據
   return [
-    { label: '帳戶總數', value: accountCount.value,   icon: BankOutlined,  bg: '#e6f7ff', color: '#1890ff', loading: statsLoading.value },
-    { label: '客戶總數', value: customerCount.value,  icon: UserOutlined,  bg: '#f6ffed', color: '#52c41a', loading: statsLoading.value },
-    { label: '員工人數', value: employeeCount.value,  icon: TeamOutlined,  bg: '#fff7e6', color: '#fa8c16', loading: statsLoading.value },
-    { label: '最新交易', value: todayTransCount.value, icon: SwapOutlined,  bg: '#f9f0ff', color: '#722ed1', loading: statsLoading.value },
+    { label: '帳戶總數', value: accountCount.value,   icon: BankOutlined,  bg: mutedIconBg, color: mutedIconColor, loading: statsLoading.value },
+    { label: '客戶總數', value: customerCount.value,  icon: UserOutlined,  bg: mutedIconBg, color: mutedIconColor, loading: statsLoading.value },
+    { label: '員工人數', value: employeeCount.value,  icon: TeamOutlined,  bg: mutedIconBg, color: mutedIconColor, loading: statsLoading.value },
+    { label: '最新交易', value: todayTransCount.value, icon: SwapOutlined,  bg: mutedIconBg, color: mutedIconColor, loading: statsLoading.value },
   ]
 })
 
 // ── 快捷入口：依角色切換 ──
 const businessShortcuts = [
-  { label: '帳戶管理',   desc: '查看與管理帳戶',    route: '/admin/accounts',          icon: BankOutlined,    bg: '#e6f7ff', color: '#1890ff' },
-  { label: '交易紀錄',   desc: '查看所有交易紀錄',    route: '/admin/trans-logs',       icon: FileTextOutlined,bg: '#fff7e6', color: '#fa8c16' },
-  { label: '貸款管理',   desc: '審核貸款申請',       route: '/admin/loan-applications', icon: AuditOutlined,   bg: '#f9f0ff', color: '#722ed1' },
-  { label: '風險事件',   desc: '監控異常風險',       route: '/admin/risk-events',       icon: AlertOutlined,   bg: '#fff1f0', color: '#f5222d' },
-  { label: '信用卡管理', desc: '卡別與申請',         route: '/admin/card-applications', icon: CreditCardOutlined,bg: '#e6fffb', color: '#13c2c2' },
+  { label: '帳戶管理',   desc: '查看與管理帳戶',    route: '/admin/accounts',          icon: BankOutlined,    bg: mutedIconBg, color: mutedIconColor },
+  { label: '交易紀錄',   desc: '查看所有交易紀錄',    route: '/admin/trans-logs',       icon: FileTextOutlined,bg: mutedIconBg, color: mutedIconColor },
+  { label: '貸款管理',   desc: '審核貸款申請',       route: '/admin/loan-applications', icon: AuditOutlined,   bg: mutedIconBg, color: mutedIconColor },
+  { label: '風險事件',   desc: '監控異常風險',       route: '/admin/risk-events',       icon: AlertOutlined,   bg: mutedIconBg, color: mutedIconColor },
+  { label: '信用卡管理', desc: '卡別與申請',         route: '/admin/card-applications', icon: CreditCardOutlined,bg: mutedIconBg, color: mutedIconColor },
 ]
 const cisoShortcuts = [
-  { label: '系統日誌', desc: '查看所有操作日誌', route: '/admin/logs',      icon: FileTextOutlined, bg: '#fff7e6', color: '#fa8c16' },
-  { label: '員工管理', desc: '帳號與權限管理',   route: '/admin/employees', icon: TeamOutlined,     bg: '#e6f7ff', color: '#1890ff' },
+  { label: '系統日誌', desc: '查看所有操作日誌', route: '/admin/logs',      icon: FileTextOutlined, bg: mutedIconBg, color: mutedIconColor },
+  { label: '員工管理', desc: '帳號與權限管理',   route: '/admin/employees', icon: TeamOutlined,     bg: mutedIconBg, color: mutedIconColor },
 ]
 const shortcuts = computed(() => isCISO.value ? cisoShortcuts : businessShortcuts)
 
@@ -201,22 +203,7 @@ const typeMap = {
   REVERSAL: '沖正',
 }
 
-const typeColorMap = {
-  TRANSFER: 'blue',
-  DEPOSIT: 'green',
-  WITHDRAW: 'orange',
-  EXCHANGE: 'gold',
-  INTEREST: 'cyan',
-  LOAN_DISBURSEMENT: 'geekblue',
-  LOAN_REPAYMENT: 'lime',
-  CARD_PAYMENT: 'volcano',
-  CARD_SETTLEMENT: 'magenta',
-  CARD_REWARD: 'green',
-  REVERSAL: 'purple',
-}
-
 function typeLabel(t) { return typeMap[t] || t }
-function typeColor(t) { return typeColorMap[t] || 'default' }
 
 function formatAmount(amount, currency) {
   const c = currency || 'TWD'
@@ -317,6 +304,13 @@ onUnmounted(() => {
 .last-login {
   color: rgba(255, 255, 255, 0.65);
   font-size: 13px;
+}
+
+.role-tag-muted {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: rgba(255, 255, 255, 0.26) !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  font-weight: 600;
 }
 
 .welcome-date {
@@ -441,6 +435,13 @@ onUnmounted(() => {
 .shortcut-desc {
   font-size: 12px;
   color: #8c8c8c;
+}
+
+.transaction-type-tag {
+  background: rgba(92, 107, 95, 0.08) !important;
+  border: 1px solid rgba(92, 107, 95, 0.18) !important;
+  color: #5C6B5F !important;
+  font-weight: 600;
 }
 
 /* ── RWD ── */

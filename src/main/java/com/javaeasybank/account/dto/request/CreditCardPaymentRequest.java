@@ -10,6 +10,8 @@ import java.math.BigDecimal;
 @Data
 public class CreditCardPaymentRequest {
 
+    private Integer billId;
+
     @NotBlank
     private String creditCardAccountNumber;
 

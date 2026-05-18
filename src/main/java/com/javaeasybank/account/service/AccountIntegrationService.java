@@ -48,11 +48,13 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.Predicate;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -80,6 +82,7 @@ public class AccountIntegrationService {
     private static final int CREDIT_CARD_ACCOUNT_PREFIX_START = 801;
     private static final int CREDIT_CARD_ACCOUNT_PREFIX_END = 899;
     private static final int DEDICATED_ACCOUNT_NUMBER_LENGTH = 14;
+    private static final List<BillStatus> PAYABLE_BILL_STATUSES = List.of(BillStatus.UNPAID, BillStatus.PARTIAL);
 
     private final AccountRepository accountRepository;
     private final TransLogRepository transLogRepository;
@@ -88,6 +91,8 @@ public class AccountIntegrationService {
     private final CreditCardRepository creditCardRepository;
     private final LoanAccountRepository loanAccountRepository;
     private final LoanRepaymentRepository loanRepaymentRepository;
+    private final EntityManager entityManager;
+    private final JdbcTemplate jdbcTemplate;
 
     // @Lazy 避免 account ↔ loan 模組啟動順序問題；無實際循環依賴
     @Lazy
@@ -154,7 +159,7 @@ public class AccountIntegrationService {
 
         String referenceId = ReferenceIdGenerator.generate();
         String note = joinNote("貸款撥款 loanAccount=" + loanAccount.getAccountNumber(), request.getNote());
-        transLogRepository.save(buildTransLog(
+        insertTransLog(buildTransLog(
                 referenceId,
                 bankDisbursement,
                 targetAccount.getAccountNumber(),
@@ -164,7 +169,7 @@ public class AccountIntegrationService {
                 bankBefore,
                 bankDisbursement.getBalance(),
                 note));
-        transLogRepository.save(buildTransLog(
+        insertTransLog(buildTransLog(
                 referenceId,
                 targetAccount,
                 bankDisbursement.getAccountNumber(),
@@ -226,7 +231,7 @@ public class AccountIntegrationService {
         loanAccount.setLiability(liabilityBefore.add(amount));
 
         String referenceId = ReferenceIdGenerator.generate();
-        transLogRepository.save(buildTransLog(
+        insertTransLog(buildTransLog(
                 referenceId,
                 loanAccount,
                 null,
@@ -300,13 +305,13 @@ public class AccountIntegrationService {
 
         String referenceId = ReferenceIdGenerator.generate();
         String note = joinNote("貸款還款 loanAccount=" + loanAccount.getAccountNumber(), request.getNote());
-        transLogRepository.save(buildTransLog(referenceId, sourceAccount, loanAccount.getAccountNumber(),
+        insertTransLog(buildTransLog(referenceId, sourceAccount, loanAccount.getAccountNumber(),
                 EntryType.DEBIT, TransactionType.LOAN_REPAYMENT, amount,
                 sourceBefore, sourceAccount.getBalance(), note));
-        transLogRepository.save(buildTransLog(referenceId, loanAccount, sourceAccount.getAccountNumber(),
+        insertTransLog(buildTransLog(referenceId, loanAccount, sourceAccount.getAccountNumber(),
                 EntryType.CREDIT, TransactionType.LOAN_REPAYMENT, amount,
                 liabilityBefore, loanAccount.getLiability(), note));
-        transLogRepository.save(buildTransLog(referenceId, bankCollection, sourceAccount.getAccountNumber(),
+        insertTransLog(buildTransLog(referenceId, bankCollection, sourceAccount.getAccountNumber(),
                 EntryType.CREDIT, TransactionType.LOAN_REPAYMENT, amount,
                 collectionBefore, bankCollection.getBalance(), note));
         // Keep accounting and loan schedule state in the same transaction.
@@ -404,16 +409,17 @@ public class AccountIntegrationService {
     public CreditCardPaymentResponse payCreditCard(String customerId, CreditCardPaymentRequest request) {
         BigDecimal amount = normalizePositiveAmount(request.getAmount(), "信用卡繳款金額");
         String fromAccountNumber = normalizeAccountNumber(request.getFromAccountNumber());
+        CardBill bill = resolveCreditCardPaymentBill(customerId, request.getBillId());
+        BigDecimal paidAmount = zeroIfNull(bill.getPaidAmount());
+        BigDecimal remainingBillAmount = zeroIfNull(bill.getTotalAmount()).subtract(paidAmount);
+        if (remainingBillAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new AccountException("BILL_ALREADY_PAID", "此帳單已無待繳金額");
+        }
+        if (amount.compareTo(remainingBillAmount) > 0) {
+            throw new AccountException("CARD_PAYMENT_EXCEEDS_BILL", "繳費金額不可超過剩餘應繳金額");
+        }
 
-        // 直接用 customerId 從 account 表查出 CREDIT_CARD 帳戶，
-        // 避免前端傳入的 creditCardAccountNumber 是 CardAccount.accountNumber（不在 account 表）
-        String creditCardAccountNumber = accountRepository
-                .findAllByCustomerIdAndAccountTypeAndCurrencyAndStatus(
-                        customerId, AccountType.CREDIT_CARD, Currency.TWD, AccountStatus.ACTIVE)
-                .stream()
-                .findFirst()
-                .map(Account::getAccountNumber)
-                .orElseThrow(() -> new AccountException("CREDIT_CARD_ACCOUNT_NOT_FOUND", "找不到有效的信用卡繳款帳戶"));
+        String creditCardAccountNumber = resolveCreditCardPaymentAccountNumber(customerId, bill);
 
         Map<String, Account> accounts = lockAccounts(
                 fromAccountNumber,
@@ -433,14 +439,8 @@ public class AccountIntegrationService {
         sourceAccount.setBalance(sourceBefore.subtract(amount));
         creditCardAccount.setBalance(cardBefore.add(amount));
 
-        // 取得最早未繳帳單，更新繳款金額與狀態
-        CardBill bill = cardBillRepository
-                .findTopByCardAccountCustomerCustomerIdAndBillStatusInOrderByDueDateAsc(customerId,
-                        List.of(BillStatus.UNPAID, BillStatus.PARTIAL))
-                .orElseThrow(() -> new AccountException("BILL_NOT_FOUND", "找不到未繳帳單"));
         // 更新帳單繳款金額與狀態
-        bill.setPaidAmount(
-                bill.getPaidAmount().add(amount));
+        bill.setPaidAmount(paidAmount.add(amount));
         //回補信用卡可用餘額
         applyPaymentToCardDebts(bill, amount);
 
@@ -460,10 +460,10 @@ public class AccountIntegrationService {
 
         String referenceId = ReferenceIdGenerator.generate();
         String note = joinNote("信用卡繳款", request.getNote());
-        transLogRepository.save(buildTransLog(referenceId, sourceAccount, creditCardAccount.getAccountNumber(),
+        insertTransLog(buildTransLog(referenceId, sourceAccount, creditCardAccount.getAccountNumber(),
                 EntryType.DEBIT, TransactionType.CARD_PAYMENT, amount,
                 sourceBefore, sourceAccount.getBalance(), note));
-        transLogRepository.save(buildTransLog(referenceId, creditCardAccount, sourceAccount.getAccountNumber(),
+        insertTransLog(buildTransLog(referenceId, creditCardAccount, sourceAccount.getAccountNumber(),
                 EntryType.CREDIT, TransactionType.CARD_PAYMENT, amount,
                 cardBefore, creditCardAccount.getBalance(), note));
 
@@ -476,6 +476,74 @@ public class AccountIntegrationService {
         response.setCreditCardBalance(creditCardAccount.getBalance());
         response.setTransactedAt(LocalDateTime.now());
         return response;
+    }
+
+    private String resolveCreditCardPaymentAccountNumber(String customerId, CardBill bill) {
+        String cardAccountNumber = bill.getCardAccount() == null
+                ? null
+                : bill.getCardAccount().getAccountNumber();
+
+        if (cardAccountNumber != null && !cardAccountNumber.isBlank()) {
+            String normalizedCardAccountNumber = normalizeAccountNumber(cardAccountNumber);
+            Account cardAccount = accountRepository.findById(normalizedCardAccountNumber).orElse(null);
+            if (cardAccount != null) {
+                validateCreditCardAccount(cardAccount);
+                validateCustomerOwns(cardAccount, customerId, "信用卡帳戶不存在或不屬於您");
+                return cardAccount.getAccountNumber();
+            }
+        }
+
+        Account existingCreditCardAccount = accountRepository
+                .findAllByCustomerIdAndAccountTypeAndCurrencyAndStatus(
+                        customerId, AccountType.CREDIT_CARD, Currency.TWD, AccountStatus.ACTIVE)
+                .stream()
+                .findFirst()
+                .orElse(null);
+        if (existingCreditCardAccount != null) {
+            return existingCreditCardAccount.getAccountNumber();
+        }
+
+        if (cardAccountNumber == null || cardAccountNumber.isBlank()) {
+            throw new AccountException("CREDIT_CARD_ACCOUNT_NOT_FOUND", "找不到有效的信用卡繳款帳戶");
+        }
+
+        Account account = new Account();
+        account.setAccountNumber(normalizeAccountNumber(cardAccountNumber));
+        account.setCustomerId(customerId);
+        account.setAccountType(AccountType.CREDIT_CARD);
+        account.setCurrency(Currency.TWD);
+        account.setBalance(BigDecimal.ZERO);
+        account.setLiability(BigDecimal.ZERO);
+        account.setInterestRate(null);
+        account.setStatus(AccountStatus.ACTIVE);
+        account.setCreatedBy(SYSTEM_OPERATOR);
+        account.setChangedBy(SYSTEM_OPERATOR);
+
+        entityManager.persist(account);
+        entityManager.flush();
+        log.warn("補建缺少的信用卡繳款帳戶: customerId={}, accountNumber={}", customerId, account.getAccountNumber());
+        return account.getAccountNumber();
+    }
+
+    private CardBill resolveCreditCardPaymentBill(String customerId, Integer billId) {
+        CardBill bill;
+        if (billId != null) {
+            bill = cardBillRepository
+                    .findByBillIdAndCardAccountCustomerCustomerId(billId, customerId)
+                    .orElseThrow(() -> new AccountException("BILL_NOT_FOUND", "找不到指定帳單"));
+        } else {
+            bill = cardBillRepository
+                    .findTopByCardAccountCustomerCustomerIdAndBillStatusInOrderByDueDateAsc(
+                            customerId,
+                            PAYABLE_BILL_STATUSES)
+                    .orElseThrow(() -> new AccountException("BILL_NOT_FOUND", "找不到未繳帳單"));
+        }
+
+        if (!PAYABLE_BILL_STATUSES.contains(bill.getBillStatus())) {
+            throw new AccountException("BILL_NOT_PAYABLE", "此帳單狀態不可繳費");
+        }
+
+        return bill;
     }
 
     @Transactional(readOnly = true)
@@ -541,10 +609,10 @@ public class AccountIntegrationService {
 
         String referenceId = ReferenceIdGenerator.generate();
         String note = joinNote("信用卡帳務結算", request.getNote());
-        transLogRepository.save(buildTransLog(referenceId, creditCardAccount, bankCollection.getAccountNumber(),
+        insertTransLog(buildTransLog(referenceId, creditCardAccount, bankCollection.getAccountNumber(),
                 EntryType.DEBIT, TransactionType.CARD_SETTLEMENT, amount,
                 cardBefore, creditCardAccount.getBalance(), note));
-        transLogRepository.save(buildTransLog(referenceId, bankCollection, creditCardAccount.getAccountNumber(),
+        insertTransLog(buildTransLog(referenceId, bankCollection, creditCardAccount.getAccountNumber(),
                 EntryType.CREDIT, TransactionType.CARD_SETTLEMENT, amount,
                 collectionBefore, bankCollection.getBalance(), note));
 
@@ -795,6 +863,42 @@ public class AccountIntegrationService {
         transLog.setCurrency(account.getCurrency());
         transLog.setNote(note);
         return transLog;
+    }
+
+    private void insertTransLog(TransLog transLog) {
+        transLog.prePersist();
+        if (transLog.getCreatedAt() == null) {
+            transLog.setCreatedAt(LocalDateTime.now());
+        }
+
+        jdbcTemplate.update("""
+                INSERT INTO trans_log (
+                    transaction_id, reference_id, account_number, counterpart_account,
+                    bank_code, bank_name, counterpart_bank_code, counterpart_bank_name,
+                    is_interbank, entry_type, transaction_type, amount, fee_amount,
+                    total_debit_amount, balance_before, balance_after, currency, note, created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                transLog.getTransactionId(),
+                transLog.getReferenceId(),
+                transLog.getAccountNumber(),
+                transLog.getCounterpartAccount(),
+                transLog.getBankCode(),
+                transLog.getBankName(),
+                transLog.getCounterpartBankCode(),
+                transLog.getCounterpartBankName(),
+                transLog.isInterbank(),
+                transLog.getEntryType().name(),
+                transLog.getTransactionType().name(),
+                transLog.getAmount(),
+                transLog.getFeeAmount(),
+                transLog.getTotalDebitAmount(),
+                transLog.getBalanceBefore(),
+                transLog.getBalanceAfter(),
+                transLog.getCurrency().name(),
+                transLog.getNote(),
+                transLog.getCreatedAt());
     }
 
     private String joinNote(String defaultNote, String note) {

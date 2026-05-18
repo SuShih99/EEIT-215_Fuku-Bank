@@ -327,7 +327,6 @@ WHERE account_type = 'CREDIT_CARD'
       SELECT account_number FROM CARD_ACCOUNT
   );
 
-IF NOT EXISTS (SELECT 1 FROM [ACCOUNT])
 INSERT INTO [ACCOUNT] (
     account_number, customer_id, account_type, currency,
     balance, liability, interest_rate, status,

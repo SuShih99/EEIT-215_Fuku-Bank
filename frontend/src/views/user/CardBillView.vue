@@ -55,6 +55,16 @@ const formatMoney = (value) => {
   return Number(value || 0).toLocaleString()
 }
 
+const getRemainingAmount = (bill) => {
+  return Math.max(Number(bill.totalAmount || 0) - Number(bill.paidAmount || 0), 0)
+}
+
+const getMinimumDueAmount = (bill) => {
+  const remainingAmount = getRemainingAmount(bill)
+  const unpaidMinimum = Math.max(Number(bill.minimumPayment || 0) - Number(bill.paidAmount || 0), 0)
+  return unpaidMinimum > 0 ? Math.min(unpaidMinimum, remainingAmount) : remainingAmount
+}
+
 const fetchBills = async () => {
   loading.value = true
   try {
@@ -95,10 +105,29 @@ const fetchUnbilledTransactions = async () => {
 
 const handlePayment = async (bill) => {
   try {
+    const amount = Number(bill.payAmount)
+    const remainingAmount = getRemainingAmount(bill)
+
+    if (!selectedAccount.value) {
+      message.warning('請選擇扣款帳戶')
+      return
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      message.warning('請輸入大於 0 的繳費金額')
+      return
+    }
+
+    if (amount > remainingAmount) {
+      message.warning(`繳費金額不可超過剩餘應繳 NT$ ${formatMoney(remainingAmount)}`)
+      return
+    }
+
     await payCard({
+      billId: bill.billId,
       fromAccountNumber: selectedAccount.value,
       creditCardAccountNumber: bill.creditCardAccountNumber,
-      amount: bill.payAmount,
+      amount,
       note: '信用卡繳費',
     })
     message.success('繳費成功')
@@ -222,7 +251,7 @@ onMounted(() => {
             </strong>
           </div>
         </div>
-        <div class="account-select">
+        <div v-if="bill.billStatus !== 'PAID' && getRemainingAmount(bill) > 0" class="account-select">
           <select v-model="selectedAccount" class="account-dropdown">
             <option
               v-for="account in paymentAccounts"
@@ -235,13 +264,13 @@ onMounted(() => {
           </select>
         </div>
 
-        <div class="payment-section">
+        <div v-if="bill.billStatus !== 'PAID' && getRemainingAmount(bill) > 0" class="payment-section">
           <div class="quick-actions">
-            <button class="quick-btn" @click="bill.payAmount = bill.minimumPayment">
+            <button class="quick-btn" @click="bill.payAmount = getMinimumDueAmount(bill)">
               最低應繳
             </button>
 
-            <button class="quick-btn" @click="bill.payAmount = bill.totalAmount">全額繳清</button>
+            <button class="quick-btn" @click="bill.payAmount = getRemainingAmount(bill)">全額繳清</button>
           </div>
 
           <div class="pay-row">
@@ -249,6 +278,9 @@ onMounted(() => {
               v-model="bill.payAmount"
               type="number"
               class="pay-input"
+              min="1"
+              step="1"
+              :max="getRemainingAmount(bill)"
               placeholder="請輸入繳費金額"
             />
 
