@@ -5,12 +5,15 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 /**
  * 交易紀錄響應 DTO，用於向客戶端返回交易紀錄資訊。
  */
 @Data
 public class TransLogResponse {
+    public static final String BUSINESS_ACCOUNT_LABEL = "銀行業務帳戶";
+
     /**
      * 交易 ID。
      */
@@ -118,6 +121,27 @@ public class TransLogResponse {
         response.setCurrency(transLog.getCurrency() != null ? transLog.getCurrency().name() : null);
         response.setNote(transLog.getNote());
         response.setCreatedAt(transLog.getCreatedAt());
+        return response;
+    }
+
+    public static TransLogResponse fromEntityForAdmin(TransLog transLog, Set<String> businessAccountNumbers) {
+        TransLogResponse response = fromEntity(transLog);
+        if (response == null || businessAccountNumbers == null || businessAccountNumbers.isEmpty()) {
+            return response;
+        }
+
+        if (businessAccountNumbers.contains(response.getAccountNumber())) {
+            response.setAccountNumber(BUSINESS_ACCOUNT_LABEL);
+            response.setBalanceBefore(null);
+            response.setBalanceAfter(null);
+            response.setTotalDebitAmount(null);
+        }
+
+        if (businessAccountNumbers.contains(response.getCounterpartAccount())) {
+            response.setCounterpartAccount(BUSINESS_ACCOUNT_LABEL);
+            response.setCounterpartBankCode(null);
+            response.setCounterpartBankName(BUSINESS_ACCOUNT_LABEL);
+        }
         return response;
     }
 }

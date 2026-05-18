@@ -83,6 +83,33 @@ public class AccountController {
     }
 
     /**
+     * 後台帳戶複合搜尋，可同時依客戶姓名、客戶 ID、帳號、狀態、型別、幣別篩選。
+     */
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<PageResponse<AccountResponse>>> searchAccounts(
+            @RequestParam(required = false) String customerName,
+            @RequestParam(required = false) String customerId,
+            @RequestParam(required = false) String accountNumber,
+            @RequestParam(required = false) AccountStatus status,
+            @RequestParam(required = false) AccountType type,
+            @RequestParam(required = false) Currency currency,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        log.info("Received request to search accounts: customerName={}, customerId={}, accountNumber={}, status={}, type={}, currency={}",
+                customerName, customerId, accountNumber, status, type, currency);
+        Page<AccountResponse> result = accountService.searchAdminAccounts(
+                customerId,
+                customerName,
+                accountNumber,
+                status,
+                type,
+                currency,
+                PageRequest.of(page, size));
+        PageResponse<AccountResponse> pageResponse = PageResponse.of(result.getContent(), page, size, result.getTotalElements());
+        return ResponseEntity.ok(ApiResponse.success(pageResponse));
+    }
+
+    /**
      * 檢索按狀態過濾的帳戶分頁列表。
      *
      * @param status 要檢索的帳戶狀態。

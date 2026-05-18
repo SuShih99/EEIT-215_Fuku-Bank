@@ -127,6 +127,7 @@ public class RiskReviewService {
                 ReviewTask task = reviewTaskService.createTask(log, dto);
                 yield buildResponse(log, disposition, task.getTaskId(), credit.getFinalScore());
             }
+            case RETURN -> throw new IllegalStateException("RETURN 不應由自動風控流程產生");
         };
     }
 

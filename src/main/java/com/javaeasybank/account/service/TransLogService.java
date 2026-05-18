@@ -1,6 +1,10 @@
 package com.javaeasybank.account.service;
 
 import com.javaeasybank.account.dto.response.TransLogResponse;
+import com.javaeasybank.account.entity.Account;
+import com.javaeasybank.account.entity.TransLog;
+import com.javaeasybank.account.enums.AccountType;
+import com.javaeasybank.account.repository.AccountRepository;
 import com.javaeasybank.account.repository.TransLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,8 +14,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * 交易紀錄業務邏輯服務層。
@@ -23,6 +30,7 @@ import java.util.stream.Collectors;
 public class TransLogService {
 
     private final TransLogRepository transLogRepository;
+    private final AccountRepository accountRepository;
 
     /**
      * 根據參考 ID 查詢交易紀錄列表。
@@ -33,9 +41,7 @@ public class TransLogService {
     @Transactional(readOnly = true)
     public List<TransLogResponse> getByReferenceId(String referenceId) {
         log.debug("Fetching trans logs by referenceId: {}", referenceId);
-        return transLogRepository.findByReferenceId(referenceId).stream()
-                .map(TransLogResponse::fromEntity)
-                .collect(Collectors.toList());
+        return toAdminResponses(transLogRepository.findByReferenceIdExcludingAccountType(referenceId, AccountType.BUSINESS));
     }
 
     /**
@@ -48,8 +54,11 @@ public class TransLogService {
     @Transactional(readOnly = true)
     public Page<TransLogResponse> getByAccountNumber(String accountNumber, Pageable pageable) {
         log.debug("Fetching trans logs by accountNumber: {}", accountNumber);
-        return transLogRepository.findByAccountInvolved(accountNumber, pageable)
-                .map(TransLogResponse::fromEntity);
+        if (accountRepository.existsByAccountNumberAndAccountType(accountNumber, AccountType.BUSINESS)) {
+            return Page.empty(pageable);
+        }
+        return toAdminResponsePage(
+                transLogRepository.findByAccountInvolvedExcludingAccountType(accountNumber, AccountType.BUSINESS, pageable));
     }
 
     /**
@@ -62,8 +71,8 @@ public class TransLogService {
     @Transactional(readOnly = true)
     public Page<TransLogResponse> getByCustomerId(String customerId, Pageable pageable) {
         log.debug("Fetching trans logs by customerId: {}", customerId);
-        return transLogRepository.findByCustomerId(customerId, pageable)
-                .map(TransLogResponse::fromEntity);
+        return toAdminResponsePage(
+                transLogRepository.findByCustomerIdExcludingAccountType(customerId, AccountType.BUSINESS, pageable));
     }
 
     /**
@@ -78,8 +87,9 @@ public class TransLogService {
     @Transactional(readOnly = true)
     public Page<TransLogResponse> getByCustomerIdAndDateRange(String customerId, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
         log.debug("Fetching trans logs by customerId: {} and date range: {} to {}", customerId, startDate, endDate);
-        return transLogRepository.findByCustomerIdAndDateRange(customerId, startDate, endDate, pageable)
-                .map(TransLogResponse::fromEntity);
+        return toAdminResponsePage(
+                transLogRepository.findByCustomerIdAndDateRangeExcludingAccountType(
+                        customerId, AccountType.BUSINESS, startDate, endDate, pageable));
     }
 
     /**
@@ -91,7 +101,32 @@ public class TransLogService {
     @Transactional(readOnly = true)
     public Page<TransLogResponse> getLatest(Pageable pageable) {
         log.debug("Fetching latest trans logs");
-        return transLogRepository.findAllByOrderByCreatedAtDesc(pageable)
-                .map(TransLogResponse::fromEntity);
+        return toAdminResponsePage(
+                transLogRepository.findAllExcludingAccountTypeOrderByCreatedAtDesc(AccountType.BUSINESS, pageable));
+    }
+
+    private List<TransLogResponse> toAdminResponses(List<TransLog> logs) {
+        Set<String> businessAccountNumbers = findBusinessAccountNumbers(logs);
+        return logs.stream()
+                .map(log -> TransLogResponse.fromEntityForAdmin(log, businessAccountNumbers))
+                .collect(Collectors.toList());
+    }
+
+    private Page<TransLogResponse> toAdminResponsePage(Page<TransLog> logs) {
+        Set<String> businessAccountNumbers = findBusinessAccountNumbers(logs.getContent());
+        return logs.map(log -> TransLogResponse.fromEntityForAdmin(log, businessAccountNumbers));
+    }
+
+    private Set<String> findBusinessAccountNumbers(Collection<TransLog> logs) {
+        Set<String> accountNumbers = logs.stream()
+                .flatMap(log -> Stream.of(log.getAccountNumber(), log.getCounterpartAccount()))
+                .filter(accountNumber -> accountNumber != null && !accountNumber.isBlank())
+                .collect(Collectors.toSet());
+        if (accountNumbers.isEmpty()) {
+            return Set.of();
+        }
+        return accountRepository.findAllByAccountNumberInAndAccountType(accountNumbers, AccountType.BUSINESS).stream()
+                .map(Account::getAccountNumber)
+                .collect(Collectors.toSet());
     }
 }

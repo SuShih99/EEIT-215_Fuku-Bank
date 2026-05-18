@@ -7,21 +7,51 @@
     <!-- 頂部 F 橫劃：搜尋與主操作 -->
     <div class="action-bar">
       <!-- 左側搜尋區 -->
-      <div class="search-group" style="flex-wrap: wrap; max-width: 800px;">
-        <a-input
-          v-model:value="accountNumberSearch"
-          placeholder="搜尋帳號..."
-          class="rounded-input"
-          style="width: 150px"
-          allow-clear
-        />
-        <a-input
-          v-model:value="customerId"
-          placeholder="客戶 ID..."
-          class="rounded-input"
-          style="width: 150px"
-          allow-clear
-        />
+      <div class="search-group account-search-group" style="flex-wrap: wrap; max-width: 980px;">
+        <a-form-item
+          class="filter-form-item"
+          :validate-status="filterErrors.customerName ? 'error' : ''"
+          :help="filterErrors.customerName"
+        >
+          <a-input
+            v-model:value="customerNameSearch"
+            placeholder="顧客姓名..."
+            class="rounded-input"
+            style="width: 150px"
+            allow-clear
+            @blur="validateCustomerName"
+          />
+        </a-form-item>
+
+        <a-form-item
+          class="filter-form-item"
+          :validate-status="filterErrors.accountNumber ? 'error' : ''"
+          :help="filterErrors.accountNumber"
+        >
+          <a-input
+            v-model:value="accountNumberSearch"
+            placeholder="搜尋帳號..."
+            class="rounded-input"
+            style="width: 150px"
+            allow-clear
+            @blur="validateAccountNumber"
+          />
+        </a-form-item>
+
+        <a-form-item
+          class="filter-form-item"
+          :validate-status="filterErrors.customerId ? 'error' : ''"
+          :help="filterErrors.customerId"
+        >
+          <a-input
+            v-model:value="customerId"
+            placeholder="客戶 ID..."
+            class="rounded-input"
+            style="width: 150px"
+            allow-clear
+            @blur="validateCustomerId"
+          />
+        </a-form-item>
 
         <a-select
           v-model:value="statusFilter"
@@ -43,9 +73,11 @@
           allow-clear
         >
           <a-select-option value="CHECKING">活存</a-select-option>
+          <a-select-option value="SAVINGS">儲蓄</a-select-option>
           <a-select-option value="TIME_DEPOSIT">定存</a-select-option>
           <a-select-option value="LOAN">貸款</a-select-option>
           <a-select-option value="SUB_ACCOUNT">子帳戶</a-select-option>
+          <a-select-option value="CREDIT_CARD">信用卡</a-select-option>
         </a-select>
 
         <a-select
@@ -267,13 +299,10 @@ import { SearchOutlined, PlusOutlined } from '@ant-design/icons-vue'
 import { getErrorMessage } from '@/utils/errorMessages'
 import { useAuthStore } from '@/stores/auth'
 import {
-  getAccountsByCustomerId,
-  getAccountsByStatus,
-  getAccountsByTypeAndCurrency,
-  getLatestAccounts,
+  searchAdminAccounts,
   createAccount,
   updateAccountStatus,
-  getAccount, // Added getAccount
+  getAccount,
 } from '@/api/account'
 
 const authStore = useAuthStore()
@@ -291,9 +320,11 @@ const statusMap = {
 
 const typeMap = {
   CHECKING: '活存',
+  SAVINGS: '儲蓄',
   TIME_DEPOSIT: '定存',
   LOAN: '貸款',
   SUB_ACCOUNT: '子帳戶',
+  CREDIT_CARD: '信用卡',
 }
 
 // === 格式化工具 ===
@@ -308,11 +339,17 @@ function formatTime(value) {
 }
 
 // === 查詢相關 ===
+const customerNameSearch = ref('')
 const accountNumberSearch = ref('')
 const customerId = ref('')
 const statusFilter = ref(undefined)
 const typeFilter = ref(undefined)
 const currencyFilter = ref(undefined)
+const filterErrors = reactive({
+  customerName: '',
+  accountNumber: '',
+  customerId: '',
+})
 const accounts = ref([])
 const loading = ref(false)
 const currentPage = ref(1)
@@ -321,6 +358,8 @@ const total = ref(0)
 
 // 記錄當前用哪種查詢，換頁時要用
 const lastSearchType = ref('')
+
+const hasFilterErrors = computed(() => Object.values(filterErrors).some(Boolean))
 
 onMounted(fetchData)
 
@@ -371,6 +410,10 @@ function handleResizeColumn(w, col) {
 }
 
 async function handleSearch() {
+  validateFilters()
+  if (hasFilterErrors.value) {
+    return
+  }
   currentPage.value = 1
   await fetchData()
 }
@@ -382,42 +425,17 @@ async function handleTableChange(pagination) {
 }
 
 async function fetchData() {
+  validateFilters()
+  if (hasFilterErrors.value) {
+    return
+  }
+
   loading.value = true
   try {
-    let res
     const page = currentPage.value - 1
     const size = pageSize.value
-
-    if (accountNumberSearch.value) {
-      lastSearchType.value = 'accountNumber'
-      try {
-        const singleRes = await getAccount(accountNumberSearch.value)
-        accounts.value = [singleRes.data.data]
-        total.value = 1
-      } catch (err) {
-        accounts.value = []
-        total.value = 0
-        message.error(getErrorMessage(err, '查無此帳號'))
-      }
-      loading.value = false
-      return
-    } else if (customerId.value) {
-      lastSearchType.value = 'customerId'
-      res = await getAccountsByCustomerId(customerId.value, page, size)
-    } else if ((typeFilter.value && !currencyFilter.value) || (!typeFilter.value && currencyFilter.value)) {
-      message.warning('請同時選擇帳戶型別和幣別')
-      loading.value = false
-      return
-    } else if (typeFilter.value && currencyFilter.value) {
-      lastSearchType.value = 'typeAndCurrency'
-      res = await getAccountsByTypeAndCurrency(typeFilter.value, currencyFilter.value, page, size)
-    } else if (statusFilter.value) {
-      lastSearchType.value = 'status'
-      res = await getAccountsByStatus(statusFilter.value, page, size)
-    } else {
-      lastSearchType.value = 'latest'
-      res = await getLatestAccounts(page, size)
-    }
+    lastSearchType.value = 'adminSearch'
+    const res = await searchAdminAccounts(buildSearchParams(), page, size)
 
     accounts.value = res.data.data.content
     total.value = res.data.data.totalElements
@@ -426,6 +444,46 @@ async function fetchData() {
   } finally {
     loading.value = false
   }
+}
+
+function buildSearchParams() {
+  return {
+    customerName: normalizeFilterValue(customerNameSearch.value),
+    accountNumber: normalizeFilterValue(accountNumberSearch.value),
+    customerId: normalizeFilterValue(customerId.value),
+    status: statusFilter.value || undefined,
+    type: typeFilter.value || undefined,
+    currency: currencyFilter.value || undefined,
+  }
+}
+
+function normalizeFilterValue(value) {
+  const normalized = value?.trim()
+  return normalized || undefined
+}
+
+function validateFilters() {
+  validateCustomerName()
+  validateAccountNumber()
+  validateCustomerId()
+}
+
+function validateCustomerName() {
+  filterErrors.customerName = /[0-9０-９]/.test(customerNameSearch.value || '')
+    ? '顧客姓名不可包含數字'
+    : ''
+}
+
+function validateAccountNumber() {
+  filterErrors.accountNumber = /[^0-9]/.test(accountNumberSearch.value || '')
+    ? '帳號只能輸入數字'
+    : ''
+}
+
+function validateCustomerId() {
+  filterErrors.customerId = /[\u3400-\u9fff]/.test(customerId.value || '')
+    ? '客戶 ID 不可包含中文'
+    : ''
 }
 
 // === 建立帳戶相關 ===
@@ -527,11 +585,15 @@ function fillDemoAccount(type, currency) {
 }
 
 async function handleClear() {
+  customerNameSearch.value = ''
   accountNumberSearch.value = ''
   customerId.value = ''
   statusFilter.value = undefined
   typeFilter.value = undefined
   currencyFilter.value = undefined
+  filterErrors.customerName = ''
+  filterErrors.accountNumber = ''
+  filterErrors.customerId = ''
   accounts.value = []
   total.value = 0
   currentPage.value = 1
@@ -597,6 +659,20 @@ async function handleStatusChange() {
 </script>
 
 <style scoped>
+.filter-form-item {
+  margin-bottom: 0;
+}
+
+.account-search-group {
+  align-items: flex-start;
+}
+
+.filter-form-item :deep(.ant-form-item-explain-error) {
+  font-size: 12px;
+  line-height: 1.3;
+  margin-top: 4px;
+}
+
 .demo-fill-section {
   display: flex;
   align-items: center;

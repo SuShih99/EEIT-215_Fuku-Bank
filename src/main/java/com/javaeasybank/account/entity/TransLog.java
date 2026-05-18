@@ -20,7 +20,7 @@ import java.util.UUID;
  */
 @Entity
 @Table(
-    name = "TRANS_LOG",
+    name = "trans_log",
     indexes = {
         @Index(name = "idx_tx_ref", columnList = "reference_id"),
         @Index(name = "idx_tx_account_time", columnList = "account_number, created_at")
