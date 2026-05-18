@@ -289,10 +289,11 @@ public class AccountIntegrationService {
         ensureSufficientBalance(sourceAccount, amount, "扣款帳戶餘額不足");
 
         BigDecimal liabilityBefore = zeroIfNull(loanAccount.getLiability());
-        if (amount.compareTo(liabilityBefore) > 0) {
+        if (amount.compareTo(liabilityBefore) > 0
+                && !isFinalPrincipalRepayment(loanAccountNumber, request.getApplicationId(), amount)) {
             throw new AccountException("LOAN_OVERPAYMENT_NOT_ALLOWED", "還款金額不可大於剩餘負債");
         }
-        ExactLoanRepayment exactRepayment = validateExactLoanRepaymentAmount(
+        LoanRepaymentPlan repaymentPlan = validateLoanRepaymentAmount(
                 loanAccountNumber,
                 request.getApplicationId(),
                 amount);
@@ -300,7 +301,7 @@ public class AccountIntegrationService {
         BigDecimal sourceBefore = zeroIfNull(sourceAccount.getBalance());
         BigDecimal collectionBefore = zeroIfNull(bankCollection.getBalance());
         sourceAccount.setBalance(sourceBefore.subtract(amount));
-        loanAccount.setLiability(liabilityBefore.subtract(amount));
+        loanAccount.setLiability(liabilityBefore.subtract(amount.min(liabilityBefore)));
         bankCollection.setBalance(collectionBefore.add(amount));
 
         String referenceId = ReferenceIdGenerator.generate();
@@ -315,8 +316,8 @@ public class AccountIntegrationService {
                 EntryType.CREDIT, TransactionType.LOAN_REPAYMENT, amount,
                 collectionBefore, bankCollection.getBalance(), note));
         // Keep accounting and loan schedule state in the same transaction.
-        if (exactRepayment.applicationId() != null && !exactRepayment.applicationId().isBlank()) {
-            loanRepaymentService.processRepayment(exactRepayment.applicationId());
+        if (repaymentPlan.applicationId() != null && !repaymentPlan.applicationId().isBlank()) {
+            loanRepaymentService.processRepayments(repaymentPlan.applicationId(), repaymentPlan.periodsToPay());
         }
 
         return toLoanTransactionResponse(
@@ -406,77 +407,97 @@ public class AccountIntegrationService {
     }
 
     @Transactional
-    public CreditCardPaymentResponse payCreditCard(String customerId, CreditCardPaymentRequest request) {
-        BigDecimal amount = normalizePositiveAmount(request.getAmount(), "信用卡繳款金額");
-        String fromAccountNumber = normalizeAccountNumber(request.getFromAccountNumber());
-        CardBill bill = resolveCreditCardPaymentBill(customerId, request.getBillId());
-        BigDecimal paidAmount = zeroIfNull(bill.getPaidAmount());
-        BigDecimal remainingBillAmount = zeroIfNull(bill.getTotalAmount()).subtract(paidAmount);
-        if (remainingBillAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new AccountException("BILL_ALREADY_PAID", "此帳單已無待繳金額");
+public CreditCardPaymentResponse payCreditCard(String customerId, CreditCardPaymentRequest request) {
+    BigDecimal amount = normalizePositiveAmount(request.getAmount(), "信用卡繳款金額");
+    String fromAccountNumber = normalizeAccountNumber(request.getFromAccountNumber());
+
+    List<CardBill> bills = resolveCreditCardPaymentBills(customerId, request);
+
+    BigDecimal totalRemainingAmount = bills.stream()
+            .map(bill -> zeroIfNull(bill.getTotalAmount()).subtract(zeroIfNull(bill.getPaidAmount())))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+    if (totalRemainingAmount.compareTo(BigDecimal.ZERO) <= 0) {
+        throw new AccountException("BILL_ALREADY_PAID", "此帳單已無待繳金額");
+    }
+
+    if (amount.compareTo(totalRemainingAmount) > 0) {
+        throw new AccountException("CARD_PAYMENT_EXCEEDS_BILL", "繳費金額不可超過剩餘應繳金額");
+    }
+
+    String creditCardAccountNumber = resolveCreditCardPaymentAccountNumber(customerId, bills.get(0));
+
+    Map<String, Account> accounts = lockAccounts(
+            fromAccountNumber,
+            creditCardAccountNumber);
+
+    Account sourceAccount = accounts.get(fromAccountNumber);
+    Account creditCardAccount = accounts.get(creditCardAccountNumber);
+
+    validateRepaymentSourceOrTarget(sourceAccount, "扣款帳戶");
+    validateCreditCardAccount(creditCardAccount);
+    validateCustomerOwns(sourceAccount, customerId, "扣款帳戶不存在或不屬於您");
+    validateCustomerOwns(creditCardAccount, customerId, "信用卡帳戶不存在或不屬於您");
+    ensureSufficientBalance(sourceAccount, amount, "扣款帳戶餘額不足");
+
+    BigDecimal sourceBefore = zeroIfNull(sourceAccount.getBalance());
+    BigDecimal cardBefore = zeroIfNull(creditCardAccount.getBalance());
+
+    sourceAccount.setBalance(sourceBefore.subtract(amount));
+    creditCardAccount.setBalance(cardBefore.add(amount));
+
+    BigDecimal remainingPaymentAmount = amount;
+
+    for (CardBill bill : bills) {
+        if (remainingPaymentAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            break;
         }
-        if (amount.compareTo(remainingBillAmount) > 0) {
-            throw new AccountException("CARD_PAYMENT_EXCEEDS_BILL", "繳費金額不可超過剩餘應繳金額");
+
+        BigDecimal billPaidAmount = zeroIfNull(bill.getPaidAmount());
+        BigDecimal billRemainingAmount = zeroIfNull(bill.getTotalAmount()).subtract(billPaidAmount);
+
+        if (billRemainingAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            continue;
         }
 
-        String creditCardAccountNumber = resolveCreditCardPaymentAccountNumber(customerId, bill);
+        BigDecimal payToThisBill = remainingPaymentAmount.min(billRemainingAmount);
 
-        Map<String, Account> accounts = lockAccounts(
-                fromAccountNumber,
-                creditCardAccountNumber);
+        bill.setPaidAmount(billPaidAmount.add(payToThisBill));
+        applyPaymentToCardDebts(bill, payToThisBill);
 
-        Account sourceAccount = accounts.get(fromAccountNumber);
-        Account creditCardAccount = accounts.get(creditCardAccountNumber);
-
-        validateRepaymentSourceOrTarget(sourceAccount, "扣款帳戶");
-        validateCreditCardAccount(creditCardAccount);
-        validateCustomerOwns(sourceAccount, customerId, "扣款帳戶不存在或不屬於您");
-        validateCustomerOwns(creditCardAccount, customerId, "信用卡帳戶不存在或不屬於您");
-        ensureSufficientBalance(sourceAccount, amount, "扣款帳戶餘額不足");
-
-        BigDecimal sourceBefore = zeroIfNull(sourceAccount.getBalance());
-        BigDecimal cardBefore = zeroIfNull(creditCardAccount.getBalance());
-        sourceAccount.setBalance(sourceBefore.subtract(amount));
-        creditCardAccount.setBalance(cardBefore.add(amount));
-
-        // 更新帳單繳款金額與狀態
-        bill.setPaidAmount(paidAmount.add(amount));
-        //回補信用卡可用餘額
-        applyPaymentToCardDebts(bill, amount);
-
-        // 已繳清
         if (bill.getPaidAmount().compareTo(bill.getTotalAmount()) >= 0) {
-
             bill.setBillStatus(BillStatus.PAID);
-
-        }
-        // 部分繳款
-        else if (bill.getPaidAmount().compareTo(BigDecimal.ZERO) > 0) {
-
+        } else {
             bill.setBillStatus(BillStatus.PARTIAL);
         }
 
-        cardBillRepository.save(bill);
-
-        String referenceId = ReferenceIdGenerator.generate();
-        String note = joinNote("信用卡繳款", request.getNote());
-        insertTransLog(buildTransLog(referenceId, sourceAccount, creditCardAccount.getAccountNumber(),
-                EntryType.DEBIT, TransactionType.CARD_PAYMENT, amount,
-                sourceBefore, sourceAccount.getBalance(), note));
-        insertTransLog(buildTransLog(referenceId, creditCardAccount, sourceAccount.getAccountNumber(),
-                EntryType.CREDIT, TransactionType.CARD_PAYMENT, amount,
-                cardBefore, creditCardAccount.getBalance(), note));
-
-        CreditCardPaymentResponse response = new CreditCardPaymentResponse();
-        response.setReferenceId(referenceId);
-        response.setCreditCardAccountNumber(creditCardAccount.getAccountNumber());
-        response.setFromAccountNumber(sourceAccount.getAccountNumber());
-        response.setAmount(amount);
-        response.setFromAccountBalance(sourceAccount.getBalance());
-        response.setCreditCardBalance(creditCardAccount.getBalance());
-        response.setTransactedAt(LocalDateTime.now());
-        return response;
+        remainingPaymentAmount = remainingPaymentAmount.subtract(payToThisBill);
     }
+
+    cardBillRepository.saveAll(bills);
+
+    String referenceId = ReferenceIdGenerator.generate();
+    String note = joinNote("信用卡繳款", request.getNote());
+
+    insertTransLog(buildTransLog(referenceId, sourceAccount, creditCardAccount.getAccountNumber(),
+            EntryType.DEBIT, TransactionType.CARD_PAYMENT, amount,
+            sourceBefore, sourceAccount.getBalance(), note));
+
+    insertTransLog(buildTransLog(referenceId, creditCardAccount, sourceAccount.getAccountNumber(),
+            EntryType.CREDIT, TransactionType.CARD_PAYMENT, amount,
+            cardBefore, creditCardAccount.getBalance(), note));
+
+    CreditCardPaymentResponse response = new CreditCardPaymentResponse();
+    response.setReferenceId(referenceId);
+    response.setCreditCardAccountNumber(creditCardAccount.getAccountNumber());
+    response.setFromAccountNumber(sourceAccount.getAccountNumber());
+    response.setAmount(amount);
+    response.setFromAccountBalance(sourceAccount.getBalance());
+    response.setCreditCardBalance(creditCardAccount.getBalance());
+    response.setTransactedAt(LocalDateTime.now());
+
+    return response;
+}
 
     private String resolveCreditCardPaymentAccountNumber(String customerId, CardBill bill) {
         String cardAccountNumber = bill.getCardAccount() == null
@@ -524,6 +545,29 @@ public class AccountIntegrationService {
         log.warn("補建缺少的信用卡繳款帳戶: customerId={}, accountNumber={}", customerId, account.getAccountNumber());
         return account.getAccountNumber();
     }
+
+    private List<CardBill> resolveCreditCardPaymentBills(String customerId, CreditCardPaymentRequest request) {
+    List<Integer> billIds = request.getBillIds();
+
+    if (billIds != null && !billIds.isEmpty()) {
+        List<CardBill> bills = billIds.stream()
+                .map(billId -> cardBillRepository
+                        .findByBillIdAndCardAccountCustomerCustomerId(billId, customerId)
+                        .orElseThrow(() -> new AccountException("BILL_NOT_FOUND", "找不到指定帳單")))
+                .filter(bill -> PAYABLE_BILL_STATUSES.contains(bill.getBillStatus()))
+                .sorted((a, b) -> String.valueOf(a.getBillingMonth()).compareTo(String.valueOf(b.getBillingMonth())))
+                .toList();
+
+        if (bills.isEmpty()) {
+            throw new AccountException("BILL_NOT_FOUND", "找不到可繳帳單");
+        }
+
+        return bills;
+    }
+
+    CardBill bill = resolveCreditCardPaymentBill(customerId, request.getBillId());
+    return List.of(bill);
+}
 
     private CardBill resolveCreditCardPaymentBill(String customerId, Integer billId) {
         CardBill bill;
@@ -759,7 +803,7 @@ public class AccountIntegrationService {
         }
     }
 
-    private ExactLoanRepayment validateExactLoanRepaymentAmount(
+    private LoanRepaymentPlan validateLoanRepaymentAmount(
             String loanAccountNumber,
             String applicationId,
             BigDecimal amount) {
@@ -769,26 +813,66 @@ public class AccountIntegrationService {
                 && !applicationId.trim().equals(loanModuleAccount.getApplicationId())) {
             throw new AccountException("LOAN_APPLICATION_MISMATCH", "貸款申請與貸款帳戶不符");
         }
-
-        LoanRepayment currentRepayment = loanRepaymentRepository.findByAccountIdAndRepaymentStatusIn(
+        List<LoanRepayment> pendingRepayments = loanRepaymentRepository.findByAccountIdAndRepaymentStatusIn(
                         loanModuleAccount.getAccountId(),
                         List.of(LoanRepaymentStatus.SCHEDULED, LoanRepaymentStatus.OVERDUE))
                 .stream()
-                .min((first, second) -> first.getPeriodIndex().compareTo(second.getPeriodIndex()))
-                .orElseThrow(() -> new AccountException("LOAN_REPAYMENT_NOT_FOUND", "查無待繳貸款期別"));
+                .sorted((first, second) -> first.getPeriodIndex().compareTo(second.getPeriodIndex()))
+                .toList();
+        if (pendingRepayments.isEmpty()) {
+            throw new AccountException("LOAN_REPAYMENT_NOT_FOUND", "找不到待繳貸款期數");
+        }
 
-        BigDecimal expectedAmount = zeroIfNull(currentRepayment.getTotalAmount()).setScale(
+        BigDecimal cumulativeAmount = BigDecimal.ZERO.setScale(Currency.TWD.getDecimalPlaces(), RoundingMode.HALF_UP);
+        int periodsToPay = 0;
+        for (LoanRepayment repayment : pendingRepayments) {
+            cumulativeAmount = cumulativeAmount.add(zeroIfNull(repayment.getTotalAmount()))
+                    .setScale(Currency.TWD.getDecimalPlaces(), RoundingMode.HALF_UP);
+            periodsToPay++;
+            if (amount.compareTo(cumulativeAmount) == 0) {
+                return new LoanRepaymentPlan(loanModuleAccount.getApplicationId(), periodsToPay);
+            }
+            if (amount.compareTo(cumulativeAmount) < 0) {
+                break;
+            }
+        }
+
+        BigDecimal remainingPrincipal = zeroIfNull(loanModuleAccount.getRemainingPrincipal())
+                .setScale(Currency.TWD.getDecimalPlaces(), RoundingMode.HALF_UP);
+        if (pendingRepayments.size() == 1 && amount.compareTo(remainingPrincipal) == 0) {
+            return new LoanRepaymentPlan(loanModuleAccount.getApplicationId(), 1);
+        }
+
+        BigDecimal currentAmount = zeroIfNull(pendingRepayments.get(0).getTotalAmount()).setScale(
                 Currency.TWD.getDecimalPlaces(),
                 RoundingMode.HALF_UP);
-        if (amount.compareTo(expectedAmount) != 0) {
-            throw new AccountException(
-                    "LOAN_REPAYMENT_AMOUNT_MISMATCH",
-                    "還款金額必須等於本期應繳金額 " + expectedAmount.toPlainString());
-        }
-        return new ExactLoanRepayment(loanModuleAccount.getApplicationId());
+        throw new AccountException(
+                "LOAN_REPAYMENT_AMOUNT_MISMATCH",
+                "還款金額必須等於本期或連續多期應繳總額，目前本期應繳 " + currentAmount.toPlainString());
     }
 
-    private record ExactLoanRepayment(String applicationId) {
+    private record LoanRepaymentPlan(String applicationId, int periodsToPay) {
+    }
+
+    private boolean isFinalPrincipalRepayment(String loanAccountNumber, String applicationId, BigDecimal amount) {
+        return loanAccountRepository.findByAccountNumber(loanAccountNumber)
+                .filter(loanAccount -> applicationId == null
+                        || applicationId.isBlank()
+                        || applicationId.trim().equals(loanAccount.getApplicationId()))
+                .filter(loanAccount -> {
+                    long pendingCount = loanRepaymentRepository.findByAccountIdAndRepaymentStatusIn(
+                                    loanAccount.getAccountId(),
+                                    List.of(LoanRepaymentStatus.SCHEDULED, LoanRepaymentStatus.OVERDUE))
+                            .size();
+                    return pendingCount == 1;
+                })
+                .map(LoanAccount::getRemainingPrincipal)
+                .map(this::zeroIfNull)
+                .map(remainingPrincipal -> remainingPrincipal.setScale(
+                        Currency.TWD.getDecimalPlaces(),
+                        RoundingMode.HALF_UP))
+                .filter(remainingPrincipal -> amount.compareTo(remainingPrincipal) == 0)
+                .isPresent();
     }
 
     private BigDecimal normalizePositiveAmount(BigDecimal amount, String label) {

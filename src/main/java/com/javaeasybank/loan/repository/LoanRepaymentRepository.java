@@ -19,4 +19,8 @@ public interface LoanRepaymentRepository extends JpaRepository<LoanRepayment, St
     Optional<LoanRepayment> findByAccountIdAndPeriodIndex(String accountId, Integer periodIndex);
 
     List<LoanRepayment> findByScheduledDateBeforeAndRepaymentStatus(LocalDate date, LoanRepaymentStatus status);
+
+    // 應繳日介於 startDate ~ endDate 之間，且仍為指定狀態（用於到期提醒）
+    List<LoanRepayment> findByScheduledDateBetweenAndRepaymentStatus(
+            LocalDate startDate, LocalDate endDate, LoanRepaymentStatus status);
 }

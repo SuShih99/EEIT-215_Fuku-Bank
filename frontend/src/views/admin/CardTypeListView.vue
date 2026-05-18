@@ -2,7 +2,13 @@
 import { ref, onMounted } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import api from '@/api/axios'
-import { getCardTypes,createCardType, uploadImage,  deleteCardType,updateCardType } from '@/api/cardtype'
+import {
+  getCardTypes,
+  createCardType,
+  uploadImage,
+  deleteCardType,
+  updateCardType,
+} from '@/api/cardtype'
 import { PlusOutlined, SyncOutlined } from '@ant-design/icons-vue'
 
 const cardTypes = ref([])
@@ -16,7 +22,10 @@ const file = ref(null)
 // 表單資料
 const form = ref({
   cardTypeName: '',
-  cashbackRate:0,
+  cashbackRate: 0,
+  brand: 'VISA',
+  annualFee: 0,
+  cardImageUrl: '',
 })
 // 編輯id
 const editingId = ref(null)
@@ -32,11 +41,10 @@ const handleFileChange = (e) => {
   // if (file.value.size > 5 * 1024 * 1024) {
   // message.error('圖片不能超過 5MB')
   // return
-// }
-  
+  // }
+
   file.value = e.target.files[0]
 }
-
 
 // 表格欄位定義
 const columns = [
@@ -59,8 +67,7 @@ const fetchCardTypes = async () => {
   try {
     const data = await getCardTypes()
     cardTypes.value = data
-    console.log(data);
-    
+    console.log(data)
   } catch (error) {
     message.error(error.response?.data?.message || '讀取資料失敗')
   } finally {
@@ -92,7 +99,9 @@ const handleCreate = async () => {
       await updateCardType(editingId.value, {
         cardTypeName: form.value.cardTypeName,
         cashbackRate: form.value.cashbackRate,
-        cardImageUrl: imageUrl, // 可為 null（看後端）
+        cardImageUrl: imageUrl || form.value.cardImageUrl,
+        brand: form.value.brand,
+        annualFee: form.value.annualFee,
       })
       message.success('更新成功')
     } else {
@@ -106,6 +115,8 @@ const handleCreate = async () => {
         cardTypeName: form.value.cardTypeName,
         cashbackRate: form.value.cashbackRate,
         cardImageUrl: imageUrl,
+        brand: form.value.brand,
+        annualFee: form.value.annualFee,
       })
       message.success('新增成功')
     }
@@ -113,28 +124,29 @@ const handleCreate = async () => {
     // reset
     open.value = false
     editingId.value = null
-    form.value.cardTypeName = ''
-    form.value.cashbackRate = 0
+    form.value = {
+      cardTypeName: '',
+      cashbackRate: 0,
+      brand: 'VISA',
+      annualFee: 0,
+    }
     file.value = null
-
     await fetchCardTypes()
   } catch (error) {
     message.error(error.response?.data?.message || '新增失敗')
   }
 }
 // 編輯處理
-const handleEdit = (record)=>{
+const handleEdit = (record) => {
   editingId.value = record.cardTypeId
   form.value.cardTypeName = record.cardTypeName
   form.value.cashbackRate = record.cashbackRate
+  form.value.brand = record.brand
+  form.value.annualFee = record.annualFee
+  form.value.cardImageUrl = record.cardImageUrl
   open.value = true
   file.value = null
 }
-
-
-
-
-
 
 // 刪除處理
 const handleDelete = (id) => {
@@ -170,7 +182,7 @@ onMounted(() => {
     </div>
 
     <!-- 頂部 F 橫劃：主操作 -->
-    <div class="action-bar" style="justify-content: flex-end;">
+    <div class="action-bar" style="justify-content: flex-end">
       <div class="global-actions">
         <a-button class="rounded-btn btn-ghost" @click="fetchCardTypes">
           <template #icon><SyncOutlined /></template>
@@ -205,9 +217,16 @@ onMounted(() => {
         <!-- 操作按鈕處理 -->
         <template v-else-if="column.key === 'action'">
           <div class="action-cell">
-            <a-button type="link" class="action-btn edit-btn" @click="handleEdit(record)">編輯</a-button>
+            <a-button type="link" class="action-btn edit-btn" @click="handleEdit(record)"
+              >編輯</a-button
+            >
             <a-divider type="vertical" />
-            <a-button type="link" class="action-btn suspend-btn" @click="handleDelete(record.cardTypeId)">刪除</a-button>
+            <a-button
+              type="link"
+              class="action-btn suspend-btn"
+              @click="handleDelete(record.cardTypeId)"
+              >刪除</a-button
+            >
           </div>
         </template>
       </template>
@@ -222,8 +241,21 @@ onMounted(() => {
         <a-form-item label="圖片">
           <input type="file" @change="handleFileChange" />
         </a-form-item>
+
+        <a-form-item label="品牌">
+          <a-select v-model:value="form.brand">
+            <a-select-option value="VISA">VISA</a-select-option>
+            <a-select-option value="MasterCard">MasterCard</a-select-option>
+            <a-select-option value="JCB">JCB</a-select-option>
+          </a-select>
+        </a-form-item>
+
+        <a-form-item label="年費">
+          <a-input-number v-model:value="form.annualFee" :min="0" style="width: 100%" />
+        </a-form-item>
+
         <a-form-item label="回饋率(%)">
-          <a-input-number v-model:value="form.cashbackRate" min="0" max="100"/>
+          <a-input-number v-model:value="form.cashbackRate" min="0" max="100" />
         </a-form-item>
       </a-form>
     </a-modal>

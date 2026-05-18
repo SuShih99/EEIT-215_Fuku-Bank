@@ -14,6 +14,7 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -153,7 +154,7 @@ public class EmailService {
         context.setVariable("time", LocalDateTime.now()
                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         context.setVariable("referenceId", referenceId);
-        context.setVariable("loanType", loanType);
+        context.setVariable("loanType", formatLoanType(loanType));
         context.setVariable("amount", amount);
 
         String html = templateEngine.process("mail/loan-document-required", context);
@@ -199,5 +200,32 @@ public class EmailService {
         log.error("Failed to send email with attachment to {}: {}", to, e.getMessage());
     }
 }
-}
 
+    private String formatLoanType(String loanType) {
+        if (loanType == null || loanType.isBlank()) {
+            return "";
+        }
+        return switch (loanType) {
+            case "PERSONAL" -> "個人信貸";
+            case "CAR" -> "汽車貸款";
+            case "MOTOR" -> "機車貸款";
+            case "STUDENT" -> "學貸";
+            case "BUSINESS" -> "創業貸款";
+            case "HOUSE" -> "房屋貸款";
+            case "LAND" -> "土地貸款";
+            default -> loanType;
+        };
+    }
+
+    private String formatAnnualRate(BigDecimal rate) {
+        if (rate == null) {
+            return "";
+        }
+        BigDecimal percent = rate.abs().compareTo(BigDecimal.ONE) <= 0
+                ? rate.multiply(BigDecimal.valueOf(100))
+                : rate;
+        return percent.setScale(4, RoundingMode.HALF_UP)
+                .stripTrailingZeros()
+                .toPlainString() + "%";
+    }
+}

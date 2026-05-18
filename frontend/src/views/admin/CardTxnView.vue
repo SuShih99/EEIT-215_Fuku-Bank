@@ -212,7 +212,7 @@ onMounted(() => {
 
       <a-button @click="handleReset">
         <template #icon><SyncOutlined /></template>
-        重設
+        重新整理
       </a-button>
     </div>
     <!-- Table -->

@@ -120,6 +120,17 @@ public class LoanApplicationService {
                 dto.getApplyPeriod(), dto.getRate());
         loan.setDisbursementAccount(dto.getDisbursementAccount()); // 儲存撥款入帳帳號
         entityManager.persist(loan);
+
+        // 申請成立通知
+        String email = customerService.findEmailByCustomerId(customerId);
+        if (email != null) {
+            emailService.sendLoanAppliedNotification(
+                    email, loan.getApplicationId(), loan.getApplyType(),
+                    loan.getApplyAmount(), loan.getApplyPeriod());
+        } else {
+            log.warn("[LoanApplied] 客戶無 email，略過通知。customerId={}", customerId);
+        }
+
         return loan.getApplicationId();
     }
 
@@ -426,6 +437,24 @@ public class LoanApplicationService {
                     && dto.getNewStatus() != LoanApplicationStatus.REJECTED) {
                 throw new BusinessException("風控回調目標狀態不合法：" + dto.getNewStatus());
             }
+            // 拒絕：主表寫入前先準備發信所需資料（寫入後 loan 狀態已變，需提前取值）
+            if (dto.getNewStatus() == LoanApplicationStatus.REJECTED) {
+                final String rejectEmail = customerService.findEmailByCustomerId(loan.getCustomerId());
+                final String rejectAppId = loan.getApplicationId();
+                final String rejectType  = loan.getApplyType();
+                final BigDecimal rejectAmt = loan.getApplyAmount();
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        if (rejectEmail != null) {
+                            emailService.sendLoanRejectedNotification(
+                                    rejectEmail, rejectAppId, rejectType, rejectAmt);
+                        } else {
+                            log.warn("[LoanRejected] 客戶無 email，略過通知。applicationId={}", rejectAppId);
+                        }
+                    }
+                });
+            }
             // 核准後觸發自動建帳與撥款（afterCommit 確保主表先寫入再執行）
             if (dto.getNewStatus() == LoanApplicationStatus.APPROVED) {
                 TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -465,6 +494,34 @@ public class LoanApplicationService {
         // ACCOUNT 模組撥款確認後，同步建立貸款帳戶
         if ("ACCOUNT".equals(caller)) {
             loanAccountService.createOnDisbursement(applicationId, dto.getLoanAccountNumber());
+
+            // 核准暨撥款通知：帳號已建立，取 reviewDetail 取得核准條件
+            try {
+                LoanReviewDetail detail = reviewDetailRepo.findByApplicationId(applicationId)
+                        .orElse(null);
+                String disbEmail = customerService.findEmailByCustomerId(loan.getCustomerId());
+                if (disbEmail != null && detail != null) {
+                    var loanAccount = loanAccountService.getByApplicationId(applicationId);
+                    String firstPaymentDate = loanAccount.getNextPaymentDate() != null
+                            ? loanAccount.getNextPaymentDate().toString()
+                            : null;
+                    emailService.sendLoanApprovedAndDisbursedNotification(
+                            disbEmail,
+                            applicationId,
+                            loan.getApplyType(),
+                            detail.getConfirmedAmount(),
+                            detail.getConfirmedPeriod(),
+                            detail.getConfirmedRate(),
+                            loanAccount.getAccountId(),
+                            loan.getDisbursementAccount(),
+                            firstPaymentDate);
+                } else {
+                    log.warn("[LoanDisbursed] 略過通知：email={} detail={} applicationId={}",
+                            disbEmail, detail, applicationId);
+                }
+            } catch (Exception e) {
+                log.error("[LoanDisbursed] 發送核准暨撥款通知失敗，applicationId={}", applicationId, e);
+            }
         }
     }
 

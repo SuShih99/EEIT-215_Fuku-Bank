@@ -119,8 +119,7 @@
                 v-model.number="form.amount"
                 class="form-input"
                 min="1"
-                :max="selectedLoan.remainingPrincipal"
-                readonly
+                step="1"
                 placeholder="輸入金額"
               />
               <button class="btn-preset" @click="fillCurrentRepaymentAmount">
@@ -290,11 +289,23 @@ function fmtDateTime(d) {
   })
 }
 
+function payableAmountForCurrentPeriod() {
+  if (!currentRepayment.value?.totalAmount) return null
+  const scheduledAmount = Number(currentRepayment.value.totalAmount)
+  const remainingPrincipal = Number(selectedLoan.value?.remainingPrincipal || 0)
+  if (remainingPrincipal > 0 && remainingPrincipal < scheduledAmount) {
+    return Math.round(remainingPrincipal)
+  }
+  return Math.round(scheduledAmount)
+}
+
 // ── 可送出條件 ──
 const canSubmit = computed(() =>
   form.value.fromAccountNumber &&
   selectedLoan.value?.accountNumber &&
   form.value.amount > 0 &&
+  (!payableAmountForCurrentPeriod() || Number(form.value.amount) >= payableAmountForCurrentPeriod()) &&
+  Number(form.value.amount) <= Number(selectedLoan.value?.remainingPrincipal || 0) &&
   selectedLoan.value &&
   !submitting.value
 )
@@ -347,8 +358,9 @@ async function loadCurrentRepaymentAmount() {
     currentRepayment.value = repayments
       .filter(rp => rp.repaymentStatus === 'SCHEDULED' || rp.repaymentStatus === 'OVERDUE')
       .sort((a, b) => Number(a.periodIndex) - Number(b.periodIndex))[0] || null
-    if (currentRepayment.value?.totalAmount != null) {
-      form.value.amount = Math.round(Number(currentRepayment.value.totalAmount))
+    const payableAmount = payableAmountForCurrentPeriod()
+    if (payableAmount != null) {
+      form.value.amount = payableAmount
     }
   } catch {
     currentRepayment.value = null
@@ -356,8 +368,9 @@ async function loadCurrentRepaymentAmount() {
 }
 
 function fillCurrentRepaymentAmount() {
-  if (currentRepayment.value?.totalAmount != null) {
-    form.value.amount = Math.round(Number(currentRepayment.value.totalAmount))
+  const payableAmount = payableAmountForCurrentPeriod()
+  if (payableAmount != null) {
+    form.value.amount = payableAmount
   }
 }
 

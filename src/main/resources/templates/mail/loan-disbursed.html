@@ -62,23 +62,50 @@
             font-size: 14px;
             color: #555555;
         }
+        .section-title {
+            font-size: 13px;
+            color: #999999;
+            margin: 18px 0 4px 0;
+            letter-spacing: 0.5px;
+        }
     </style>
 </head>
 <body>
 <div class="container">
-    <div class="header">Java Easy Bank - 貸款撥款完成通知</div>
+    <div class="header">Java Easy Bank - 貸款核准暨撥款通知</div>
     <div class="content">
         <p>親愛的客戶您好：</p>
-        <p>您的貸款款項已成功撥入指定帳戶，還款排程已同步建立，請依期繳款。</p>
+        <p>您的貸款申請已通過審核，款項已同步撥入您指定的帳戶，還款排程亦已建立，請依期繳款。</p>
 
+        <div class="section-title">核准條件</div>
+        <table class="data-table">
+            <tr>
+                <th>申請編號</th>
+                <td th:text="${applicationId}"></td>
+            </tr>
+            <tr>
+                <th>貸款類型</th>
+                <td th:text="${loanType}"></td>
+            </tr>
+            <tr>
+                <th>核准金額</th>
+                <td style="font-weight: bold; color: #333;" th:text="${confirmedAmount}"></td>
+            </tr>
+            <tr>
+                <th>核准期數</th>
+                <td><span th:text="${confirmedPeriod}"></span> 個月</td>
+            </tr>
+            <tr>
+                <th>年利率</th>
+                <td th:text="${confirmedRate}"></td>
+            </tr>
+        </table>
+
+        <div class="section-title">撥款資訊</div>
         <table class="data-table">
             <tr>
                 <th>撥款時間</th>
                 <td th:text="${time}"></td>
-            </tr>
-            <tr>
-                <th>申請編號</th>
-                <td th:text="${applicationId}"></td>
             </tr>
             <tr>
                 <th>貸款帳號</th>
@@ -87,10 +114,6 @@
             <tr>
                 <th>撥款入帳帳號</th>
                 <td th:text="${disbursementAccount}"></td>
-            </tr>
-            <tr>
-                <th>撥款金額</th>
-                <td style="font-weight: bold; color: #333;" th:text="${amount}"></td>
             </tr>
             <tr>
                 <th>首期應繳日</th>

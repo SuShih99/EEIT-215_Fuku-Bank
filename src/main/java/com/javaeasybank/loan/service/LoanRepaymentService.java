@@ -1,8 +1,10 @@
 package com.javaeasybank.loan.service;
 
 import com.javaeasybank.common.exception.BusinessException;
+import com.javaeasybank.common.service.EmailService;
 import com.javaeasybank.account.entity.Account;
 import com.javaeasybank.account.repository.AccountRepository;
+import com.javaeasybank.customer.service.CustomerService;
 import com.javaeasybank.loan.dto.response.LoanRepaymentResponseDTO;
 import com.javaeasybank.loan.entity.LoanAccount;
 import com.javaeasybank.loan.entity.LoanRepayment;
@@ -42,6 +44,12 @@ public class LoanRepaymentService {
     @Autowired
     private AccountRepository accountRepo;
 
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private CustomerService customerService;
+
     public void createSchedule(LoanAccount account) {
         List<AmortizationCalculator.RepaymentRow> rows = AmortizationCalculator.buildSchedule(
                 account.getRemainingPrincipal(),
@@ -72,14 +80,20 @@ public class LoanRepaymentService {
     public void processRepayment(String applicationId) {
         LoanAccount account = loanAccountRepo.findByApplicationId(applicationId)
                 .orElseThrow(() -> new BusinessException("Loan account not found applicationId=" + applicationId));
-        processRepayment(account);
+        processRepayments(account, 1);
+    }
+
+    public void processRepayments(String applicationId, int periodsToPay) {
+        LoanAccount account = loanAccountRepo.findByApplicationId(applicationId)
+                .orElseThrow(() -> new BusinessException("Loan account not found applicationId=" + applicationId));
+        processRepayments(account, periodsToPay);
     }
 
     public void processRepaymentByAccountId(String accountId) {
         LoanAccount account = loanAccountRepo.findById(accountId)
                 .orElseThrow(() -> new BusinessException("Loan account not found accountId=" + accountId));
         validateAccountingAlreadyDeducted(account);
-        processRepayment(account);
+        processRepayments(account, 1);
     }
 
     private void validateAccountingAlreadyDeducted(LoanAccount account) {
@@ -93,29 +107,48 @@ public class LoanRepaymentService {
         }
     }
 
-    private void processRepayment(LoanAccount account) {
+    private void processRepayments(LoanAccount account, int periodsToPay) {
+        if (periodsToPay <= 0) {
+            throw new BusinessException("periodsToPay must be greater than 0");
+        }
+
         List<LoanRepayment> pending = getPendingRepayments(account);
-        LoanRepayment current = getCurrentPendingRepayment(account, pending);
+        List<LoanRepayment> paymentsToApply = pending.stream()
+                .sorted(Comparator.comparing(LoanRepayment::getPeriodIndex))
+                .limit(periodsToPay)
+                .toList();
 
-        current.setRepaymentStatus(LoanRepaymentStatus.PAID);
-        current.setPaidDate(LocalDate.now());
-        current.setUpdateTime(LocalDateTime.now());
-        repaymentRepo.save(current);
+        if (paymentsToApply.size() < periodsToPay) {
+            throw new BusinessException("Pending repayments are fewer than requested periods accountId="
+                    + account.getAccountId());
+        }
 
-        account.setPaidPeriods(account.getPaidPeriods() + 1);
-        account.setRemainingPrincipal(current.getRemainingAfter());
+        LocalDate paidDate = LocalDate.now();
+        paymentsToApply.forEach(repayment -> {
+            repayment.setRepaymentStatus(LoanRepaymentStatus.PAID);
+            repayment.setPaidDate(paidDate);
+            repayment.setUpdateTime(LocalDateTime.now());
+        });
+        repaymentRepo.saveAll(paymentsToApply);
+
+        LoanRepayment lastApplied = paymentsToApply.get(paymentsToApply.size() - 1);
+        account.setPaidPeriods(account.getPaidPeriods() + paymentsToApply.size());
+        account.setRemainingPrincipal(lastApplied.getRemainingAfter());
 
         account.setNextPaymentDate(
                 pending.stream()
-                        .filter(r -> r.getPeriodIndex() > current.getPeriodIndex())
+                        .filter(r -> r.getPeriodIndex() > lastApplied.getPeriodIndex())
                         .min(Comparator.comparing(LoanRepayment::getPeriodIndex))
                         .map(LoanRepayment::getScheduledDate)
                         .orElse(null));
 
+        List<String> appliedIds = paymentsToApply.stream()
+                .map(LoanRepayment::getRepaymentId)
+                .toList();
         boolean hasOverdue = repaymentRepo
                 .findByAccountIdAndRepaymentStatus(account.getAccountId(), LoanRepaymentStatus.OVERDUE)
                 .stream()
-                .anyMatch(r -> !r.getRepaymentId().equals(current.getRepaymentId()));
+                .anyMatch(r -> !appliedIds.contains(r.getRepaymentId()));
 
         if (account.getPaidPeriods().equals(account.getConfirmedPeriod())) {
             account.setAccountStatus(LoanAccountStatus.PAID_OFF);
@@ -134,6 +167,36 @@ public class LoanRepaymentService {
                 account.getPaidPeriods(),
                 account.getConfirmedPeriod(),
                 account.getAccountStatus());
+
+        // 還款成功通知（以最後一筆 applied 為準）
+        try {
+            String email = customerService.findEmailByCustomerId(account.getCustomerId());
+            if (email != null) {
+                LoanRepayment last = paymentsToApply.get(paymentsToApply.size() - 1);
+                String nextDateStr = account.getNextPaymentDate() != null
+                        ? account.getNextPaymentDate().toString() : null;
+                // 下期應繳金額：從還款排程取下一筆的 totalAmount
+                java.math.BigDecimal nextAmt = pending.stream()
+                        .filter(r -> r.getPeriodIndex() > last.getPeriodIndex())
+                        .min(Comparator.comparing(LoanRepayment::getPeriodIndex))
+                        .map(LoanRepayment::getTotalAmount)
+                        .orElse(null);
+                emailService.sendLoanRepaymentPaidNotification(
+                        email,
+                        account.getAccountId(),
+                        last.getPeriodIndex(),
+                        account.getConfirmedPeriod(),
+                        last.getTotalAmount(),
+                        last.getPrincipalPortion(),
+                        last.getInterestPortion(),
+                        nextDateStr,
+                        nextAmt);
+            } else {
+                log.warn("[RepaymentPaid] 客戶無 email，略過通知。customerId={}", account.getCustomerId());
+            }
+        } catch (Exception e) {
+            log.error("[RepaymentPaid] 發送還款通知失敗，accountId={}", account.getAccountId(), e);
+        }
     }
 
     private List<LoanRepayment> getPendingRepayments(LoanAccount account) {
@@ -173,6 +236,23 @@ public class LoanRepaymentService {
             loan.setUpdateTime(LocalDateTime.now());
             loanApplicationRepo.save(loan);
             log.info("[Repayment] closed applicationId={}", loan.getApplicationId());
+
+            // 結清通知
+            try {
+                String email = customerService.findEmailByCustomerId(account.getCustomerId());
+                if (email != null) {
+                    emailService.sendLoanPaidOffNotification(
+                            email,
+                            loan.getApplicationId(),
+                            account.getAccountId(),
+                            loan.getApplyType(),
+                            account.getConfirmedPeriod());
+                } else {
+                    log.warn("[LoanPaidOff] 客戶無 email，略過通知。customerId={}", account.getCustomerId());
+                }
+            } catch (Exception e) {
+                log.error("[LoanPaidOff] 發送結清通知失敗，accountId={}", account.getAccountId(), e);
+            }
         });
     }
 

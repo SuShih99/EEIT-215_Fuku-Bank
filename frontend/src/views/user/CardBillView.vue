@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import dayjs from 'dayjs'
 import { getBills, getUnbilledBills } from '@/api/userCardBill'
 import { payCard, getPaymentAccounts } from '@/api/userCardPayment'
@@ -9,6 +9,9 @@ const loading = ref(false)
 const bills = ref([])
 const paymentAccounts = ref([])
 const selectedAccount = ref('')
+const selectedHistoryBill = ref(null)
+const payAmount = ref('')
+
 const pagination = ref({
   current: 1,
   pageSize: 10,
@@ -17,39 +20,6 @@ const pagination = ref({
 
 const activeTab = ref('BILLED')
 const unbilledTransactions = ref([])
-
-const columns = [
-  {
-    title: '帳單編號',
-    dataIndex: 'billId',
-    key: 'billId',
-  },
-  {
-    title: '帳單月份',
-    dataIndex: 'billingMonth',
-    key: 'billingMonth',
-  },
-  {
-    title: '帳單金額',
-    dataIndex: 'totalAmount',
-    key: 'totalAmount',
-  },
-  {
-    title: '最低應繳金額',
-    dataIndex: 'minimumPayment',
-    key: 'minimumPayment',
-  },
-  {
-    title: '已繳金額',
-    dataIndex: 'paidAmount',
-    key: 'paidAmount',
-  },
-  {
-    title: '繳費截止日',
-    dataIndex: 'dueDate',
-    key: 'dueDate',
-  },
-]
 
 const formatMoney = (value) => {
   return Number(value || 0).toLocaleString()
@@ -62,21 +32,82 @@ const getRemainingAmount = (bill) => {
 const getMinimumDueAmount = (bill) => {
   const remainingAmount = getRemainingAmount(bill)
   const unpaidMinimum = Math.max(Number(bill.minimumPayment || 0) - Number(bill.paidAmount || 0), 0)
+
   return unpaidMinimum > 0 ? Math.min(unpaidMinimum, remainingAmount) : remainingAmount
+}
+
+const historyBills = computed(() => {
+  return [...bills.value].sort((a, b) =>
+    String(b.billingMonth).localeCompare(String(a.billingMonth)),
+  )
+})
+
+const displayBill = computed(() => {
+  if (bills.value.length === 0) return null
+
+  const unpaidBills = bills.value.filter((bill) => getRemainingAmount(bill) > 0)
+
+  // 如果有未繳帳單：顯示未繳合併
+  if (unpaidBills.length > 0) {
+    const sortedUnpaidBills = [...unpaidBills].sort((a, b) =>
+      String(b.billingMonth).localeCompare(String(a.billingMonth)),
+    )
+
+    const latestBill = sortedUnpaidBills[0]
+
+    const totalRemainingAmount = unpaidBills.reduce((sum, bill) => {
+      return sum + getRemainingAmount(bill)
+    }, 0)
+
+    const totalMinimumPayment = unpaidBills.reduce((sum, bill) => {
+      return sum + getMinimumDueAmount(bill)
+    }, 0)
+
+    return {
+      ...latestBill,
+      billIds: unpaidBills.map((bill) => bill.billId),
+      totalAmount: totalRemainingAmount,
+      minimumPayment: totalMinimumPayment,
+      paidAmount: 0,
+      billStatus: unpaidBills.some((bill) => bill.billStatus === 'PARTIAL') ? 'PARTIAL' : 'UNPAID',
+    }
+  }
+
+  // 如果全部繳清：顯示最新一期帳單
+  return historyBills.value[0]
+})
+
+const currentBill = computed(() => {
+  if (selectedHistoryBill.value) {
+    return bills.value.find((bill) => bill.billId === selectedHistoryBill.value)
+  }
+
+  return displayBill.value
+})
+
+const getCreditUsagePercent = (bill) => {
+  const creditLimit = Number(bill?.creditLimit || 0)
+  const availableCredit = Number(bill?.availableCredit || 0)
+
+  if (creditLimit <= 0) return 0
+
+  return Math.min(Math.max((availableCredit / creditLimit) * 100, 0), 100)
 }
 
 const fetchBills = async () => {
   loading.value = true
+
   try {
     const res = await getBills(pagination.value.current - 1, pagination.value.pageSize)
 
     console.log(res)
 
-    bills.value = res.content.map((item) => ({
-      ...item,
-      dueDate: dayjs(item.dueDate).format('YYYY-MM-DD'),
-    }))
-    .sort((a, b) => dayjs(b.billingMonth).valueOf() - dayjs(a.billingMonth).valueOf())
+    bills.value = res.content
+      .map((item) => ({
+        ...item,
+        dueDate: dayjs(item.dueDate).format('YYYY-MM-DD'),
+      }))
+      .sort((a, b) => String(b.billingMonth).localeCompare(String(a.billingMonth)))
 
     pagination.value.total = res.totalElements
   } catch (error) {
@@ -88,13 +119,18 @@ const fetchBills = async () => {
 
 const fetchUnbilledTransactions = async () => {
   loading.value = true
+
   try {
     const res = await getUnbilledBills(pagination.value.current - 1, pagination.value.pageSize)
-    unbilledTransactions.value = res.content.map((item) => ({
-      ...item,
-      transactionDate: dayjs(item.transactionDate).format('YYYY-MM-DD HH:mm'),
-    }))
-    .sort((a, b) => dayjs(b.txnDate).valueOf() - dayjs(a.txnDate).valueOf())
+
+    console.log(res)
+
+    unbilledTransactions.value = res.content
+      .map((item) => ({
+        ...item,
+        transactionDate: dayjs(item.transactionDate).format('YYYY-MM-DD HH:mm'),
+      }))
+      .sort((a, b) => dayjs(b.txnDate).valueOf() - dayjs(a.txnDate).valueOf())
   } catch (error) {
     console.error('Failed to fetch unbilled transactions:', error)
     message.error(error.response?.data?.message || '無法獲取未出帳交易')
@@ -105,7 +141,7 @@ const fetchUnbilledTransactions = async () => {
 
 const handlePayment = async (bill) => {
   try {
-    const amount = Number(bill.payAmount)
+    const amount = Number(payAmount.value)
     const remainingAmount = getRemainingAmount(bill)
 
     if (!selectedAccount.value) {
@@ -124,13 +160,17 @@ const handlePayment = async (bill) => {
     }
 
     await payCard({
-      billId: bill.billId,
+      billIds: bill.billIds || [bill.billId],
       fromAccountNumber: selectedAccount.value,
       creditCardAccountNumber: bill.creditCardAccountNumber,
       amount,
       note: '信用卡繳費',
     })
+
     message.success('繳費成功')
+    payAmount.value = ''
+    selectedHistoryBill.value = null
+
     fetchBills()
     fetchAccounts()
   } catch (error) {
@@ -142,7 +182,9 @@ const handlePayment = async (bill) => {
 const fetchAccounts = async () => {
   try {
     const res = await getPaymentAccounts()
+
     console.log(res)
+
     paymentAccounts.value = res
 
     if (res.length > 0) {
@@ -161,11 +203,16 @@ watch(activeTab, async (newTab) => {
   }
 })
 
+watch(selectedHistoryBill, () => {
+  payAmount.value = ''
+})
+
 onMounted(() => {
   fetchBills()
   fetchAccounts()
 })
 </script>
+
 <template>
   <div class="bill-page">
     <h2 class="page-title">我的帳單</h2>
@@ -177,6 +224,7 @@ onMounted(() => {
       >
         未出帳交易
       </button>
+
       <button
         :class="['tab-btn', activeTab === 'BILLED' ? 'active' : '']"
         @click="activeTab = 'BILLED'"
@@ -187,29 +235,31 @@ onMounted(() => {
 
     <div v-if="loading" class="loading">載入中...</div>
 
-    <div v-if="activeTab === 'BILLED' && bills.length === 0" class="empty">尚無帳單資料</div>
+    <div v-if="activeTab === 'BILLED' && bills.length === 0" class="empty">
+      尚無帳單資料
+    </div>
 
     <div v-else-if="activeTab === 'UNBILLED' && unbilledTransactions.length === 0" class="empty">
       尚無未出帳交易
     </div>
 
     <div v-if="activeTab === 'BILLED'" class="bill-list">
-      <div v-for="bill in bills" :key="bill.billId" class="bill-card">
+      <div v-if="currentBill" class="bill-card">
         <div class="bill-header">
           <div>
             <div class="label">帳單月份</div>
             <div class="value">
-              {{ bill.billingMonth }}
+              {{ currentBill.billingMonth }}
             </div>
           </div>
 
-          <div class="status" :class="bill.billStatus">
+          <div class="status" :class="currentBill.billStatus">
             {{
-              bill.billStatus === 'PAID'
+              currentBill.billStatus === 'PAID'
                 ? '已繳費'
-                : bill.billStatus === 'UNPAID'
+                : currentBill.billStatus === 'UNPAID'
                   ? '未繳費'
-                  : bill.billStatus === 'PARTIAL'
+                  : currentBill.billStatus === 'PARTIAL'
                     ? '部分繳款'
                     : '逾期'
             }}
@@ -217,41 +267,82 @@ onMounted(() => {
         </div>
 
         <div class="bill-body">
-          <div class="info-row">
-            <span>信用卡帳戶</span>
-            <strong>{{ bill.creditCardAccountNumber }}</strong>
+          <div class="history-section">
+            <select v-model="selectedHistoryBill" class="history-select">
+              <option :value="null">最新應繳帳單</option>
+
+              <option
+                v-for="bill in historyBills"
+                :key="bill.billId"
+                :value="bill.billId"
+              >
+                {{ bill.billingMonth }}
+                -
+                {{
+                  bill.billStatus === 'PAID'
+                    ? '已繳清'
+                    : bill.billStatus === 'PARTIAL'
+                      ? '部分繳款'
+                      : '未繳費'
+                }}
+              </option>
+            </select>
           </div>
+
           <div class="info-row">
             <span>帳單金額</span>
-            <strong> NT$ {{ formatMoney(bill.totalAmount) }} </strong>
+            <strong>NT$ {{ formatMoney(currentBill.totalAmount) }}</strong>
           </div>
 
           <div class="info-row">
             <span>最低應繳</span>
-            <strong> NT$ {{ formatMoney(bill.minimumPayment) }} </strong>
+            <strong>NT$ {{ formatMoney(currentBill.minimumPayment) }}</strong>
           </div>
 
           <div class="info-row">
             <span>已繳金額</span>
-            <strong> NT$ {{ formatMoney(bill.paidAmount) }} </strong>
+            <strong>NT$ {{ formatMoney(currentBill.paidAmount) }}</strong>
           </div>
+
+          <div class="info-row">
+            <span>本期回饋金</span>
+            <strong>NT$ {{ formatMoney(currentBill.cashbackAmount) }}</strong>
+          </div>
+
           <div class="info-row">
             <span>信用額度</span>
-            <strong> NT$ {{ formatMoney(bill.creditLimit) }} </strong>
+            <strong>NT$ {{ formatMoney(currentBill.creditLimit) }}</strong>
           </div>
+
           <div class="info-row">
             <span>可用額度</span>
-            <strong> NT$ {{ formatMoney(bill.availableCredit) }} </strong>
+            <strong>NT$ {{ formatMoney(currentBill.availableCredit) }}</strong>
+          </div>
+
+          <div class="credit-bar-box">
+            <div class="credit-bar-text">
+              <span>可用額度比例</span>
+              <strong>{{ getCreditUsagePercent(currentBill).toFixed(0) }}%</strong>
+            </div>
+
+            <div class="credit-bar">
+              <div
+                class="credit-bar-fill"
+                :style="{ width: getCreditUsagePercent(currentBill) + '%' }"
+              ></div>
+            </div>
           </div>
 
           <div class="info-row">
             <span>繳費截止日</span>
-            <strong>
-              {{ bill.dueDate }}
-            </strong>
+            <strong>{{ currentBill.dueDate }}</strong>
           </div>
         </div>
-        <div v-if="bill.billStatus !== 'PAID' && getRemainingAmount(bill) > 0" class="account-select">
+
+        <div
+          v-if="currentBill.billStatus !== 'PAID' && getRemainingAmount(currentBill) > 0"
+          class="account-select"
+        >
           <select v-model="selectedAccount" class="account-dropdown">
             <option
               v-for="account in paymentAccounts"
@@ -259,38 +350,56 @@ onMounted(() => {
               :value="account.accountNumber"
             >
               {{ account.accountNumber }}
-              餘額: NT$ {{ account.balance }}
+              餘額: NT$ {{ formatMoney(account.balance) }}
             </option>
           </select>
         </div>
 
-        <div v-if="bill.billStatus !== 'PAID' && getRemainingAmount(bill) > 0" class="payment-section">
+        <div
+          v-if="currentBill.billStatus !== 'PAID' && getRemainingAmount(currentBill) > 0"
+          class="payment-section"
+        >
           <div class="quick-actions">
-            <button class="quick-btn" @click="bill.payAmount = getMinimumDueAmount(bill)">
+            <button
+              class="quick-btn"
+              @click="payAmount = getMinimumDueAmount(currentBill)"
+            >
               最低應繳
             </button>
 
-            <button class="quick-btn" @click="bill.payAmount = getRemainingAmount(bill)">全額繳清</button>
+            <button
+              class="quick-btn"
+              @click="payAmount = getRemainingAmount(currentBill)"
+            >
+              全額繳清
+            </button>
           </div>
 
           <div class="pay-row">
             <input
-              v-model="bill.payAmount"
+              v-model="payAmount"
               type="number"
               class="pay-input"
               min="1"
               step="1"
-              :max="getRemainingAmount(bill)"
+              :max="getRemainingAmount(currentBill)"
               placeholder="請輸入繳費金額"
             />
 
-            <button class="pay-btn" @click="handlePayment(bill)">立即繳費</button>
+            <button class="pay-btn" @click="handlePayment(currentBill)">
+              立即繳費
+            </button>
           </div>
         </div>
       </div>
     </div>
+
     <div v-else class="bill-list">
-      <div v-for="txn in unbilledTransactions" :key="txn.txnId" class="bill-card">
+      <div
+        v-for="txn in unbilledTransactions"
+        :key="txn.txnId"
+        class="bill-card"
+      >
         <div class="bill-body">
           <div class="info-row">
             <span>商店</span>
@@ -306,7 +415,7 @@ onMounted(() => {
 
           <div class="info-row">
             <span>金額</span>
-            <strong> NT$ {{ formatMoney(txn.txnAmount) }} </strong>
+            <strong>NT$ {{ formatMoney(txn.txnAmount) }}</strong>
           </div>
 
           <div class="info-row">
@@ -318,6 +427,7 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
 <style scoped>
 .bill-page {
   max-width: 960px;
@@ -432,6 +542,33 @@ onMounted(() => {
   box-shadow: 0 12px 36px rgba(63, 74, 66, 0.06);
 }
 
+.account-select {
+  margin: 18px 0 12px;
+}
+
+.account-dropdown,
+.history-select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text-primary);
+  background: rgba(250, 250, 247, 0.92);
+  font-family: var(--font-body);
+  font-size: 15px;
+  outline: none;
+  transition:
+    border-color var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease);
+}
+
+.account-dropdown:focus,
+.history-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
 .payment-section {
   margin-top: 20px;
   padding: 16px;
@@ -455,9 +592,6 @@ onMounted(() => {
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  transition:
-    border-color var(--duration) var(--ease),
-    background var(--duration) var(--ease);
 }
 
 .quick-btn:hover {
@@ -481,9 +615,6 @@ onMounted(() => {
   font-family: var(--font-body);
   font-size: 15px;
   outline: none;
-  transition:
-    border-color var(--duration) var(--ease),
-    box-shadow var(--duration) var(--ease);
 }
 
 .pay-input:focus {
@@ -500,41 +631,13 @@ onMounted(() => {
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
-  transition:
-    background var(--duration) var(--ease),
-    border-color var(--duration) var(--ease),
-    box-shadow var(--duration) var(--ease);
 }
 
 .pay-btn:hover {
   background: var(--primary-dark);
   border-color: var(--primary-dark);
-  box-shadow: 0 4px 16px rgba(107, 95, 80, 0.1);
-}
-.account-select {
-  margin: 18px 0 12px;
 }
 
-.account-dropdown {
-  width: 100%;
-  min-height: 44px;
-  border: 1px solid rgba(214, 206, 195, 0.86);
-  border-radius: 8px;
-  padding: 10px 14px;
-  color: var(--text-primary);
-  background: rgba(250, 250, 247, 0.92);
-  font-family: var(--font-body);
-  font-size: 15px;
-  outline: none;
-  transition:
-    border-color var(--duration) var(--ease),
-    box-shadow var(--duration) var(--ease);
-}
-
-.account-dropdown:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-light);
-}
 .tabs {
   display: flex;
   gap: 8px;
@@ -556,10 +659,6 @@ onMounted(() => {
   color: var(--text-secondary);
   font-family: var(--font-body);
   font-weight: 600;
-  transition:
-    background var(--duration) var(--ease),
-    color var(--duration) var(--ease),
-    border-color var(--duration) var(--ease);
 }
 
 .tab-btn:hover {
@@ -571,6 +670,41 @@ onMounted(() => {
   background: var(--primary);
   border-color: var(--primary);
   color: white;
+}
+
+.credit-bar-box {
+  padding: 4px 0 12px;
+  border-bottom: 1px solid rgba(214, 206, 195, 0.64);
+}
+
+.credit-bar-text {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.credit-bar-text strong {
+  color: var(--text-primary);
+}
+
+.credit-bar {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(214, 206, 195, 0.5);
+  overflow: hidden;
+}
+
+.credit-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #6cd399;
+}
+
+.history-section {
+  margin-bottom: 12px;
 }
 
 @media (max-width: 640px) {

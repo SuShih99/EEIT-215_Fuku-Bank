@@ -5,7 +5,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -278,9 +280,18 @@ public class CardTxnService {
     }
 
     public Page<CardTxnResponseDto> findByCustomerId(String customerId, Pageable pageable) {
-        return cardTxnRepository.findByCard_Customer_CustomerId(customerId, pageable)
-                .map(mapper::toDto);
-    }
+
+    Pageable sortedPageable = PageRequest.of(
+            pageable.getPageNumber(),
+            pageable.getPageSize(),
+            Sort.by(Sort.Direction.DESC, "txnDate")
+    );
+
+    return cardTxnRepository.findByCard_Customer_CustomerId(
+            customerId,
+            sortedPageable
+    ).map(mapper::toDto);
+}
 
     public Page<CardTxnResponseDto> getUnbilledBillsByCustomerId(String customerId, Pageable pageable) {
         return cardTxnRepository.findByCard_Customer_CustomerIdAndBillIsNull(customerId, pageable)
@@ -294,7 +305,14 @@ public class CardTxnService {
             Pageable pageable) {
         Specification<CardTransaction> spec = CardTxnSpecification.search(keyword, txnType, startDate, endDate);
 
-        return cardTxnRepository.findAll(spec, pageable)
+        Pageable sortedPageable = PageRequest.of(
+            pageable.getPageNumber(),
+            pageable.getPageSize(),
+            Sort.by(Sort.Direction.DESC, "txnDate")
+    );
+
+
+        return cardTxnRepository.findAll(spec, sortedPageable)
                 .map(this::toResponseDto);
     }
 

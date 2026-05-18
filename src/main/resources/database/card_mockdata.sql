@@ -174,7 +174,7 @@ SET IDENTITY_INSERT CREDIT_CARD ON;
 IF NOT EXISTS (SELECT 1 FROM CREDIT_CARD)
 INSERT INTO CREDIT_CARD
 (card_id, customer_id, card_type_id, application_item_id, card_number, expiry_date, current_debt, status) VALUES
-(1, 'Q8M4T7K2', 1, 2, '4000000010000001', '2028-01-28', 48399, 'ACTIVE'),
+(1, 'Q8M4T7K2', 1, 2, '4000000010000001', '2028-01-28', 5850, 'ACTIVE'),
 (2, 'R5N9W3A6', 2, 3, '4000000010000002', '2028-02-28', 6003, 'ACTIVE'),
 (3, 'H7C2P8D4', 3, 7, '4000000010000003', '2028-03-28', 7910, 'BLOCKED'),
 (4, 'V6J3X9M5', 4, 9, '4000000010000004', '2028-04-28', 4767, 'ACTIVE'),
@@ -199,7 +199,7 @@ INSERT INTO CREDIT_CARD
 (23, 'C6T8R4J3', 3, NULL, '4000000010000023', '2029-11-28', 2771, 'ACTIVE'),
 (24, 'E2V7D9M5', 4, NULL, '4000000010000024', '2029-12-28', 8104, 'ACTIVE'),
 (25, 'Q5H3K8A7', 5, NULL, '4000000010000025', '2029-01-28', 53122, 'ACTIVE'),
-(26, 'R8J6N2C4', 6, NULL, '4000000010000026', '2029-02-28', 6641, 'ACTIVE'),
+(26, 'R8J6N2C4', 6, NULL, '4000000010000026', '2029-02-28', 5700, 'ACTIVE'),
 (27, 'T3M9P5W7', 7, NULL, '4000000010000027', '2029-03-28', 16590, 'ACTIVE'),
 (28, 'V7A4D8Q2', 8, NULL, '4000000010000028', '2029-04-28', 4690, 'ACTIVE'),
 (29, 'W2K6T9N5', 9, NULL, '4000000010000029', '2029-05-28', 11110, 'ACTIVE'),
@@ -359,9 +359,9 @@ INSERT INTO CARD_TRANSACTION
 (txn_id, card_id, merchant_id, ref_txn_id, txn_amount, txn_type, txn_date, description) VALUES
 (1, 6, 6, NULL, 50, 'PURCHASE', '2025-11-03 09:01:47', N'計程車'),
 (2, 36, 1, NULL, 250, 'PURCHASE', '2025-11-01 11:14:08', N'便利商店'),
-(3, 26, 9, NULL, 600, 'PURCHASE', '2025-11-04 09:43:47', N'誠品購書'),
+(3, 26, 9, NULL, 600, 'PURCHASE', '2026-03-05 09:43:47', N'誠品購書'),
 (4, 37, 7, NULL, 100, 'PURCHASE', '2025-11-04 09:37:27', N'蝦皮購物'),
-(5, 3, 4, NULL, 100, 'REFUND', '2025-11-01 08:05:13', N'麥當勞用餐'),
+(5, 3, 4, NULL, -100, 'REFUND', '2025-11-01 08:05:13', N'麥當勞用餐'),
 (6, 36, 3, NULL, 1000, 'PURCHASE', '2025-11-03 16:38:01', N'星巴克咖啡'),
 (7, 32, 8, NULL, 5000, 'PURCHASE', '2025-11-07 11:45:41', N'串流訂閱'),
 (8, 27, 8, NULL, 450, 'PURCHASE', '2025-11-09 16:26:14', N'串流訂閱'),
@@ -390,12 +390,12 @@ INSERT INTO CARD_TRANSACTION
 (31, 41, 8, NULL, 2000, 'PURCHASE', '2025-11-30 13:53:49', N'Netflix 訂閱'),
 (32, 48, 6, NULL, 300, 'PURCHASE', '2025-12-01 08:14:52', N'計程車'),
 (33, 29, 10, NULL, 250, 'PURCHASE', '2025-11-26 20:20:25', N'日用品採購'),
-(34, 7, 9, NULL, 800, 'REFUND', '2025-11-29 09:13:58', N'文具用品'),
+(34, 7, 9, NULL, -800, 'REFUND', '2025-11-29 09:13:58', N'文具用品'),
 (35, 37, 3, NULL, 2000, 'PURCHASE', '2025-12-02 22:45:20', N'星巴克咖啡'),
 (36, 37, 5, NULL, 1200, 'PURCHASE', '2025-11-30 18:31:25', N'高鐵車票'),
 (37, 38, 8, NULL, 2500, 'PURCHASE', '2025-12-05 15:09:16', N'串流訂閱'),
 (38, 13, 10, NULL, 250, 'PURCHASE', '2025-12-02 11:47:35', N'家樂福採購'),
-(39, 35, 5, NULL, 500, 'REFUND', '2025-12-06 12:47:37', N'高鐵車票'),
+(39, 35, 5, NULL, -500, 'REFUND', '2025-12-06 12:47:37', N'高鐵車票'),
 (40, 37, 9, NULL, 1200, 'PURCHASE', '2025-12-06 22:37:25', N'誠品購書'),
 (41, 39, 8, NULL, 50, 'PURCHASE', '2025-12-06 11:08:32', N'Netflix 訂閱'),
 (42, 35, 4, NULL, 250, 'PURCHASE', '2025-12-07 09:48:03', N'外送平台'),
@@ -411,7 +411,7 @@ INSERT INTO CARD_TRANSACTION
 (52, 20, 4, NULL, 500, 'PURCHASE', '2025-12-18 22:46:16', N'外送平台'),
 (53, 38, 1, NULL, 50, 'PURCHASE', '2025-12-18 20:11:32', N'7-11 消費'),
 (54, 23, 8, NULL, 100, 'PURCHASE', '2025-12-15 21:40:19', N'Netflix 訂閱'),
-(55, 6, 10, NULL, 1000, 'REFUND', '2025-12-22 18:32:38', N'日用品採購'),
+(55, 6, 10, NULL, -1000, 'REFUND', '2025-12-22 18:32:38', N'日用品採購'),
 (56, 17, 9, NULL, 2000, 'PURCHASE', '2025-12-18 10:23:48', N'文具用品'),
 (57, 39, 9, NULL, 500, 'PURCHASE', '2025-12-19 16:49:59', N'誠品購書'),
 (58, 13, 6, NULL, 1200, 'PURCHASE', '2025-12-23 22:00:38', N'計程車'),
@@ -421,17 +421,17 @@ INSERT INTO CARD_TRANSACTION
 (62, 40, 10, NULL, 3000, 'PURCHASE', '2025-12-26 09:05:46', N'日用品採購'),
 (63, 22, 7, NULL, 2500, 'PURCHASE', '2025-12-26 21:04:48', N'網購'),
 (64, 47, 1, NULL, 200, 'PURCHASE', '2025-12-28 20:08:08', N'7-11 消費'),
-(65, 1, 4, NULL, 3000, 'PURCHASE', '2025-12-30 15:35:10', N'麥當勞用餐'),
-(66, 26, 10, NULL, 1200, 'PURCHASE', '2025-12-28 16:55:38', N'家樂福採購'),
+(65, 1, 4, NULL, 3000, 'PURCHASE', '2026-03-18 15:35:10', N'麥當勞用餐'),
+(66, 26, 10, NULL, 1200, 'PURCHASE', '2026-03-12 16:55:38', N'家樂福採購'),
 (67, 21, 5, NULL, 1500, 'PURCHASE', '2025-12-30 11:59:34', N'高鐵車票'),
 (68, 37, 9, NULL, 250, 'PURCHASE', '2026-01-03 19:44:12', N'文具用品'),
-(69, 28, 7, NULL, 800, 'REFUND', '2026-01-03 12:25:42', N'蝦皮購物'),
+(69, 28, 7, NULL, -800, 'REFUND', '2026-01-03 12:25:42', N'蝦皮購物'),
 (70, 19, 10, NULL, 1000, 'PURCHASE', '2026-01-04 13:28:57', N'家樂福採購'),
 (71, 31, 6, NULL, 2000, 'PURCHASE', '2026-01-03 15:07:15', N'Uber 叫車'),
-(72, 47, 8, NULL, 100, 'REFUND', '2026-01-01 09:21:01', N'Netflix 訂閱'),
+(72, 47, 8, NULL, -100, 'REFUND', '2026-01-01 09:21:01', N'Netflix 訂閱'),
 (73, 31, 8, NULL, 2000, 'PURCHASE', '2026-01-05 16:14:37', N'Netflix 訂閱'),
 (74, 11, 10, NULL, 100, 'PURCHASE', '2026-01-03 08:04:45', N'家樂福採購'),
-(75, 1, 2, NULL, 2000, 'PURCHASE', '2026-01-08 08:14:04', N'全家消費'),
+(75, 1, 2, NULL, 2000, 'PURCHASE', '2026-03-28 08:14:04', N'全家消費'),
 (76, 19, 7, NULL, 390, 'PURCHASE', '2026-01-04 21:21:04', N'蝦皮購物'),
 (77, 14, 4, NULL, 500, 'PURCHASE', '2026-01-09 11:17:42', N'外送平台'),
 (78, 40, 8, NULL, 2500, 'PURCHASE', '2026-01-09 11:34:08', N'Netflix 訂閱'),
@@ -444,7 +444,7 @@ INSERT INTO CARD_TRANSACTION
 (85, 20, 4, NULL, 300, 'PURCHASE', '2026-01-17 18:06:03', N'餐廳消費'),
 (86, 8, 3, NULL, 390, 'PURCHASE', '2026-01-16 19:21:51', N'星巴克咖啡'),
 (87, 12, 1, NULL, 100, 'PURCHASE', '2026-01-20 09:15:12', N'7-11 消費'),
-(88, 26, 10, NULL, 250, 'PURCHASE', '2026-01-16 16:28:08', N'家樂福採購'),
+(88, 26, 10, NULL, 250, 'PURCHASE', '2026-03-26 16:28:08', N'家樂福採購'),
 (89, 32, 3, NULL, 1200, 'PURCHASE', '2026-01-19 10:17:29', N'星巴克咖啡'),
 (90, 41, 3, NULL, 390, 'PURCHASE', '2026-01-18 21:59:04', N'咖啡廳'),
 (91, 39, 4, NULL, 1500, 'PURCHASE', '2026-01-21 20:55:54', N'餐廳消費'),
@@ -491,8 +491,8 @@ INSERT INTO CARD_TRANSACTION
 (132, 30, 9, NULL, 250, 'PURCHASE', '2026-02-25 22:58:54', N'文具用品'),
 (133, 37, 5, NULL, 200, 'PURCHASE', '2026-02-24 09:40:27', N'交通費'),
 (134, 31, 4, NULL, 800, 'PURCHASE', '2026-03-03 12:02:00', N'麥當勞用餐'),
-(135, 26, 10, NULL, 200, 'PURCHASE', '2026-02-28 20:08:40', N'日用品採購'),
-(136, 26, 6, NULL, 450, 'PURCHASE', '2026-03-01 10:47:28', N'計程車'),
+(135, 26, 10, NULL, 200, 'PURCHASE', '2026-04-03 20:08:40', N'日用品採購'),
+(136, 26, 6, NULL, 450, 'PURCHASE', '2026-04-07 10:47:28', N'計程車'),
 (137, 20, 7, NULL, 390, 'PURCHASE', '2026-03-04 19:27:35', N'網購'),
 (138, 28, 9, NULL, 1000, 'PURCHASE', '2026-03-01 09:04:56', N'文具用品'),
 (139, 3, 7, NULL, 2500, 'PURCHASE', '2026-03-07 22:09:34', N'網購'),
@@ -505,10 +505,10 @@ INSERT INTO CARD_TRANSACTION
 (146, 35, 4, NULL, 2500, 'PURCHASE', '2026-03-12 22:55:26', N'餐廳消費'),
 (147, 34, 3, NULL, 600, 'PURCHASE', '2026-03-13 19:09:59', N'咖啡廳'),
 (148, 36, 1, NULL, 1000, 'PURCHASE', '2026-03-11 21:10:51', N'便利商店'),
-(149, 26, 5, NULL, 1500, 'PURCHASE', '2026-03-17 10:56:26', N'高鐵車票'),
+(149, 26, 5, NULL, 1500, 'PURCHASE', '2026-04-17 10:56:26', N'高鐵車票'),
 (150, 32, 1, NULL, 250, 'PURCHASE', '2026-03-12 10:47:59', N'便利商店'),
 (151, 42, 7, NULL, 2000, 'PURCHASE', '2026-03-15 20:59:26', N'蝦皮購物'),
-(152, 26, 1, NULL, 1500, 'PURCHASE', '2026-03-19 18:55:47', N'便利商店'),
+(152, 26, 1, NULL, 1500, 'PURCHASE', '2026-04-30 18:55:47', N'便利商店'),
 (153, 31, 2, NULL, 3000, 'PURCHASE', '2026-03-20 11:17:10', N'全家消費'),
 (154, 47, 6, NULL, 300, 'PURCHASE', '2026-03-21 19:06:24', N'計程車'),
 (155, 40, 7, NULL, 50, 'PURCHASE', '2026-03-22 08:54:30', N'蝦皮購物'),
@@ -564,7 +564,7 @@ SET IDENTITY_INSERT CARD_BILL ON;
 IF NOT EXISTS (SELECT 1 FROM CARD_BILL)
 INSERT INTO CARD_BILL
 (bill_id, card_id, billing_month, bill_date, due_date, total_amount, minimum_payment, paid_amount, bill_status) VALUES
-(1, 1, '2026-02', '2026-02-25', '2026-03-10', 15000, 1500, 5877, 'PARTIAL'),
+(1, 1, '2026-04', '2026-04-25', '2026-05-10', 5850, 585, 0, 'UNPAID'),
 (2, 2, '2026-04', '2026-04-25', '2026-05-10', 15000, 1500, 0, 'UNPAID'),
 (3, 3, '2026-03', '2026-03-25', '2026-04-10', 15000, 1500, 15000, 'PAID'),
 (4, 4, '2026-04', '2026-04-25', '2026-05-10', 15000, 1500, 8387, 'PARTIAL'),
@@ -589,7 +589,7 @@ INSERT INTO CARD_BILL
 (23, 23, '2026-02', '2026-02-25', '2026-03-10', 30000, 3000, 30000, 'PAID'),
 (24, 24, '2026-02', '2026-02-25', '2026-03-10', 7000, 700, 0, 'UNPAID'),
 (25, 25, '2026-03', '2026-03-25', '2026-04-10', 5000, 500, 5000, 'PAID'),
-(26, 26, '2026-02', '2026-02-25', '2026-03-10', 20000, 2000, 0, 'UNPAID'),
+(26, 26, '2026-04', '2026-04-25', '2026-05-10', 4200, 420, 0, 'UNPAID'),
 (27, 27, '2026-01', '2026-01-25', '2026-02-10', 15000, 1500, 0, 'UNPAID'),
 (28, 28, '2026-02', '2026-02-25', '2026-03-10', 5000, 500, 5000, 'PAID'),
 (29, 29, '2026-01', '2026-01-25', '2026-02-10', 10000, 1000, 10000, 'PAID'),
@@ -616,14 +616,56 @@ INSERT INTO CARD_BILL
 (50, 50, '2026-03', '2026-03-25', '2026-04-10', 2000, 200, 2000, 'PAID');
 SET IDENTITY_INSERT CARD_BILL OFF;
 
-UPDATE b
-SET b.card_account_id = c.card_account_id
-FROM CARD_BILL b
-JOIN CREDIT_CARD c ON c.card_id = b.card_id;
+-- 1. 先補交易回饋
+UPDATE ct
+SET
+    cashback_rate = ctype.cashback_rate,
+    cashback_amount = ROUND(ct.txn_amount * ctype.cashback_rate / 100, 0)
+FROM CARD_TRANSACTION ct
+JOIN CREDIT_CARD cc ON ct.card_id = cc.card_id
+JOIN CARD_TYPE ctype ON cc.card_type_id = ctype.card_type_id
+WHERE ct.txn_type IN ('PURCHASE', 'REFUND');
 
--- Keep the newest mock transactions unbilled so admin bill generation still has data to process.
+-- 2. 先把交易掛到帳單
 UPDATE t
 SET t.bill_id = b.bill_id
 FROM CARD_TRANSACTION t
 JOIN CARD_BILL b ON b.card_id = t.card_id
 WHERE t.txn_id <= 150;
+
+UPDATE t
+SET t.bill_id = b.bill_id
+FROM CARD_TRANSACTION t
+JOIN CARD_BILL b ON b.card_id = t.card_id
+WHERE t.card_id = 1
+  AND b.billing_month = '2026-04'
+  AND t.txn_date >= '2026-03-01'
+  AND t.txn_date < '2026-05-01';
+
+UPDATE t
+SET t.bill_id = b.bill_id
+FROM CARD_TRANSACTION t
+JOIN CARD_BILL b ON b.card_id = t.card_id
+WHERE t.card_id = 26
+  AND b.billing_month = '2026-04'
+  AND t.txn_date >= '2026-03-01'
+  AND t.txn_date <= '2026-04-25 23:59:59';
+
+-- 3. 再補帳單 card_account_id
+UPDATE b
+SET b.card_account_id = c.card_account_id
+FROM CARD_BILL b
+JOIN CREDIT_CARD c ON c.card_id = b.card_id;
+
+-- 4. 最後才算帳單回饋總額
+UPDATE b
+SET
+    cashback_amount = ISNULL(x.total_cashback, 0),
+    reward_posted = 0,
+    reward_reference_id = NULL
+FROM CARD_BILL b
+OUTER APPLY (
+    SELECT SUM(ISNULL(t.cashback_amount, 0)) AS total_cashback
+    FROM CARD_TRANSACTION t
+    WHERE t.bill_id = b.bill_id
+) x;

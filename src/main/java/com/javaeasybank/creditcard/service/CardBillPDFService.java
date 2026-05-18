@@ -1,5 +1,6 @@
 package com.javaeasybank.creditcard.service;
 
+import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -13,84 +14,143 @@ import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 
 import com.lowagie.text.Font;
+import com.lowagie.text.Image;
 import com.lowagie.text.Phrase;
 import com.lowagie.text.pdf.BaseFont;
+import com.lowagie.text.pdf.PdfPCell;
 
 @Service
 public class CardBillPDFService {
 
-    public byte[] generateBillPdf(
-            String customerName,
-            String billingMonth,
-            BigDecimal totalAmount,
-            BigDecimal minimumPayment,
-            LocalDate dueDate,
-            String password) {
+        public byte[] generateBillPdf(
+                        String customerName,
+                        String billingMonth,
+                        BigDecimal totalAmount,
+                        BigDecimal minimumPayment,
+                        LocalDate dueDate,
+                        String password) {
 
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                try {
 
-            Document document = new Document();
-            PdfWriter writer = PdfWriter.getInstance(document, baos);
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-            writer.setEncryption(
-                    password.getBytes(),
-                    password.getBytes(),
-                    PdfWriter.ALLOW_PRINTING,
-                    PdfWriter.ENCRYPTION_AES_128);
-            String fontPath = getClass()
-                    .getClassLoader()
-                    .getResource("fonts/SourceHanSansTC-Normal.otf")
-                    .getPath();
+                        Document document = new Document();
 
-            BaseFont baseFont = BaseFont.createFont(
-                    fontPath,
-                    BaseFont.IDENTITY_H,
-                    BaseFont.EMBEDDED);
+                        PdfWriter writer = PdfWriter.getInstance(document, baos);
 
-            Font chineseFont = new Font(baseFont, 12);
+                        writer.setEncryption(
+                                        password.getBytes(),
+                                        password.getBytes(),
+                                        PdfWriter.ALLOW_PRINTING,
+                                        PdfWriter.ENCRYPTION_AES_128);
 
-            document.open();
+                        String fontPath = getClass()
+                                        .getClassLoader()
+                                        .getResource("fonts/SourceHanSansTC-Normal.otf")
+                                        .getPath();
 
-            document.add(new Paragraph(
-                    "Java Easy Bank 信用卡月結帳單",
-                    chineseFont));
-            document.add(new Paragraph(" "));
+                        BaseFont baseFont = BaseFont.createFont(
+                                        fontPath,
+                                        BaseFont.IDENTITY_H,
+                                        BaseFont.EMBEDDED);
 
-            PdfPTable table = new PdfPTable(2);
-            table.setWidthPercentage(100);
+                        Font chineseFont = new Font(baseFont, 12);
 
-            table.addCell(new Phrase("客戶姓名", chineseFont));
-            table.addCell(new Phrase(customerName, chineseFont));
+                        Font titleFont = new Font(baseFont, 22, Font.BOLD);
 
-            table.addCell(new Phrase("帳單月份", chineseFont));
-            table.addCell(new Phrase(billingMonth, chineseFont));
+                        document.open();
+                        
 
-            table.addCell(new Phrase("本期應繳金額", chineseFont));
-            table.addCell(new Phrase(
-                    "NT$ " + totalAmount.setScale(0, RoundingMode.HALF_UP),
-                    chineseFont));
+                        Paragraph title = new Paragraph(
+                                        "Java Easy Bank 信用卡月結帳單",
+                                        titleFont);
 
-            table.addCell(new Phrase("最低應繳金額", chineseFont));
-            table.addCell(new Phrase(
-                    "NT$ " + minimumPayment.setScale(0, RoundingMode.HALF_UP),
-                    chineseFont));
+                        title.setSpacingAfter(30f);
 
-            table.addCell(new Phrase("繳款截止日", chineseFont));
-            table.addCell(new Phrase(dueDate.toString(), chineseFont));
+                        document.add(title);
 
-            document.add(table);
+                        PdfPTable table = new PdfPTable(2);
 
-            document.add(new Paragraph(" "));
-            document.add(new Paragraph(
-                    "This PDF is protected by the last 4 digits of your ID number."));
+                        table.setWidthPercentage(100);
+                        table.setSpacingBefore(20f);
+                        table.setSpacingAfter(20f);
 
-            document.close();
+                        addRow(
+                                        table,
+                                        "客戶姓名",
+                                        customerName,
+                                        chineseFont);
 
-            return baos.toByteArray();
+                        addRow(
+                                        table,
+                                        "帳單月份",
+                                        billingMonth,
+                                        chineseFont);
 
-        } catch (Exception e) {
-            throw new RuntimeException("產生信用卡帳單 PDF 失敗", e);
+                        addRow(
+                                        table,
+                                        "本期應繳金額",
+                                        "NT$ " + formatMoney(totalAmount),
+                                        chineseFont);
+
+                        addRow(
+                                        table,
+                                        "最低應繳金額",
+                                        "NT$ " + formatMoney(minimumPayment),
+                                        chineseFont);
+
+                        addRow(
+                                        table,
+                                        "繳款截止日",
+                                        dueDate.toString(),
+                                        chineseFont);
+
+                        document.add(table);
+
+                        document.add(new Paragraph(
+                                        "本 PDF 已加密，請使用身分證字號末 4 碼開啟。",
+                                        chineseFont));
+
+                        document.close();
+
+                        return baos.toByteArray();
+
+                } catch (Exception e) {
+
+                        throw new RuntimeException(
+                                        "產生信用卡帳單 PDF 失敗",
+                                        e);
+                }
         }
-    }
+
+        private void addRow(
+                        PdfPTable table,
+                        String label,
+                        String value,
+                        Font font) {
+
+                PdfPCell left = new PdfPCell(
+                                new Phrase(label, font));
+
+                left.setPadding(10f);
+
+                left.setBackgroundColor(
+                                new Color(240, 240, 240));
+
+                PdfPCell right = new PdfPCell(
+                                new Phrase(value, font));
+
+                right.setPadding(10f);
+
+                table.addCell(left);
+                table.addCell(right);
+        }
+
+        private String formatMoney(BigDecimal amount) {
+
+                return String.format(
+                                "%,d",
+                                amount.setScale(0, RoundingMode.HALF_UP)
+                                                .longValue());
+        }
 }
