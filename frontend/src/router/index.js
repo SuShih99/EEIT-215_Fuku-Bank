@@ -377,9 +377,14 @@ router.beforeEach(async (to) => {
     try {
       const { checkAuth } = await import('@/api/auth')
       await checkAuth()
-    } catch {
-      localStorage.removeItem('auth_user')
-      return { name: 'admin-login' }
+    } catch (error) {
+      const status = error?.response?.status
+      if (status === 401 || status === 403) {
+        localStorage.removeItem('auth_user')
+        localStorage.removeItem('auth_token')
+        return { name: 'admin-login' }
+      }
+      console.warn('Admin session check failed without auth status:', error)
     }
   }
 

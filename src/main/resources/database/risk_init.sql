@@ -62,7 +62,7 @@ CREATE TABLE customer_credit_info
     customer_id     varchar(20) NOT NULL,
     annual_income   decimal(15, 2),
     occupation      nvarchar(50),
-    job             nvarchar(100),
+    job             NVARCHAR(100),
     external_score  int,
     other_bank_debt decimal(15, 2),
     has_real_estate bit,

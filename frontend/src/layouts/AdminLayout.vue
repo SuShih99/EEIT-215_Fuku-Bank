@@ -144,7 +144,7 @@
 import { ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { logout } from '@/api/auth'
+import { checkAuth, logout } from '@/api/auth'
 import { Modal } from 'ant-design-vue'
 import { onMounted, onUnmounted } from 'vue'
 import {
@@ -203,6 +203,21 @@ async function handleLogout() {
 }
 
 let idleTimer = null
+let sessionKeepAliveTimer = null
+
+async function keepAdminSessionAlive() {
+  try {
+    await checkAuth()
+  } catch (error) {
+    const status = error?.response?.status
+    if (status === 401 || status === 403) {
+      authStore.clearUser()
+      router.push('/admin/login')
+      return
+    }
+    console.warn('Admin session keep-alive failed:', error)
+  }
+}
 
 onMounted(() => {
   // 每 1 秒更新倒數
@@ -216,10 +231,13 @@ onMounted(() => {
       countdown.value = 300
     }
   }, 1000)
+
+  sessionKeepAliveTimer = setInterval(keepAdminSessionAlive, 30000)
 })
 
 onUnmounted(() => {
   if (idleTimer) clearInterval(idleTimer)
+  if (sessionKeepAliveTimer) clearInterval(sessionKeepAliveTimer)
 })
 </script>
 

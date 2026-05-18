@@ -12,6 +12,7 @@ const goDetail = (billId) => {
 }
 
 const loading = ref(false)
+const generating = ref(false)
 
 const bills = ref([])
 
@@ -19,6 +20,12 @@ const pagination = ref({
   current: 1,
   pageSize: 10,
   total: 0,
+})
+
+const searchForm = ref({
+  customerName: '',
+  billingMonth: '',
+  billStatus: ''
 })
 
 const columns = [
@@ -77,18 +84,24 @@ const columns = [
     dataIndex: 'billStatus',
     key: 'billStatus',
   },
-  {
-    title: '操作',
-    key: 'action',
-    width: 120,
-  },
+  
 ]
 
 const fetchBills = async (page = 1) => {
   loading.value = true
 
   try {
-    const response = await getBills(page - 1, pagination.value.pageSize)
+    const response = await getBills({
+      page: page - 1,
+      size: pagination.value.pageSize,
+
+      customerName: searchForm.value.customerName || undefined,
+
+      billingMonth: searchForm.value.billingMonth || undefined,
+
+      billStatus: searchForm.value.billStatus || undefined,
+    })
+
     console.log(response)
 
     bills.value = response.content.map((item) => ({
@@ -109,6 +122,8 @@ const fetchBills = async (page = 1) => {
 
 const handleGenerateBills = async () => {
   try {
+    generating.value = true
+
     const count = await generateBills()
     message.success(`成功產生 ${count} 筆帳單`)
     await fetchBills()
@@ -117,6 +132,8 @@ const handleGenerateBills = async () => {
     console.log(error.response?.data?.message)
 
     message.error(error.response?.data?.message || '生成帳單失敗')
+  }finally{
+    generating.value = false
   }
 }
 
@@ -144,6 +161,46 @@ onMounted(() => {
 
       <a-button type="primary" @click="handleGenerateBills"> 產生帳單 </a-button>
     </div>
+    <!-- Search Form -->
+    <a-form layout="inline" :model="searchForm" style="margin-bottom: 16px">
+  <a-form-item>
+    <a-input
+      v-model:value="searchForm.customerName"
+      placeholder="客戶姓名"
+      allow-clear
+    />
+  </a-form-item>
+
+  <a-form-item>
+    <a-input
+      v-model:value="searchForm.billingMonth"
+      placeholder="帳單月份"
+      allow-clear
+    />
+  </a-form-item>
+
+  <a-form-item>
+    <a-select
+      v-model:value="searchForm.billStatus"
+      placeholder="帳單狀態"
+      allow-clear
+      style="width: 140px"
+    >
+      <a-select-option value="PAID">已繳費</a-select-option>
+      <a-select-option value="UNPAID">未繳費</a-select-option>
+      <a-select-option value="PARTIAL">部分繳款</a-select-option>
+      <a-select-option value="OVERDUE">逾期</a-select-option>
+    </a-select>
+  </a-form-item>
+
+  <a-form-item>
+    <a-button type="primary" @click="fetchBills()">
+      搜尋
+    </a-button>
+  </a-form-item>
+</a-form>
+
+
 
     <!-- Table -->
     <a-table
