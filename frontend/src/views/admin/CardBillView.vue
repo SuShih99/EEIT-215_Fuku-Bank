@@ -159,7 +159,7 @@ onMounted(() => {
     >
       <a-typography-title :level="2" style="margin: 0"> 帳單管理 </a-typography-title>
 
-      <a-button type="primary" @click="handleGenerateBills"> 產生帳單 </a-button>
+      <a-button type="primary" :loading="generating" @click="handleGenerateBills"> 產生帳單 </a-button>
     </div>
     <!-- Search Form -->
     <a-form layout="inline" :model="searchForm" style="margin-bottom: 16px">
