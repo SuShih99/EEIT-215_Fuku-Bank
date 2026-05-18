@@ -76,6 +76,7 @@ public class SecurityConfig {
                         // === 公開 API & 付款API===
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/linepay/**").permitAll()
+                        .requestMatchers("/api/loan-applications/rate-rules").permitAll()
 
                         // === 風控接口全部鎖在本機ip ===
                         .requestMatchers("/api/risk/**").access(new WebExpressionAuthorizationManager("hasIpAddress('127.0.0.1') or hasIpAddress('::1')"))

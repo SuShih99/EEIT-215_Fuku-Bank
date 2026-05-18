@@ -24,9 +24,12 @@ import com.javaeasybank.loan.enums.LoanReviewStatus;
 import com.javaeasybank.loan.repository.LoanApplicationRepository;
 import com.javaeasybank.loan.repository.LoanContactLogRepository;
 import com.javaeasybank.loan.repository.LoanReviewDetailRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,6 +64,12 @@ public class LoanApplicationService {
 
     @Autowired
     private LoanReviewDetailRepository reviewDetailRepo;
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Autowired
     private LoanRiskClient loanRiskClient;
@@ -110,7 +119,7 @@ public class LoanApplicationService {
         fillLoanContent(loan, dto.getApplyType(), dto.getApplyAmount(),
                 dto.getApplyPeriod(), dto.getRate());
         loan.setDisbursementAccount(dto.getDisbursementAccount()); // 儲存撥款入帳帳號
-        laRepo.save(loan);
+        entityManager.persist(loan);
         return loan.getApplicationId();
     }
 
@@ -149,33 +158,71 @@ public class LoanApplicationService {
         LoanContactStatus contactStatus = LoanContactStatus.valueOf(dto.getContactStatus());
         LoanContactChannel contactChannel = LoanContactChannel.valueOf(dto.getContactChannel());
 
-        // 寫入聯繫紀錄
-        LoanContactLog log = new LoanContactLog();
-        log.setLogId(generateId("CL"));
-        log.setApplicationId(applicationId);
-        log.setEmpId(dto.getEmpId());
-        log.setContactStatus(contactStatus);
-        log.setContactChannel(contactChannel);
-        log.setContactTime(LocalDateTime.now());
-        log.setNote(dto.getNote());
-        contactLogRepo.save(log);
-
-        // 同步更新主表最新聯繫狀態
-        loan.setLatestContactStatus(contactStatus);
-        loan.setLatestContactTime(log.getContactTime());
+        LocalDateTime contactTime = LocalDateTime.now();
+        insertContactLog(applicationId, dto, contactStatus, contactChannel, contactTime);
 
         // 若主表仍是 PENDING_CONTACT，推進為 IN_CONTACT
+        LoanApplicationStatus nextApplicationStatus = null;
         if (loan.getApplicationStatus() == LoanApplicationStatus.PENDING_CONTACT) {
-            loan.setApplicationStatus(LoanApplicationStatus.IN_CONTACT);
-            loan.setUpdateTime(log.getContactTime());
+            nextApplicationStatus = LoanApplicationStatus.IN_CONTACT;
         }
         // 客戶放棄時，主表推進為 CANCELLED
         if (contactStatus == LoanContactStatus.DECLINED) {
-            loan.setApplicationStatus(LoanApplicationStatus.CANCELLED);
-            loan.setUpdateTime(log.getContactTime());
+            nextApplicationStatus = LoanApplicationStatus.CANCELLED;
         }
 
-        laRepo.save(loan);
+        updateLoanContactState(applicationId, contactStatus, contactTime, nextApplicationStatus);
+    }
+
+    private void insertContactLog(String applicationId, LoanContactLogRequestDTO dto,
+                                  LoanContactStatus contactStatus,
+                                  LoanContactChannel contactChannel,
+                                  LocalDateTime contactTime) {
+        jdbcTemplate.update("""
+                INSERT INTO loan_contact_log
+                    (log_id, application_id, emp_id, contact_status, contact_channel, contact_time, note)
+                VALUES
+                    (?, ?, ?, ?, ?, ?, ?)
+                """,
+                generateId("CL"),
+                applicationId,
+                dto.getEmpId(),
+                contactStatus.name(),
+                contactChannel.name(),
+                contactTime,
+                dto.getNote());
+    }
+
+    private void updateLoanContactState(String applicationId,
+                                        LoanContactStatus contactStatus,
+                                        LocalDateTime contactTime,
+                                        LoanApplicationStatus nextApplicationStatus) {
+        if (nextApplicationStatus == null) {
+            jdbcTemplate.update("""
+                    UPDATE loan_application
+                       SET latest_contact_status = ?,
+                           latest_contact_time = ?
+                     WHERE application_id = ?
+                    """,
+                    contactStatus.name(),
+                    contactTime,
+                    applicationId);
+            return;
+        }
+
+        jdbcTemplate.update("""
+                UPDATE loan_application
+                   SET latest_contact_status = ?,
+                       latest_contact_time = ?,
+                       application_status = ?,
+                       update_time = ?
+                 WHERE application_id = ?
+                """,
+                contactStatus.name(),
+                contactTime,
+                nextApplicationStatus.name(),
+                contactTime,
+                applicationId);
     }
 
     // 查某申請的所有聯繫紀錄
@@ -197,30 +244,62 @@ public class LoanApplicationService {
 
         // 沒有草稿就建新的
         LoanReviewDetail detail = reviewDetailRepo.findByApplicationId(applicationId)
-                .orElse(new LoanReviewDetail());
+                .orElse(null);
+        boolean newDetail = detail == null;
 
         // 已送審的填單不可再修改
-        if (detail.getReviewId() != null
-                && detail.getReviewStatus() == LoanReviewStatus.SUBMITTED) {
+        if (detail != null && detail.getReviewStatus() == LoanReviewStatus.SUBMITTED) {
             throw new BusinessException("此申請已送審，無法修改填單內容");
         }
 
-        // 若是全新的，產生 PK 並綁定 applicationId
-        if (detail.getReviewId() == null) {
-            detail.setReviewId(generateId("RD"));
-            detail.setApplicationId(applicationId);
+        LocalDateTime reviewTime = LocalDateTime.now();
+
+        if (newDetail) {
+            insertReviewDetail(applicationId, dto, reviewTime);
+        } else {
+            updateReviewDetail(detail.getReviewId(), dto, reviewTime);
         }
+    }
 
-        // 填入審核內容（覆蓋舊草稿）
-        detail.setConfirmedAmount(dto.getConfirmedAmount());
-        detail.setConfirmedPeriod(dto.getConfirmedPeriod());
-        detail.setConfirmedRate(dto.getConfirmedRate());
-        detail.setCollateralNote(dto.getCollateralNote());
-        detail.setEmpId(dto.getEmpId());
-        detail.setReviewTime(LocalDateTime.now());
-        detail.setReviewStatus(LoanReviewStatus.DRAFT);
+    private void insertReviewDetail(String applicationId, LoanReviewDetailRequestDTO dto, LocalDateTime reviewTime) {
+        jdbcTemplate.update("""
+                INSERT INTO loan_review_detail
+                    (review_id, application_id, confirmed_amount, confirmed_period, confirmed_rate,
+                     collateral_note, emp_id, review_time, review_status, submitted_time, review_note)
+                VALUES
+                    (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)
+                """,
+                generateId("RD"),
+                applicationId,
+                dto.getConfirmedAmount(),
+                dto.getConfirmedPeriod(),
+                dto.getConfirmedRate(),
+                dto.getCollateralNote(),
+                dto.getEmpId(),
+                reviewTime,
+                LoanReviewStatus.DRAFT.name());
+    }
 
-        reviewDetailRepo.save(detail);
+    private void updateReviewDetail(String reviewId, LoanReviewDetailRequestDTO dto, LocalDateTime reviewTime) {
+        jdbcTemplate.update("""
+                UPDATE loan_review_detail
+                   SET confirmed_amount = ?,
+                       confirmed_period = ?,
+                       confirmed_rate = ?,
+                       collateral_note = ?,
+                       emp_id = ?,
+                       review_time = ?,
+                       review_status = ?
+                 WHERE review_id = ?
+                """,
+                dto.getConfirmedAmount(),
+                dto.getConfirmedPeriod(),
+                dto.getConfirmedRate(),
+                dto.getCollateralNote(),
+                dto.getEmpId(),
+                reviewTime,
+                LoanReviewStatus.DRAFT.name(),
+                reviewId);
     }
 
     // 送審：草稿 → SUBMITTED，主表推進為 PENDING_REVIEW
@@ -504,9 +583,12 @@ public class LoanApplicationService {
 
     // 查填單內容
     public LoanReviewDetailResponseDTO getReviewDetail(String applicationId) {
-        LoanReviewDetail detail = reviewDetailRepo.findByApplicationId(applicationId)
-                .orElseThrow(() -> new BusinessException("尚未建立二次填單：" + applicationId));
-        return toReviewDetailResponseDTO(detail);
+        if (!laRepo.existsById(applicationId)) {
+            throw new BusinessException("找不到申請編號：" + applicationId);
+        }
+        return reviewDetailRepo.findByApplicationId(applicationId)
+                .map(this::toReviewDetailResponseDTO)
+                .orElse(null);
     }
 
     // 置頂查詢：曾被外部模組（風控、帳戶）異動過狀態的申請，依更新時間降序
