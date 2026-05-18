@@ -525,22 +525,29 @@ async function handleRequestReset() {
 .profile-page {
   max-width: 900px;
   margin: 0 auto;
+  padding: 24px;
 }
 
 .page-title {
   font-family: var(--font-heading);
   font-size: var(--text-h2);
-  margin-bottom: var(--space-4);
-  letter-spacing: 3px;
+  font-weight: 600;
+  line-height: var(--leading-heading);
+  margin-bottom: 20px;
+  color: var(--text-primary);
+  letter-spacing: 0;
 }
 
-/* 頂部設定項目選擇 (Radio) */
 .setting-selector {
   display: flex;
   align-items: center;
   gap: var(--space-6);
   padding: var(--space-4) var(--space-5);
   margin-bottom: var(--space-4);
+  border-radius: 12px;
+  background: rgba(255, 249, 239, 0.92);
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  box-shadow: 0 12px 36px rgba(63, 74, 66, 0.08);
 }
 
 .setting-label {
@@ -561,12 +568,14 @@ async function handleRequestReset() {
   gap: var(--space-2);
   cursor: pointer;
   font-size: 15px;
-  color: var(--text-primary);
-  transition: opacity 0.2s;
+  color: var(--text-secondary);
+  transition:
+    color var(--duration) var(--ease),
+    opacity var(--duration) var(--ease);
 }
 
 .custom-radio:hover {
-  opacity: 0.8;
+  color: var(--primary-dark);
 }
 
 .custom-radio input {
@@ -577,9 +586,10 @@ async function handleRequestReset() {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  border: 1.5px solid var(--border);
+  border: 1.5px solid rgba(214, 206, 195, 0.92);
   position: relative;
-  transition: all 0.2s;
+  background: rgba(250, 250, 247, 0.84);
+  transition: all var(--duration) var(--ease);
 }
 
 .custom-radio input:checked + .radio-mark {
@@ -598,9 +608,12 @@ async function handleRequestReset() {
   background: var(--primary);
 }
 
-/* 主內容區塊 */
 .profile-content {
   padding: var(--space-5) var(--space-6);
+  border-radius: 12px;
+  background: rgba(255, 249, 239, 0.92);
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  box-shadow: 0 12px 36px rgba(63, 74, 66, 0.08);
 }
 
 .section-title {
@@ -608,7 +621,8 @@ async function handleRequestReset() {
   font-weight: 600;
   margin-bottom: var(--space-5);
   padding-bottom: var(--space-3);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(214, 206, 195, 0.8);
+  color: var(--text-primary);
 }
 
 .sub-section-title {
@@ -633,7 +647,7 @@ async function handleRequestReset() {
 .ctbc-label {
   width: 160px;
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--text-secondary);
   flex-shrink: 0;
   font-size: 15px;
 }
@@ -650,13 +664,43 @@ async function handleRequestReset() {
   color: var(--text-secondary);
 }
 
+.divider {
+  border-color: rgba(214, 206, 195, 0.8) !important;
+}
+
+.jb-input {
+  min-height: 48px;
+  color: var(--text-primary);
+  background: rgba(250, 250, 247, 0.92);
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  border-radius: 8px;
+  transition:
+    border-color var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease),
+    background var(--duration) var(--ease);
+}
+
+.jb-input:hover:not(:disabled):not(:focus) {
+  border-color: var(--text-disabled);
+}
+
+.jb-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.jb-input:disabled {
+  color: var(--text-secondary);
+  background: rgba(234, 228, 218, 0.72);
+  border-color: rgba(214, 206, 195, 0.86);
+}
+
 .password-field {
   display: flex;
   align-items: center;
   gap: var(--space-3);
 }
 
-/* 大頭照區塊 */
 .avatar-tab {
   align-items: flex-start;
   gap: var(--space-5);
@@ -684,7 +728,7 @@ async function handleRequestReset() {
   height: 100px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid var(--border);
+  border: 3px solid rgba(214, 206, 195, 0.86);
   display: block;
 }
 
@@ -695,12 +739,12 @@ async function handleRequestReset() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-secondary);
+  background: rgba(234, 228, 218, 0.72);
   color: var(--primary);
   font-family: var(--font-heading);
   font-size: 40px;
   font-weight: 600;
-  border: 3px solid var(--border);
+  border: 3px solid rgba(214, 206, 195, 0.86);
 }
 
 .avatar-overlay {
@@ -726,9 +770,9 @@ async function handleRequestReset() {
 }
 
 .cif-box {
-  background: var(--bg-secondary);
-  border: 1px solid rgba(214, 206, 195, 0.5);
-  border-radius: var(--radius-md);
+  background: rgba(250, 250, 247, 0.84);
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  border-radius: 8px;
   padding: var(--space-3) var(--space-4);
   display: flex;
   flex-direction: column;
@@ -747,7 +791,6 @@ async function handleRequestReset() {
   letter-spacing: 1px;
 }
 
-/* 底部按鈕區 */
 .form-actions {
   margin-top: 40px;
   display: flex;
@@ -759,7 +802,38 @@ async function handleRequestReset() {
   width: 180px;
 }
 
+.jb-btn {
+  border-radius: 8px;
+}
+
+.jb-btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.jb-btn-primary:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  box-shadow: 0 4px 16px rgba(107, 95, 80, 0.1);
+}
+
+.jb-btn-secondary {
+  background: rgba(255, 249, 239, 0.72);
+  color: var(--primary-dark);
+  border-color: rgba(214, 206, 195, 0.86);
+}
+
+.jb-btn-secondary:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
 @media (max-width: 700px) {
+  .profile-page {
+    padding: 16px 0;
+  }
+
   .setting-selector {
     flex-direction: column;
     align-items: flex-start;
@@ -773,6 +847,10 @@ async function handleRequestReset() {
   .ctbc-label {
     width: 100%;
   }
+  .ctbc-field {
+    width: 100%;
+    flex-wrap: wrap;
+  }
   .form-actions {
     flex-direction: column;
   }
@@ -781,17 +859,16 @@ async function handleRequestReset() {
   }
 }
 
-/* Custom Toast */
 .jb-toast {
   position: fixed;
   top: 40px;
   left: 50%;
   transform: translateX(-50%);
   padding: 12px 24px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
+  background: rgba(255, 249, 239, 0.96);
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  border-radius: 12px;
+  box-shadow: 0 12px 36px rgba(63, 74, 66, 0.08);
   z-index: 9999;
   font-weight: 500;
   display: flex;
@@ -806,7 +883,6 @@ async function handleRequestReset() {
 .toast-fade-enter-active, .toast-fade-leave-active { transition: all 0.3s var(--ease); }
 .toast-fade-enter-from, .toast-fade-leave-to { opacity: 0; transform: translate(-50%, -10px); }
 
-/* Custom Modal */
 .jb-modal-overlay {
   position: fixed;
   inset: 0;
@@ -824,8 +900,10 @@ async function handleRequestReset() {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 249, 239, 0.96);
+  border: 1px solid rgba(214, 206, 195, 0.86);
+  box-shadow: 0 12px 36px rgba(63, 74, 66, 0.12);
 }
 .jb-modal-title {
   font-size: 18px;
