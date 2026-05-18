@@ -131,6 +131,7 @@ public class RiskReviewService {
                 log.error("[RiskEngine] 自動風控引擎不應直接計算出退回補件狀態 applicationId={}", dto.getBusinessId());
                 throw new IllegalStateException("自動規則審查不支援直接導向退回補件流程");
             }
+            case RETURN -> throw new IllegalStateException("RETURN 不應由自動風控流程產生");
         };
     }
 

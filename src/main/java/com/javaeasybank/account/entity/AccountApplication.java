@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  * 審核通過後由 Service 層自動建立 Account。
  */
 @Entity
-@Table(name = "ACCOUNT_APPLICATION")
+@Table(name = "account_application")
 @Getter
 @Setter
 @NoArgsConstructor

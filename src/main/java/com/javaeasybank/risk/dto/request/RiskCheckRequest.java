@@ -35,6 +35,7 @@ public class RiskCheckRequest {
     /**
      * 業務上下文，用於存放銀行端偵測到的異常標籤
      */
+    @Builder.Default
     private Map<String, Object> context = new HashMap<>();
 
     public void addContext(String key, Object value) {

@@ -19,6 +19,13 @@ export function getAccountsByCustomerId(customerId, page = 0, size = 10) {
   })
 }
 
+// 後台複合搜尋帳戶（可同時依姓名、客戶 ID、帳號、狀態、型別、幣別查詢）
+export function searchAdminAccounts(params = {}, page = 0, size = 10) {
+  return api.get('/api/accounts/search', {
+    params: { ...params, page, size },
+  })
+}
+
 // 依狀態篩選（分頁）
 export function getAccountsByStatus(status, page = 0, size = 10) {
   return api.get(`/api/accounts/status/${status}`, {

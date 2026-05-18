@@ -2,6 +2,7 @@ package com.javaeasybank.account.repository;
 
 import com.javaeasybank.account.dto.request.AccountStats;
 import com.javaeasybank.account.entity.TransLog;
+import com.javaeasybank.account.enums.AccountType;
 import com.javaeasybank.account.enums.EntryType;
 import com.javaeasybank.account.enums.TransactionType;
 import org.springframework.data.domain.Page;
@@ -32,6 +33,17 @@ public interface TransLogRepository extends JpaRepository<TransLog, String>, Jpa
      */
     List<TransLog> findByReferenceId(String referenceId);
 
+    @Query("""
+            SELECT t
+            FROM TransLog t
+            LEFT JOIN Account a ON t.accountNumber = a.accountNumber
+            WHERE t.referenceId = :referenceId
+              AND (a.accountType IS NULL OR a.accountType <> :excludedType)
+            """)
+    List<TransLog> findByReferenceIdExcludingAccountType(
+            @Param("referenceId") String referenceId,
+            @Param("excludedType") AccountType excludedType);
+
     /**
      * 檢查是否存在 note 中包含指定關鍵字的交易紀錄（用於沖正重複檢查）。
      *
@@ -59,6 +71,18 @@ public interface TransLogRepository extends JpaRepository<TransLog, String>, Jpa
     @Query("SELECT t FROM TransLog t WHERE t.accountNumber = :acctNum OR t.counterpartAccount = :acctNum")
     Page<TransLog> findByAccountInvolved(@Param("acctNum") String accountNumber, Pageable pageable);
 
+    @Query("""
+            SELECT t
+            FROM TransLog t
+            LEFT JOIN Account a ON t.accountNumber = a.accountNumber
+            WHERE (t.accountNumber = :acctNum OR t.counterpartAccount = :acctNum)
+              AND (a.accountType IS NULL OR a.accountType <> :excludedType)
+            """)
+    Page<TransLog> findByAccountInvolvedExcludingAccountType(
+            @Param("acctNum") String accountNumber,
+            @Param("excludedType") AccountType excludedType,
+            Pageable pageable);
+
     /**
      * 根據客戶 ID 查詢該客戶名下所有帳戶的所有交易紀錄，並進行分頁。
      * 此查詢涉及跨表 JOIN。
@@ -69,6 +93,18 @@ public interface TransLogRepository extends JpaRepository<TransLog, String>, Jpa
      */
     @Query("SELECT t FROM TransLog t JOIN Account a ON t.accountNumber = a.accountNumber WHERE a.customerId = :customerId")
     Page<TransLog> findByCustomerId(@Param("customerId") String customerId, Pageable pageable);
+
+    @Query("""
+            SELECT t
+            FROM TransLog t
+            JOIN Account a ON t.accountNumber = a.accountNumber
+            WHERE a.customerId = :customerId
+              AND a.accountType <> :excludedType
+            """)
+    Page<TransLog> findByCustomerIdExcludingAccountType(
+            @Param("customerId") String customerId,
+            @Param("excludedType") AccountType excludedType,
+            Pageable pageable);
 
     /**
      * 根據客戶 ID 和日期範圍查詢該客戶名下所有帳戶的所有交易紀錄，並進行分頁。
@@ -83,6 +119,22 @@ public interface TransLogRepository extends JpaRepository<TransLog, String>, Jpa
             "WHERE a.customerId = :customerId AND t.createdAt >= :startDate AND t.createdAt <= :endDate")
     Page<TransLog> findByCustomerIdAndDateRange(
             @Param("customerId") String customerId,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable);
+
+    @Query("""
+            SELECT t
+            FROM TransLog t
+            JOIN Account a ON t.accountNumber = a.accountNumber
+            WHERE a.customerId = :customerId
+              AND a.accountType <> :excludedType
+              AND t.createdAt >= :startDate
+              AND t.createdAt <= :endDate
+            """)
+    Page<TransLog> findByCustomerIdAndDateRangeExcludingAccountType(
+            @Param("customerId") String customerId,
+            @Param("excludedType") AccountType excludedType,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable);
@@ -149,6 +201,17 @@ public interface TransLogRepository extends JpaRepository<TransLog, String>, Jpa
      * @return 包含交易日誌實體的分頁列表。
      */
     Page<TransLog> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+    @Query("""
+            SELECT t
+            FROM TransLog t
+            LEFT JOIN Account a ON t.accountNumber = a.accountNumber
+            WHERE a.accountType IS NULL OR a.accountType <> :excludedType
+            ORDER BY t.createdAt DESC
+            """)
+    Page<TransLog> findAllExcludingAccountTypeOrderByCreatedAtDesc(
+            @Param("excludedType") AccountType excludedType,
+            Pageable pageable);
 
     /**
      * 一次性取得指定時間內的交易次數與總額
