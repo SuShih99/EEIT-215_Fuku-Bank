@@ -50,11 +50,6 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
 
-    @Value("${app.demo.password-reset-email:hmi550843@gmail.com}")
-    private String demoPasswordResetEmail;
-
-    @Value("${app.demo.verification-email:hmi550843@gmail.com}")
-    private String demoVerificationEmail;
 
     // 用於產生隨機英數
     private static final String ALPHANUMERIC_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -145,8 +140,8 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
         auth.setVerificationToken(verificationToken);
         customerAuthRepository.save(auth);
 
-        // 4. 驗證信統一由系統設定的收件信箱接收，使用者仍可填入任意聯絡信箱
-        emailService.sendVerificationEmail(demoVerificationEmail, verificationToken);
+        // 4. 發送驗證信到使用者填寫的信箱
+        emailService.sendVerificationEmail(email, verificationToken);
 
         CustomerRespository.LoginResponse response = new CustomerRespository.LoginResponse();
         response.setCustomerId(customerId);
@@ -369,7 +364,7 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
         // 組成重設連結
         String resetLink = frontendUrl + "/reset-password?token=" + resetToken;
 
-        emailService.sendPasswordResetEmail(demoPasswordResetEmail, resetLink);
+        emailService.sendPasswordResetEmail(profile.getEmail(), resetLink);
     }
 
     // ===========================
