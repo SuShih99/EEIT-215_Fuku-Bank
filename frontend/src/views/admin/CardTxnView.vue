@@ -23,6 +23,13 @@ const txnTypeOptions = [
   { label: '刷退', value: 'REFUND' },
 ]
 
+const txnTypeLabelMap = {
+  PURCHASE: '消費',
+  REFUND: '刷退',
+}
+
+const getTxnTypeLabel = (typeValue) => txnTypeLabelMap[typeValue] || typeValue
+
 const columns = [
   {
     title: '交易日期',
@@ -251,7 +258,7 @@ onMounted(() => {
           <!-- 類型 -->
           <template v-else-if="column.dataIndex === 'txnType'">
             <a-tag :color="record.txnType === 'REFUND' ? 'red' : 'blue'">
-              {{ record.txnType }}
+              {{ getTxnTypeLabel(record.txnType) }}
             </a-tag>
           </template>
 
