@@ -27,8 +27,20 @@ const status = ref(null)
 const statusOptions = [
   { label: '全部', value: null },
   { label: '審核中', value: 'PENDING' },
+  { label: '已核准', value: 'APPROVED' },
+  { label: '已拒絕', value: 'REJECTED' },
   { label: '已完成', value: 'COMPLETED' },
 ]
+
+const applicationStatusLabelMap = {
+  PENDING: '審核中',
+  APPROVED: '已核准',
+  REJECTED: '已拒絕',
+  COMPLETED: '已完成',
+}
+
+const getApplicationStatusLabel = (statusValue) =>
+  applicationStatusLabelMap[statusValue] || statusValue
 
 //分頁機
 const pagination = ref({
@@ -207,8 +219,15 @@ onMounted(() => {
       @change="handlePageChange"
     >
       <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'status'">
+          <div :class="['status-tag', `status-${(record.status || '').toLowerCase()}`]">
+            <span class="status-dot"></span>
+            {{ getApplicationStatusLabel(record.status) }}
+          </div>
+        </template>
+
         <!-- 查看明細 -->
-        <template v-if="column.key === 'detail'">
+        <template v-else-if="column.key === 'detail'">
           <a-button type="link" @click="goDetail(record)"> 審核明細 </a-button>
         </template>
 
