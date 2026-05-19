@@ -11,12 +11,13 @@ import java.util.List;
 public interface CustomerLoginLogRepository extends JpaRepository<CustomerLoginLog, Long> {
     List<CustomerLoginLog> findTop30ByCustomerIdOrderByLoginTimeDesc(String customerId);
 
-    // 查最近 N 分鐘內失敗次數
     @Query("SELECT COUNT(l) FROM CustomerLoginLog l " +
             "WHERE l.customerId = :customerId " +
             "AND l.result = '失敗' " +
-            "AND l.loginTime >= :since")
+            "AND l.loginTime >= :since " +
+            "AND (:unlockedAt IS NULL OR l.loginTime > :unlockedAt)")
     int countRecentFailures(
             @Param("customerId") String customerId,
-            @Param("since") LocalDateTime since);
+            @Param("since") LocalDateTime since,
+            @Param("unlockedAt") LocalDateTime unlockedAt);
 }

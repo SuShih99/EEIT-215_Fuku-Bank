@@ -4,7 +4,6 @@ import com.javaeasybank.account.enums.FundSource;
 import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.common.util.JwtUtil;
 import com.javaeasybank.customer.entity.CustomerDevice;
-import com.javaeasybank.customer.entity.CustomerLoginLog;
 import com.javaeasybank.customer.repository.CustomerRespository;
 import com.javaeasybank.customer.entity.CustomerAuth;
 import com.javaeasybank.customer.entity.CustomerProfile;
@@ -18,6 +17,7 @@ import com.javaeasybank.customer.util.TaiwanIdValidator;
 import com.javaeasybank.risk.enums.Occupation;
 import com.javaeasybank.risk.repository.CustomerCreditRepository;
 import com.javaeasybank.risk.service.CreditScoreService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,6 +33,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HexFormat;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -53,8 +54,8 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
     private final EmailService emailService;
     private final LoginRiskClient loginRiskClient;
     private final LoginAuditService loginAuditService;
-    private final CreditScoreService  creditScoreService;
-    private final CustomerCreditRepository  customerCreditRepository;
+    private final CreditScoreService creditScoreService;
+    private final CustomerCreditRepository customerCreditRepository;
 
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
@@ -168,7 +169,7 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
     // ===========================
     @Override
     public CustomerRespository.LoginResponse login(CustomerRespository.LoginRequest request, String ipAddress,
-            String userAgent) {
+                                                   String userAgent) {
         String deviceName = resolveDeviceName(userAgent);
         String location = (ipAddress == null || ipAddress.isBlank() ? "未知位置" : ipAddress) + " / " + deviceName;
 
@@ -284,7 +285,7 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
     @Override
     @Transactional
     public CustomerRespository.CustomerResponse updateProfile(String customerId,
-            CustomerRespository.ProfileUpdateRequest request) {
+                                                              CustomerRespository.ProfileUpdateRequest request) {
         CustomerProfile profile = customerProfileRepository.findById(customerId)
                 .orElseThrow(() -> new BusinessException("查無此客戶"));
 
@@ -335,8 +336,8 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
             creditScoreService.syncAndRescore(
                     customerId,
                     Occupation.fromString(profile.getOccupation()),
-                    BigDecimal.valueOf(profile.getAnnualIncome()* 10000L),
-                    profile.getFundSource()!= null ? mapChineseToEnum(profile.getFundSource()): null,
+                    BigDecimal.valueOf(profile.getAnnualIncome() * 10000L),
+                    profile.getFundSource() != null ? mapChineseToEnum(profile.getFundSource()) : null,
                     profile.getIsPep()
             );
         } else {
@@ -440,11 +441,11 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
     public void seedAuthTestData() {
         // 為已有的 seed 客戶資料建立對應的 customer_auth
         String[][] data = {
-                { "X7K9P2M4", "mingwang85" },
-                { "V4L6T1Y8", "hualin90" },
-                { "D3H8F5G2", "chienchen78" },
-                { "B9W1C7R5", "yachang95" },
-                { "P6M4N2Q8", "chihlee82" },
+                {"X7K9P2M4", "mingwang85"},
+                {"V4L6T1Y8", "hualin90"},
+                {"D3H8F5G2", "chienchen78"},
+                {"B9W1C7R5", "yachang95"},
+                {"P6M4N2Q8", "chihlee82"},
         };
 
         for (String[] d : data) {
@@ -465,12 +466,12 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
     // 私有方法
     // ===========================
     private void handleLoginFailure(CustomerAuth auth, CustomerProfile profile, String email, String location,
-            String failReason,
-            String ipAddress, String userAgent, String deviceName, String userErrorMessage) {
+                                    String failReason,
+                                    String ipAddress, String userAgent, String deviceName, String userErrorMessage) {
         // 取得最近 30 分鐘內的失敗次數 (不含本次)
         int recentFailures = customerLoginLogRepository.countRecentFailures(
                 auth.getCustomerId(),
-                LocalDateTime.now().minusMinutes(30));
+                LocalDateTime.now().minusMinutes(30), auth.getUnlockedAt());
 
         // 紀錄本次失敗
         loginAuditService.recordLogin(auth.getCustomerId(), auth.getUsername(), "失敗", failReason, ipAddress, userAgent,
@@ -530,6 +531,22 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
                     return FundSource.OTHER; // 真的找不到就給其他
                 }
         }
+    }
+    @Transactional
+    @Override
+    public void unlockCustomer(String customerId) {
+        CustomerAuth auth = customerAuthRepository.findByCustomerId(customerId)
+                .orElseThrow(() -> new EntityNotFoundException("Customer not found: " + customerId));
+
+        auth.setStatus("ACTIVE");
+        auth.setUnlockedAt(LocalDateTime.now());
+        customerAuthRepository.save(auth);
+        log.info("[unlockCustomer] customerId={} unlockedAt={}", customerId, auth.getUnlockedAt());
+
+        customerProfileRepository.findById(customerId).ifPresent(profile -> {
+            profile.setStatus("ACTIVE");
+            customerProfileRepository.save(profile);
+        });
     }
 
     private void upsertDevice(String customerId, String ipAddress, String userAgent) {

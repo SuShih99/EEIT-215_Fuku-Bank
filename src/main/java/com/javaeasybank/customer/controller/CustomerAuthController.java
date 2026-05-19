@@ -127,6 +127,12 @@ public class CustomerAuthController {
         customerAuthService.resetPassword(request);
         return ResponseEntity.ok(ApiResponse.success("密碼已成功重設，請使用新密碼登入"));
     }
+    // ===== 解除被鎖定客戶 =====
+    @PatchMapping("/{customerId}/unlock")
+    public ResponseEntity<Void> unlockCustomer(@PathVariable String customerId) {
+        customerAuthService.unlockCustomer(customerId);
+        return ResponseEntity.ok().build();
+    }
 
     // ===== 一鍵帶入客戶認證測試資料 =====
     @PostMapping("/seed")

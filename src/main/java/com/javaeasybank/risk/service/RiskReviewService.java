@@ -131,6 +131,11 @@ public class RiskReviewService {
                 log.error("[RiskEngine] 自動風控引擎不應直接計算出退回補件狀態 applicationId={}", dto.getBusinessId());
                 throw new IllegalStateException("自動規則審查不支援直接導向退回補件流程");
             }
+            case WARNING -> {
+                // 警告不阻斷流程，僅記錄 log，不 callback 也不建 ReviewTask
+                log.warn("[RiskEngine] 非預期的 WARNING disposition 出現在信用審核流程 businessId={}", dto.getBusinessId());
+                throw new IllegalStateException("信用審核流程不支援 WARNING disposition");
+            }
         };
     }
 
