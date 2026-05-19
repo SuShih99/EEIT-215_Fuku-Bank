@@ -294,11 +294,11 @@
                   >
                     <i class="fa-solid fa-user-check"></i>
                   </button>
-                  <!-- 補件文件 -->
+                  <!-- 上傳文件 -->
                   <button
                     class="btn btn-xs btn-outline"
                     @click="openDocModal(app)"
-                    title="補件文件"
+                    title="上傳文件"
                   >
                     <i class="fa-solid fa-folder"></i>
                   </button>
@@ -361,7 +361,7 @@
     @review-updated="onReviewUpdated"
   />
 
-  <!-- ── 補件文件 Modal ── -->
+  <!-- ── 上傳文件 Modal ── -->
   <LoanDocumentModal
     v-model="docModalOpen"
     :app="docModalApp"

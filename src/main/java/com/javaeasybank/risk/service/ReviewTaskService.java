@@ -56,6 +56,9 @@ public class ReviewTaskService {
         task.setScene(request.getScene());
         task.setStatus("PENDING");
         task.setSubstatus("NEW");
+        if (request.getDocuments() != null && !request.getDocuments().isEmpty()) {
+            task.setAttachments(objectMapper.writeValueAsString(request.getDocuments()));
+        }
 
         Integer priority = switch (eventLog.getRiskLevel()) {
             case HIGH -> 1;
@@ -99,17 +102,18 @@ public class ReviewTaskService {
         };
         task.setStatus(newStatus);
 
-        // RETURNED 不設結案時間
         if (request.getReviewResult() == ReviewResult.RETURNED) {
+            // RETURNED 不設結案時間，保留補件要求供客戶端顯示。
             task.setSubstatus("WAITING_DOCUMENT");
             if (request.getRequiredDocuments() != null && !request.getRequiredDocuments().isEmpty()) {
                 // 序列化存入，例如 ["INCOME_CERT","PROPERTY_CERT"]
                 task.setRequiredDocumentsJson(objectMapper.writeValueAsString(request.getRequiredDocuments()));
-            } else {
-                // APPROVED / REJECTED：結案，清除 substatus
-                task.setSubstatus(null);
-                task.setProcessedAt(LocalDateTime.now());
             }
+        } else {
+            // APPROVED / REJECTED：結案，清除前一次退補件留下的狀態與文件要求。
+            task.setSubstatus(null);
+            task.setRequiredDocumentsJson(null);
+            task.setProcessedAt(LocalDateTime.now());
         }
 
         rtRepos.save(task);

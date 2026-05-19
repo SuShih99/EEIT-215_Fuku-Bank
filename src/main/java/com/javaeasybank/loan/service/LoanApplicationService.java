@@ -23,6 +23,7 @@ import com.javaeasybank.loan.enums.LoanContactStatus;
 import com.javaeasybank.loan.enums.LoanReviewStatus;
 import com.javaeasybank.loan.repository.LoanApplicationRepository;
 import com.javaeasybank.loan.repository.LoanContactLogRepository;
+import com.javaeasybank.loan.repository.LoanDocumentRepository;
 import com.javaeasybank.loan.repository.LoanReviewDetailRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -56,6 +57,8 @@ import java.util.stream.Collectors;
 @Transactional
 public class LoanApplicationService {
 
+    private static final String BATCH_INITIAL = "INITIAL";
+
     @Autowired
     private LoanApplicationRepository laRepo;
 
@@ -64,6 +67,9 @@ public class LoanApplicationService {
 
     @Autowired
     private LoanReviewDetailRepository reviewDetailRepo;
+
+    @Autowired
+    private LoanDocumentRepository documentRepo;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -384,6 +390,18 @@ public class LoanApplicationService {
         dto.setConfirmedPeriod(detail.getConfirmedPeriod());
         dto.setConfirmedRate(detail.getConfirmedRate());
         dto.setCollateralNote(detail.getCollateralNote());
+        if (loan.getDocumentsSubmittedAt() != null) {
+            dto.setDocuments(documentRepo
+                    .findByApplicationIdAndDocumentBatchTypeAndDocumentBatchNoOrderByUploadTimeAsc(
+                            loan.getApplicationId(), BATCH_INITIAL, 0)
+                    .stream()
+                    .map(d -> new LoanDocumentInfoDTO(
+                            d.getDocumentId(),
+                            d.getDocumentType().name(),
+                            d.getFileUrl(),
+                            d.getOriginalName()))
+                    .collect(Collectors.toList()));
+        }
         dto.setEmpId(detail.getEmpId());
         dto.setSubmittedTime(detail.getSubmittedTime());
         return dto;
@@ -432,6 +450,7 @@ public class LoanApplicationService {
                 // 清空先前的送出時間，這樣前端網銀的「補件上傳按鈕」才會再度亮起允許客戶操作！
                 loan.setApplicationStatus(LoanApplicationStatus.RETURNED);
                 loan.setDocumentsSubmittedAt(null);
+                loan.setCurrentSupplementBatchNo(safeBatchNo(loan.getCurrentSupplementBatchNo()) + 1);
                 loan.setUpdateTime(LocalDateTime.now());
 
                 List<String> docs = dto.getRequiredDocuments();
@@ -469,8 +488,9 @@ public class LoanApplicationService {
                 return; //處理完補件通知，直接結束方法
             }
 
-            // 前置狀態：必須是 PENDING_REVIEW
-            if (loan.getApplicationStatus() != LoanApplicationStatus.PENDING_REVIEW) {
+            // 前置狀態：一般送審為 PENDING_REVIEW；退回補件後也允許風控改判核准/拒絕。
+            if (loan.getApplicationStatus() != LoanApplicationStatus.PENDING_REVIEW
+                    && loan.getApplicationStatus() != LoanApplicationStatus.RETURNED) {
                 throw new BusinessException(
                         "申請目前狀態為 " + loan.getApplicationStatus() + "，無法套用風控回調");
             }
@@ -790,6 +810,10 @@ public class LoanApplicationService {
             dto.setConfirmedRate(review.getConfirmedRate());
         });
         return dto;
+    }
+
+    private Integer safeBatchNo(Integer batchNo) {
+        return batchNo == null ? 0 : batchNo;
     }
 
     // Entity → LoanContactLogResponseDTO

@@ -5,6 +5,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 // 送往風控模組的審核請求 DTO
 @Getter
@@ -38,6 +39,9 @@ public class LoanRiskRequestDTO {
 
     // 擔保品備註說明（選填）
     private String collateralNote;
+
+    // 客戶在聯繫階段已送出的申請文件清單（選填）
+    private List<LoanDocumentInfoDTO> documents;
 
     // ── 行員資訊 ─────────────────────────────────────────────────────
 

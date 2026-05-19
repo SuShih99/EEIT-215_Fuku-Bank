@@ -72,4 +72,7 @@ public class LoanApplication {
 
     // 客戶送出補件的時間戳記
     private LocalDateTime documentsSubmittedAt;
+
+    // 目前補件批次；0 代表初始申請文件，1 起代表第 N 次退回補件
+    private Integer currentSupplementBatchNo = 0;
 }

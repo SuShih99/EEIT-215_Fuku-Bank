@@ -290,7 +290,8 @@ public class AccountIntegrationService {
 
         BigDecimal liabilityBefore = zeroIfNull(loanAccount.getLiability());
         if (amount.compareTo(liabilityBefore) > 0
-                && !isFinalPrincipalRepayment(loanAccountNumber, request.getApplicationId(), amount)) {
+                && !isFinalPrincipalRepayment(loanAccountNumber, request.getApplicationId(), amount)
+                && !isFullMultiPeriodRepayment(loanAccountNumber, request.getApplicationId(), amount)) {
             throw new AccountException("LOAN_OVERPAYMENT_NOT_ALLOWED", "還款金額不可大於剩餘負債");
         }
         LoanRepaymentPlan repaymentPlan = validateLoanRepaymentAmount(
@@ -873,6 +874,29 @@ public CreditCardPaymentResponse payCreditCard(String customerId, CreditCardPaym
                         RoundingMode.HALF_UP))
                 .filter(remainingPrincipal -> amount.compareTo(remainingPrincipal) == 0)
                 .isPresent();
+    }
+
+    /**
+     * 允許一次繳清全部剩餘期數（本金＋利息合計），即使總額超過剩餘本金。
+     * 例：剩餘 12 期，totalAmount 加總 = 121,959，但 liability（帳面本金）= 120,000。
+     */
+    private boolean isFullMultiPeriodRepayment(String loanAccountNumber, String applicationId, BigDecimal amount) {
+        return loanAccountRepository.findByAccountNumber(loanAccountNumber)
+                .filter(loanAccount -> applicationId == null
+                        || applicationId.isBlank()
+                        || applicationId.trim().equals(loanAccount.getApplicationId()))
+                .map(loanAccount -> {
+                    List<LoanRepayment> pending =
+                            loanRepaymentRepository.findByAccountIdAndRepaymentStatusIn(
+                                    loanAccount.getAccountId(),
+                                    List.of(LoanRepaymentStatus.SCHEDULED, LoanRepaymentStatus.OVERDUE));
+                    BigDecimal totalDue = pending.stream()
+                            .map(rp -> zeroIfNull(rp.getTotalAmount()))
+                            .reduce(BigDecimal.ZERO, BigDecimal::add)
+                            .setScale(Currency.TWD.getDecimalPlaces(), RoundingMode.HALF_UP);
+                    return amount.compareTo(totalDue) == 0;
+                })
+                .orElse(false);
     }
 
     private BigDecimal normalizePositiveAmount(BigDecimal amount, String label) {

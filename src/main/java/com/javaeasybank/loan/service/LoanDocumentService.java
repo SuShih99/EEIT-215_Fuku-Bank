@@ -28,6 +28,9 @@ import java.util.stream.Collectors;
 @Transactional
 public class LoanDocumentService {
 
+    private static final String BATCH_INITIAL = "INITIAL";
+    private static final String BATCH_SUPPLEMENT = "SUPPLEMENT";
+
     @Autowired
     private LoanDocumentRepository documentRepo;
 
@@ -58,13 +61,21 @@ public class LoanDocumentService {
 
         // 已送出補件後不可再上傳
         if (loan.getDocumentsSubmittedAt() != null) {
-            throw new BusinessException("補件已送出，如需補充請聯繫行員");
+            throw new BusinessException("文件已送出，如需補充請聯繫行員");
+        }
+        if (loan.getApplicationStatus() != LoanApplicationStatus.IN_CONTACT
+                && loan.getApplicationStatus() != LoanApplicationStatus.RETURNED) {
+            throw new BusinessException("此申請目前狀態不可上傳文件");
         }
 
-        // 數量上限：每筆申請最多 5 份文件
-        long existingCount = documentRepo.countByApplicationId(applicationId);
+        String batchType = resolveWritableBatchType(loan);
+        Integer batchNo = resolveWritableBatchNo(loan);
+
+        // 數量上限：每批次最多 5 份文件
+        long existingCount = documentRepo.countByApplicationIdAndDocumentBatchTypeAndDocumentBatchNo(
+                applicationId, batchType, batchNo);
         if (existingCount >= 5) {
-            throw new BusinessException("每筆申請最多上傳 5 份文件，目前已達上限");
+            throw new BusinessException("每批次最多上傳 5 份文件，目前已達上限");
         }
 
         LoanDocumentType type;
@@ -84,6 +95,8 @@ public class LoanDocumentService {
         doc.setOriginalName(file.getOriginalFilename());
         doc.setUploadedBy(customerId);
         doc.setUploadTime(LocalDateTime.now());
+        doc.setDocumentBatchType(batchType);
+        doc.setDocumentBatchNo(batchNo);
         documentRepo.save(doc);
 
         log.info("[Document] 上傳完成 documentId={} applicationId={}", doc.getDocumentId(), applicationId);
@@ -100,22 +113,39 @@ public class LoanDocumentService {
         if (!loan.getCustomerId().equals(customerId)) {
             throw new BusinessException("無權操作此申請");
         }
-        if (documentRepo.countByApplicationId(applicationId) == 0) {
+        String batchType = resolveWritableBatchType(loan);
+        Integer batchNo = resolveWritableBatchNo(loan);
+        if (documentRepo.countByApplicationIdAndDocumentBatchTypeAndDocumentBatchNo(applicationId, batchType, batchNo) == 0) {
             throw new BusinessException("尚未上傳任何文件，無法送出");
         }
         if (loan.getDocumentsSubmittedAt() != null) {
             throw new BusinessException("補件已送出，如需補充請聯繫行員");
         }
-        if (loan.getApplicationStatus() != LoanApplicationStatus.RETURNED) {
-            throw new BusinessException("此申請目前不是退回補件狀態，無法送出補件");
+        LoanApplicationStatus status = loan.getApplicationStatus();
+        if (status != LoanApplicationStatus.IN_CONTACT && status != LoanApplicationStatus.RETURNED) {
+            throw new BusinessException("此申請目前狀態不可送出文件");
         }
 
-        loan.setApplicationStatus(LoanApplicationStatus.PENDING_REVIEW);
-        loan.setDocumentsSubmittedAt(LocalDateTime.now());
+        boolean supplement = status == LoanApplicationStatus.RETURNED;
+        LocalDateTime submittedAt = LocalDateTime.now();
+        List<LoanDocument> currentBatchDocs = documentRepo
+                .findByApplicationIdAndDocumentBatchTypeAndDocumentBatchNoOrderByUploadTimeAsc(
+                        applicationId, batchType, batchNo);
+        currentBatchDocs.forEach(doc -> doc.setSubmittedAt(submittedAt));
+        documentRepo.saveAll(currentBatchDocs);
+        if (supplement) {
+            loan.setApplicationStatus(LoanApplicationStatus.PENDING_REVIEW);
+        }
+        loan.setDocumentsSubmittedAt(submittedAt);
         loanApplicationRepo.save(loan);
-        log.info("[Document] 補件送出 applicationId={} customerId={}", applicationId, customerId);
+        log.info("[Document] 文件送出 applicationId={} customerId={} status={}", applicationId, customerId, status);
 
-        // 非同步通知風控模組（失敗不影響送出結果）
+        if (!supplement) {
+            return;
+        }
+
+        // 退回補件送出後通知風控模組（失敗不影響送出結果）。
+        // 風控後台審核不做批次隔離，需看見此申請所有已上傳文件。
         try {
             List<LoanDocumentInfoDTO> docInfos = documentRepo
                     .findByApplicationIdOrderByUploadTimeAsc(applicationId)
@@ -150,6 +180,11 @@ public class LoanDocumentService {
         if (loan.getDocumentsSubmittedAt() != null) {
             throw new BusinessException("補件已送出，如需變更請聯繫行員");
         }
+        String batchType = resolveWritableBatchType(loan);
+        Integer batchNo = resolveWritableBatchNo(loan);
+        if (!batchType.equals(doc.getDocumentBatchType()) || !batchNo.equals(doc.getDocumentBatchNo())) {
+            throw new BusinessException("只能刪除目前批次的文件");
+        }
 
         // 刪除實體檔案（失敗不中斷，僅記錄警告）
         try {
@@ -172,7 +207,9 @@ public class LoanDocumentService {
         if (!loan.getCustomerId().equals(customerId)) {
             throw new BusinessException("無權存取此申請的文件");
         }
-        return documentRepo.findByApplicationIdOrderByUploadTimeAsc(applicationId)
+        BatchScope scope = resolveVisibleBatch(loan);
+        return documentRepo.findByApplicationIdAndDocumentBatchTypeAndDocumentBatchNoOrderByUploadTimeAsc(
+                        applicationId, scope.batchType(), scope.batchNo())
                 .stream()
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
@@ -187,7 +224,9 @@ public class LoanDocumentService {
         if (loan.getDocumentsSubmittedAt() == null) {
             return java.util.Collections.emptyList();
         }
-        return documentRepo.findByApplicationIdOrderByUploadTimeAsc(applicationId)
+        BatchScope scope = resolveVisibleBatch(loan);
+        return documentRepo.findByApplicationIdAndDocumentBatchTypeAndDocumentBatchNoOrderByUploadTimeAsc(
+                        applicationId, scope.batchType(), scope.batchNo())
                 .stream()
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
@@ -212,6 +251,38 @@ public class LoanDocumentService {
         dto.setOriginalName(doc.getOriginalName());
         dto.setUploadedBy(doc.getUploadedBy());
         dto.setUploadTime(doc.getUploadTime());
+        dto.setDocumentBatchType(doc.getDocumentBatchType());
+        dto.setDocumentBatchNo(doc.getDocumentBatchNo());
+        dto.setSubmittedAt(doc.getSubmittedAt());
         return dto;
+    }
+
+    private String resolveWritableBatchType(LoanApplication loan) {
+        return switch (loan.getApplicationStatus()) {
+            case IN_CONTACT -> BATCH_INITIAL;
+            case RETURNED -> BATCH_SUPPLEMENT;
+            default -> throw new BusinessException("此申請目前狀態不可上傳文件");
+        };
+    }
+
+    private Integer resolveWritableBatchNo(LoanApplication loan) {
+        return loan.getApplicationStatus() == LoanApplicationStatus.RETURNED
+                ? safeBatchNo(loan.getCurrentSupplementBatchNo())
+                : 0;
+    }
+
+    private BatchScope resolveVisibleBatch(LoanApplication loan) {
+        if (loan.getApplicationStatus() == LoanApplicationStatus.RETURNED
+                || safeBatchNo(loan.getCurrentSupplementBatchNo()) > 0) {
+            return new BatchScope(BATCH_SUPPLEMENT, safeBatchNo(loan.getCurrentSupplementBatchNo()));
+        }
+        return new BatchScope(BATCH_INITIAL, 0);
+    }
+
+    private Integer safeBatchNo(Integer batchNo) {
+        return batchNo == null ? 0 : batchNo;
+    }
+
+    private record BatchScope(String batchType, Integer batchNo) {
     }
 }

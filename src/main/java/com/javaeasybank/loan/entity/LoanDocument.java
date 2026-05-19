@@ -39,4 +39,13 @@ public class LoanDocument {
 
     // 文件上傳時間，由 LoanDocumentService 寫入當下時間
     private LocalDateTime uploadTime;
+
+    // INITIAL = 聯繫階段申請文件；SUPPLEMENT = 退回補件文件
+    private String documentBatchType;
+
+    // INITIAL 固定 0；SUPPLEMENT 由 LoanApplication.currentSupplementBatchNo 決定
+    private Integer documentBatchNo;
+
+    // 本批次文件送出時間；null = 草稿可編輯
+    private LocalDateTime submittedAt;
 }

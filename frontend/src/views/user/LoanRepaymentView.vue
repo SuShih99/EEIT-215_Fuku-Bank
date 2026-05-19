@@ -110,26 +110,53 @@
             </div>
           </div>
 
-          <!-- 還款金額 -->
+          <!-- 繳款期數選擇 -->
           <div class="form-group">
-            <label class="form-label">還款金額 <span class="req">*</span></label>
-            <div class="amount-row">
-              <input
-                type="number"
-                v-model.number="form.amount"
-                class="form-input"
-                min="1"
-                step="1"
-                placeholder="輸入金額"
-              />
-              <button class="btn-preset" @click="fillCurrentRepaymentAmount">
-                填入月繳金額
-              </button>
+            <label class="form-label">繳款期數 <span class="req">*</span></label>
+            <div v-if="unpaidRepayments.length === 0" class="state-inline muted">
+              目前無待繳期數
             </div>
-            <p class="form-hint">
-              月繳金額 <strong>$ {{ fmt(selectedLoan.monthlyPayment) }}</strong>；
-              剩餘本金 <strong>$ {{ fmt(selectedLoan.remainingPrincipal) }}</strong>
-            </p>
+            <div v-else class="period-selector">
+              <button
+                class="period-btn"
+                :disabled="periodCount <= 1"
+                @click="periodCount > 1 && periodCount--"
+              >−</button>
+              <span class="period-count">{{ periodCount }} 期</span>
+              <button
+                class="period-btn"
+                :disabled="periodCount >= unpaidRepayments.length"
+                @click="periodCount < unpaidRepayments.length && periodCount++"
+              >+</button>
+              <button
+                v-if="unpaidRepayments.length > 1"
+                class="btn-preset"
+                @click="periodCount = unpaidRepayments.length"
+              >全額清償</button>
+            </div>
+            <div class="amount-display">
+              <div class="amount-breakdown-detail">
+                <div class="amount-breakdown-row">
+                  <span class="amount-breakdown-label">償還本金</span>
+                  <span class="amount-breakdown-num">$ {{ fmt(paymentPrincipal) }}</span>
+                </div>
+                <div class="amount-breakdown-row">
+                  <span class="amount-breakdown-label">利息</span>
+                  <span class="amount-breakdown-num">$ {{ fmt(paymentInterest) }}</span>
+                </div>
+                <div class="amount-breakdown-divider"></div>
+                <div class="amount-breakdown-row amount-total-row">
+                  <span class="amount-label">本次應繳金額</span>
+                  <span class="amount-value">$ {{ fmt(paymentAmount) }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="amount-breakdown" v-if="unpaidRepayments.length > 0">
+              <span v-for="(rp, i) in unpaidRepayments.slice(0, periodCount)" :key="rp.repaymentId" class="breakdown-item">
+                第 {{ rp.periodIndex }} 期 ${{ fmt(rp.totalAmount) }}
+                <span v-if="i < periodCount - 1"> ＋ </span>
+              </span>
+            </div>
           </div>
 
           <!-- 備註 -->
@@ -254,10 +281,32 @@ const currentRepayment = ref(null)
 const debitAccounts = ref([])
 const debitLoading  = ref(false)
 
-const form = ref({ fromAccountNumber: '', amount: null, note: '' })
+const form = ref({ fromAccountNumber: '', note: '' })
 const submitting  = ref(false)
 const submitError = ref('')
 const lastResult  = ref(null)
+
+// ── 待繳期數清單（SCHEDULED + OVERDUE，依 periodIndex 排序）──
+const unpaidRepayments = ref([])
+// 本次欲繳期數（1 ～ unpaidRepayments.length）
+const periodCount = ref(1)
+
+// ── 本次應繳金額 = 前 N 期 totalAmount 加總（含利息，完整整期）──
+const paymentAmount = computed(() => {
+  const periods = unpaidRepayments.value.slice(0, periodCount.value)
+  if (periods.length === 0) return 0
+  return Math.round(periods.reduce((sum, rp) => sum + Number(rp.totalAmount || 0), 0))
+})
+
+// ── 本金 / 利息 拆分（供顯示用）──
+const paymentPrincipal = computed(() =>
+  Math.round(unpaidRepayments.value.slice(0, periodCount.value)
+    .reduce((sum, rp) => sum + Number(rp.principalPortion || 0), 0))
+)
+const paymentInterest = computed(() =>
+  Math.round(unpaidRepayments.value.slice(0, periodCount.value)
+    .reduce((sum, rp) => sum + Number(rp.interestPortion || 0), 0))
+)
 
 const history        = ref([])
 const historyLoading = ref(false)
@@ -289,24 +338,12 @@ function fmtDateTime(d) {
   })
 }
 
-function payableAmountForCurrentPeriod() {
-  if (!currentRepayment.value?.totalAmount) return null
-  const scheduledAmount = Number(currentRepayment.value.totalAmount)
-  const remainingPrincipal = Number(selectedLoan.value?.remainingPrincipal || 0)
-  if (remainingPrincipal > 0 && remainingPrincipal < scheduledAmount) {
-    return Math.round(remainingPrincipal)
-  }
-  return Math.round(scheduledAmount)
-}
-
 // ── 可送出條件 ──
 const canSubmit = computed(() =>
-  form.value.fromAccountNumber &&
-  selectedLoan.value?.accountNumber &&
-  form.value.amount > 0 &&
-  (!payableAmountForCurrentPeriod() || Number(form.value.amount) >= payableAmountForCurrentPeriod()) &&
-  Number(form.value.amount) <= Number(selectedLoan.value?.remainingPrincipal || 0) &&
-  selectedLoan.value &&
+  !!form.value.fromAccountNumber &&
+  !!selectedLoan.value?.accountNumber &&
+  !!currentRepayment.value &&       // 有待繳期數
+  paymentAmount.value > 0 &&
   !submitting.value
 )
 
@@ -339,8 +376,6 @@ async function loadDebitAccounts() {
 // ── 選取貸款 ──
 async function selectLoan(acc) {
   selectedLoan.value = acc
-  // 預填月繳金額
-  form.value.amount = acc.monthlyPayment ? Math.round(Number(acc.monthlyPayment)) : null
   form.value.note   = ''
   submitError.value = ''
   lastResult.value  = null
@@ -355,25 +390,16 @@ async function loadCurrentRepaymentAmount() {
   try {
     const res = await api.get(`/api/loan-accounts/${selectedLoan.value.accountId}/repayments`, auth())
     const repayments = res.data.data || []
-    currentRepayment.value = repayments
+    const unpaid = repayments
       .filter(rp => rp.repaymentStatus === 'SCHEDULED' || rp.repaymentStatus === 'OVERDUE')
-      .sort((a, b) => Number(a.periodIndex) - Number(b.periodIndex))[0] || null
-    const payableAmount = payableAmountForCurrentPeriod()
-    if (payableAmount != null) {
-      form.value.amount = payableAmount
-    } else {
-      form.value.amount = null
-    }
+      .sort((a, b) => Number(a.periodIndex) - Number(b.periodIndex))
+    unpaidRepayments.value = unpaid
+    currentRepayment.value = unpaid[0] || null
+    periodCount.value = 1
   } catch {
+    unpaidRepayments.value = []
     currentRepayment.value = null
-    form.value.amount = null
-  }
-}
-
-function fillCurrentRepaymentAmount() {
-  const payableAmount = payableAmountForCurrentPeriod()
-  if (payableAmount != null) {
-    form.value.amount = payableAmount
+    periodCount.value = 1
   }
 }
 
@@ -386,7 +412,7 @@ async function submitRepayment() {
       applicationId:     selectedLoan.value.applicationId,   // 讓 Loan 模組同步更新進度
       loanAccountNumber: selectedLoan.value.accountNumber,
       fromAccountNumber: form.value.fromAccountNumber,
-      amount:            form.value.amount,
+      amount:            paymentAmount.value,
       note:              form.value.note || null,
     }
     const res = await api.post('/api/customer/loan-repayments', body, auth())
@@ -407,16 +433,19 @@ async function submitRepayment() {
 // ── 還款成功後重置表單 ──
 function afterSuccess() {
   lastResult.value  = null
-  loadCurrentRepaymentAmount()
+  periodCount.value = 1
   form.value.note   = ''
+  loadCurrentRepaymentAmount()
 }
 
 // ── 取消 / 重置 ──
 function reset() {
   selectedLoan.value = null
   currentRepayment.value = null
+  unpaidRepayments.value = []
+  periodCount.value = 1
   debitAccounts.value = []
-  form.value = { fromAccountNumber: '', amount: null, note: '' }
+  form.value = { fromAccountNumber: '', note: '' }
   submitError.value = ''
   lastResult.value  = null
   history.value     = []
@@ -628,10 +657,42 @@ onMounted(async () => {
 .form-input:focus { outline: none; border-color: var(--primary); }
 .form-hint { font-size: 12px; color: var(--muted-2); margin: 0; }
 
-.amount-row { display: flex; gap: 10px; align-items: stretch; }
-.amount-row .form-input { flex: 1; }
+/* ── 期數選擇器 ── */
+.period-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.period-btn {
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.period-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+.period-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.period-count {
+  min-width: 48px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
 .btn-preset {
   padding: 0 14px;
+  height: 34px;
   border: 1.5px solid var(--border);
   border-radius: 9px;
   background: var(--surface-2);
@@ -643,6 +704,56 @@ onMounted(async () => {
   transition: all 0.15s;
 }
 .btn-preset:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ── 金額顯示 ── */
+.amount-display {
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  margin-top: 2px;
+}
+.amount-breakdown-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.amount-breakdown-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.amount-breakdown-label {
+  font-size: 12px;
+  color: var(--muted-2);
+}
+.amount-breakdown-num {
+  font-size: 13px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--muted-2);
+}
+.amount-breakdown-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 2px 0;
+}
+.amount-total-row { margin-top: 2px; }
+.amount-label { font-size: 13px; color: var(--ink); font-weight: 700; }
+.amount-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary);
+  font-family: 'IBM Plex Mono', monospace;
+}
+.amount-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 4px;
+  font-size: 11px;
+  color: var(--muted-2);
+  margin-top: 4px;
+}
+.breakdown-item { white-space: nowrap; }
 
 /* ── 扣款帳戶 ── */
 .debit-list { display: flex; flex-direction: column; gap: 8px; }

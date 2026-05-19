@@ -31,4 +31,8 @@ public class LoanDocumentResponseDTO {
 
     // 文件上傳時間
     private LocalDateTime uploadTime;
+
+    private String documentBatchType;
+    private Integer documentBatchNo;
+    private LocalDateTime submittedAt;
 }

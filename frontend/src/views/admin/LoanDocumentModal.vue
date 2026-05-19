@@ -9,7 +9,7 @@
             <div class="header-left">
               <span class="modal-icon"><i class="fa-solid fa-folder"></i></span>
               <div>
-                <div class="modal-title">補件文件</div>
+                <div class="modal-title">上傳文件</div>
                 <div class="modal-sub">
                   <span class="id-chip">{{ app?.applicationId }}</span>
                   <span class="applicant-hint">
@@ -35,7 +35,7 @@
             <!-- Empty -->
             <div v-else-if="docs.length === 0" class="doc-empty">
               <div class="empty-icon"><i class="fa-solid fa-inbox"></i></div>
-              <p>客戶尚未送出補件</p>
+              <p>目前尚未上傳文件</p>
             </div>
 
             <!-- Document list -->

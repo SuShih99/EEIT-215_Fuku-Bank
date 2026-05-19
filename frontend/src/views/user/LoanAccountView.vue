@@ -948,7 +948,8 @@ onMounted(loadAccounts)
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: transparent;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
   justify-content: center;
