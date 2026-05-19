@@ -24,4 +24,6 @@ public interface CustomerAuthService {
 
     // === 一鍵帶入客戶認證測試資料 ===
     void seedAuthTestData();
+
+    void unlockCustomer(String customerId);
 }

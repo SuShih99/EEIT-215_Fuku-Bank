@@ -13,11 +13,13 @@
           allow-clear
           @press-enter="handleSearch"
         >
-          <template #prefix><SearchOutlined style="color: #bfbfbf" /></template>
+          <template #prefix>
+            <SearchOutlined style="color: #bfbfbf"/>
+          </template>
         </a-input>
         <a-button type="primary" class="rounded-btn" @click="handleSearch">查詢</a-button>
         <a-button class="rounded-btn btn-ghost" @click="handleClear">清除</a-button>
-        <a-button type="primary" class="rounded-btn" @click="goCreate"> 新增客戶 </a-button>
+        <a-button type="primary" class="rounded-btn" @click="goCreate"> 新增客戶</a-button>
       </div>
     </div>
 
@@ -86,8 +88,8 @@
               }}
             </span>
             <span class="secondary-text">{{
-              displayValue(record.latestAccountApplicationNo)
-            }}</span>
+                displayValue(record.latestAccountApplicationNo)
+              }}</span>
           </div>
         </template>
         <template v-else-if="column.key === 'status'">
@@ -101,7 +103,7 @@
             <a-button type="link" class="action-btn edit-btn" @click="openEditModal(record)">
               編輯
             </a-button>
-            <a-divider type="vertical" />
+            <a-divider type="vertical"/>
 
             <template v-if="String(record.status || '').toUpperCase() === 'LOCKED'">
               <a-button
@@ -298,16 +300,16 @@
           <h4>識別資料</h4>
           <div class="edit-grid">
             <a-form-item label="Customer ID">
-              <a-input :value="editForm.customerId" disabled />
+              <a-input :value="editForm.customerId" disabled/>
             </a-form-item>
             <a-form-item label="CIF">
-              <a-input :value="editForm.cif" disabled />
+              <a-input :value="editForm.cif" disabled/>
             </a-form-item>
             <a-form-item label="身分證字號">
-              <a-input v-model:value="editForm.idNumber" placeholder="請輸入身分證字號" />
+              <a-input v-model:value="editForm.idNumber" placeholder="請輸入身分證字號"/>
             </a-form-item>
             <a-form-item label="姓名">
-              <a-input v-model:value="editForm.name" placeholder="請輸入姓名" />
+              <a-input v-model:value="editForm.name" placeholder="請輸入姓名"/>
             </a-form-item>
             <a-form-item label="生日">
               <a-date-picker
@@ -334,7 +336,7 @@
               </a-select>
             </a-form-item>
             <a-form-item label="大頭照 URL">
-              <a-input v-model:value="editForm.avatarUrl" placeholder="請輸入大頭照 URL" />
+              <a-input v-model:value="editForm.avatarUrl" placeholder="請輸入大頭照 URL"/>
             </a-form-item>
           </div>
         </section>
@@ -343,10 +345,10 @@
           <h4>聯絡與地址</h4>
           <div class="edit-grid">
             <a-form-item label="Email">
-              <a-input v-model:value="editForm.email" placeholder="請輸入 Email" />
+              <a-input v-model:value="editForm.email" placeholder="請輸入 Email"/>
             </a-form-item>
             <a-form-item label="電話">
-              <a-input v-model:value="editForm.phone" placeholder="請輸入電話" />
+              <a-input v-model:value="editForm.phone" placeholder="請輸入電話"/>
             </a-form-item>
             <a-form-item label="國籍">
               <a-select v-model:value="editForm.nationality" placeholder="請選擇國籍" allow-clear>
@@ -375,13 +377,13 @@
               </a-select>
             </a-form-item>
             <a-form-item label="通訊地址" class="full-width">
-              <a-input v-model:value="editForm.address" placeholder="請輸入通訊地址" />
+              <a-input v-model:value="editForm.address" placeholder="請輸入通訊地址"/>
             </a-form-item>
             <a-form-item label="戶籍地址" class="full-width">
-              <a-input v-model:value="editForm.registeredAddress" placeholder="請輸入戶籍地址" />
+              <a-input v-model:value="editForm.registeredAddress" placeholder="請輸入戶籍地址"/>
             </a-form-item>
             <a-form-item label="現居地址" class="full-width">
-              <a-input v-model:value="editForm.currentAddress" placeholder="請輸入現居地址" />
+              <a-input v-model:value="editForm.currentAddress" placeholder="請輸入現居地址"/>
             </a-form-item>
           </div>
         </section>
@@ -390,13 +392,13 @@
           <h4>職業與法遵</h4>
           <div class="edit-grid">
             <a-form-item label="職業">
-              <a-input v-model:value="editForm.occupation" placeholder="請輸入職業" />
+              <a-input v-model:value="editForm.occupation" placeholder="請輸入職業"/>
             </a-form-item>
             <a-form-item label="Job / 風控職業">
-              <a-input v-model:value="editForm.job" placeholder="請輸入風控職業欄位" />
+              <a-input v-model:value="editForm.job" placeholder="請輸入風控職業欄位"/>
             </a-form-item>
             <a-form-item label="任職機構">
-              <a-input v-model:value="editForm.employer" placeholder="請輸入任職機構" />
+              <a-input v-model:value="editForm.employer" placeholder="請輸入任職機構"/>
             </a-form-item>
             <a-form-item label="預估月交易量（萬元）">
               <a-input-number
@@ -484,8 +486,8 @@
               <div class="document-meta">
                 <strong>{{ doc.label }}</strong>
                 <small>{{
-                  documentFileNames[doc.field] || documentPathLabel(editForm[doc.field])
-                }}</small>
+                    documentFileNames[doc.field] || documentPathLabel(editForm[doc.field])
+                  }}</small>
               </div>
               <label class="document-upload-btn">
                 選擇檔案
@@ -508,10 +510,10 @@
 
           <div class="edit-grid">
             <a-form-item label="最近申請 ID">
-              <a-input :value="displayValue(editForm.latestAccountApplicationId)" disabled />
+              <a-input :value="displayValue(editForm.latestAccountApplicationId)" disabled/>
             </a-form-item>
             <a-form-item label="最近申請編號">
-              <a-input :value="displayValue(editForm.latestAccountApplicationNo)" disabled />
+              <a-input :value="displayValue(editForm.latestAccountApplicationNo)" disabled/>
             </a-form-item>
             <a-form-item label="最近申請狀態">
               <a-input
@@ -532,7 +534,7 @@
               />
             </a-form-item>
             <a-form-item label="最近申請幣別">
-              <a-input :value="displayValue(editForm.latestAppliedCurrency)" disabled />
+              <a-input :value="displayValue(editForm.latestAppliedCurrency)" disabled/>
             </a-form-item>
             <a-form-item label="最近風險標記">
               <a-input
@@ -544,7 +546,7 @@
               />
             </a-form-item>
             <a-form-item label="建立帳號">
-              <a-input :value="displayValue(editForm.createdAccountNumber)" disabled />
+              <a-input :value="displayValue(editForm.createdAccountNumber)" disabled/>
             </a-form-item>
             <a-form-item label="審核時間">
               <a-input
@@ -566,13 +568,13 @@
               />
             </a-form-item>
             <a-form-item label="同步時間">
-              <a-input :value="displayValue(editForm.accountApplicationSyncedAt)" disabled />
+              <a-input :value="displayValue(editForm.accountApplicationSyncedAt)" disabled/>
             </a-form-item>
             <a-form-item label="建立時間">
-              <a-input :value="displayValue(editForm.createdAt)" disabled />
+              <a-input :value="displayValue(editForm.createdAt)" disabled/>
             </a-form-item>
             <a-form-item label="更新時間">
-              <a-input :value="displayValue(editForm.updatedAt)" disabled />
+              <a-input :value="displayValue(editForm.updatedAt)" disabled/>
             </a-form-item>
           </div>
         </section>
@@ -582,11 +584,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { message, Modal } from 'ant-design-vue'
-import { SearchOutlined } from '@ant-design/icons-vue'
-import { BASE_URL } from '@/api/axios'
+import {ref, reactive, onMounted} from 'vue'
+import {useRouter} from 'vue-router'
+import {message, Modal} from 'ant-design-vue'
+import {SearchOutlined} from '@ant-design/icons-vue'
+import {BASE_URL} from '@/api/axios'
 import {
   getCustomers,
   updateCustomer,
@@ -594,6 +596,7 @@ import {
   activateCustomer,
   uploadCustomerDocument,
 } from '@/api/customer'
+import {unlockCustomer} from "@/api/customerAuth.js";
 
 const router = useRouter()
 
@@ -612,36 +615,36 @@ const genderMap = {
 }
 
 const countryOptions = [
-  { value: 'TW', label: '中華民國（TW）' },
-  { value: 'US', label: '美國（US）' },
-  { value: 'JP', label: '日本（JP）' },
-  { value: 'CN', label: '中國（CN）' },
-  { value: 'HK', label: '香港（HK）' },
-  { value: 'MO', label: '澳門（MO）' },
-  { value: 'KR', label: '韓國（KR）' },
-  { value: 'SG', label: '新加坡（SG）' },
-  { value: 'MY', label: '馬來西亞（MY）' },
-  { value: 'TH', label: '泰國（TH）' },
-  { value: 'VN', label: '越南（VN）' },
-  { value: 'PH', label: '菲律賓（PH）' },
-  { value: 'ID', label: '印尼（ID）' },
-  { value: 'AU', label: '澳洲（AU）' },
-  { value: 'CA', label: '加拿大（CA）' },
-  { value: 'GB', label: '英國（GB）' },
-  { value: 'DE', label: '德國（DE）' },
-  { value: 'FR', label: '法國（FR）' },
-  { value: 'OTHER', label: '其他（OTHER）' },
+  {value: 'TW', label: '中華民國（TW）'},
+  {value: 'US', label: '美國（US）'},
+  {value: 'JP', label: '日本（JP）'},
+  {value: 'CN', label: '中國（CN）'},
+  {value: 'HK', label: '香港（HK）'},
+  {value: 'MO', label: '澳門（MO）'},
+  {value: 'KR', label: '韓國（KR）'},
+  {value: 'SG', label: '新加坡（SG）'},
+  {value: 'MY', label: '馬來西亞（MY）'},
+  {value: 'TH', label: '泰國（TH）'},
+  {value: 'VN', label: '越南（VN）'},
+  {value: 'PH', label: '菲律賓（PH）'},
+  {value: 'ID', label: '印尼（ID）'},
+  {value: 'AU', label: '澳洲（AU）'},
+  {value: 'CA', label: '加拿大（CA）'},
+  {value: 'GB', label: '英國（GB）'},
+  {value: 'DE', label: '德國（DE）'},
+  {value: 'FR', label: '法國（FR）'},
+  {value: 'OTHER', label: '其他（OTHER）'},
 ]
 
 const countryMap = Object.fromEntries(countryOptions.map((option) => [option.value, option.label]))
 
 const annualIncomeOptions = [
-  { value: 50, label: '50 萬元以下' },
-  { value: 100, label: '51 - 100 萬元' },
-  { value: 200, label: '101 - 200 萬元' },
-  { value: 500, label: '201 - 500 萬元' },
-  { value: 1000, label: '501 - 1000 萬元' },
-  { value: 1001, label: '1001 萬元以上' },
+  {value: 50, label: '50 萬元以下'},
+  {value: 100, label: '51 - 100 萬元'},
+  {value: 200, label: '101 - 200 萬元'},
+  {value: 500, label: '201 - 500 萬元'},
+  {value: 1000, label: '501 - 1000 萬元'},
+  {value: 1001, label: '1001 萬元以上'},
 ]
 
 const annualIncomeMap = Object.fromEntries(
@@ -798,7 +801,7 @@ const columns = ref([
     resizable: true,
     sorter: (a, b) => (a.status || '').localeCompare(b.status || ''),
   },
-  { title: '操作', key: 'action', width: 140, fixed: 'right' },
+  {title: '操作', key: 'action', width: 140, fixed: 'right'},
 ])
 
 function handleResizeColumn(w, col) {
@@ -827,7 +830,7 @@ function handleClear() {
 }
 
 function goCreate() {
-  router.push({ name: 'admin-customers-create' })
+  router.push({name: 'admin-customers-create'})
 }
 
 function displayValue(value) {
@@ -878,9 +881,9 @@ const submitLoading = ref(false)
 const editingCustomerId = ref('')
 
 const documentFields = [
-  { field: 'idFrontUrl', label: '身分證正面' },
-  { field: 'idBackUrl', label: '身分證反面' },
-  { field: 'secondIdUrl', label: '第二證件' },
+  {field: 'idFrontUrl', label: '身分證正面'},
+  {field: 'idBackUrl', label: '身分證反面'},
+  {field: 'secondIdUrl', label: '第二證件'},
 ]
 
 const documentFiles = reactive({
@@ -1044,7 +1047,7 @@ async function handleSubmitEdit() {
 }
 
 function clearDocumentSelections() {
-  documentFields.forEach(({ field }) => {
+  documentFields.forEach(({field}) => {
     if (documentPreviewUrls[field]) {
       URL.revokeObjectURL(documentPreviewUrls[field])
     }
@@ -1078,7 +1081,7 @@ function handleDocumentFile(field, event) {
 }
 
 async function uploadPendingDocuments() {
-  for (const { field } of documentFields) {
+  for (const {field} of documentFields) {
     const file = documentFiles[field]
     if (!file) continue
 
@@ -1138,13 +1141,13 @@ function handleDeactivate(record) {
 function handleActivate(record) {
   Modal.confirm({
     title: '確定要重新啟用此客戶嗎？',
-    content: `姓名：${record.name}（${record.customerId}），啟用後該客戶可再次登入。`,
+    content: `姓名：${record.name}（${record.customerId}），解鎖後，客戶即可重新使用原本的密碼嘗試登入，且系統的連續登入失敗計數將重設。`,
     okText: '確定啟用',
     okType: 'primary',
     cancelText: '取消',
     async onOk() {
       try {
-        await activateCustomer(record.customerId)
+        await unlockCustomer(record.customerId)
         message.success(`客戶「${record.name}」已重新啟用`)
         await fetchData()
       } catch (err) {
@@ -1167,7 +1170,7 @@ function handleUnlock(record) {
     async onOk() {
       try {
         // 呼叫啟用 API 進行解鎖
-        await activateCustomer(record.customerId)
+        await unlockCustomer(record.customerId)
         message.success(`客戶「${record.name}」已成功解除鎖定`)
         await fetchData()
       } catch (err) {
@@ -1406,6 +1409,7 @@ onMounted(() => {
   background-color: rgba(82, 196, 26, 0.1);
   color: #389e0d;
 }
+
 .status-active .status-dot {
   background-color: #52c41a;
 }
@@ -1416,6 +1420,7 @@ onMounted(() => {
   background-color: rgba(255, 77, 79, 0.1);
   color: #d9363e;
 }
+
 .status-deactivated .status-dot,
 .status-frozen .status-dot,
 .status-inactive .status-dot {
@@ -1426,6 +1431,7 @@ onMounted(() => {
   background-color: rgba(47, 84, 235, 0.1);
   color: #2f54eb;
 }
+
 .status-locked .status-dot {
   background-color: #2f54eb;
 }
@@ -1434,6 +1440,7 @@ onMounted(() => {
   background-color: rgba(250, 140, 22, 0.1);
   color: #fa8c16;
 }
+
 .status-pending .status-dot {
   background-color: #fa8c16;
 }
@@ -1528,9 +1535,8 @@ onMounted(() => {
   position: relative;
   width: 100%;
   height: 100%;
-  background:
-    radial-gradient(circle at 20% 24%, rgba(197, 180, 150, 0.16), transparent 34%),
-    linear-gradient(180deg, rgba(255, 250, 242, 0.9), rgba(245, 237, 226, 0.65));
+  background: radial-gradient(circle at 20% 24%, rgba(197, 180, 150, 0.16), transparent 34%),
+  linear-gradient(180deg, rgba(255, 250, 242, 0.9), rgba(245, 237, 226, 0.65));
 }
 
 .document-placeholder span {
@@ -1601,9 +1607,8 @@ onMounted(() => {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition:
-    background-color 0.2s ease,
-    transform 0.2s ease;
+  transition: background-color 0.2s ease,
+  transform 0.2s ease;
 }
 
 .document-upload-btn:hover {

@@ -67,3 +67,8 @@ export async function getCustomerDevices() {
 export function revokeCustomerDevice(deviceId) {
   return api.delete(`/api/customer/security/devices/${deviceId}`)
 }
+
+
+export function unlockCustomer(customerId) {
+  return api.patch(`/api/customer/auth/${customerId}/unlock`)
+}

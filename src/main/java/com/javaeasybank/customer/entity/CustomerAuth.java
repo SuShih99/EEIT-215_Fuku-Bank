@@ -63,6 +63,9 @@ public class CustomerAuth {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedAt;
 
+    @Column(name = "unlocked_at")
+    private LocalDateTime unlockedAt;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
