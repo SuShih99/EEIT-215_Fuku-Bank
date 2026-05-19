@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -188,6 +189,15 @@ public class LoanRepaymentService {
             String email = customerService.findEmailByCustomerId(account.getCustomerId());
             if (email != null) {
                 LoanRepayment last = paymentsToApply.get(paymentsToApply.size() - 1);
+                BigDecimal paidTotalAmount = paymentsToApply.stream()
+                        .map(LoanRepayment::getTotalAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal paidPrincipalAmount = paymentsToApply.stream()
+                        .map(LoanRepayment::getPrincipalPortion)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal paidInterestAmount = paymentsToApply.stream()
+                        .map(LoanRepayment::getInterestPortion)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
                 String nextDateStr = account.getNextPaymentDate() != null
                         ? account.getNextPaymentDate().toString() : null;
                 // 下期應繳金額：從還款排程取下一筆的 totalAmount
@@ -201,9 +211,9 @@ public class LoanRepaymentService {
                         account.getAccountId(),
                         last.getPeriodIndex(),
                         account.getConfirmedPeriod(),
-                        last.getTotalAmount(),
-                        last.getPrincipalPortion(),
-                        last.getInterestPortion(),
+                        paidTotalAmount,
+                        paidPrincipalAmount,
+                        paidInterestAmount,
                         nextDateStr,
                         nextAmt);
             } else {

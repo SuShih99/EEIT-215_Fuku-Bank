@@ -23,6 +23,7 @@ CREATE TABLE loan_application
     latest_contact_time     DATETIME2      NULL,
     update_time             DATETIME2      NULL,
     documents_submitted_at  DATETIME2      NULL,
+    current_supplement_batch_no INT NOT NULL DEFAULT 0,
     CONSTRAINT PK_LOAN_APPLICATION PRIMARY KEY (application_id)
 );
 
@@ -128,6 +129,9 @@ CREATE TABLE loan_document
     original_name  NVARCHAR(255) NULL,
     uploaded_by    NVARCHAR(50)  NOT NULL,
     upload_time    DATETIME2     NOT NULL,
+    document_batch_type NVARCHAR(20) NOT NULL DEFAULT 'INITIAL',
+    document_batch_no   INT          NOT NULL DEFAULT 0,
+    submitted_at        DATETIME2    NULL,
 
     CONSTRAINT PK_LOAN_DOCUMENT PRIMARY KEY (document_id),
 

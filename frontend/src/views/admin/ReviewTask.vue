@@ -109,13 +109,14 @@
         <template v-if="column.key === 'scene'">{{ sceneLabel(record.scene) }}</template>
         <template v-if="column.key === 'action'">
           <a-button
-            v-if="record.status !== 'COMPLETED'"
+            v-if="canReviewTask(record)"
             type="link"
             size="small"
             @click.stop="handleReviewAction(record)"
           >審核
           </a-button
           >
+          <span v-else-if="isWaitingDocument(record)" style="color: #b08a42; font-size: 13px">待補件</span>
           <span v-else style="color: #bfbfbf; font-size: 13px">已結案</span>
         </template>
       </template>
@@ -308,10 +309,18 @@
         </a-descriptions>
 
         <!-- 未結案：顯示審核按鈕 -->
-        <div v-if="drawerTask.status !== 'COMPLETED'" style="margin-top: 20px">
+        <div v-if="canReviewTask(drawerTask)" style="margin-top: 20px">
           <a-button type="primary" block @click="handleReviewAction(drawerTask)">
             進行審核
           </a-button>
+        </div>
+        <div v-else-if="isWaitingDocument(drawerTask)" style="margin-top: 20px">
+          <a-alert
+            message="此案件正在等待客戶補件"
+            description="客戶送出補件後，案件會回到可審核狀態。"
+            type="warning"
+            show-icon
+          />
         </div>
       </template>
     </a-drawer>
@@ -595,6 +604,10 @@ function resetForm() {
 }
 
 async function handleReviewAction(task) {
+  if (!canReviewTask(task)) {
+    message.warning(isWaitingDocument(task) ? '此案件正在等待客戶補件' : '此案件不可審核')
+    return
+  }
   // 若已在處理中（自己鎖的）則直接開 Modal
   if (task.status !== 'PROCESSING') {
     try {
@@ -617,6 +630,14 @@ async function handleReviewAction(task) {
   }
   openDecisionModal(currentTask.value)
   drawerVisible.value = false
+}
+
+function isWaitingDocument(task) {
+  return task?.status === 'PENDING' && task?.substatus === 'WAITING_DOCUMENT'
+}
+
+function canReviewTask(task) {
+  return task?.status !== 'COMPLETED' && !isWaitingDocument(task)
 }
 
 function statusLabel(record) {

@@ -182,7 +182,8 @@ public class LoanDocumentService {
         }
         String batchType = resolveWritableBatchType(loan);
         Integer batchNo = resolveWritableBatchNo(loan);
-        if (!batchType.equals(doc.getDocumentBatchType()) || !batchNo.equals(doc.getDocumentBatchNo())) {
+        if (!batchType.equals(safeBatchType(doc.getDocumentBatchType()))
+                || !batchNo.equals(safeBatchNo(doc.getDocumentBatchNo()))) {
             throw new BusinessException("只能刪除目前批次的文件");
         }
 
@@ -251,8 +252,8 @@ public class LoanDocumentService {
         dto.setOriginalName(doc.getOriginalName());
         dto.setUploadedBy(doc.getUploadedBy());
         dto.setUploadTime(doc.getUploadTime());
-        dto.setDocumentBatchType(doc.getDocumentBatchType());
-        dto.setDocumentBatchNo(doc.getDocumentBatchNo());
+        dto.setDocumentBatchType(safeBatchType(doc.getDocumentBatchType()));
+        dto.setDocumentBatchNo(safeBatchNo(doc.getDocumentBatchNo()));
         dto.setSubmittedAt(doc.getSubmittedAt());
         return dto;
     }
@@ -281,6 +282,10 @@ public class LoanDocumentService {
 
     private Integer safeBatchNo(Integer batchNo) {
         return batchNo == null ? 0 : batchNo;
+    }
+
+    private String safeBatchType(String batchType) {
+        return batchType == null ? BATCH_INITIAL : batchType;
     }
 
     private record BatchScope(String batchType, Integer batchNo) {

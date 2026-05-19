@@ -167,9 +167,10 @@ public class ReviewTaskService {
             throw new BusinessException("該案件已結案，無法重新審核");
         }
 
-        //
-        // 只要不是已結案，且沒被別的管理員鎖定，不論原本是 PENDING 還是補件狀態（如 WAITING_DOCUMENT）
-        // 當管理員點擊「開始審核」時，都允許強制覆蓋為當前管理員
+        if ("PENDING".equals(task.getStatus()) && "WAITING_DOCUMENT".equals(task.getSubstatus())) {
+            throw new BusinessException("該案件目前待客戶補件，補件送出前不可開始審核");
+        }
+
         task.setStatus("PROCESSING");
         task.setSubstatus("IN_REVIEW");
         task.setAssignee(currentAuditor);
@@ -181,11 +182,10 @@ public class ReviewTaskService {
 
     @Transactional
     public void attachDocuments(String businessId, List<RiskAttachmentRequest.AttachmentDetail> documents) {
-        ReviewTask task = rtRepos.findFirstByBusinessIdAndStatusOrderByCreateAtDesc(businessId, "PENDING").orElse(null);
-        if (task == null) {
-            log.warn("[ReviewTask] 找不到對應 PENDING 任務，略過補件附件 businessId={}", businessId);
-            return;
-        }
+        ReviewTask task = rtRepos
+                .findFirstByBusinessIdAndStatusAndSubstatusOrderByCreateAtDesc(
+                        businessId, "PENDING", "WAITING_DOCUMENT")
+                .orElseThrow(() -> new BusinessException("找不到待補件審核任務：" + businessId));
         try {
             task.setAttachments(objectMapper.writeValueAsString(documents));
 

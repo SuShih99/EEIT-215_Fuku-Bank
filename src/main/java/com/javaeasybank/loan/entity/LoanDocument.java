@@ -48,4 +48,14 @@ public class LoanDocument {
 
     // 本批次文件送出時間；null = 草稿可編輯
     private LocalDateTime submittedAt;
+
+    @PrePersist
+    private void applyBatchDefaults() {
+        if (documentBatchType == null) {
+            documentBatchType = "INITIAL";
+        }
+        if (documentBatchNo == null) {
+            documentBatchNo = 0;
+        }
+    }
 }

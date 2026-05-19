@@ -15,6 +15,11 @@ public interface ReviewTaskRepository extends JpaRepository<ReviewTask, Long> {
     // 依 businessId 找對應任務（補件通知用）
     Optional<ReviewTask> findFirstByBusinessIdAndStatusOrderByCreateAtDesc(String businessId, String status);
 
+    Optional<ReviewTask> findFirstByBusinessIdAndStatusAndSubstatusOrderByCreateAtDesc(
+            String businessId,
+            String status,
+            String substatus);
+
     @Query("SELECT t FROM ReviewTask t LEFT JOIN FETCH t.riskEventLog WHERE " +
             "(:status IS NULL OR t.status = :status) AND " +
             "(:scene IS NULL OR t.scene = :scene) AND " +
@@ -25,4 +30,3 @@ public interface ReviewTaskRepository extends JpaRepository<ReviewTask, Long> {
             @Param("priority") Integer priority,
             Pageable pageable);
 }
-

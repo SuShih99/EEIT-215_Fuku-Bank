@@ -132,7 +132,7 @@
                 v-if="unpaidRepayments.length > 1"
                 class="btn-preset"
                 @click="periodCount = unpaidRepayments.length"
-              >全額清償</button>
+              >繳清剩餘期數</button>
             </div>
             <div class="amount-display">
               <div class="amount-breakdown-detail">
