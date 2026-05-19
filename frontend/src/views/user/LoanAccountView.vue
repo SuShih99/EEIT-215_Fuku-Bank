@@ -43,10 +43,22 @@
         </button>
       </div>
 
+      <!-- ── 狀態篩選列 ── -->
+      <div v-else class="filter-bar">
+        <button class="filter-btn" :class="{ active: filterStatus === null }"       @click="filterStatus = null">全部</button>
+        <button class="filter-btn" :class="{ active: filterStatus === 'OVERDUE' }"  @click="filterStatus = 'OVERDUE'">逾期</button>
+        <button class="filter-btn" :class="{ active: filterStatus === 'ACTIVE' }"   @click="filterStatus = 'ACTIVE'">還款中</button>
+        <button class="filter-btn" :class="{ active: filterStatus === 'PAID_OFF' }" @click="filterStatus = 'PAID_OFF'">已結清</button>
+      </div>
+
       <!-- ── 帳戶列表 ── -->
-      <div v-else class="account-list">
+      <div v-if="!loading && !error && accounts.length > 0" class="account-list">
+        <div v-if="filteredSortedAccounts.length === 0" class="filter-empty">
+          <i class="fa-solid fa-filter-circle-xmark"></i>
+          <span>目前無符合的帳戶</span>
+        </div>
         <div
-          v-for="acc in accounts"
+          v-for="acc in filteredSortedAccounts"
           :key="acc.accountId"
           class="account-card"
         >
@@ -280,13 +292,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import api from '@/api/axios'
 
 // ── 狀態變數 ──
 const accounts       = ref([])   // 貸款帳戶清單
 const loading        = ref(false)
 const error          = ref('')
+const filterStatus   = ref(null) // null = 全部
 const showModal      = ref(false)
 const modalAccount   = ref(null)
 const repayments     = ref([])   // Modal 中的帳戶還款明細
@@ -316,6 +329,25 @@ const REPAYMENT_STATUS = {
   PAID:      { label: '已繳',   cls: 'rs-paid'      },
   OVERDUE:   { label: '逾期',   cls: 'rs-overdue'   },
 }
+
+// ── 排序 + 篩選 ──
+const filteredSortedAccounts = computed(() => {
+  let list = filterStatus.value
+    ? accounts.value.filter(a => a.accountStatus === filterStatus.value)
+    : [...accounts.value]
+  return list.sort((a, b) => {
+    // 逾期優先
+    if (a.accountStatus === 'OVERDUE' && b.accountStatus !== 'OVERDUE') return -1
+    if (b.accountStatus === 'OVERDUE' && a.accountStatus !== 'OVERDUE') return 1
+    // 已結清排最後
+    if (a.accountStatus === 'PAID_OFF' && b.accountStatus !== 'PAID_OFF') return 1
+    if (b.accountStatus === 'PAID_OFF' && a.accountStatus !== 'PAID_OFF') return -1
+    // 依下次繳款日升冪
+    const da = a.nextPaymentDate ? new Date(a.nextPaymentDate) : new Date('9999-12-31')
+    const db = b.nextPaymentDate ? new Date(b.nextPaymentDate) : new Date('9999-12-31')
+    return da - db
+  })
+})
 
 // ── helper：帳戶狀態 ──
 function statusLabel(st) { return ACCOUNT_STATUS[st]?.label || st }
@@ -517,6 +549,49 @@ onMounted(loadAccounts)
 .sk-line  { height: 14px; width: 100%; }
 .sk-short { height: 12px; width: 55%; }
 @keyframes shimmer { from { opacity: 0.7; } to { opacity: 0.35; } }
+
+/* ── 篩選列（對齊 LoanStatusView .type-filter-group / .type-pill）── */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.filter-btn {
+  padding: 5px 13px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted-2);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  font-family: 'Noto Sans TC', sans-serif;
+}
+.filter-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.filter-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+/* 篩選後無結果 */
+.filter-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 0;
+  color: var(--muted-2);
+  font-size: 14px;
+}
+.filter-empty i { font-size: 28px; }
 
 /* ── 帳戶卡片 ── */
 .account-list { display: flex; flex-direction: column; gap: 18px; }
