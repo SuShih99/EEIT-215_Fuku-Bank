@@ -12,10 +12,18 @@ const keyword = ref('')
 const status = ref(null)
 
 const statusOptions = [
-  { label: 'ACTIVE', value: 'ACTIVE' },
-  { label: 'INACTIVE', value: 'INACTIVE' },
-  { label: 'BLOCKED', value: 'BLOCKED' },
+  { label: '啟用中', value: 'ACTIVE' },
+  { label: '未開卡', value: 'INACTIVE' },
+  { label: '已停卡', value: 'BLOCKED' },
 ]
+
+const cardStatusLabelMap = {
+  ACTIVE: '啟用中',
+  INACTIVE: '未開卡',
+  BLOCKED: '已停卡',
+}
+
+const getCardStatusLabel = (statusValue) => cardStatusLabelMap[statusValue] || statusValue
 const pagination = ref({
   current: 1,
   pageSize: 10,
@@ -238,7 +246,7 @@ onMounted(() => {
         <template v-else-if="column.key === 'status'">
           <div :class="['status-tag', `status-${record.status.toLowerCase()}`]">
             <span class="status-dot"></span>
-            {{ record.status }}
+            {{ getCardStatusLabel(record.status) }}
           </div>
         </template>
 
