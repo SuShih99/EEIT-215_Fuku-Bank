@@ -24,10 +24,16 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/*
- * 負責貸款帳戶相關業務：
- *   - 撥款協調：ACCOUNT 模組確認撥款後，依二次填單資料建立 LoanAccount 紀錄
- *   - 客戶查詢：依 customerId 或 applicationId 查詢帳戶資訊
+/**
+ * 貸款帳戶業務邏輯 Service。
+ *
+ * <p>負責兩大業務：</p>
+ * <ol>
+ *   <li><b>撥款協調</b>：接收帳戶模組（ACCOUNT）的撥款完成通知後，
+ *       依 {@code LoanReviewDetail} 的核准條件建立 {@code LoanAccount}，
+ *       並呼叫 {@code LoanRepaymentService} 預排所有還款期數。</li>
+ *   <li><b>帳戶查詢</b>：提供客戶查詢個人帳戶、行員後台查詢全部帳戶等方法。</li>
+ * </ol>
  */
 @Slf4j
 @Service
@@ -49,17 +55,37 @@ public class LoanAccountService {
     @Autowired
     private LoanRepaymentService loanRepaymentService;
 
-    // ===撥款協調===
+    // ── 撥款協調 ─────────────────────────────────────────────────────
 
     /**
-     * 由 LoanApplicationService.handleStatusCallback 在 ACCOUNT 分支呼叫。
-     * 讀取二次填單核准資料，建立 LoanAccount 並設定還款起算日。
-     * 具備冪等保護：帳戶已存在時直接略過，不拋錯。
+     * 撥款完成後建立貸款帳戶（不帶貸款帳號的多載版本）。
+     *
+     * <p>委派至 {@link #createOnDisbursement(String, String)}，
+     * 帳號欄位設為 {@code null}，待後續由帳戶模組補充。</p>
+     *
+     * @param applicationId 貸款申請識別碼
      */
     public void createOnDisbursement(String applicationId) {
         createOnDisbursement(applicationId, null);
     }
 
+    /**
+     * 撥款完成後建立貸款帳戶（主要邏輯）。
+     *
+     * <p>由 {@code LoanApplicationService.handleStatusCallback} 在
+     * {@code callerModule = "ACCOUNT"} 分支呼叫，執行步驟：</p>
+     * <ol>
+     *   <li>冪等保護：若帳戶已存在則直接略過，防止重複撥款回調建出多筆帳戶。</li>
+     *   <li>讀取 {@code LoanApplication} 與 {@code LoanReviewDetail} 取得核准條件。</li>
+     *   <li>以 {@code AmortizationCalculator} 計算月付金。</li>
+     *   <li>建立並儲存 {@code LoanAccount}，初始狀態為 {@code ACTIVE}。</li>
+     *   <li>呼叫 {@code LoanRepaymentService.createSchedule} 預排所有還款期數。</li>
+     * </ol>
+     *
+     * @param applicationId    貸款申請識別碼
+     * @param loanAccountNumber 帳戶模組產生的貸款帳號（可為 {@code null}）
+     * @throws BusinessException 若申請或二次填單資料不存在
+     */
     public void createOnDisbursement(String applicationId, String loanAccountNumber) {
 
         // 冪等保護：重複回調時不重複建帳
@@ -75,12 +101,12 @@ public class LoanAccountService {
         LoanReviewDetail detail = reviewDetailRepo.findByApplicationId(applicationId)
                 .orElseThrow(() -> new BusinessException("找不到二次填單：" + applicationId));
 
-        BigDecimal principal    = detail.getConfirmedAmount();
-        Integer    periods      = detail.getConfirmedPeriod();
-        BigDecimal annualRate   = detail.getConfirmedRate();
+        BigDecimal principal  = detail.getConfirmedAmount();
+        Integer    periods    = detail.getConfirmedPeriod();
+        BigDecimal annualRate = detail.getConfirmedRate();
         log.info("[Disbursement] Step-B 計算月付金 principal={} annualRate={} periods={}",
                 principal, annualRate, periods);
-        BigDecimal monthlyPmt   = AmortizationCalculator.calcMonthlyPayment(principal, annualRate, periods);
+        BigDecimal monthlyPmt = AmortizationCalculator.calcMonthlyPayment(principal, annualRate, periods);
         log.info("[Disbursement] Step-B 完成 monthlyPmt={}", monthlyPmt);
 
         LocalDate startDate = LocalDate.now();
@@ -107,14 +133,18 @@ public class LoanAccountService {
         log.info("[Disbursement] Step-C 完成 applicationId={}", applicationId);
 
         log.info("[Disbursement] Step-D 預排還款明細 periods={}", periods);
-        // 預排 N 期還款明細
         loanRepaymentService.createSchedule(account);
         log.info("[Disbursement] Step-D 完成 applicationId={}", applicationId);
     }
 
-    // ===客戶查詢===
+    // ── 查詢 ─────────────────────────────────────────────────────────
 
-    // 查詢客戶自己的所有貸款帳戶，按建立時間降序
+    /**
+     * 查詢客戶自己的所有貸款帳戶，按建立時間降序排列。
+     *
+     * @param customerId 客戶內部識別碼
+     * @return 客戶的貸款帳戶清單（不含還款明細）
+     */
     @Transactional(readOnly = true)
     public List<LoanAccountResponseDTO> getMyAccounts(String customerId) {
         return loanAccountRepo.findByCustomerIdOrderByCreateTimeDesc(customerId)
@@ -123,7 +153,12 @@ public class LoanAccountService {
                 .collect(Collectors.toList());
     }
 
-    // 行員端：查全部帳戶（可依 accountStatus 篩選；null 表示不篩選）
+    /**
+     * 行員端查詢全部貸款帳戶，支援依帳戶狀態篩選。
+     *
+     * @param status 帳戶狀態篩選條件；傳入 {@code null} 表示查詢全部
+     * @return 符合條件的貸款帳戶清單
+     */
     @Transactional(readOnly = true)
     public List<LoanAccountResponseDTO> getAllAccounts(LoanAccountStatus status) {
         List<LoanAccount> accounts = (status != null)
@@ -132,7 +167,13 @@ public class LoanAccountService {
         return accounts.stream().map(this::toResponseDTO).collect(Collectors.toList());
     }
 
-    // 依申請編號查單筆帳戶（客戶確認撥款結果用）
+    /**
+     * 依貸款申請編號查詢單筆帳戶，供客戶確認撥款結果使用。
+     *
+     * @param applicationId 貸款申請識別碼
+     * @return 對應的貸款帳戶資訊
+     * @throws BusinessException 若申請尚未建立帳戶（撥款未完成）
+     */
     @Transactional(readOnly = true)
     public LoanAccountResponseDTO getByApplicationId(String applicationId) {
         LoanAccount account = loanAccountRepo.findByApplicationId(applicationId)
@@ -140,7 +181,13 @@ public class LoanAccountService {
         return toResponseDTO(account);
     }
 
-    // 依帳戶 ID 查單筆（客戶端還款時間表的所有權驗證用）
+    /**
+     * 依帳戶 ID 查詢單筆帳戶，供 Controller 層進行所有權驗證。
+     *
+     * @param accountId 貸款帳戶識別碼
+     * @return 對應的貸款帳戶資訊
+     * @throws BusinessException 若帳戶不存在
+     */
     @Transactional(readOnly = true)
     public LoanAccountResponseDTO getAccountById(String accountId) {
         LoanAccount account = loanAccountRepo.findById(accountId)
@@ -148,16 +195,29 @@ public class LoanAccountService {
         return toResponseDTO(account);
     }
 
-    // ===工具方法===
+    // ── 工具方法 ─────────────────────────────────────────────────────
 
-    // 產生格式化 ID（前綴 + yyyyMMddHHmmss + 4 位亂數），與 LoanApplicationService 同規格
+    /**
+     * 產生格式化識別碼：前綴 + {@code yyyyMMddHHmmss} + 4 位隨機數字。
+     * 格式與 {@code LoanApplicationService} 的 ID 產生規格相同。
+     *
+     * @param prefix 識別碼前綴，例如 {@code "LAC"}
+     * @return 格式化的唯一識別碼
+     */
     private String generateId(String prefix) {
-        String timeStr       = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        String randomSuffix  = String.format("%04d", (int) (Math.random() * 10000));
+        String timeStr      = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        String randomSuffix = String.format("%04d", (int) (Math.random() * 10000));
         return prefix + timeStr + randomSuffix;
     }
 
-    // Entity → LoanAccountResponseDTO（不帶還款明細，明細由還款模組負責）
+    /**
+     * 將 {@code LoanAccount} Entity 轉換為 {@code LoanAccountResponseDTO}。
+     * 不帶還款明細（明細由 {@code LoanRepaymentService} 獨立提供）。
+     * 額外查詢 {@code CustomerProfile} 以填入對外顯示的 CIF 欄位。
+     *
+     * @param account 貸款帳戶 Entity
+     * @return 對應的回應 DTO
+     */
     private LoanAccountResponseDTO toResponseDTO(LoanAccount account) {
         LoanAccountResponseDTO dto = new LoanAccountResponseDTO();
         dto.setAccountId(account.getAccountId());

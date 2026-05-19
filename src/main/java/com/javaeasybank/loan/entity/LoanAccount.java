@@ -10,6 +10,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * 貸款帳戶 Entity，對應資料庫 {@code loan_account}。
+ *
+ * <p>在貸款申請進入 {@code DISBURSED} 狀態時由 {@code LoanAccountService} 建立，
+ * 記錄核准條件、還款進度與帳戶狀態。
+ * 每筆申請撥款後對應一個帳戶（一對一關係）。</p>
+ */
 @Entity
 @Table(name = "loan_account")
 @Getter
@@ -17,33 +24,69 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class LoanAccount {
 
+    /** 帳戶唯一識別碼（UUID），作為主鍵。 */
     @Id
-    private String accountId; // 帳戶ID
+    private String accountId;
+
+    /** 貸款帳號（對外識別號，由帳戶模組產生並於撥款回調時帶入）。 */
     private String accountNumber;
 
-    private String applicationId; // 申請編號
-    private String customerId; // 用戶ID
+    /** 關聯的貸款申請識別碼，可追溯原始申請。 */
+    private String applicationId;
 
-    // 撥款條件（從二次填單複製過來）
-    private String applyType; // 貸款種類
-    private Long principalAmount; // 核准撥款金額(本金)
-    private Integer confirmedPeriod; // 還款期數
-    private BigDecimal rate; // 年利率
-    private BigDecimal monthlyPayment; // 每期應繳金額
+    /** 客戶內部識別碼（系統內部使用，不對外顯示）。 */
+    private String customerId;
 
-    // 還款進度
-    private Integer paidPeriods; // 已繳期數（初始為 0）
-    private BigDecimal remainingPrincipal; // 剩餘本金（初始等於 principalAmount）
+    // ── 核准條件（從行員二次填單複製而來）───────────────────────────
 
-    // 日期
-    private LocalDate startDate; // 撥款日（還款起算日）
-    private LocalDate nextPaymentDate; // 下次應繳日
+    /** 貸款種類，例如 {@code "PERSONAL"}（信貸）、{@code "HOUSE"}（房貸）。 */
+    private String applyType;
 
-    // ── 帳戶狀態 ────────────────────────────────────────────────────
+    /** 核准撥款本金（新台幣，單位：元）。 */
+    private Long principalAmount;
+
+    /** 核准還款期數（月）。 */
+    private Integer confirmedPeriod;
+
+    /** 核准年利率（百分比小數，例如 {@code 0.05} 代表 5%）。 */
+    private BigDecimal rate;
+
+    /** 每期（月）應繳總金額，由 {@code AmortizationCalculator} 計算。 */
+    private BigDecimal monthlyPayment;
+
+    // ── 還款進度 ─────────────────────────────────────────────────────
+
+    /** 目前已繳清的期數，初始為 {@code 0}，每次繳款後 +1。 */
+    private Integer paidPeriods;
+
+    /**
+     * 目前尚未還清的本金餘額（新台幣）。
+     * 初始值等於 {@code principalAmount}，每次繳款後依攤還表更新。
+     */
+    private BigDecimal remainingPrincipal;
+
+    // ── 日期 ─────────────────────────────────────────────────────────
+
+    /** 撥款日，同時作為還款起算日（第一期應繳日從此日起算一個月）。 */
+    private LocalDate startDate;
+
+    /** 下一期的應繳截止日，繳款後更新為下一期的 {@code scheduledDate}。 */
+    private LocalDate nextPaymentDate;
+
+    // ── 帳戶狀態 ─────────────────────────────────────────────────────
+
+    /**
+     * 帳戶還款狀態，以字串形式存入 DB，參見 {@code LoanAccountStatus}。
+     * 由 {@code LoanRepaymentScheduler} 依還款紀錄自動更新。
+     */
     @Enumerated(EnumType.STRING)
-    private LoanAccountStatus accountStatus; // account_status
+    private LoanAccountStatus accountStatus;
 
     // ── 時間戳 ──────────────────────────────────────────────────────
-    private LocalDateTime createTime; // create_time
-    private LocalDateTime updateTime; // update_time（每次還款或狀態異動時更新）
+
+    /** 帳戶建立時間（即撥款時間）。 */
+    private LocalDateTime createTime;
+
+    /** 最後更新時間，每次繳款或狀態異動時更新。 */
+    private LocalDateTime updateTime;
 }

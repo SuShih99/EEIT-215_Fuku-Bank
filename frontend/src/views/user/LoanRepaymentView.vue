@@ -361,9 +361,12 @@ async function loadCurrentRepaymentAmount() {
     const payableAmount = payableAmountForCurrentPeriod()
     if (payableAmount != null) {
       form.value.amount = payableAmount
+    } else {
+      form.value.amount = null
     }
   } catch {
     currentRepayment.value = null
+    form.value.amount = null
   }
 }
 
@@ -392,6 +395,7 @@ async function submitRepayment() {
     await loadLoanAccounts()
     const updated = loanAccounts.value.find(a => a.accountId === selectedLoan.value.accountId)
     if (updated) selectedLoan.value = updated
+    await loadCurrentRepaymentAmount()
     await loadHistory()
   } catch (e) {
     submitError.value = e.response?.data?.message || '還款失敗，請確認輸入資料或稍後重試'

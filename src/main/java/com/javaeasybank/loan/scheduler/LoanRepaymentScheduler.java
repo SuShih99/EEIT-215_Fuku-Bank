@@ -21,11 +21,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/*
- * 貸款還款排程批次：
- *   每日 01:00 掃描應繳日已過但仍為 SCHEDULED 的期數，標記為 OVERDUE，
- *   並同步將對應 LoanAccount.accountStatus 升級為 OVERDUE。
- *   同時掃描距應繳日 3 天內的期數，發送繳款到期提醒通知。
+/**
+ * 貸款還款排程批次元件。
+ *
+ * <p>每日 01:00 執行一次，負責兩項任務：</p>
+ * <ol>
+ *   <li><b>逾期標記</b>：掃描應繳日已過但狀態仍為 {@code SCHEDULED} 的期數，
+ *       批次更新為 {@code OVERDUE}，並同步將對應的 {@code LoanAccount.accountStatus}
+ *       從 {@code ACTIVE} 升級為 {@code OVERDUE}，同時寄送逾期通知信給客戶。</li>
+ *   <li><b>到期提醒</b>：掃描距應繳日 1～3 天內的 {@code SCHEDULED} 期數，
+ *       提前寄送繳款到期提醒通知給客戶。</li>
+ * </ol>
  */
 @Slf4j
 @Component
@@ -38,8 +44,19 @@ public class LoanRepaymentScheduler {
     private final CustomerService         customerService;
 
     /**
-     * 逾期掃描 + 到期提醒：每日 01:00 執行
-     * cron = 秒 分 時 日 月 週
+     * 逾期掃描與到期提醒的主排程方法，每日 01:00 自動執行。
+     *
+     * <p>執行流程：</p>
+     * <ol>
+     *   <li>查詢應繳日早於今日且仍為 {@code SCHEDULED} 的期數，批次標記為 {@code OVERDUE}。</li>
+     *   <li>將上述期數所屬的 {@code LoanAccount}（若目前為 {@code ACTIVE}）升級為 {@code OVERDUE}。</li>
+     *   <li>對每筆逾期期數寄送逾期通知 Email 給客戶。</li>
+     *   <li>查詢未來 1～3 天內到期的 {@code SCHEDULED} 期數，寄送到期提醒 Email 給客戶。</li>
+     * </ol>
+     *
+     * <p>整個方法包裹在 {@code @Transactional} 中，
+     * 確保逾期標記與帳戶狀態更新為同一個 DB 事務（原子性）。
+     * Email 發送失敗時僅記錄錯誤日誌，不影響事務提交。</p>
      */
     @Scheduled(cron = "0 0 1 * * *")
     @Transactional
@@ -48,8 +65,8 @@ public class LoanRepaymentScheduler {
         LocalDate today = LocalDate.now();
         log.info("[OverdueScan] 開始掃描 date={}", today);
 
-        // ── 1. 逾期標記 ──────────────────────────────────────────
-        // 應繳日 < 今天 且 仍為 SCHEDULED → 逾期
+        // ── 1. 逾期標記 ──────────────────────────────────────────────
+        // 應繳日 < 今天 且 仍為 SCHEDULED → 標記為 OVERDUE
         List<LoanRepayment> overdues = repaymentRepo
                 .findByScheduledDateBeforeAndRepaymentStatus(today, LoanRepaymentStatus.SCHEDULED);
 
@@ -81,7 +98,7 @@ public class LoanRepaymentScheduler {
             log.info("[OverdueScan] 完成：逾期期數={} 涉及帳戶={}",
                     overdues.size(), accountsToUpdate.size());
 
-            // 逾期通知：每個逾期期數各寄一封
+            // 逾期通知：每個逾期期數各寄一封通知給客戶
             Map<String, LoanAccount> accountMap = loanAccountRepo
                     .findAllById(byAccount.keySet())
                     .stream()
@@ -110,7 +127,7 @@ public class LoanRepaymentScheduler {
             log.info("[OverdueScan] 無逾期期數");
         }
 
-        // ── 2. 到期提醒（距應繳日 1 ~ 3 天內）────────────────────
+        // ── 2. 到期提醒（距應繳日 1 ~ 3 天內）────────────────────────
         LocalDate reminderStart = today.plusDays(1);
         LocalDate reminderEnd   = today.plusDays(3);
 
@@ -131,6 +148,7 @@ public class LoanRepaymentScheduler {
                 .stream()
                 .collect(Collectors.toMap(LoanAccount::getAccountId, a -> a));
 
+        // 對每筆即將到期的期數寄送提醒 Email
         upcoming.forEach(rp -> {
             LoanAccount account = upcomingAccountMap.get(rp.getAccountId());
             if (account == null) return;

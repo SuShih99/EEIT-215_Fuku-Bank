@@ -21,10 +21,18 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/*
- * 補件文件管理（預留，補件功能暫未啟用）
- *   - 客戶上傳補件（MultipartFile → FileStorageService → 寫 loan_document）
- *   - 查詢指定申請的文件清單
+/**
+ * 補件文件管理業務邏輯 Service。
+ *
+ * <p>負責客戶補件流程中的文件生命週期管理：</p>
+ * <ul>
+ *   <li><b>上傳</b>：驗證所有權與數量上限，透過 {@code FileStorageService} 儲存實體檔案，
+ *       並寫入 {@code LoanDocument} 後設資訊。</li>
+ *   <li><b>送出</b>：標記補件已全數備妥（寫入 {@code documentsSubmittedAt}），
+ *       並以 best-effort 方式通知風控模組。</li>
+ *   <li><b>刪除</b>：驗證所有權及送出狀態，清除實體檔案與 DB 記錄。</li>
+ *   <li><b>查詢</b>：客戶端驗證所有權；行員端需客戶送出後才顯示。</li>
+ * </ul>
  */
 @Slf4j
 @Service
@@ -43,8 +51,26 @@ public class LoanDocumentService {
     @Autowired
     private LoanRiskClient loanRiskClient;
 
-    // ===客戶上傳補件===
+    // ── 上傳 ─────────────────────────────────────────────────────────
 
+    /**
+     * 客戶上傳單份補件文件。
+     *
+     * <p>執行前檢查：</p>
+     * <ol>
+     *   <li>申請必須存在，且 {@code customerId} 必須與申請所有人一致。</li>
+     *   <li>補件尚未送出（{@code documentsSubmittedAt == null}）。</li>
+     *   <li>該申請已上傳文件數量未達上限（每筆最多 5 份）。</li>
+     *   <li>{@code documentType} 字串必須對應合法的 {@code LoanDocumentType} 列舉值。</li>
+     * </ol>
+     *
+     * @param applicationId 申請識別碼
+     * @param customerId    上傳者的客戶識別碼（從 JWT 取得）
+     * @param documentType  文件類型字串（{@code LoanDocumentType} 的 name()）
+     * @param file          上傳的文件檔案
+     * @return 上傳後的文件資訊 DTO
+     * @throws BusinessException 若驗證失敗
+     */
     public LoanDocumentResponseDTO upload(String applicationId,
                                           String customerId,
                                           String documentType,
@@ -92,8 +118,20 @@ public class LoanDocumentService {
         return toResponseDTO(doc);
     }
 
-    // ===客戶送出補件===
+    // ── 送出補件 ─────────────────────────────────────────────────────
 
+    /**
+     * 客戶確認補件已全數備妥並正式送出。
+     *
+     * <p>寫入 {@code LoanApplication.documentsSubmittedAt}，
+     * 行員後台在此之後才可查看並審核文件。
+     * 送出後以 best-effort 方式呼叫 {@code LoanRiskClient.attachDocuments}
+     * 通知風控模組，失敗不影響送出主流程。</p>
+     *
+     * @param applicationId 申請識別碼
+     * @param customerId    操作者的客戶識別碼
+     * @throws BusinessException 若所有權驗證失敗、尚未上傳文件或補件已送出
+     */
     public void submitDocuments(String applicationId, String customerId) {
         LoanApplication loan = loanApplicationRepo.findById(applicationId)
                 .orElseThrow(() -> new BusinessException("找不到申請編號：" + applicationId));
@@ -129,8 +167,18 @@ public class LoanDocumentService {
         }
     }
 
-    // ===客戶刪除補件===
+    // ── 刪除 ─────────────────────────────────────────────────────────
 
+    /**
+     * 客戶刪除自己上傳的補件文件（補件送出前才允許）。
+     *
+     * <p>先刪除 {@code FileStorageService} 的實體檔案（失敗僅記錄警告，不中斷），
+     * 再移除 DB 記錄。</p>
+     *
+     * @param documentId 文件識別碼
+     * @param customerId 操作者的客戶識別碼
+     * @throws BusinessException 若文件不存在、所有權驗證失敗或補件已送出
+     */
     public void delete(String documentId, String customerId) {
         LoanDocument doc = documentRepo.findById(documentId)
                 .orElseThrow(() -> new BusinessException("找不到文件：" + documentId));
@@ -147,7 +195,7 @@ public class LoanDocumentService {
             throw new BusinessException("補件已送出，如需變更請聯繫行員");
         }
 
-        // 刪除實體檔案（失敗不中斷，僅記錄）
+        // 刪除實體檔案（失敗不中斷，僅記錄警告）
         try {
             fileStorageService.delete(doc.getFileUrl());
         } catch (Exception e) {
@@ -158,9 +206,16 @@ public class LoanDocumentService {
         log.info("[Document] 刪除完成 documentId={}", documentId);
     }
 
-    // ===查詢===
+    // ── 查詢 ─────────────────────────────────────────────────────────
 
-    // 客戶端：驗證申請屬於該客戶才可查
+    /**
+     * 客戶端查詢補件文件清單（需驗證所有權）。
+     *
+     * @param applicationId 申請識別碼
+     * @param customerId    查詢者的客戶識別碼
+     * @return 文件清單，依上傳時間升序排列
+     * @throws BusinessException 若申請不存在或所有權驗證失敗
+     */
     @Transactional(readOnly = true)
     public List<LoanDocumentResponseDTO> getByApplicationId(String applicationId, String customerId) {
         LoanApplication loan = loanApplicationRepo.findById(applicationId)
@@ -174,7 +229,16 @@ public class LoanDocumentService {
                 .collect(Collectors.toList());
     }
 
-    // 行員端：客戶送出後才顯示文件
+    /**
+     * 行員端查詢補件文件清單（客戶送出後才顯示）。
+     *
+     * <p>若客戶尚未送出補件（{@code documentsSubmittedAt == null}），
+     * 回傳空清單，前端可顯示「客戶尚未送出補件」提示。</p>
+     *
+     * @param applicationId 申請識別碼
+     * @return 文件清單（依上傳時間升序），或空清單
+     * @throws BusinessException 若申請不存在
+     */
     @Transactional(readOnly = true)
     public List<LoanDocumentResponseDTO> getByApplicationId(String applicationId) {
         LoanApplication loan = loanApplicationRepo.findById(applicationId)
@@ -189,14 +253,26 @@ public class LoanDocumentService {
                 .collect(Collectors.toList());
     }
 
-    // ===工具方法===
+    // ── 工具方法 ─────────────────────────────────────────────────────
 
+    /**
+     * 產生格式化識別碼：前綴 + {@code yyyyMMddHHmmss} + 4 位隨機數字。
+     *
+     * @param prefix 識別碼前綴，例如 {@code "DOC"}
+     * @return 格式化的唯一識別碼
+     */
     private String generateId(String prefix) {
         String timeStr      = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         String randomSuffix = String.format("%04d", (int) (Math.random() * 10000));
         return prefix + timeStr + randomSuffix;
     }
 
+    /**
+     * 將 {@code LoanDocument} Entity 轉換為回應 DTO。
+     *
+     * @param doc 文件 Entity
+     * @return 對應的回應 DTO
+     */
     private LoanDocumentResponseDTO toResponseDTO(LoanDocument doc) {
         LoanDocumentResponseDTO dto = new LoanDocumentResponseDTO();
         dto.setDocumentId(doc.getDocumentId());
