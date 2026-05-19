@@ -1,18 +1,24 @@
 package com.javaeasybank.customer.service;
 
+import com.javaeasybank.account.enums.FundSource;
+import com.javaeasybank.risk.repository.CustomerCreditRepository;
+import com.javaeasybank.risk.dto.request.RiskReviewRequest;
 import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.customer.repository.CustomerRespository;
 import com.javaeasybank.customer.entity.CustomerProfile;
 import com.javaeasybank.customer.repository.CustomerAuthRepository;
 import com.javaeasybank.customer.repository.CustomerProfileRepository;
 import com.javaeasybank.customer.util.TaiwanIdValidator;
-import com.javaeasybank.risk.service.BlackListService;
+import com.javaeasybank.risk.entity.CustomerCreditInfo;
+import com.javaeasybank.risk.enums.Occupation;
 import com.javaeasybank.risk.service.CreditScoreService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -21,10 +27,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class CustomerServiceImpl implements CustomerService {
 
     private final CustomerProfileRepository customerProfileRepository;
     private final CustomerAuthRepository customerAuthRepository;
+    private final CreditScoreService creditScoreService;
+    private final CustomerCreditRepository customerCreditRepository; // 新增注入
 
     // 加入 JdbcTemplate 依賴，用於執行原生 SQL
     private final JdbcTemplate jdbcTemplate;
@@ -35,10 +44,14 @@ public class CustomerServiceImpl implements CustomerService {
     private final SecureRandom secureRandom = new SecureRandom();
 
     public CustomerServiceImpl(CustomerProfileRepository customerProfileRepository,
-                               CustomerAuthRepository customerAuthRepository, CreditScoreService creditSCoreService,
+                               CustomerAuthRepository customerAuthRepository,
+                               CreditScoreService creditScoreService,
+                               CustomerCreditRepository customerCreditRepository, // 新增注入
                                JdbcTemplate jdbcTemplate) {
         this.customerProfileRepository = customerProfileRepository;
         this.customerAuthRepository = customerAuthRepository;
+        this.creditScoreService = creditScoreService;
+        this.customerCreditRepository = customerCreditRepository; // 初始化
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -96,7 +109,11 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public CustomerRespository.CustomerResponse updateCustomer(String customerId, CustomerRespository.CustomerRequest request) {
+    @Transactional
+    public CustomerRespository.CustomerResponse updateCustomer(String customerId,
+                                                               CustomerRespository.CustomerRequest request) {
+        log.info("[CustomerService] 開始更新客戶資料 customerId={}", customerId);
+
         CustomerProfile profile = customerProfileRepository.findById(customerId)
                 .orElseThrow(() -> new BusinessException("查無此客戶"));
 
@@ -135,13 +152,13 @@ public class CustomerServiceImpl implements CustomerService {
         if (request.getAnnualIncome() != null) {
             profile.setAnnualIncome(request.getAnnualIncome());
         }
-        if (request.getRiskLevel() != null) {
-            profile.setRiskLevel(request.getRiskLevel());
-        }
+
         normalizeApplicationDerivedFields(profile);
 
         CustomerProfile saved = customerProfileRepository.save(profile);
+
         return convertToResponse(saved);
+
     }
 
     @Override
@@ -329,6 +346,7 @@ public class CustomerServiceImpl implements CustomerService {
                 .orElseThrow(() -> new BusinessException("查無此客戶編號：" + cif));
         return convertToResponse(profile);
     }
+
     @Override
     public String findEmailByCustomerId(String customerId) {
         CustomerProfile profile = customerProfileRepository.findById(customerId)
@@ -371,7 +389,8 @@ public class CustomerServiceImpl implements CustomerService {
         profile.setNationality(request.getNationality());
         profile.setRegisteredAddress(request.getRegisteredAddress());
         profile.setCurrentAddress(request.getCurrentAddress());
-        profile.setAddress(resolveAddress(request.getAddress(), request.getCurrentAddress(), request.getRegisteredAddress(), profile.getAddress()));
+        profile.setAddress(resolveAddress(request.getAddress(), request.getCurrentAddress(),
+                request.getRegisteredAddress(), profile.getAddress()));
         profile.setOccupation(request.getOccupation());
         profile.setJob(request.getOccupation());
         profile.setEmployer(request.getEmployer());
@@ -412,22 +431,34 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     private void applyOptionalApplicationFields(CustomerProfile profile, CustomerRespository.CustomerRequest request) {
-        if (request.getNationality() != null) profile.setNationality(request.getNationality());
-        if (request.getRegisteredAddress() != null) profile.setRegisteredAddress(request.getRegisteredAddress());
-        if (request.getCurrentAddress() != null) profile.setCurrentAddress(request.getCurrentAddress());
+        if (request.getNationality() != null)
+            profile.setNationality(request.getNationality());
+        if (request.getRegisteredAddress() != null)
+            profile.setRegisteredAddress(request.getRegisteredAddress());
+        if (request.getCurrentAddress() != null)
+            profile.setCurrentAddress(request.getCurrentAddress());
         if (request.getOccupation() != null) {
             profile.setOccupation(request.getOccupation());
             profile.setJob(request.getOccupation());
         }
-        if (request.getEmployer() != null) profile.setEmployer(request.getEmployer());
-        if (request.getEstimatedMonthlyTx() != null) profile.setEstimatedMonthlyTx(request.getEstimatedMonthlyTx());
-        if (request.getAccountPurpose() != null) profile.setAccountPurpose(request.getAccountPurpose());
-        if (request.getFundSource() != null) profile.setFundSource(request.getFundSource());
-        if (request.getTaxResidency() != null) profile.setTaxResidency(request.getTaxResidency());
-        if (request.getIsPep() != null) profile.setIsPep(request.getIsPep());
-        if (request.getIdFrontUrl() != null) profile.setIdFrontUrl(request.getIdFrontUrl());
-        if (request.getIdBackUrl() != null) profile.setIdBackUrl(request.getIdBackUrl());
-        if (request.getSecondIdUrl() != null) profile.setSecondIdUrl(request.getSecondIdUrl());
+        if (request.getEmployer() != null)
+            profile.setEmployer(request.getEmployer());
+        if (request.getEstimatedMonthlyTx() != null)
+            profile.setEstimatedMonthlyTx(request.getEstimatedMonthlyTx());
+        if (request.getAccountPurpose() != null)
+            profile.setAccountPurpose(request.getAccountPurpose());
+        if (request.getFundSource() != null)
+            profile.setFundSource(request.getFundSource());
+        if (request.getTaxResidency() != null)
+            profile.setTaxResidency(request.getTaxResidency());
+        if (request.getIsPep() != null)
+            profile.setIsPep(request.getIsPep());
+        if (request.getIdFrontUrl() != null)
+            profile.setIdFrontUrl(request.getIdFrontUrl());
+        if (request.getIdBackUrl() != null)
+            profile.setIdBackUrl(request.getIdBackUrl());
+        if (request.getSecondIdUrl() != null)
+            profile.setSecondIdUrl(request.getSecondIdUrl());
         if (request.getLatestAccountApplicationId() != null)
             profile.setLatestAccountApplicationId(request.getLatestAccountApplicationId());
         if (request.getLatestAccountApplicationNo() != null)

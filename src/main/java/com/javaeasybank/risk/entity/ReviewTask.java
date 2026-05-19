@@ -63,6 +63,10 @@ public class ReviewTask {
     @Column(name = "attachments", columnDefinition = "NVARCHAR(MAX)")
     private String attachments;
 
+    @Lob
+    @Column(name = "required_documents_json", columnDefinition = "NVARCHAR(MAX)")
+    private String requiredDocumentsJson;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @CreatedDate
     @Column(updatable = false)

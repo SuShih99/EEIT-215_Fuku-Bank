@@ -5,10 +5,10 @@ import com.javaeasybank.risk.enums.Disposition;
 import com.javaeasybank.risk.enums.RiskLevel;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
 @Getter
 @Builder
 public class RiskEventResponse {
@@ -24,6 +24,8 @@ public class RiskEventResponse {
     private Disposition actionTaken;
 
     private String triggerReason;
+
+    private String metaData;
 
     private BigDecimal transactionAmount;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")

@@ -15,7 +15,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -44,7 +44,7 @@ public class RiskEventService {
                 predicates.add(cb.equal(root.get("eventType"), eventType));
             }
             if (StringUtils.hasText(actionTaken)) {
-                predicates.add(cb.equal(root.get("actionTaken"), actionTaken));
+                predicates.add(cb.equal(root.get("disposition"), actionTaken));
             }
             if (StringUtils.hasText(riskLevel)) {
                 predicates.add(cb.equal(root.get("riskLevel"), riskLevel));
@@ -76,7 +76,7 @@ public class RiskEventService {
             // metaData 從現有欄位組 JSON
             String meta = buildMetaData(request);
             logEntry.setMetaData(meta);
-            //callbackurl
+            // callbackurl
             logEntry.setCallbackUrl(request.getCallbackUrl());
             // 存檔
             relRepos.save(logEntry);
@@ -112,8 +112,8 @@ public class RiskEventService {
                 .actionTaken(rel.getDisposition())
                 .triggerReason(rel.getTriggerReason())
                 .transactionAmount(rel.getTransactionAmount())
+                .metaData(rel.getMetaData())
                 .createdAt(rel.getCreatedAt())
                 .build();
     }
 }
-

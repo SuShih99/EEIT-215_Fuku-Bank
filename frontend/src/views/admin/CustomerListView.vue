@@ -17,9 +17,7 @@
         </a-input>
         <a-button type="primary" class="rounded-btn" @click="handleSearch">查詢</a-button>
         <a-button class="rounded-btn btn-ghost" @click="handleClear">清除</a-button>
-        <a-button type="primary" class="rounded-btn" @click="goCreate">
-          新增客戶
-        </a-button>
+        <a-button type="primary" class="rounded-btn" @click="goCreate"> 新增客戶 </a-button>
       </div>
     </div>
 
@@ -76,10 +74,20 @@
         </template>
         <template v-else-if="column.key === 'latestApplication'">
           <div class="stack-cell">
-            <span :class="['application-status', applicationStatusClass(record.latestAccountApplicationStatus)]">
-              {{ applicationStatusMap[record.latestAccountApplicationStatus] || displayValue(record.latestAccountApplicationStatus) }}
+            <span
+              :class="[
+                'application-status',
+                applicationStatusClass(record.latestAccountApplicationStatus),
+              ]"
+            >
+              {{
+                applicationStatusMap[record.latestAccountApplicationStatus] ||
+                displayValue(record.latestAccountApplicationStatus)
+              }}
             </span>
-            <span class="secondary-text">{{ displayValue(record.latestAccountApplicationNo) }}</span>
+            <span class="secondary-text">{{
+              displayValue(record.latestAccountApplicationNo)
+            }}</span>
           </div>
         </template>
         <template v-else-if="column.key === 'status'">
@@ -94,15 +102,24 @@
               編輯
             </a-button>
             <a-divider type="vertical" />
-            <template v-if="record.status === 'INACTIVE' || record.status === 'DEACTIVATED'">
+
+            <template v-if="String(record.status || '').toUpperCase() === 'LOCKED'">
               <a-button
                 type="link"
                 class="action-btn resume-btn"
-                @click="handleActivate(record)"
+                style="color: #2f54eb; font-weight: 600"
+                @click="handleUnlock(record)"
               >
+                解除鎖定
+              </a-button>
+            </template>
+
+            <template v-else-if="record.status === 'INACTIVE' || record.status === 'DEACTIVATED'">
+              <a-button type="link" class="action-btn resume-btn" @click="handleActivate(record)">
                 啟用
               </a-button>
             </template>
+
             <template v-else>
               <a-button
                 type="link"
@@ -115,12 +132,23 @@
           </div>
         </template>
       </template>
-
       <template #expandedRowRender="{ record }">
         <div class="customer-detail-grid">
           <section class="detail-section">
             <h4>基本與地址</h4>
             <dl>
+              <div v-if="String(record.status || '').toUpperCase() === 'LOCKED'">
+                <dt>資安狀態</dt>
+                <dd>
+                  <a-button type="primary" size="small" @click="handleUnlock(record)">
+                    解除帳戶鎖定
+                  </a-button>
+                </dd>
+              </div>
+              <div>
+                <dt>帳戶狀態</dt>
+                <dd>{{ statusMap[record.status] || displayValue(record.status) }}</dd>
+              </div>
               <div>
                 <dt>國籍</dt>
                 <dd>{{ displayCountry(record.nationality) }}</dd>
@@ -173,7 +201,11 @@
               </div>
               <div>
                 <dt>開戶目的</dt>
-                <dd>{{ accountPurposeMap[record.accountPurpose] || displayValue(record.accountPurpose) }}</dd>
+                <dd>
+                  {{
+                    accountPurposeMap[record.accountPurpose] || displayValue(record.accountPurpose)
+                  }}
+                </dd>
               </div>
               <div>
                 <dt>資金來源</dt>
@@ -195,11 +227,21 @@
               </div>
               <div>
                 <dt>申請狀態</dt>
-                <dd>{{ applicationStatusMap[record.latestAccountApplicationStatus] || displayValue(record.latestAccountApplicationStatus) }}</dd>
+                <dd>
+                  {{
+                    applicationStatusMap[record.latestAccountApplicationStatus] ||
+                    displayValue(record.latestAccountApplicationStatus)
+                  }}
+                </dd>
               </div>
               <div>
                 <dt>帳戶類型</dt>
-                <dd>{{ accountTypeMap[record.latestAppliedAccountType] || displayValue(record.latestAppliedAccountType) }}</dd>
+                <dd>
+                  {{
+                    accountTypeMap[record.latestAppliedAccountType] ||
+                    displayValue(record.latestAppliedAccountType)
+                  }}
+                </dd>
               </div>
               <div>
                 <dt>幣別</dt>
@@ -207,7 +249,12 @@
               </div>
               <div>
                 <dt>風險標記</dt>
-                <dd>{{ riskFlagMap[record.latestAccountApplicationRiskFlag] || displayValue(record.latestAccountApplicationRiskFlag) }}</dd>
+                <dd>
+                  {{
+                    riskFlagMap[record.latestAccountApplicationRiskFlag] ||
+                    displayValue(record.latestAccountApplicationRiskFlag)
+                  }}
+                </dd>
               </div>
               <div>
                 <dt>審核人員</dt>
@@ -271,7 +318,10 @@
               />
             </a-form-item>
             <a-form-item label="性別">
-              <a-input :value="genderMap[editForm.gender] || displayValue(editForm.gender)" disabled />
+              <a-input
+                :value="genderMap[editForm.gender] || displayValue(editForm.gender)"
+                disabled
+              />
             </a-form-item>
             <a-form-item label="顧客狀態">
               <a-select v-model:value="editForm.status" placeholder="請選擇狀態">
@@ -280,6 +330,7 @@
                 <a-select-option value="DEACTIVATED">已停用</a-select-option>
                 <a-select-option value="PENDING">待審核</a-select-option>
                 <a-select-option value="FROZEN">凍結</a-select-option>
+                <a-select-option value="LOCKED" disabled>資安鎖定 (請透過列表解鎖)</a-select-option>
               </a-select>
             </a-form-item>
             <a-form-item label="大頭照 URL">
@@ -299,14 +350,26 @@
             </a-form-item>
             <a-form-item label="國籍">
               <a-select v-model:value="editForm.nationality" placeholder="請選擇國籍" allow-clear>
-                <a-select-option v-for="option in countryOptions" :key="option.value" :value="option.value">
+                <a-select-option
+                  v-for="option in countryOptions"
+                  :key="option.value"
+                  :value="option.value"
+                >
                   {{ option.label }}
                 </a-select-option>
               </a-select>
             </a-form-item>
             <a-form-item label="稅務居民">
-              <a-select v-model:value="editForm.taxResidency" placeholder="請選擇稅務居民" allow-clear>
-                <a-select-option v-for="option in countryOptions" :key="option.value" :value="option.value">
+              <a-select
+                v-model:value="editForm.taxResidency"
+                placeholder="請選擇稅務居民"
+                allow-clear
+              >
+                <a-select-option
+                  v-for="option in countryOptions"
+                  :key="option.value"
+                  :value="option.value"
+                >
                   {{ option.label }}
                 </a-select-option>
               </a-select>
@@ -336,25 +399,53 @@
               <a-input v-model:value="editForm.employer" placeholder="請輸入任職機構" />
             </a-form-item>
             <a-form-item label="預估月交易量（萬元）">
-              <a-input-number v-model:value="editForm.estimatedMonthlyTx" style="width: 100%" :min="0" />
+              <a-input-number
+                v-model:value="editForm.estimatedMonthlyTx"
+                style="width: 100%"
+                :min="0"
+              />
             </a-form-item>
             <a-form-item label="年收入（萬元）">
-              <a-select v-model:value="editForm.annualIncome" placeholder="請選擇年收入級距" allow-clear>
-                <a-select-option v-for="option in annualIncomeOptions" :key="option.value" :value="option.value">
+              <a-select
+                v-model:value="editForm.annualIncome"
+                placeholder="請選擇年收入級距"
+                allow-clear
+              >
+                <a-select-option
+                  v-for="option in annualIncomeOptions"
+                  :key="option.value"
+                  :value="option.value"
+                >
                   {{ option.label }}
                 </a-select-option>
               </a-select>
             </a-form-item>
             <a-form-item label="開戶目的">
-              <a-select v-model:value="editForm.accountPurpose" placeholder="請選擇開戶目的" allow-clear>
-                <a-select-option v-for="(label, value) in accountPurposeMap" :key="value" :value="value">
+              <a-select
+                v-model:value="editForm.accountPurpose"
+                placeholder="請選擇開戶目的"
+                allow-clear
+              >
+                <a-select-option
+                  v-for="(label, value) in accountPurposeMap"
+                  :key="value"
+                  :value="value"
+                >
                   {{ label }}
                 </a-select-option>
               </a-select>
             </a-form-item>
             <a-form-item label="資金來源">
-              <a-select v-model:value="editForm.fundSource" placeholder="請選擇資金來源" allow-clear>
-                <a-select-option v-for="(label, value) in fundSourceMap" :key="value" :value="value">
+              <a-select
+                v-model:value="editForm.fundSource"
+                placeholder="請選擇資金來源"
+                allow-clear
+              >
+                <a-select-option
+                  v-for="(label, value) in fundSourceMap"
+                  :key="value"
+                  :value="value"
+                >
                   {{ label }}
                 </a-select-option>
               </a-select>
@@ -367,7 +458,11 @@
               </a-select>
             </a-form-item>
             <a-form-item label="PEP">
-              <a-switch v-model:checked="editForm.isPep" checked-children="是" un-checked-children="否" />
+              <a-switch
+                v-model:checked="editForm.isPep"
+                checked-children="是"
+                un-checked-children="否"
+              />
             </a-form-item>
           </div>
         </section>
@@ -377,20 +472,35 @@
           <div class="document-upload-grid">
             <div v-for="doc in documentFields" :key="doc.field" class="document-upload-card">
               <div class="document-preview">
-                <img v-if="documentPreviewUrl(doc.field)" :src="documentPreviewUrl(doc.field)" :alt="doc.label" />
+                <img
+                  v-if="documentPreviewUrl(doc.field)"
+                  :src="documentPreviewUrl(doc.field)"
+                  :alt="doc.label"
+                />
                 <div v-else class="document-placeholder">
                   <span></span>
                 </div>
               </div>
               <div class="document-meta">
                 <strong>{{ doc.label }}</strong>
-                <small>{{ documentFileNames[doc.field] || documentPathLabel(editForm[doc.field]) }}</small>
+                <small>{{
+                  documentFileNames[doc.field] || documentPathLabel(editForm[doc.field])
+                }}</small>
               </div>
               <label class="document-upload-btn">
                 選擇檔案
-                <input type="file" accept="image/jpeg,image/png" @change="handleDocumentFile(doc.field, $event)" />
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  @change="handleDocumentFile(doc.field, $event)"
+                />
               </label>
-              <a-button v-if="editForm[doc.field]" type="link" size="small" @click="openDocument(editForm[doc.field])">
+              <a-button
+                v-if="editForm[doc.field]"
+                type="link"
+                size="small"
+                @click="openDocument(editForm[doc.field])"
+              >
                 檢視目前檔案
               </a-button>
             </div>
@@ -404,28 +514,56 @@
               <a-input :value="displayValue(editForm.latestAccountApplicationNo)" disabled />
             </a-form-item>
             <a-form-item label="最近申請狀態">
-              <a-input :value="applicationStatusMap[editForm.latestAccountApplicationStatus] || displayValue(editForm.latestAccountApplicationStatus)" disabled />
+              <a-input
+                :value="
+                  applicationStatusMap[editForm.latestAccountApplicationStatus] ||
+                  displayValue(editForm.latestAccountApplicationStatus)
+                "
+                disabled
+              />
             </a-form-item>
             <a-form-item label="最近帳戶類型">
-              <a-input :value="accountTypeMap[editForm.latestAppliedAccountType] || displayValue(editForm.latestAppliedAccountType)" disabled />
+              <a-input
+                :value="
+                  accountTypeMap[editForm.latestAppliedAccountType] ||
+                  displayValue(editForm.latestAppliedAccountType)
+                "
+                disabled
+              />
             </a-form-item>
             <a-form-item label="最近申請幣別">
               <a-input :value="displayValue(editForm.latestAppliedCurrency)" disabled />
             </a-form-item>
             <a-form-item label="最近風險標記">
-              <a-input :value="riskFlagMap[editForm.latestAccountApplicationRiskFlag] || displayValue(editForm.latestAccountApplicationRiskFlag)" disabled />
+              <a-input
+                :value="
+                  riskFlagMap[editForm.latestAccountApplicationRiskFlag] ||
+                  displayValue(editForm.latestAccountApplicationRiskFlag)
+                "
+                disabled
+              />
             </a-form-item>
             <a-form-item label="建立帳號">
               <a-input :value="displayValue(editForm.createdAccountNumber)" disabled />
             </a-form-item>
             <a-form-item label="審核時間">
-              <a-input :value="displayValue(editForm.latestAccountApplicationReviewedAt)" disabled />
+              <a-input
+                :value="displayValue(editForm.latestAccountApplicationReviewedAt)"
+                disabled
+              />
             </a-form-item>
             <a-form-item label="審核人員">
-              <a-input :value="displayValue(editForm.latestAccountApplicationReviewedBy)" disabled />
+              <a-input
+                :value="displayValue(editForm.latestAccountApplicationReviewedBy)"
+                disabled
+              />
             </a-form-item>
             <a-form-item label="駁回/補件原因" class="full-width">
-              <a-textarea :value="displayValue(editForm.latestAccountApplicationRejectReason)" disabled :rows="2" />
+              <a-textarea
+                :value="displayValue(editForm.latestAccountApplicationRejectReason)"
+                disabled
+                :rows="2"
+              />
             </a-form-item>
             <a-form-item label="同步時間">
               <a-input :value="displayValue(editForm.accountApplicationSyncedAt)" disabled />
@@ -465,6 +603,7 @@ const statusMap = {
   PENDING: '待審核',
   FROZEN: '凍結',
   INACTIVE: '停用',
+  LOCKED: '資安鎖定',
 }
 
 const genderMap = {
@@ -494,7 +633,7 @@ const countryOptions = [
   { value: 'OTHER', label: '其他（OTHER）' },
 ]
 
-const countryMap = Object.fromEntries(countryOptions.map(option => [option.value, option.label]))
+const countryMap = Object.fromEntries(countryOptions.map((option) => [option.value, option.label]))
 
 const annualIncomeOptions = [
   { value: 50, label: '50 萬元以下' },
@@ -505,7 +644,9 @@ const annualIncomeOptions = [
   { value: 1001, label: '1001 萬元以上' },
 ]
 
-const annualIncomeMap = Object.fromEntries(annualIncomeOptions.map(option => [option.value, option.label]))
+const annualIncomeMap = Object.fromEntries(
+  annualIncomeOptions.map((option) => [option.value, option.label]),
+)
 
 const applicationStatusMap = {
   PENDING: '待審核',
@@ -559,18 +700,104 @@ const customers = ref([])
 const loading = ref(false)
 
 const columns = ref([
-  { title: '客戶資訊', dataIndex: 'name', key: 'name', width: 190, fixed: 'left', resizable: true, sorter: (a, b) => (a.name || '').localeCompare(b.name || '') },
-  { title: 'CIF', dataIndex: 'cif', key: 'cif', width: 125, resizable: true, sorter: (a, b) => (a.cif || '').localeCompare(b.cif || '') },
-  { title: '身分證字號', dataIndex: 'idNumber', key: 'idNumber', width: 130, resizable: true, sorter: (a, b) => (a.idNumber || '').localeCompare(b.idNumber || '') },
-  { title: '國籍', dataIndex: 'nationality', key: 'nationality', width: 75, resizable: true, sorter: (a, b) => (a.nationality || '').localeCompare(b.nationality || '') },
-  { title: '性別', dataIndex: 'gender', key: 'gender', width: 65, resizable: true, sorter: (a, b) => (a.gender || '').localeCompare(b.gender || '') },
-  { title: '電話', dataIndex: 'phone', key: 'phone', width: 130, resizable: true, sorter: (a, b) => (a.phone || '').localeCompare(b.phone || '') },
-  { title: '現居地址', dataIndex: 'currentAddress', key: 'currentAddress', width: 230, resizable: true, sorter: (a, b) => (a.currentAddress || a.address || '').localeCompare(b.currentAddress || b.address || '') },
-  { title: '職業/任職機構', key: 'occupationInfo', width: 180, resizable: true, sorter: (a, b) => (a.occupation || '').localeCompare(b.occupation || '') },
-  { title: '法遵', key: 'compliance', width: 115, resizable: true, sorter: (a, b) => Number(b.isPep || 0) - Number(a.isPep || 0) },
-  { title: '最近開戶申請', key: 'latestApplication', width: 170, resizable: true, sorter: (a, b) => (a.latestAccountApplicationStatus || '').localeCompare(b.latestAccountApplicationStatus || '') },
-  { title: '建立帳號', dataIndex: 'createdAccountNumber', key: 'createdAccountNumber', width: 130, resizable: true, sorter: (a, b) => (a.createdAccountNumber || '').localeCompare(b.createdAccountNumber || '') },
-  { title: '顧客狀態', dataIndex: 'status', key: 'status', width: 105, resizable: true, sorter: (a, b) => (a.status || '').localeCompare(b.status || '') },
+  {
+    title: '客戶資訊',
+    dataIndex: 'name',
+    key: 'name',
+    width: 190,
+    fixed: 'left',
+    resizable: true,
+    sorter: (a, b) => (a.name || '').localeCompare(b.name || ''),
+  },
+  {
+    title: 'CIF',
+    dataIndex: 'cif',
+    key: 'cif',
+    width: 125,
+    resizable: true,
+    sorter: (a, b) => (a.cif || '').localeCompare(b.cif || ''),
+  },
+  {
+    title: '身分證字號',
+    dataIndex: 'idNumber',
+    key: 'idNumber',
+    width: 130,
+    resizable: true,
+    sorter: (a, b) => (a.idNumber || '').localeCompare(b.idNumber || ''),
+  },
+  {
+    title: '國籍',
+    dataIndex: 'nationality',
+    key: 'nationality',
+    width: 75,
+    resizable: true,
+    sorter: (a, b) => (a.nationality || '').localeCompare(b.nationality || ''),
+  },
+  {
+    title: '性別',
+    dataIndex: 'gender',
+    key: 'gender',
+    width: 65,
+    resizable: true,
+    sorter: (a, b) => (a.gender || '').localeCompare(b.gender || ''),
+  },
+  {
+    title: '電話',
+    dataIndex: 'phone',
+    key: 'phone',
+    width: 130,
+    resizable: true,
+    sorter: (a, b) => (a.phone || '').localeCompare(b.phone || ''),
+  },
+  {
+    title: '現居地址',
+    dataIndex: 'currentAddress',
+    key: 'currentAddress',
+    width: 230,
+    resizable: true,
+    sorter: (a, b) =>
+      (a.currentAddress || a.address || '').localeCompare(b.currentAddress || b.address || ''),
+  },
+  {
+    title: '職業/任職機構',
+    key: 'occupationInfo',
+    width: 180,
+    resizable: true,
+    sorter: (a, b) => (a.occupation || '').localeCompare(b.occupation || ''),
+  },
+  {
+    title: '法遵',
+    key: 'compliance',
+    width: 115,
+    resizable: true,
+    sorter: (a, b) => Number(b.isPep || 0) - Number(a.isPep || 0),
+  },
+  {
+    title: '最近開戶申請',
+    key: 'latestApplication',
+    width: 170,
+    resizable: true,
+    sorter: (a, b) =>
+      (a.latestAccountApplicationStatus || '').localeCompare(
+        b.latestAccountApplicationStatus || '',
+      ),
+  },
+  {
+    title: '建立帳號',
+    dataIndex: 'createdAccountNumber',
+    key: 'createdAccountNumber',
+    width: 130,
+    resizable: true,
+    sorter: (a, b) => (a.createdAccountNumber || '').localeCompare(b.createdAccountNumber || ''),
+  },
+  {
+    title: '顧客狀態',
+    dataIndex: 'status',
+    key: 'status',
+    width: 105,
+    resizable: true,
+    sorter: (a, b) => (a.status || '').localeCompare(b.status || ''),
+  },
   { title: '操作', key: 'action', width: 140, fixed: 'right' },
 ])
 
@@ -638,7 +865,9 @@ function normalizeAnnualIncomeOption(value) {
 }
 
 function applicationStatusClass(status) {
-  return String(status || 'none').toLowerCase().replace('_', '-')
+  return String(status || 'none')
+    .toLowerCase()
+    .replace('_', '-')
 }
 
 // ===========================
@@ -925,6 +1154,29 @@ function handleActivate(record) {
   })
 }
 
+// ===========================
+// 解除客戶資安鎖定
+// ===========================
+function handleUnlock(record) {
+  Modal.confirm({
+    title: '確定要解除該客戶的資安鎖定嗎？',
+    content: `姓名：${record.name}（${record.customerId}）。解鎖後，客戶即可重新使用原本的密碼嘗試登入，且系統的連續登入失敗計數將重設。`,
+    okText: '確定解鎖',
+    okType: 'primary',
+    cancelText: '取消',
+    async onOk() {
+      try {
+        // 呼叫啟用 API 進行解鎖
+        await activateCustomer(record.customerId)
+        message.success(`客戶「${record.name}」已成功解除鎖定`)
+        await fetchData()
+      } catch (err) {
+        message.error(err.response?.data?.message || '解鎖失敗')
+      }
+    },
+  })
+}
+
 onMounted(() => {
   fetchData()
 })
@@ -942,7 +1194,7 @@ onMounted(() => {
   height: 40px;
   border-radius: 50%;
   background-color: rgba(92, 107, 95, 0.1);
-  color: #5C6B5F;
+  color: #5c6b5f;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1154,21 +1406,37 @@ onMounted(() => {
   background-color: rgba(82, 196, 26, 0.1);
   color: #389e0d;
 }
-.status-active .status-dot { background-color: #52c41a; }
+.status-active .status-dot {
+  background-color: #52c41a;
+}
 
-.status-deactivated, .status-frozen, .status-inactive {
+.status-deactivated,
+.status-frozen,
+.status-inactive {
   background-color: rgba(255, 77, 79, 0.1);
   color: #d9363e;
 }
 .status-deactivated .status-dot,
 .status-frozen .status-dot,
-.status-inactive .status-dot { background-color: #ff4d4f; }
+.status-inactive .status-dot {
+  background-color: #ff4d4f;
+}
+
+.status-locked {
+  background-color: rgba(47, 84, 235, 0.1);
+  color: #2f54eb;
+}
+.status-locked .status-dot {
+  background-color: #2f54eb;
+}
 
 .status-pending {
   background-color: rgba(250, 140, 22, 0.1);
   color: #fa8c16;
 }
-.status-pending .status-dot { background-color: #fa8c16; }
+.status-pending .status-dot {
+  background-color: #fa8c16;
+}
 
 .suspend-btn {
   color: #ff4d4f;
@@ -1333,7 +1601,9 @@ onMounted(() => {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .document-upload-btn:hover {

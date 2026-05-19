@@ -2,7 +2,6 @@ package com.javaeasybank.creditcard.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-
 import com.javaeasybank.creditcard.enums.BillStatus;
 
 import lombok.Data;

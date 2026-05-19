@@ -83,7 +83,7 @@ public class RiskReviewService {
 
         // 不再處理新客戶建立，找不到直接拋例外
         // 代表 Customer 模組尚未完成初始化，屬於異常情況
-        creditScoreService.updateIfPresent(dto);
+        //creditScoreService.updateIfPresent(dto);
         return creditScoreService.rescore(dto.getCustomerId());
     }
 

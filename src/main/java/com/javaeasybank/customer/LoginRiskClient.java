@@ -30,18 +30,20 @@ public class LoginRiskClient {
         req.setCustomerId(customerId);
         req.setScene(BusinessScene.LOGIN_CHECK);
         req.setBusinessId(customerId);
-        req.setTargetIdentifier(ipAddress);
+        req.setTargetIdentifier(customerId);
         req.addContext("eventType", eventType);
         req.addContext("reason", reason);
 
         log.info("[LoginRiskClient] 嘗試發送風控事件 customerId={}, eventType={}", customerId, eventType);
 
         try {
-            restTemplate.postForEntity(
-                    riskBaseUrl + "check", req, Void.class);
+            restTemplate.postForEntity(riskBaseUrl + "check", req, Void.class);
+        } catch (org.springframework.web.client.HttpStatusCodeException e) {
+            // 關鍵：這行能印出到底是 404、400 還是 403，以及遠端回傳的錯誤訊息
+            log.error("[LoginRiskClient] 遠端風控服務回傳錯誤! 狀態碼={}, 回傳內容={}",
+                    e.getStatusCode(), e.getResponseBodyAsString());
         } catch (RestClientException e) {
-            // 風控記錄失敗不影響登入流程
-            log.warn("[LoginRiskClient] 風控記錄失敗 customerId={}", customerId, e);
+            log.error("[LoginRiskClient] 網路連線失敗或目標伺服器未啟動", e);
         }
     }
 }

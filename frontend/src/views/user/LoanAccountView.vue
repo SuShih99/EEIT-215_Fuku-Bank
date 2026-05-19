@@ -62,26 +62,25 @@
               </span>
               <!-- 立即繳款按鈕（僅 ACTIVE 帳戶顯示） -->
               <button
-                v-if="acc.accountStatus === 'ACTIVE'"
+                v-if="acc.accountStatus === 'ACTIVE' || acc.accountStatus === 'OVERDUE'"
                 class="repay-btn"
                 @click="$router.push({ name: 'user-loan-repayment', query: { accountId: acc.accountId } })"
                 title="前往繳款"
               >
                 立即繳款
               </button>
-              <!-- 展開還款時間表按鈕 -->
+              <!-- 查看還款時間表按鈕 -->
               <button
                 class="expand-btn"
-                :class="{ expanded: expandedId === acc.accountId }"
-                @click="toggleRepayments(acc.accountId)"
-                :title="expandedId === acc.accountId ? '收合' : '查看還款明細'"
+                @click="openRepaymentModal(acc)"
+                title="查看還款明細"
               >
-                {{ expandedId === acc.accountId ? '▲ 收合' : '▼ 還款明細' }}
+                還款明細
               </button>
             </div>
           </div>
 
-          <!-- ── 主體：圓形圖（左）+ 資訊列（右）── -->
+          <!-- ── 主體：進度 + 重點摘要 + 條件摘要 ── -->
           <div class="card-body">
 
             <!-- 左：圓形還款進度圖 + 期數進度 -->
@@ -136,60 +135,116 @@
               </div>
             </div>
 
-            <!-- 右：資訊列 -->
-            <div class="info-rows">
-              <!-- 貸款條件 -->
-              <div class="info-row">
+            <!-- 中：付款重點 -->
+            <div class="payment-focus" :class="{ overdue: isOverdue(acc) }">
+              <span class="focus-label">月繳金額</span>
+              <strong class="focus-amount">$ {{ formatDecimal(acc.monthlyPayment) }}</strong>
+              <div class="focus-date">
+                <span>下次繳款日</span>
+                <strong class="mono" :class="{ 'overdue-text': isOverdue(acc) }">
+                  {{ acc.nextPaymentDate ? formatDate(acc.nextPaymentDate) : '—' }}
+                </strong>
+              </div>
+              <div v-if="isOverdue(acc)" class="overdue-note">
+                已逾期，請盡快完成繳款
+              </div>
+            </div>
+
+            <!-- 右：條件摘要格 -->
+            <div class="info-grid">
+              <div class="info-tile">
                 <span class="info-row-label">貸款期數</span>
                 <span class="info-row-val">{{ acc.confirmedPeriod }} 期</span>
               </div>
-              <div class="info-row">
-                <span class="info-row-label">年利率</span>
-                <span class="info-row-val">
-                  {{ formatRate(acc.rate) }}
-                  <span class="info-row-sub" v-if="acc.rate != null">月利率 {{ formatMonthlyRate(acc.rate) }}</span>
-                </span>
+              <div class="info-tile rate-tile">
+                <div class="rate-side">
+                  <span class="info-row-label">年利率</span>
+                  <span class="info-row-val">{{ formatRate(acc.rate) }}</span>
+                </div>
+                <div class="rate-divider"></div>
+                <div class="rate-side">
+                  <span class="info-row-label">月利率</span>
+                  <span class="info-row-val">{{ formatMonthlyRate(acc.rate) }}</span>
+                </div>
               </div>
-              <div class="info-row">
-                <span class="info-row-label">月繳金額</span>
-                <span class="info-row-val">$ {{ formatDecimal(acc.monthlyPayment) }}</span>
-              </div>
-              <!-- 分隔線 -->
-              <div class="info-divider"></div>
-              <!-- 還款進度 -->
-              <div class="info-row">
+              <div class="info-tile">
                 <span class="info-row-label">撥款日</span>
                 <span class="info-row-val mono">{{ formatDate(acc.startDate) }}</span>
               </div>
-              <div class="info-row">
-                <span class="info-row-label">下次繳款日</span>
-                <span class="info-row-val mono" :class="{ 'overdue-text': isOverdue(acc) }">
-                  {{ acc.nextPaymentDate ? formatDate(acc.nextPaymentDate) : '—' }}
-                </span>
+              <div class="info-tile">
+                <span class="info-row-label">剩餘期數</span>
+                <span class="info-row-val mono">{{ Math.max(Number(acc.confirmedPeriod || 0) - Number(acc.paidPeriods || 0), 0) }} 期</span>
               </div>
             </div>
 
           </div>
 
-          <!-- ── 還款時間表（展開區） ── -->
-          <transition name="slide">
-            <div v-if="expandedId === acc.accountId" class="repayment-section">
+        </div>
+      </div>
 
-              <!-- 載入還款明細中 -->
-              <div v-if="repaymentLoading" class="rep-loading">載入還款明細中…</div>
+    </div>
+  </div>
 
-              <!-- 還款明細表 -->
-              <div v-else-if="repayments.length > 0" class="rep-table-wrap">
+  <!-- ── 還款時間表 Modal ── -->
+  <teleport to="body">
+    <transition name="modal-fade">
+      <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
+        <div class="modal-box">
+          <div class="modal-header">
+            <div class="modal-title-group">
+              <span class="modal-title">還款時間表</span>
+              <span v-if="modalAccount" class="modal-subtitle">
+                帳戶 {{ modalAccount.accountId }}
+                <span class="type-badge" style="margin-left:8px;">
+                  {{ LOAN_TYPE_MAP[modalAccount.applyType] || modalAccount.applyType }}
+                </span>
+              </span>
+            </div>
+            <button class="modal-close-btn" @click="closeModal">✕</button>
+          </div>
+
+          <div v-if="modalAccount" class="modal-summary">
+            <div class="summary-item">
+              <span class="summary-label">本金</span>
+              <span class="summary-value mono">{{ formatAmount(modalAccount.principalAmount) }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">月繳</span>
+              <span class="summary-value mono">{{ formatDecimal(modalAccount.monthlyPayment) }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">年利率</span>
+              <span class="summary-value mono">{{ formatRate(modalAccount.rate) }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">期數進度</span>
+              <span class="summary-value mono">{{ modalAccount.paidPeriods }} / {{ modalAccount.confirmedPeriod }}</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label">剩餘本金</span>
+              <span class="summary-value mono">{{ formatDecimal(modalAccount.remainingPrincipal) }}</span>
+            </div>
+          </div>
+
+          <div class="modal-body">
+            <div v-if="repaymentLoading" class="rep-loading">
+              <span class="spin">⟳</span> 載入還款明細中…
+            </div>
+            <template v-else-if="repayments.length > 0">
+              <div class="rep-header">
+                <span class="rep-title">共 {{ repayments.length }} 期</span>
+              </div>
+              <div class="rep-table-wrap">
                 <table class="rep-table">
                   <thead>
                     <tr>
                       <th>期</th>
                       <th>應繳日</th>
                       <th>實繳日</th>
-                      <th>月繳金額</th>
-                      <th>本金</th>
-                      <th>利息</th>
-                      <th>剩餘本金</th>
+                      <th class="text-right">月繳總額</th>
+                      <th class="text-right">本金</th>
+                      <th class="text-right">利息</th>
+                      <th class="text-right">剩餘本金</th>
                       <th>狀態</th>
                     </tr>
                   </thead>
@@ -199,13 +254,13 @@
                       :key="rp.repaymentId"
                       :class="rowClass(rp.repaymentStatus)"
                     >
-                      <td class="mono">{{ rp.periodIndex }}</td>
+                      <td class="mono text-center">{{ rp.periodIndex }}</td>
                       <td class="mono">{{ formatDate(rp.scheduledDate) }}</td>
                       <td class="mono">{{ rp.paidDate ? formatDate(rp.paidDate) : '—' }}</td>
-                      <td class="mono">{{ formatDecimal(rp.totalAmount) }}</td>
-                      <td class="mono">{{ formatDecimal(rp.principalPortion) }}</td>
-                      <td class="mono muted">{{ formatDecimal(rp.interestPortion) }}</td>
-                      <td class="mono">{{ formatDecimal(rp.remainingAfter) }}</td>
+                      <td class="mono text-right">{{ formatDecimal(rp.totalAmount) }}</td>
+                      <td class="mono text-right">{{ formatDecimal(rp.principalPortion) }}</td>
+                      <td class="mono text-right muted">{{ formatDecimal(rp.interestPortion) }}</td>
+                      <td class="mono text-right">{{ formatDecimal(rp.remainingAfter) }}</td>
                       <td>
                         <span class="rep-status" :class="repStatusClass(rp.repaymentStatus)">
                           {{ repStatusLabel(rp.repaymentStatus) }}
@@ -215,16 +270,13 @@
                   </tbody>
                 </table>
               </div>
-
-              <div v-else class="rep-loading">尚無還款明細資料</div>
-            </div>
-          </transition>
-
+            </template>
+            <div v-else class="rep-loading">尚無還款明細資料</div>
+          </div>
         </div>
       </div>
-
-    </div>
-  </div>
+    </transition>
+  </teleport>
 </template>
 
 <script setup>
@@ -235,8 +287,9 @@ import api from '@/api/axios'
 const accounts       = ref([])   // 貸款帳戶清單
 const loading        = ref(false)
 const error          = ref('')
-const expandedId     = ref(null) // 目前展開的帳戶 ID
-const repayments     = ref([])   // 展開中的帳戶之還款明細
+const showModal      = ref(false)
+const modalAccount   = ref(null)
+const repayments     = ref([])   // Modal 中的帳戶還款明細
 const repaymentLoading = ref(false)
 
 // ── 貸款類型對照 ──
@@ -345,22 +398,15 @@ async function loadAccounts() {
   }
 }
 
-// ── API：切換展開 / 收合還款明細 ──
-async function toggleRepayments(accountId) {
-  // 已展開 → 收合
-  if (expandedId.value === accountId) {
-    expandedId.value = null
-    repayments.value = []
-    return
-  }
-
-  // 展開新帳戶 → 先清空舊資料，再打 API
-  expandedId.value = accountId
+// ── API：開啟還款明細 Modal ──
+async function openRepaymentModal(acc) {
+  modalAccount.value = acc
+  showModal.value = true
   repayments.value = []
   repaymentLoading.value = true
   try {
     const token = localStorage.getItem('customer_token')
-    const res = await api.get(`/api/loan-accounts/${accountId}/repayments`, {
+    const res = await api.get(`/api/loan-accounts/${acc.accountId}/repayments`, {
       headers: { Authorization: `Bearer ${token}` },
     })
     repayments.value = res.data.data || []
@@ -369,6 +415,12 @@ async function toggleRepayments(accountId) {
   } finally {
     repaymentLoading.value = false
   }
+}
+
+function closeModal() {
+  showModal.value = false
+  modalAccount.value = null
+  repayments.value = []
 }
 
 onMounted(loadAccounts)
@@ -465,7 +517,7 @@ onMounted(loadAccounts)
 @keyframes shimmer { from { opacity: 0.7; } to { opacity: 0.35; } }
 
 /* ── 帳戶卡片 ── */
-.account-list { display: flex; flex-direction: column; gap: 20px; }
+.account-list { display: flex; flex-direction: column; gap: 18px; }
 
 .account-card {
   background: var(--surface);
@@ -481,7 +533,7 @@ onMounted(loadAccounts)
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 14px 20px;
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
   gap: 10px;
@@ -530,8 +582,8 @@ onMounted(loadAccounts)
   font-weight: 600;
 }
 .repay-btn:hover {
-  background: var(--primary-dark);
-  border-color: var(--primary-dark);
+  background: var(--pk);
+  border-color: var(--pk);
   transform: translateY(-1px);
 }
 
@@ -553,13 +605,17 @@ onMounted(loadAccounts)
   background: rgba(92,107,95,0.08);
 }
 
-/* ── 卡片主體（左圓圖 + 右資訊列）── */
+/* ── 卡片主體（進度 + 重點摘要 + 條件摘要）── */
 .card-body {
-  display: flex;
+  display: grid;
+  grid-template-columns: 180px 170px minmax(380px, 1fr);
   align-items: center;
   gap: 24px;
-  padding: 20px 20px;
+  padding: 20px 28px;
   border-bottom: 1px solid var(--border);
+  max-width: 1080px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 /* 左：圓形區塊 */
@@ -571,12 +627,12 @@ onMounted(loadAccounts)
 }
 .circle-chart-wrap {
   position: relative;
-  width: 120px;
-  height: 120px;
+  width: 104px;
+  height: 104px;
 }
 .circle-svg {
-  width: 120px;
-  height: 120px;
+  width: 104px;
+  height: 104px;
   display: block;
 }
 .circle-center-text {
@@ -592,7 +648,7 @@ onMounted(loadAccounts)
   pointer-events: none;
 }
 .cctext-pct {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
   font-family: 'IBM Plex Mono', monospace;
   line-height: 1;
@@ -604,7 +660,7 @@ onMounted(loadAccounts)
 }
 /* 圓圈下方：金額行 */
 .circle-principal {
-  margin-top: 10px;
+  margin-top: 8px;
   display: flex;
   align-items: baseline;
   gap: 4px;
@@ -630,8 +686,8 @@ onMounted(loadAccounts)
   text-align: center;
 }
 .period-progress {
-  margin-top: 12px;
-  width: 120px;
+  margin-top: 10px;
+  width: 156px;
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -652,19 +708,86 @@ onMounted(loadAccounts)
   font-family: 'IBM Plex Mono', monospace;
 }
 
-/* 右：資訊列 */
-.info-rows {
-  flex: 1;
+.payment-focus {
+  min-width: 0;
+  border-left: 1px solid var(--border);
+  padding-left: 24px;
+}
+.payment-focus.overdue {
+  border-left-color: rgba(166,90,77,0.35);
+}
+.focus-label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted-2);
+  margin-bottom: 4px;
+}
+.focus-amount {
+  display: block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 24px;
+  line-height: 1.1;
+  color: var(--ink);
+}
+.focus-date {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 3px;
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--muted-2);
+}
+.focus-date strong {
+  font-size: 18px;
+  color: var(--ink);
+}
+.overdue-note {
+  display: inline-flex;
+  margin-top: 10px;
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: rgba(166,90,77,0.10);
+  color: var(--red);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* 右：資訊摘要格 */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
   min-width: 0;
 }
-.info-row {
+.info-tile {
+  min-height: 66px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: rgba(234,228,218,0.48);
+  border: 1px solid rgba(214,206,195,0.68);
   display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+}
+.rate-tile {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
+  padding-left: 18px;
+  padding-right: 18px;
+}
+.rate-side {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.rate-divider {
+  width: 1px;
+  height: 42px;
+  background: var(--border);
 }
 .info-row-label {
   font-size: 12px;
@@ -672,31 +795,53 @@ onMounted(loadAccounts)
   flex-shrink: 0;
 }
 .info-row-val {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--ink);
-  text-align: right;
+  text-align: left;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 2px;
+}
+.rate-side .info-row-val {
+  font-size: 16px;
+  line-height: 1.15;
+  white-space: nowrap;
 }
 .info-row-val.mono { font-family: 'IBM Plex Mono', monospace; }
 .info-row-sub {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 400;
   color: var(--muted-2);
   font-family: 'IBM Plex Mono', monospace;
 }
-.info-divider {
-  border-top: 1px dashed var(--border);
-  margin: 2px 0;
-}
 .overdue-text { color: var(--red) !important; }
 
-@media (max-width: 520px) {
-  .card-body { flex-direction: column; align-items: center; }
-  .info-rows  { width: 100%; }
+@media (max-width: 960px) {
+  .card-body {
+    grid-template-columns: 180px 1fr;
+    gap: 20px;
+  }
+  .info-grid {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 560px) {
+  .card-body {
+    grid-template-columns: 1fr;
+    padding: 18px;
+  }
+  .payment-focus {
+    border-left: none;
+    border-top: 1px solid var(--border);
+    padding-left: 0;
+    padding-top: 16px;
+  }
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* 進度條 */
@@ -718,19 +863,12 @@ onMounted(loadAccounts)
 .prog-overdue { background: var(--red); }
 .prog-done    { background: var(--green); }
 
-/* ── 還款時間表展開區 ── */
-.repayment-section { padding: 16px 20px 20px; }
-
 .rep-loading {
   text-align: center;
   color: var(--muted-2);
   font-size: 13px;
   padding: 20px 0;
 }
-
-/* 展開動畫 */
-.slide-enter-active, .slide-leave-active { transition: all 0.25s ease; }
-.slide-enter-from, .slide-leave-to       { opacity: 0; transform: translateY(-8px); }
 
 /* 還款明細表 */
 .rep-table-wrap { overflow-x: auto; }
@@ -784,4 +922,143 @@ onMounted(loadAccounts)
 .rs-scheduled { background: rgba(166,140,0,0.10);  color: #7a6000; }
 .rs-paid      { background: rgba(74,140,92,0.10);  color: #1a7a40; }
 .rs-overdue   { background: rgba(166,90,77,0.12);  color: var(--red); }
+
+.text-right { text-align: right !important; }
+.text-center { text-align: center !important; }
+
+.rep-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.rep-title {
+  color: var(--muted-2);
+  font-size: 12px;
+  font-weight: 700;
+}
+.spin {
+  display: inline-block;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Modal 遮罩 ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* ── Modal 本體：對齊貸款後端帳戶明細 card ── */
+.modal-box {
+  background: #ffffff;
+  border: 1px solid #dde1de;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 860px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px 16px;
+  border-bottom: 1px solid #dde1de;
+  background: #f0f2f0;
+  flex-shrink: 0;
+}
+.modal-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.modal-subtitle {
+  font-size: 12px;
+  color: var(--muted-2);
+  display: flex;
+  align-items: center;
+}
+.modal-close-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid #dde1de;
+  background: #ffffff;
+  color: var(--muted-2);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.modal-close-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(92,107,95,0.08);
+}
+
+.modal-summary {
+  display: flex;
+  gap: 0;
+  flex-shrink: 0;
+  border-bottom: 1px solid #dde1de;
+  background: #ffffff;
+  overflow-x: auto;
+}
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 20px;
+  border-right: 1px solid #dde1de;
+  min-width: 130px;
+}
+.summary-item:last-child { border-right: none; }
+.summary-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted-2);
+  letter-spacing: 0.06em;
+}
+.summary-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px 24px;
+}
+
+.modal-fade-enter-active, .modal-fade-leave-active { transition: all 0.2s ease; }
+.modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
+.modal-fade-enter-from .modal-box, .modal-fade-leave-to .modal-box { transform: scale(0.96) translateY(8px); }
+.modal-fade-enter-active .modal-box, .modal-fade-leave-active .modal-box { transition: transform 0.2s ease; }
+
+@media (max-width: 640px) {
+  .modal-overlay { padding: 12px; }
+  .modal-box { max-height: 90vh; }
+  .modal-header { padding: 14px 16px; }
+  .modal-body { padding: 16px; }
+}
 </style>

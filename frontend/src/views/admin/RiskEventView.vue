@@ -14,9 +14,9 @@
           style="width: 150px"
           allow-clear
         >
-          <a-select-option value="LOAN">貸款</a-select-option>
-          <a-select-option value="TRANSFER">轉帳</a-select-option>
-          <a-select-option value="USER_LOGIN">登入</a-select-option>
+          <a-select-option value="LOAN">貸款申請</a-select-option>
+          <a-select-option value="TRANSFER_REVIEW">轉帳審核</a-select-option>
+          <a-select-option value="LOGIN_CHECK">登入檢查</a-select-option>
           <a-select-option value="CREDIT_CARD">信用卡</a-select-option>
         </a-select>
         <a-select
@@ -36,8 +36,8 @@
           style="width: 150px"
           allow-clear
         >
-          <a-select-option value="PASSED">通過</a-select-option>
-          <a-select-option value="REJECTED">拒絕</a-select-option>
+          <a-select-option value="PASS">通過</a-select-option>
+          <a-select-option value="REJECT">拒絕</a-select-option>
           <a-select-option value="MANUAL_REVIEW">人工審核</a-select-option>
         </a-select>
         <a-button type="primary" class="rounded-btn" @click="loadData">
@@ -53,6 +53,7 @@
       :data-source="dataSource"
       :pagination="pagination"
       :loading="loading"
+      :scroll="{ x: 800 }"
       @change="handleTableChange"
       row-key="logId"
       class="custom-table"
@@ -72,7 +73,20 @@
         <template v-else-if="column.key === 'eventType'">
           <a-tag color="blue">{{ eventTypeMap[record.eventType] || record.eventType }}</a-tag>
         </template>
+        <template v-else-if="column.key === 'createdAt'">
+          {{ formatDate(record.createdAt) }}
+        </template>
       </template>
+
+      <!--<template #expandedRowRender="{ record }">
+        <div class="metadata-detail">
+          <h4 class="detail-title">原始元數據 (JSON Metadata)</h4>
+          <div v-if="record.metaData" class="json-code-box">
+            <pre>{{ formatJson(record.metaData) }}</pre>
+          </div>
+          <a-empty v-else description="此事件無附加元數據資訊" :image="false" />
+        </div>
+      </template>-->
     </a-table>
   </div>
 </template>
@@ -111,9 +125,9 @@ const actionTakenColorMap = {
 }
 
 const eventTypeMap = {
-  LOAN_APPLY: '貸款',
-  TRANSFER: '轉帳',
-  USER_LOGIN: '登入',
+  LOAN_APPLY: '貸款申請',
+  TRANSFER_REVIEW: '轉帳審核',
+  LOGIN_CHECK: '登入檢查',
   CREDIT_CARD: '信用卡',
 }
 
@@ -130,6 +144,9 @@ const pagination = reactive({
   current: 1,
   pageSize: 10,
   total: 0,
+  showSizeChanger: true,
+  pageSizeOptions: ['10', '20', '50', '100'],
+  showTotal: (total) => `共 ${total} 筆`,
 })
 
 const loadData = async () => {
@@ -163,6 +180,26 @@ const handleTableChange = (pag) => {
   pagination.current = pag.current
   pagination.pageSize = pag.pageSize
   loadData()
+}
+
+const formatJson = (data) => {
+  if (!data) return ''
+  if (typeof data === 'string') {
+    try {
+      // 如果是字串則解析後格式化
+      return JSON.stringify(JSON.parse(data), null, 2)
+    } catch (e) {
+      return data
+    }
+  }
+  // 如果已經是物件則直接格式化
+  return JSON.stringify(data, null, 2)
+}
+
+function formatDate(val) {
+  if (!val) return '—'
+  const cleanStr = val.replace('T', ' ').replace(/-/g, '/')
+  return cleanStr.substring(0, 16)
 }
 
 onMounted(() => loadData())
@@ -216,5 +253,40 @@ onMounted(() => loadData())
 }
 .risk-suspended .status-dot {
   background-color: #722ed1;
+}
+
+/* Metadata 展開內容樣式 */
+.metadata-detail {
+  padding: 16px;
+  background: #fdfdfd;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+}
+
+.detail-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #262626;
+  margin-bottom: 12px;
+}
+
+.json-code-box {
+  background: #1e1e1e;
+  padding: 16px;
+  border-radius: 6px;
+  max-height: 500px;
+  overflow-y: auto;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.json-code-box pre {
+  margin: 0;
+  color: #9cdcfe; /* 淺藍色，類似 VS Code 屬性名顏色 */
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  tab-size: 2;
 }
 </style>

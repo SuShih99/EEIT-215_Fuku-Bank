@@ -17,19 +17,21 @@ CREATE TABLE RISK_EVENT_LOG
 
 CREATE TABLE REVIEW_TASK
 (
-    task_id       BIGINT IDENTITY(1,1),
-    log_id        BIGINT      NOT NULL,
-    business_id   VARCHAR(64) NOT NULL,
-    scene         VARCHAR(32) NULL,
-    status        VARCHAR(50) NULL,           -- 255 有點大，通常狀態代碼 50 綽綽有餘
-    review_result VARCHAR(20) NULL,
-    assignee      VARCHAR(255) NULL,
-    admin_comment VARCHAR(255) NULL,
-    priority      INT      DEFAULT 0,
-    create_at     DATETIME DEFAULT GETDATE(), -- 自動記錄建立時間
-    processed_at  DATETIME NULL,
-    version       BIGINT   DEFAULT 0,
-    attachments   NVARCHAR(MAX) NULL,         -- 補件文件清單（JSON 陣列，null = 尚未收到補件）
+    task_id               BIGINT IDENTITY(1,1),
+    log_id                BIGINT      NOT NULL,
+    business_id           VARCHAR(64) NOT NULL,
+    scene                 VARCHAR(32) NULL,
+    status                VARCHAR(50) NULL,
+    sub_status            VARCHAR(50) NULL,
+    review_result         VARCHAR(20) NULL,
+    assignee              VARCHAR(255) NULL,
+    admin_comment         VARCHAR(50) NULL,
+    requiredDocumentsJson NVARCHAR(MAX) NULL,
+    priority              INT      DEFAULT 0,
+    create_at             DATETIME DEFAULT GETDATE(), -- 自動記錄建立時間
+    processed_at          DATETIME NULL,
+    version               BIGINT   DEFAULT 0,
+    attachments           NVARCHAR(MAX) NULL,         -- 補件文件清單（JSON 陣列，null = 尚未收到補件）
     CONSTRAINT pk_review_task PRIMARY KEY (task_id)
 )
     GO

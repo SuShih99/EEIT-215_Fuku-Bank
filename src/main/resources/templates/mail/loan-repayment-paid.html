@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, "Microsoft JhengHei", sans-serif;
+            background-color: #f7f7f5;
+            color: #333333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border: 1px solid #e0e0d5;
+            border-top: 4px solid #5a6e60;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .header {
+            font-size: 20px;
+            font-weight: bold;
+            color: #5a6e60;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eeeeee;
+            padding-bottom: 10px;
+        }
+        .content {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #4a4a4a;
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 13px;
+            color: #888888;
+            border-top: 1px solid #eeeeee;
+            padding-top: 15px;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .data-table th, .data-table td {
+            padding: 10px;
+            border-bottom: 1px solid #eeeeee;
+            text-align: left;
+        }
+        .data-table th {
+            width: 140px;
+            color: #666666;
+            font-weight: normal;
+        }
+        .section-title {
+            font-size: 13px;
+            color: #999999;
+            margin: 18px 0 4px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">Java Easy Bank - 還款成功通知</div>
+    <div class="content">
+        <p>親愛的客戶您好：</p>
+        <p>您的本期貸款還款已順利完成，以下為本期還款明細。</p>
+
+        <div class="section-title">本期還款</div>
+        <table class="data-table">
+            <tr>
+                <th>還款時間</th>
+                <td th:text="${time}"></td>
+            </tr>
+            <tr>
+                <th>貸款帳號</th>
+                <td th:text="${loanAccountNumber}"></td>
+            </tr>
+            <tr>
+                <th>還款期數</th>
+                <td>第 <span th:text="${periodIndex}"></span> 期 / 共 <span th:text="${totalPeriods}"></span> 期</td>
+            </tr>
+            <tr>
+                <th>還款金額</th>
+                <td style="font-weight: bold; color: #333;" th:text="${totalAmount}"></td>
+            </tr>
+            <tr>
+                <th>　本金</th>
+                <td th:text="${principalPortion}"></td>
+            </tr>
+            <tr>
+                <th>　利息</th>
+                <td th:text="${interestPortion}"></td>
+            </tr>
+        </table>
+
+        <div class="section-title">下期資訊</div>
+        <table class="data-table">
+            <tr>
+                <th>下期應繳日</th>
+                <td th:text="${nextPaymentDate}" th:if="${nextPaymentDate != null}"></td>
+                <td th:if="${nextPaymentDate == null}" style="color: #5a6e60; font-weight: bold;">已全數結清</td>
+            </tr>
+            <tr th:if="${nextPaymentDate != null}">
+                <th>下期應繳金額</th>
+                <td th:text="${nextAmount}"></td>
+            </tr>
+        </table>
+
+        <p>感謝您準時繳款。</p>
+    </div>
+    <div class="footer">
+        Java Easy Bank 敬上<br/>
+        此為系統自動發送之信件，請勿直接回覆。
+    </div>
+</div>
+</body>
+</html>

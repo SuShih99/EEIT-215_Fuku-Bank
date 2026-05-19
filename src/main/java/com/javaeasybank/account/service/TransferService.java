@@ -39,8 +39,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.javaeasybank.risk.enums.Disposition.*;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -100,6 +98,7 @@ public class TransferService {
 
         // 建立一個暫存變數
         LocalDateTime now = LocalDateTime.now(clock);
+        String internalWarning = null;
 
         AccountStats velocityStats = transLogRepository.getRecentStats(
                 fromAccNum,
@@ -111,11 +110,10 @@ public class TransferService {
         BigDecimal velocitySum = velocityStats.sum();
         if (velocityCount >= 3) {
             log.warn("[Transfer] 高頻轉帳 fromAcc={} count={}", fromAccNum, velocityCount);
-            throw new TransferException("HIGH_FREQUENCY",
-                   "短時間內轉帳次數過多，請稍後再試");
+            internalWarning = "高頻轉帳，系統自動終止轉帳";
+            // 不再直接拋出異常，而是讓風控服務處理，確保記錄
         }
 
-        String internalWarning = null;
         // 定義拆單偵測閾值
         int countThreshold = 2;
         BigDecimal velocityAmountThreshold = new BigDecimal("40000");
@@ -152,7 +150,8 @@ public class TransferService {
         String finalReason = internalWarning != null
                 ? internalWarning
                 : (riskResult.getDisposition() == Disposition.MANUAL_REVIEW
-                   ? riskResult.getReason() : null);
+                        ? riskResult.getReason()
+                        : null);
 
         if (finalReason != null) {
             // 內部有警告時，強制設為 MANUAL_REVIEW
@@ -184,6 +183,7 @@ public class TransferService {
 
         return executeTransfer(request, referenceId);
     }
+
     @Transactional
     protected TransferResponse executeTransfer(TransferRequest request, String referenceId) {
 
@@ -373,7 +373,8 @@ public class TransferService {
             throw new TransferException("UNSUPPORTED_CROSS_CURRENCY_EXCHANGE", "換匯僅支援台幣換外幣或外幣換台幣");
         }
 
-        BigDecimal normalizedFromAmount = fromAmount.setScale(fromAccount.getCurrency().getDecimalPlaces(), RoundingMode.HALF_UP);
+        BigDecimal normalizedFromAmount = fromAmount.setScale(fromAccount.getCurrency().getDecimalPlaces(),
+                RoundingMode.HALF_UP);
         if (normalizedFromAmount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new TransferException("INVALID_AMOUNT", "換匯金額必須大於 0");
         }
@@ -381,7 +382,8 @@ public class TransferService {
             throw new TransferException("INSUFFICIENT_BALANCE", "轉出帳戶餘額不足");
         }
 
-        BigDecimal exchangeRate = exchangeRateService.calculateExchangeRate(fromAccount.getCurrency(), toAccount.getCurrency());
+        BigDecimal exchangeRate = exchangeRateService.calculateExchangeRate(fromAccount.getCurrency(),
+                toAccount.getCurrency());
         BigDecimal toAmount = normalizedFromAmount
                 .multiply(exchangeRate)
                 .setScale(toAccount.getCurrency().getDecimalPlaces(), RoundingMode.HALF_UP);
@@ -398,7 +400,8 @@ public class TransferService {
 
         String referenceId = ReferenceIdGenerator.generate();
         LocalDateTime now = LocalDateTime.now();
-        String note = buildExchangeNote(request.getNote(), exchangeRate, fromAccount.getCurrency(), toAccount.getCurrency());
+        String note = buildExchangeNote(request.getNote(), exchangeRate, fromAccount.getCurrency(),
+                toAccount.getCurrency());
 
         TransLog fromLog = buildTransLog(
                 referenceId,
@@ -414,8 +417,7 @@ public class TransferService {
                 note,
                 false,
                 BigDecimal.ZERO,
-                normalizedFromAmount
-        );
+                normalizedFromAmount);
 
         TransLog toLog = buildTransLog(
                 referenceId,
@@ -431,8 +433,7 @@ public class TransferService {
                 note,
                 false,
                 BigDecimal.ZERO,
-                toAmount
-        );
+                toAmount);
 
         saveTransLogs(fromLog, toLog);
 
@@ -470,8 +471,8 @@ public class TransferService {
         }
     }
 
-    private String buildExchangeNote(String requestNote, BigDecimal exchangeRate, Currency fromCurrency, Currency
-            toCurrency) {
+    private String buildExchangeNote(String requestNote, BigDecimal exchangeRate, Currency fromCurrency,
+            Currency toCurrency) {
         String note = "換匯 " + fromCurrency.name() + "->" + toCurrency.name() + " 匯率 " + exchangeRate.toPlainString();
         if (requestNote != null && !requestNote.isBlank()) {
             note += " | " + requestNote.trim();
@@ -521,21 +522,20 @@ public class TransferService {
                 referenceId, riskResult.getReviewTaskId());
     }
 
-
     private TransLog buildTransLog(String referenceId,
-                                   String accountNumber,
-                                   String counterpartAccount,
-                                   TransferBank counterpartBank,
-                                   EntryType entryType,
-                                   TransactionType transactionType,
-                                   BigDecimal amount,
-                                   BigDecimal balanceBefore,
-                                   BigDecimal balanceAfter,
-                                   Currency currency,
-                                   String note,
-                                   boolean interbank,
-                                   BigDecimal feeAmount,
-                                   BigDecimal totalDebitAmount) {
+            String accountNumber,
+            String counterpartAccount,
+            TransferBank counterpartBank,
+            EntryType entryType,
+            TransactionType transactionType,
+            BigDecimal amount,
+            BigDecimal balanceBefore,
+            BigDecimal balanceAfter,
+            Currency currency,
+            String note,
+            boolean interbank,
+            BigDecimal feeAmount,
+            BigDecimal totalDebitAmount) {
         TransLog transLog = new TransLog();
         transLog.setReferenceId(referenceId);
         transLog.setAccountNumber(accountNumber);
@@ -593,9 +593,9 @@ public class TransferService {
     }
 
     private CashResponse cashTransaction(CashRequest request,
-                                         EntryType entryType,
-                                         TransactionType transactionType,
-                                         String actionLabel) {
+            EntryType entryType,
+            TransactionType transactionType,
+            String actionLabel) {
         String accountNumber = normalizeAccountNumber(request.getAccountNumber());
         BigDecimal amount = request.getAmount();
 
@@ -607,8 +607,7 @@ public class TransferService {
         Account account = findAccountOrThrow(
                 accountNumber,
                 "ACCOUNT_NOT_FOUND",
-                "帳戶不存在: " + accountNumber
-        );
+                "帳戶不存在: " + accountNumber);
         validateActiveAccount(account, "ACCOUNT_INACTIVE", "帳戶非 ACTIVE 狀態");
         validateGeneralBalanceAccount(account, "帳戶");
 
@@ -632,20 +631,19 @@ public class TransferService {
                 transactionType,
                 amount,
                 balanceBefore,
-                request.getNote()
-        ));
+                request.getNote()));
 
         log.info("{}成功: refId={}, account={}, amount={}", actionLabel, referenceId, accountNumber, amount);
         return buildCashResponse(referenceId, accountNumber, amount, account.getBalance(), now);
     }
 
     private TransLog buildCashTransLog(String referenceId,
-                                       Account account,
-                                       EntryType entryType,
-                                       TransactionType transactionType,
-                                       BigDecimal amount,
-                                       BigDecimal balanceBefore,
-                                       String note) {
+            Account account,
+            EntryType entryType,
+            TransactionType transactionType,
+            BigDecimal amount,
+            BigDecimal balanceBefore,
+            String note) {
         TransLog transLog = new TransLog();
         transLog.setReferenceId(referenceId);
         transLog.setAccountNumber(account.getAccountNumber());
@@ -664,10 +662,10 @@ public class TransferService {
     }
 
     private CashResponse buildCashResponse(String referenceId,
-                                           String accountNumber,
-                                           BigDecimal amount,
-                                           BigDecimal balance,
-                                           LocalDateTime transactedAt) {
+            String accountNumber,
+            BigDecimal amount,
+            BigDecimal balance,
+            LocalDateTime transactedAt) {
         CashResponse response = new CashResponse();
         response.setReferenceId(referenceId);
         response.setAccountNumber(accountNumber);
@@ -678,11 +676,11 @@ public class TransferService {
     }
 
     private TransLog buildReversalLog(String reversalRefId,
-                                      TransLog originalLog,
-                                      EntryType reversedEntryType,
-                                      BigDecimal balanceBefore,
-                                      BigDecimal balanceAfter,
-                                      String note) {
+            TransLog originalLog,
+            EntryType reversedEntryType,
+            BigDecimal balanceBefore,
+            BigDecimal balanceAfter,
+            String note) {
         TransLog reversalLog = new TransLog();
         reversalLog.setReferenceId(reversalRefId);
         reversalLog.setAccountNumber(originalLog.getAccountNumber());
@@ -705,8 +703,8 @@ public class TransferService {
     }
 
     private ReversalResponse.ReversalDetail buildReversalDetail(String accountNumber,
-                                                                BigDecimal reversedAmount,
-                                                                BigDecimal balanceAfter) {
+            BigDecimal reversedAmount,
+            BigDecimal balanceAfter) {
         ReversalResponse.ReversalDetail detail = new ReversalResponse.ReversalDetail();
         detail.setAccountNumber(accountNumber);
         detail.setReversedAmount(reversedAmount);
@@ -767,10 +765,11 @@ public class TransferService {
      * 根據原始交易編號找出所有交易紀錄，對每筆紀錄反向操作帳戶餘額，
      * 並寫入新的沖正交易紀錄。不會修改或刪除原始紀錄。
      *
-     * <p>沖正邏輯：
+     * <p>
+     * 沖正邏輯：
      * <ul>
-     *   <li>原始 DEBIT（扣款）→ 沖正時把錢加回去，寫一筆 CREDIT + REVERSAL</li>
-     *   <li>原始 CREDIT（入帳）→ 沖正時把錢扣回來，寫一筆 DEBIT + REVERSAL</li>
+     * <li>原始 DEBIT（扣款）→ 沖正時把錢加回去，寫一筆 CREDIT + REVERSAL</li>
+     * <li>原始 CREDIT（入帳）→ 沖正時把錢扣回來，寫一筆 DEBIT + REVERSAL</li>
      * </ul>
      *
      * @param request 沖正請求（含原始交易編號與沖正原因）。
@@ -788,7 +787,7 @@ public class TransferService {
         }
 
         // 2. 防止重複沖正：檢查是否已有以此 referenceId 為目標的沖正紀錄
-        //    沖正紀錄的 note 會包含 "沖正 ref: {originalRefId}"
+        // 沖正紀錄的 note 會包含 "沖正 ref: {originalRefId}"
         String reversalNoteKeyword = REVERSAL_NOTE_PREFIX + originalRefId;
         boolean alreadyReversed = transLogRepository.existsByNoteContaining(reversalNoteKeyword);
         if (alreadyReversed) {
@@ -836,8 +835,7 @@ public class TransferService {
                     reversedEntryType,
                     balanceBefore,
                     account.getBalance(),
-                    notePrefix
-            ));
+                    notePrefix));
 
             // 6. 收集沖正明細
             details.add(buildReversalDetail(accNum, originalLog.getAmount(), account.getBalance()));

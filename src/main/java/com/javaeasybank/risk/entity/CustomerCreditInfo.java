@@ -1,5 +1,6 @@
 package com.javaeasybank.risk.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.javaeasybank.account.enums.FundSource;
 import com.javaeasybank.risk.enums.Occupation;
 import com.javaeasybank.risk.enums.RiskLevel;
@@ -60,7 +61,7 @@ public class CustomerCreditInfo {
     @Enumerated(EnumType.STRING)
     @Column(name = "risk_level", length = 10)
     private RiskLevel riskLevel; // LOW, MEDIUM, HIGH
-
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @Column(name = "last_updated_at", nullable = false)
     private LocalDateTime lastUpdatedAt;
 

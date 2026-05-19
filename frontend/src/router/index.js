@@ -258,6 +258,18 @@ const router = createRouter({
           component: () => import('../views/admin/ReviewTask.vue'),
         },
         {
+          path: 'credit-list',
+          name: 'admin-credit-list',
+          meta: { requiresAuth: true, roles: ['CFDM', 'CFSO'] },
+          component: () => import('../views/admin/CreditList.vue'),
+        },
+        {
+          path: '/admin/risk/credit/:customerId',
+          name: 'admin-credit-detail',
+          component: () => import('../views/admin/CreditDetail.vue'),
+          meta: { requiresAuth: true, roles: ['CFDM', 'CFSO'] },
+        },
+        {
           name: 'admin-card-application-detail',
           path: '/admin/card-applications/:id',
           meta: { requiresBusiness: true },

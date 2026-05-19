@@ -1,5 +1,6 @@
 package com.javaeasybank.risk.dto.request;
 
+import com.javaeasybank.account.enums.FundSource;
 import com.javaeasybank.risk.enums.BusinessScene;
 import com.javaeasybank.risk.enums.Occupation;
 import jakarta.validation.constraints.*;
@@ -107,4 +108,8 @@ public class RiskReviewRequest {
      * 是否有不動產
      */
     private Boolean hasRealEstate;
+
+    private Boolean isPep;
+
+    private FundSource fundSource;
 }

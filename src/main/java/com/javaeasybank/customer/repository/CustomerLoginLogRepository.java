@@ -13,10 +13,10 @@ public interface CustomerLoginLogRepository extends JpaRepository<CustomerLoginL
 
     // 查最近 N 分鐘內失敗次數
     @Query("SELECT COUNT(l) FROM CustomerLoginLog l " +
-            "WHERE l.username = :username " +
+            "WHERE l.customerId = :customerId " +
             "AND l.result = '失敗' " +
             "AND l.loginTime >= :since")
     int countRecentFailures(
-            @Param("username") String username,
+            @Param("customerId") String customerId,
             @Param("since") LocalDateTime since);
 }

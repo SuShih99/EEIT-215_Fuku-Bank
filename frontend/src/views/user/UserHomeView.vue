@@ -5,9 +5,18 @@
     <!-- 未開戶引導 -->
     <section v-if="!hasAccount" class="onboard-card" aria-label="開戶引導">
       <div class="onboard-icon">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="2" y="5" width="20" height="14" rx="2"/>
-          <line x1="2" y1="10" x2="22" y2="10"/>
+        <svg
+          width="48"
+          height="48"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="var(--primary)"
+          stroke-width="1.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="2" y="5" width="20" height="14" rx="2" />
+          <line x1="2" y1="10" x2="22" y2="10" />
         </svg>
       </div>
       <div class="onboard-content">
@@ -16,10 +25,16 @@
           您尚未擁有任何帳戶。立即申請開戶，即可享有存款、轉帳、換匯等完整金融服務。
         </p>
         <div class="onboard-actions">
-          <button class="jb-btn jb-btn-primary jb-btn-lg" @click="$router.push({ name: 'user-account-application' })">
+          <button
+            class="jb-btn jb-btn-primary jb-btn-lg"
+            @click="$router.push({ name: 'user-account-application' })"
+          >
             立即申請開戶
           </button>
-          <button class="jb-btn jb-btn-secondary" @click="$router.push({ name: 'user-account-application' })">
+          <button
+            class="jb-btn jb-btn-secondary"
+            @click="$router.push({ name: 'user-account-application' })"
+          >
             查看申請進度
           </button>
         </div>
@@ -68,8 +83,21 @@
         </div>
 
         <div class="profile-link-row" @click="$router.push({ name: 'user-profile' })">
-          <span class="profile-label" style="color: var(--text-primary); font-weight: 600;">我的權益</span>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          <span class="profile-label" style="color: var(--text-primary); font-weight: 600"
+            >我的權益</span
+          >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M9 18l6-6-6-6" />
+          </svg>
         </div>
       </section>
 
@@ -80,9 +108,41 @@
             <h2 class="asset-overview-title">資產總覽</h2>
             <p class="asset-overview-subtitle">淨資產（折合臺幣）</p>
           </div>
-          <button class="toggle-visibility-btn" @click="showAmounts = !showAmounts" :aria-label="showAmounts ? '隱藏金額' : '顯示金額'">
-            <svg v-if="showAmounts" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-            <svg v-else width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+          <button
+            class="toggle-visibility-btn"
+            @click="showAmounts = !showAmounts"
+            :aria-label="showAmounts ? '隱藏金額' : '顯示金額'"
+          >
+            <svg
+              v-if="showAmounts"
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.9"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <svg
+              v-else
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.9"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+              ></path>
+              <line x1="1" y1="1" x2="23" y2="23"></line>
+            </svg>
           </button>
         </div>
 
@@ -109,8 +169,15 @@
               </div>
             </div>
             <div class="asset-subcard-actions">
-              <button class="subcard-primary-btn" @click="$router.push({ name: 'user-transfer' })">臺幣轉帳</button>
-              <button class="subcard-secondary-btn" @click="$router.push({ name: 'user-transactions' })">臺幣明細</button>
+              <button class="subcard-primary-btn" @click="$router.push({ name: 'user-transfer' })">
+                臺幣轉帳
+              </button>
+              <button
+                class="subcard-secondary-btn"
+                @click="$router.push({ name: 'user-transactions' })"
+              >
+                臺幣明細
+              </button>
             </div>
           </div>
 
@@ -126,13 +193,26 @@
                 <span>$ {{ formatMoney(assetData.creditUnbilled) }}</span>
               </div>
               <div class="asset-subcard-detail">
-                <span>{{ currentMonth }} 月帳單</span>
-                <span class="text-safe">無需繳費</span>
+                <span>{{ currentMonth }} 帳單</span>
+                <span :class="assetData.currentBillAmount > 0 ? 'text-overdue' : 'text-safe'">
+                  {{
+                    assetData.currentBillAmount > 0
+                      ? '$ ' + formatMoney(assetData.currentBillAmount)
+                      : '無需繳費'
+                  }}
+                </span>
               </div>
             </div>
             <div class="asset-subcard-actions">
-              <button class="subcard-primary-btn" @click="comingSoon">我要繳費</button>
-              <button class="subcard-secondary-btn" @click="comingSoon">帳單分期</button>
+              <button class="subcard-primary-btn" @click="router.push({ name: 'user-card-types' })">
+                申辦卡片
+              </button>
+              <button
+                class="subcard-secondary-btn"
+                @click="router.push({ name: 'user-card-bills' })"
+              >
+                我要繳費
+              </button>
             </div>
           </div>
 
@@ -142,14 +222,22 @@
               <span class="asset-subcard-title">貸款</span>
             </div>
             <!-- 無帳戶 -->
-            <p v-if="sortedLoanAccounts.length === 0" class="asset-subcard-amount asset-subcard-amount--muted">
+            <p
+              v-if="sortedLoanAccounts.length === 0"
+              class="asset-subcard-amount asset-subcard-amount--muted"
+            >
               {{ showAmounts ? '尚無貸款' : '***' }}
             </p>
             <!-- 有帳戶：顯示剩餘本金總計 -->
             <p v-else class="asset-subcard-amount">
-              {{ showAmounts
-                ? '$ ' + sortedLoanAccounts.reduce((s, a) => s + (a.remainingPrincipal || 0), 0).toLocaleString('zh-TW')
-                : '***' }}
+              {{
+                showAmounts
+                  ? '$ ' +
+                    sortedLoanAccounts
+                      .reduce((s, a) => s + (a.remainingPrincipal || 0), 0)
+                      .toLocaleString('zh-TW')
+                  : '***'
+              }}
             </p>
             <div class="asset-subcard-details">
               <!-- 依最近繳款日排序，最多顯示 2 筆 -->
@@ -160,7 +248,10 @@
                   class="asset-subcard-detail"
                 >
                   <span>{{ LOAN_TYPE_MAP[acc.applyType] || acc.applyType }}</span>
-                  <span v-if="showAmounts" :class="{ 'text-overdue': acc.accountStatus === 'OVERDUE' }">
+                  <span
+                    v-if="showAmounts"
+                    :class="{ 'text-overdue': acc.accountStatus === 'OVERDUE' }"
+                  >
                     {{ acc.nextPaymentDate ? acc.nextPaymentDate.substring(0, 10) : '—' }}
                   </span>
                   <span v-else>***</span>
@@ -179,10 +270,30 @@
               </template>
             </div>
             <div class="asset-subcard-actions loan-subcard-actions">
-              <button class="subcard-primary-btn" @click="$router.push({ name: 'user-loan-apply' })">申請貸款</button>
-              <button class="subcard-secondary-btn" @click="$router.push({ name: 'user-loan-status' })">查看申請</button>
-              <button class="subcard-secondary-btn" @click="$router.push({ name: 'user-loan-accounts' })">查看帳戶</button>
-              <button class="subcard-secondary-btn" @click="$router.push({ name: 'user-loan-repayment' })">立即還款</button>
+              <button
+                class="subcard-primary-btn"
+                @click="$router.push({ name: 'user-loan-apply' })"
+              >
+                申請貸款
+              </button>
+              <button
+                class="subcard-secondary-btn"
+                @click="$router.push({ name: 'user-loan-status' })"
+              >
+                查看申請
+              </button>
+              <button
+                class="subcard-secondary-btn"
+                @click="$router.push({ name: 'user-loan-accounts' })"
+              >
+                查看帳戶
+              </button>
+              <button
+                class="subcard-secondary-btn"
+                @click="$router.push({ name: 'user-loan-repayment' })"
+              >
+                立即還款
+              </button>
             </div>
           </div>
         </div>
@@ -211,7 +322,9 @@
       <section class="exchange-card" aria-label="匯率">
         <div class="card-title-row">
           <h3 class="card-title">匯率</h3>
-          <button class="block-action-btn" @click="$router.push({ name: 'user-exchange' })">立即換匯</button>
+          <button class="block-action-btn" @click="$router.push({ name: 'user-exchange' })">
+            立即換匯
+          </button>
         </div>
         <div class="section-rule"></div>
         <table class="exchange-table" :class="{ 'is-updating': isUpdatingRates }">
@@ -232,21 +345,29 @@
             </tr>
           </tbody>
         </table>
-        <p class="exchange-time">資料時間：{{ exchangeTime }} <button class="refresh-btn" @click="fetchExchangeRates"><span :class="{ 'spin-anim': isUpdatingRates }" style="display:inline-block;">↻</span> 更新</button></p>
+        <p class="exchange-time">
+          資料時間：{{ exchangeTime }}
+          <button class="refresh-btn" @click="fetchExchangeRates">
+            <span :class="{ 'spin-anim': isUpdatingRates }" style="display: inline-block">↻</span>
+            更新
+          </button>
+        </p>
       </section>
 
       <!-- 歷史水位圖 -->
       <section class="watermark-card" aria-label="歷史水位圖">
         <h3 class="card-title">臺外幣歷史水位圖</h3>
         <div class="section-rule"></div>
-        <div class="period-tabs" style="margin-bottom: 16px;">
+        <div class="period-tabs" style="margin-bottom: 16px">
           <button
             v-for="p in periods"
             :key="p.value"
             class="period-tab"
             :class="{ active: activePeriod === p.value }"
             @click="activePeriod = p.value"
-          >{{ p.label }}</button>
+          >
+            {{ p.label }}
+          </button>
         </div>
         <div class="chart-wrap">
           <canvas ref="lineCanvas" height="260"></canvas>
@@ -274,6 +395,7 @@ import api, { BASE_URL } from '@/api/axios'
 import { Chart, registerables } from 'chart.js'
 import { getMyAccountApplications } from '@/api/accountApplication'
 import { getMyAccounts } from '@/api/customerAccount'
+import { getBills, getUnbilledBills } from '@/api/userCardBill'
 
 Chart.register(...registerables)
 
@@ -301,25 +423,64 @@ const onboardFeatures = [
   },
 ]
 
-const accountsList = ref([])
+//==信用卡==
+const currentBillMonth = ref('')
+
+async function fetchCreditSummary() {
+  try {
+    const bills = await getBills(0, 10)
+    const unbilled = await getUnbilledBills(0, 10)
+
+    const billList = bills.content || []
+    const unbilledList = unbilled.content || []
+
+    // 依帳單月份由新到舊排序，抓最新一期
+    const sortedBills = [...billList].sort((a, b) => {
+      return String(b.billingMonth).localeCompare(String(a.billingMonth))
+    })
+
+    const latestBill = sortedBills[0]
+    currentBillMonth.value = latestBill?.billingMonth || ''
+    const billTotal = Number(latestBill?.totalAmount || 0)
+    const paidAmount = Number(latestBill?.paidAmount || 0)
+    const remainingBillAmount = Math.max(billTotal - paidAmount, 0)
+
+    assetData.value.currentBillAmount = remainingBillAmount
+    assetData.value.currentBillPaidAmount = paidAmount
+
+    const unbilledTotal = unbilledList.reduce((sum, item) => {
+      return sum + Number(item.txnAmount || 0)
+    }, 0)
+
+    assetData.value.creditUnbilled = unbilledTotal
+
+    // 最新一期帳單 + 未出帳
+    assetData.value.creditTotal = billTotal + unbilledTotal
+
+    calculateAssets()
+  } catch (e) {
+    console.error('首頁信用卡金額取得失敗', e)
+  }
+}
 
 // === 貸款帳戶 ===
+const accountsList = ref([])
 const loanAccounts = ref([])
 
 const LOAN_TYPE_MAP = {
   PERSONAL: '個人信貸',
-  CAR:      '汽車貸款',
-  MOTOR:    '機車貸款',
-  STUDENT:  '學貸',
+  CAR: '汽車貸款',
+  MOTOR: '機車貸款',
+  STUDENT: '學貸',
   BUSINESS: '創業貸款',
-  HOUSE:    '房屋貸款',
-  LAND:     '土地貸款',
+  HOUSE: '房屋貸款',
+  LAND: '土地貸款',
 }
 
 // 依最近繳款日排序（未結清），最近到期的排最前面
 const sortedLoanAccounts = computed(() => {
   return [...loanAccounts.value]
-    .filter(a => a.accountStatus !== 'PAID_OFF')
+    .filter((a) => a.accountStatus !== 'PAID_OFF')
     .sort((a, b) => {
       if (!a.nextPaymentDate && !b.nextPaymentDate) return 0
       if (!a.nextPaymentDate) return 1
@@ -340,7 +501,7 @@ async function checkAccountStatus() {
     }
     // 沒有帳戶，再檢查是否有已核准的開戶申請
     const apps = await getMyAccountApplications()
-    const hasApproved = apps && apps.some(a => a.status === 'APPROVED')
+    const hasApproved = apps && apps.some((a) => a.status === 'APPROVED')
     hasAccount.value = hasApproved
   } catch {
     // API 失敗時保持顯示 dashboard（避免影響已有帳戶的用戶）
@@ -366,7 +527,11 @@ const todayStr = computed(() => {
   const d = new Date()
   return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
 })
-const currentMonth = computed(() => String(new Date().getMonth() + 1).padStart(2, '0'))
+//計算月結帳單月份
+const currentMonth = computed(() => {
+  if (!currentBillMonth.value) return '--'
+  return currentBillMonth.value
+})
 
 // === 資產資料 ===
 const assetData = ref({
@@ -376,18 +541,20 @@ const assetData = ref({
   foreignAsset: 0,
   creditTotal: 43680,
   creditUnbilled: 12500,
+  currentBillAmount: 0,
+  currentBillPaidAmount: 0,
 })
 
 function calculateAssets() {
   let twd = 0
   let fxTwd = 0
 
-  accountsList.value.forEach(a => {
+  accountsList.value.forEach((a) => {
     if (a.accountType === 'LOAN') return
     if (a.currency === 'TWD') {
       twd += Number(a.balance || 0)
     } else {
-      const rateObj = exchangeRates.value.find(r => r.code === a.currency)
+      const rateObj = exchangeRates.value.find((r) => r.code === a.currency)
       if (rateObj && rateObj.buy !== '-') {
         // 使用買入匯率折算台幣
         fxTwd += Number(a.balance || 0) * Number(rateObj.buy)
@@ -404,11 +571,11 @@ function calculateAssets() {
   assetData.value.deposit = twd + fxTwd
   assetData.value.netAsset = assetData.value.deposit - assetData.value.creditTotal
 
-  const total = twd + fxTwd + assetData.value.creditTotal;
+  const total = twd + fxTwd + assetData.value.creditTotal
   if (total > 0) {
-    distributionData.value[0].pct = Math.round((twd / total) * 100);
-    distributionData.value[1].pct = Math.round((fxTwd / total) * 100);
-    distributionData.value[2].pct = Math.round((assetData.value.creditTotal / total) * 100);
+    distributionData.value[0].pct = Math.round((twd / total) * 100)
+    distributionData.value[1].pct = Math.round((fxTwd / total) * 100)
+    distributionData.value[2].pct = Math.round((assetData.value.creditTotal / total) * 100)
   }
 
   // 重繪圖表
@@ -444,13 +611,15 @@ function drawDonut() {
   donutChart = new Chart(donutCanvas.value, {
     type: 'doughnut',
     data: {
-      labels: distributionData.value.map(d => d.label),
-      datasets: [{
-        data: distributionData.value.map(d => d.pct || 0.1), // if all 0, use 0.1 to avoid empty chart
-        backgroundColor: ['#5C6B5F', '#8BA58E', '#A65A4D', '#D6CEC3'],
-        borderWidth: 0,
-        hoverOffset: 4,
-      }],
+      labels: distributionData.value.map((d) => d.label),
+      datasets: [
+        {
+          data: distributionData.value.map((d) => d.pct || 0.1), // if all 0, use 0.1 to avoid empty chart
+          backgroundColor: ['#5C6B5F', '#8BA58E', '#A65A4D', '#D6CEC3'],
+          borderWidth: 0,
+          hoverOffset: 4,
+        },
+      ],
     },
     options: {
       cutout: '68%',
@@ -500,9 +669,9 @@ function generateMockLine(months) {
       twdData.push(currentTwd)
       fxData.push(currentFx)
     } else {
-      const seed = d.getMonth() + d.getFullYear();
-      const rand1 = (Math.sin(seed) * 0.5 + 0.5) * 0.2 - 0.1; // -10% ~ +10%
-      const rand2 = (Math.cos(seed) * 0.5 + 0.5) * 0.2 - 0.1;
+      const seed = d.getMonth() + d.getFullYear()
+      const rand1 = (Math.sin(seed) * 0.5 + 0.5) * 0.2 - 0.1 // -10% ~ +10%
+      const rand2 = (Math.cos(seed) * 0.5 + 0.5) * 0.2 - 0.1
       twdData.push(Math.round(currentTwd * (1 + rand1)))
       fxData.push(Math.round(currentFx * (1 + rand2)))
     }
@@ -566,7 +735,12 @@ function drawLine() {
           ticks: {
             font: { family: 'Cormorant Garamond', size: 12 },
             color: '#A8A199',
-            callback: v => v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : v >= 1000 ? (v / 1000).toFixed(0) + 'K' : v,
+            callback: (v) =>
+              v >= 1000000
+                ? (v / 1000000).toFixed(1) + 'M'
+                : v >= 1000
+                  ? (v / 1000).toFixed(0) + 'K'
+                  : v,
           },
           border: { display: false },
         },
@@ -578,7 +752,7 @@ function drawLine() {
           titleFont: { family: 'Noto Sans TC' },
           bodyFont: { family: 'Noto Sans TC' },
           callbacks: {
-            label: ctx => ` ${ctx.dataset.label}：$${ctx.parsed.y.toLocaleString()}`,
+            label: (ctx) => ` ${ctx.dataset.label}：$${ctx.parsed.y.toLocaleString()}`,
           },
         },
       },
@@ -609,7 +783,7 @@ async function fetchExchangeRates() {
     exchangeTime.value = `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 
     // Convert base 1 TWD = X currency to 1 currency = Y TWD
-    exchangeRates.value = exchangeRates.value.map(currency => {
+    exchangeRates.value = exchangeRates.value.map((currency) => {
       const rateToTwd = rates[currency.code]
       if (!rateToTwd) return currency
 
@@ -637,6 +811,8 @@ watch(activePeriod, () => drawLine())
 onMounted(async () => {
   await checkAccountStatus()
   if (hasAccount.value) {
+    await fetchCreditSummary()
+
     drawDonut()
     drawLine()
     fetchExchangeRates()
@@ -996,7 +1172,7 @@ onMounted(async () => {
 }
 
 .text-overdue {
-  color: #C0392B;
+  color: #c0392b;
   font-weight: 600;
 }
 
@@ -1239,7 +1415,9 @@ onMounted(async () => {
 }
 
 @keyframes spin {
-  100% { transform: rotate(360deg); }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* === 歷史水位圖 === */
@@ -1323,8 +1501,12 @@ onMounted(async () => {
     gap: var(--space-3) var(--space-5);
     align-items: start;
   }
-  .distribution-card .card-title { grid-column: 1 / -1; }
-  .distribution-card .section-rule { grid-column: 1 / -1; }
+  .distribution-card .card-title {
+    grid-column: 1 / -1;
+  }
+  .distribution-card .section-rule {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 768px) {
