@@ -163,18 +163,12 @@ public class RiskReviewService {
 
     private String buildReason(CustomerCreditInfo credit, int finalScore) {
         if (credit == null) return null;
-        return String.format(
-                "{\"finalScore\":%d,\"riskLevel\":\"%s\",\"occupation\":\"%s\"," +
-                        "\"annualIncome\":%s,\"externalScore\":%d," +
-                        "\"otherBankDebt\":%s,\"hasRealEstate\":%b,\"isPep\":%b}",
-                finalScore,
-                credit.getRiskLevel(),
-                credit.getOccupation(),
-                credit.getAnnualIncome(),
-                credit.getExternalScore(),
-                credit.getOtherBankDebt(),
-                credit.getHasRealEstate(),
-                credit.getIsPep());
+        return switch (credit.getRiskLevel()) {
+            case LOW -> "客戶信用評估結果良好，系統自動通過";
+            case MEDIUM -> "客戶信用評分屬中等風險（評分區間 40–69），建議人工複核後決定是否核准";
+            case HIGH -> "客戶信用評估結果不佳，系統自動拒絕";
+            default -> "風險等級未知，請人工確認";
+        };
     }
 
     /**

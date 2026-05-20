@@ -44,7 +44,7 @@ public class CreditScoreService {
         if (keyword != null && !keyword.isEmpty()) {
             // 先從 CustomerProfile 查符合條件的客戶 ID
             List<String> matchedIds = cpRepos
-                    .findByNameContaining(keyword)
+                    .findByNameContainingOrCustomerIdContaining(keyword, keyword)
                     .stream()
                     .map(CustomerProfile::getCustomerId)
                     .toList();
@@ -100,7 +100,7 @@ public class CreditScoreService {
 
     @Transactional
     public CustomerCreditInfo initializeCreditInfo(String customerId, LocalDate birthday, Occupation occupation,
-            BigDecimal annualIncome, FundSource fundSource, Boolean isPep) {
+                                                   BigDecimal annualIncome, FundSource fundSource, Boolean isPep) {
         CustomerCreditInfo ccInfo = new CustomerCreditInfo();
         ccInfo.setCustomerId(customerId);
         ccInfo.setOccupation(occupation);

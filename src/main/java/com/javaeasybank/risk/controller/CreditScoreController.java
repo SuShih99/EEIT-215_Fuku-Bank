@@ -27,7 +27,6 @@ public class CreditScoreController {
     public ResponseEntity<ApiResponse<Page<CreditInfoResponse>>> listAll(
             @RequestParam(required = false) String keyword,
             Pageable pageable,
-            Authentication auth,
             HttpServletRequest request) {
 
         authActionLogService.recordAction(

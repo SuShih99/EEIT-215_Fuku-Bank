@@ -30,9 +30,12 @@
     >
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'riskLevel'">
-          <a-tag :color="riskColor(record.riskLevel)" class="table-risk-badge">
+          <div v-if="record.riskLevel"
+               :class="['status-tag', `risk-${record.riskLevel.toLowerCase()}`]">
+            <span class="status-dot"></span>
             {{ riskLabel(record.riskLevel) }}
-          </a-tag>
+          </div>
+          <span v-else style="color: #bfbfbf">—</span>
         </template>
         <template v-if="column.key === 'lastUpdatedAt'">
           {{ formatDate(record.lastUpdatedAt) }}
@@ -48,9 +51,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { message } from 'ant-design-vue'
-import { useRouter } from 'vue-router'
+import {ref, reactive, onMounted} from 'vue'
+import {message} from 'ant-design-vue'
+import {useRouter} from 'vue-router'
 import axios from 'axios'
 
 const router = useRouter()
@@ -59,6 +62,8 @@ const BASE_URL = '/api/risk/creditscore'
 const credits = ref([])
 const loading = ref(false)
 const keyword = ref('')
+const sortField = ref('')
+const sortOrder = ref('')
 
 const pagination = reactive({
   current: 1,
@@ -70,11 +75,19 @@ const pagination = reactive({
 })
 
 const columns = [
-  { title: '客戶 ID', dataIndex: 'customerId', key: 'customerId', width: 150 },
-  { title: '客戶姓名', dataIndex: 'customerName', key: 'customerName', width: 150 },
-  { title: '風險等級', dataIndex: 'riskLevel', key: 'riskLevel', width: 120 },
-  { title: '最後更新', dataIndex: 'lastUpdatedAt', key: 'lastUpdatedAt', width: 180 },
-  { title: '操作', key: 'action', width: 150, fixed: 'right' },
+  {title: '客戶 ID', dataIndex: 'customerId', key: 'customerId', width: 150},
+  {title: '客戶姓名', dataIndex: 'customerName', key: 'customerName', width: 150},
+  {title: '風險等級', dataIndex: 'riskLevel', key: 'riskLevel', width: 120},
+  {
+    title: '最後更新',
+    dataIndex: 'lastUpdatedAt',
+    key: 'lastUpdatedAt',
+    width: 180,
+    sorter: true,
+    sortDirections: ['descend', 'ascend', 'descend'],
+    defaultSortOrder: 'descend'
+  },
+  {title: '操作', key: 'action', width: 150, fixed: 'right'},
 ]
 
 async function fetchCredits() {
@@ -85,8 +98,11 @@ async function fetchCredits() {
       size: pagination.pageSize,
     }
     if (keyword.value) params.keyword = keyword.value
+    params.sort = sortField.value && sortOrder.value
+      ? `${sortField.value},${sortOrder.value}`
+      : 'lastUpdatedAt,desc'
 
-    const res = await axios.get(BASE_URL, { params, withCredentials: true })
+    const res = await axios.get(BASE_URL, {params, withCredentials: true})
     const page = res.data.data
     credits.value = page.content
     const backendPageNumber = Number(page.number || 0)
@@ -104,9 +120,16 @@ function handleSearch() {
   fetchCredits()
 }
 
-function handleTableChange(pag) {
+function handleTableChange(pag, _filters, sorter) {
   pagination.current = Math.max(1, Number(pag.current || 1))
   pagination.pageSize = pag.pageSize
+  if (sorter?.field) {
+    sortField.value = sorter.field
+    sortOrder.value = sorter.order === 'ascend' ? 'asc' : 'desc'
+  } else {
+    sortField.value = ''
+    sortOrder.value = ''
+  }
   fetchCredits()
 }
 
@@ -115,11 +138,7 @@ function viewDetail(customerId) {
 }
 
 function riskLabel(r) {
-  return { HIGH: '高風險', MEDIUM: '中風險', LOW: '低風險' }[r] || r
-}
-
-function riskColor(r) {
-  return { HIGH: 'red', MEDIUM: 'orange', LOW: 'green' }[r] || 'default'
+  return {HIGH: '高風險', MEDIUM: '中風險', LOW: '低風險'}[r] || r
 }
 
 function formatDate(val) {
@@ -181,12 +200,51 @@ onMounted(fetchCredits)
   font-size: 15px !important;
 }
 
-.table-risk-badge {
-  font-size: 15px !important;
-}
-
 .action-btn {
   font-size: 16px !important;
   padding: 0;
+}
+
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.risk-low {
+  background-color: rgba(82, 196, 26, 0.1);
+  color: #389e0d;
+}
+
+.risk-low .status-dot {
+  background-color: #52c41a;
+}
+
+.risk-medium {
+  background-color: rgba(250, 140, 22, 0.1);
+  color: #fa8c16;
+}
+
+.risk-medium .status-dot {
+  background-color: #fa8c16;
+}
+
+.risk-high {
+  background-color: rgba(255, 77, 79, 0.1);
+  color: #d9363e;
+}
+
+.risk-high .status-dot {
+  background-color: #ff4d4f;
 }
 </style>
