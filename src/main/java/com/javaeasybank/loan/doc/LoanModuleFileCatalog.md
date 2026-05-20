@@ -2,14 +2,29 @@
 
 本文整理專案中所有貸款相關檔案，依「用途、對象、功能、方法、分類」歸納，方便快速理解貸款模組的前後端、資料表、帳務整合、風控整合與通知流程。
 
-## 0. 本次核對結果
+## 0. 本次最終核對結果
 
-本文件已依目前專案內容重新核對，確認目前版本需要更新，原因如下：
+本文件已依目前專案程式碼再次完整核對，現階段可作為貸款模組的最終整理版。這一版整理重點如下：
 
-1. 正式使用中的整理檔位於 `src/main/resources/doc/LoanModuleFileCatalog.md`，不是先前另一個路徑。
-2. 目前文件缺少「客戶端工作流程」、「行員端工作流程」與「系統自動行為」說明。
-3. 目前文件尚未整理 `frontend/src/api/axios.js` 這種檔名不含 `Loan`、但實際參與貸款 API 驗證流程的橫切檔案。
-4. 目前文件尚未補上「使用到的技術方法」總覽。
+1. 正式使用中的整理檔確認為 `src/main/resources/doc/LoanModuleFileCatalog.md`。
+2. 已補齊客戶端、行員端、系統自動流程、帳戶整合、通知、排程、契約輸出等主線說明。
+3. 已把檔名不含 `Loan`、但實際參與貸款流程的橫切檔案一起納入，例如 `frontend/src/api/axios.js`、`common/config/SecurityConfig.java`、`common/service/EmailService.java`、`common/service/FileStorageService.java`。
+4. 已補上各層用途、對象、功能、主要方法、分類、DTO / Entity / Enum / Repository / SQL / 前端畫面與技術方法整理。
+5. 已把目前程式中新增的契約 PDF 產生與附件寄送流程一併納入。
+
+### 0.1 閱讀建議
+
+| 想看的主題 | 建議先看 |
+|---|---|
+| 整體流程 | 第 1 節、第 12 節 |
+| 檔案用途與分類 | 第 2 節 |
+| API 與 Controller | 第 3 節 |
+| Service 所有主要方法 | 第 4 節 |
+| Repository / Entity / DTO / Enum | 第 5 至第 8 節 |
+| 帳戶整合 | 第 9 節 |
+| 前端行為 | 第 10 節 |
+| Email / 排程 / 技術方法 | 第 11、14 節 |
+| 實務注意事項 | 第 13 節 |
 
 ## 1. 模組總覽
 
@@ -110,6 +125,7 @@
 | Service | `loan/service/LoanAccountService.java` | 貸款帳戶 | 撥款後建帳、查詢帳戶 |
 | Service | `loan/service/LoanRepaymentService.java` | 還款期數 | 建立攤還表、同步已繳、結清 |
 | Service | `loan/service/LoanDocumentService.java` | 補件文件 | 文件上傳、送出、刪除、查詢 |
+| Service | `loan/service/LoanContractPdfService.java` | 契約輸出 | 產生貸款契約 PDF 附件 |
 | Client | `loan/client/LoanRiskClient.java` | 風控 | 呼叫風控送審與補件通知 |
 | Scheduler | `loan/scheduler/LoanRepaymentScheduler.java` | 還款排程 | 每日逾期掃描與到期提醒 |
 | Utils | `loan/utils/AmortizationCalculator.java` | 攤還計算 | 等額本息月付金與攤還表 |
@@ -197,6 +213,7 @@
 |---|---|---|
 | SQL | `src/main/resources/database/loan_init.sql` | 建立貸款資料表 |
 | SQL | `src/main/resources/database/loan_mockdata.sql` | 貸款測試資料 |
+| SQL | `src/main/resources/database/loan_document_batch_migration.sql` | 補件批次欄位升級腳本 |
 | SQL | `src/main/java/com/javaeasybank/loan/database/LoanTable.sql` | 舊版 / 模組內貸款建表腳本 |
 | Mail Template | `templates/mail/loan-applied.html` | 申請成立通知 |
 | Mail Template | `templates/mail/loan-document-required.html` | 補件通知 |
@@ -207,6 +224,10 @@
 | Mail Template | `templates/mail/loan-overdue.html` | 逾期通知 |
 | Mail Template | `templates/mail/loan-repayment-reminder.html` | 到期提醒 |
 | HTTP | `loan/utils/test.http` | 手動測試 API |
+| Preview Asset | `loan_contract_preview.html` | 契約版型預覽檔 |
+| Preview Asset | `loan_contract_preview.docx` | 契約文字版本參考檔 |
+| Script | `generate_loan_contract_preview.py` | 產生 / 匯出契約預覽用腳本 |
+| Font | `src/main/resources/fonts/SourceHanSansTC-Normal.otf` | 契約 PDF 中文字型 |
 | Doc | `common/doc/LoanAccountIntegrationGuide.md` | 貸款與帳戶整合說明，但目前檔案內容在終端顯示有編碼亂碼 |
 
 ### 2.7 權限與橫切設定
@@ -214,6 +235,8 @@
 | 分類 | 檔案 | 用途 |
 |---|---|---|
 | Security | `common/config/SecurityConfig.java` | 開放 `/api/loan-applications/rate-rules`；限制 `/api/loan-callbacks/**` 僅本機 IP 可呼叫 |
+| Security Filter | `common/config/JwtAuthenticationFilter.java` | 將 JWT 解析結果放入 SecurityContext，供貸款 API 與 `@PreAuthorize` 使用 |
+| HTTP Config | `common/config/RestTemplateConfig.java` | 提供 `LoanRiskClient` 使用的 `RestTemplate` |
 | Static Upload | `common/service/FileStorageService.java` | 被 `LoanDocumentService` 用於儲存與刪除補件檔案 |
 | Email | `common/service/EmailService.java` | 提供貸款申請、補件、核准撥款、還款、結清、逾期與提醒通知 |
 | API Interceptor | `frontend/src/api/axios.js` | 依 `/api/loan-applications/`、`/api/loan-accounts/`、`/api/loan-documents/` 自動附帶客戶 token |
@@ -320,10 +343,13 @@ Base URL: `/api/loan-callbacks`
 | `autoDisburse(String applicationId)` | public | 核准後自動建帳與撥款，使用 `NOT_SUPPORTED` 避免外層事務鎖定 |
 | `retryDisburse(String applicationId)` | public | 申請卡在 `APPROVED` 時手動重跑撥款 |
 | `retryRiskSubmit(String applicationId)` | public | 申請卡在 `PENDING_REVIEW` 時手動重送風控 |
+| `sendLoanContractNotification(String applicationId)` | private | 產生契約 PDF 並用附件方式寄給客戶 |
+| `formatContractNumber(String applicationId)` | private | 將 `LA...` 申請編號轉成 `LC-...` 契約編號 |
 | `getReviewDetail(String applicationId)` | public | 查二次填單 |
 | `getRecentlyUpdated()` | public | 查有 `updateTime` 的申請 |
 | `getRateRules()` | public | 回傳貸款類型、基準利率、期數、期數加碼等規則 |
 | `toResponseDTO(LoanApplication loan)` | private | 申請 Entity 轉 Response DTO |
+| `safeBatchNo(Integer batchNo)` | private | 批次編號空值保護，供文件批次資訊輸出 |
 | `toContactLogResponseDTO(LoanContactLog log)` | private | 聯繫紀錄 Entity 轉 DTO |
 | `toReviewDetailResponseDTO(LoanReviewDetail detail)` | private | 二次填單 Entity 轉 DTO |
 
@@ -388,6 +414,12 @@ Base URL: `/api/loan-callbacks`
 | `getByApplicationId(String applicationId)` | public | 行員查文件，客戶尚未送出時回空清單 |
 | `generateId(String prefix)` | private | 產生 `DOC` ID |
 | `toResponseDTO(LoanDocument doc)` | private | Entity 轉 DTO |
+| `resolveWritableBatchType(LoanApplication loan)` | private | 決定本次上傳要寫入哪個補件批次類型 |
+| `resolveWritableBatchNo(LoanApplication loan)` | private | 決定本次上傳要寫入哪個補件批次編號 |
+| `resolveVisibleBatch(LoanApplication loan)` | private | 決定客戶 / 行員目前應看到哪一批文件 |
+| `safeBatchNo(Integer batchNo)` | private | 批次編號空值保護 |
+| `safeBatchType(String batchType)` | private | 批次類型空值保護 |
+| `BatchScope(String batchType, Integer batchNo)` | private record | 封裝可見文件批次範圍 |
 
 ### 4.5 `LoanRiskClient`
 
@@ -408,7 +440,25 @@ Base URL: `/api/loan-callbacks`
 |---|---|---|
 | `scanOverdueRepayments()` | public scheduled | 將逾期期數標記為 `OVERDUE`、更新帳戶狀態、寄逾期信，並寄 1-3 天內到期提醒信 |
 
-### 4.7 `AmortizationCalculator`
+### 4.7 `LoanContractPdfService`
+
+用途：依申請資料、客戶資料、二次填單結果產生貸款契約 PDF，供核准後隨 email 附件寄送。
+
+| 方法 | 類型 | 功能 |
+|---|---|---|
+| `generateContractPdf(String applicationId)` | public | 載入申請 / 客戶 / 二次填單後輸出 PDF byte array |
+| `renderHtmlToPdf(String html)` | private | 將 HTML 轉為 PDF 位元組 |
+| `buildHtml(LoanApplication loan, CustomerProfile profile, LoanReviewDetail detail)` | private | 組出完整契約 HTML 內容 |
+| `registerCjkFont(PdfRendererBuilder builder)` | private | 註冊中文顯示字型 |
+| `findCjkFontPath()` | private | 尋找可用 CJK 字型檔位置 |
+| `safe(String value)` | private | 字串空值保護 |
+| `firstNonBlank(String... values)` | private | 多來源欄位取第一個有效值 |
+| `formatLoanType(String loanType)` | private | 貸款類型轉中文 |
+| `formatAnnualRate(BigDecimal rate)` | private | 利率轉百分比字串 |
+| `formatMoney(BigDecimal amount)` | private | 金額格式化 |
+| `formatContractNumber(String applicationId)` | private | 產生契約編號 |
+
+### 4.8 `AmortizationCalculator`
 
 用途：等額本息計算。
 
@@ -612,12 +662,21 @@ Base URL: `/api/loan-callbacks`
 | `generateDedicatedAccountNumber` | 依身分證編碼產生 901-999 貸款專用帳號 |
 | `encodeIdentityNumber` | 身分證英文轉數字編碼 |
 | `lockAccounts` / `lockSingleAccount` | 交易時鎖定帳戶避免併發問題 |
+| `normalizeAccountNumber` | 去除空白並標準化帳號輸入 |
 | `validateBusinessAccount` | 驗證銀行內部帳戶 |
 | `validateLoanAccount` | 驗證帳務貸款帳戶 |
 | `validateRepaymentSourceOrTarget` | 驗證台幣活存扣款 / 入帳帳戶 |
+| `validateActive` | 驗證帳戶必須為正常狀態 |
+| `validateCustomerOwns` | 驗證帳戶確實屬於目前客戶 |
+| `validateSameCustomer` | 驗證兩個帳戶屬於同一客戶 |
+| `ensureSufficientBalance` | 驗證扣款帳戶餘額足夠 |
 | `validateLoanRepaymentAmount` | 驗證還款金額必須等於本期或連續多期應繳總額 |
 | `isFinalPrincipalRepayment` | 最後一期允許以剩餘本金清償 |
-| `insertTransLog` | 直接寫入交易紀錄 |
+| `isFullMultiPeriodRepayment` | 驗證是否一次繳足連續多期完整金額 |
+| `zeroIfNull` | 金額空值時轉為 0 |
+| `buildTransLog` | 組裝帳務交易紀錄 |
+| `saveTransLog` | 寫入交易紀錄資料表 |
+| `joinNote` | 合併預設說明與附加備註 |
 | `toLoanAccountResponse` / `toLoanTransactionResponse` | 回應 DTO 轉換 |
 
 ### 9.2 `AccountIntegrationController` 貸款端點
@@ -636,44 +695,49 @@ Base URL: `/api/loan-callbacks`
 |---|---|---|
 | `LoanApplyView.vue` | `loadRateRules` | 呼叫 `/api/loan-applications/rate-rules` |
 | `LoanApplyView.vue` | `loadAccounts` | 取得可撥款入帳帳戶 |
-| `LoanApplyView.vue` | `computedRate`, `estimatedMonthly`, `availablePeriods` | 利率與月付金前端試算 |
-| `LoanApplyView.vue` | `validate`, `validateAll` | 申請表單驗證 |
+| `LoanApplyView.vue` | `availablePeriods`, `termPremium`, `computedRate`, `estimatedMonthly`, `selectedAccountInfo` | 利率、月付金、可選期數與入帳帳戶資訊前端試算 |
+| `LoanApplyView.vue` | `onTypeSelect`, `onPeriodSelect`, `validate`, `validateAll` | 申請表單互動與驗證 |
 | `LoanApplyView.vue` | `submitForm` | POST `/api/loan-applications/member` |
 | `LoanApplyView.vue` | `resetForm`, `resetAll`, `goApply`, `goStatus` | 表單與頁面切換 |
 | `LoanStatusView.vue` | `load` | GET `/api/loan-applications/my` |
-| `LoanStatusView.vue` | `toggleDocPanel`, `loadDocs` | 展開並載入補件 |
+| `LoanStatusView.vue` | `availableLoanTypes`, `availableStatuses`, `sortedApplications`, `filteredApplications`, `pagedApplications` | 申請列表篩選、排序與分頁 |
+| `LoanStatusView.vue` | `toggleDocPanel`, `loadDocs`, `docCount`, `availableDocTypes`, `documentPanelTitle` | 展開、載入並整理補件資料 |
 | `LoanStatusView.vue` | `submitUpload` | POST `/api/loan-documents/{appId}/upload` |
 | `LoanStatusView.vue` | `deleteDoc` | DELETE `/api/loan-documents/{documentId}` |
 | `LoanStatusView.vue` | `submitDocuments` | POST `/api/loan-documents/{appId}/submit` |
+| `LoanStatusView.vue` | `loanTypeLabel`, `statusLabel`, `contactLabel`, `canSupplement`, `canManageDocuments` | 狀態顯示、文件按鈕條件與畫面文案 |
 | `LoanAccountView.vue` | `loadAccounts` | GET `/api/loan-accounts/my` |
-| `LoanAccountView.vue` | `openRepaymentModal` | GET `/api/loan-accounts/{accountId}/repayments` |
-| `LoanAccountView.vue` | `progressPct`, `paidRatio`, `isOverdue` | 帳戶進度與狀態顯示 |
+| `LoanAccountView.vue` | `filteredSortedAccounts` | 帳戶列表篩選與排序 |
+| `LoanAccountView.vue` | `openRepaymentModal`, `closeModal` | 開關還款明細視窗並載入還款表 |
+| `LoanAccountView.vue` | `progressPct`, `paidRatio`, `progressStroke`, `isOverdue`, `statusLabel` | 帳戶進度與狀態顯示 |
 | `LoanRepaymentView.vue` | `loadLoanAccounts` | GET `/api/loan-accounts/my` |
 | `LoanRepaymentView.vue` | `loadDebitAccounts` | GET `/api/customer/loan-repayments/debit-accounts` |
 | `LoanRepaymentView.vue` | `selectLoan`, `loadCurrentRepaymentAmount` | 選貸款帳戶並抓目前應繳期 |
-| `LoanRepaymentView.vue` | `fillCurrentRepaymentAmount` | 帶入本期應繳金額 |
+| `LoanRepaymentView.vue` | `paymentAmount`, `paymentPrincipal`, `paymentInterest`, `canSubmit` | 還款金額與可送出條件計算 |
 | `LoanRepaymentView.vue` | `submitRepayment` | POST `/api/customer/loan-repayments` |
-| `LoanRepaymentView.vue` | `loadHistory`, `gotoPage` | GET `/api/customer/loan-repayments` 分頁查紀錄 |
+| `LoanRepaymentView.vue` | `loadHistory`, `gotoPage`, `afterSuccess`, `reset` | GET `/api/customer/loan-repayments` 分頁查紀錄與還款後重整 |
 
 ### 10.2 行員端
 
 | 檔案 | 主要方法 / computed | 功能 |
 |---|---|---|
 | `LoanApplicationView.vue` | `fetchApplications` | GET `/api/admin/loan-applications` |
-| `LoanApplicationView.vue` | `setStatus` | 切換申請狀態篩選 |
-| `LoanApplicationView.vue` | `filteredApplications`, `pagedApplications` | 前端篩選、排序、分頁 |
+| `LoanApplicationView.vue` | `setStatus`, `toggleSort`, `goToPage`, `clearTypes` | 切換狀態、排序、頁碼與篩選條件 |
+| `LoanApplicationView.vue` | `filteredApplications`, `pagedApplications`, `pageNumbers`, `progressColumnLabel`, `canApprove` | 前端篩選、排序、分頁與畫面控制 |
 | `LoanApplicationView.vue` | `openContactModal`, `openReviewModal`, `openDocModal` | 開啟聯繫、審核、補件 Modal |
+| `LoanApplicationView.vue` | `displayAmount`, `displayPeriod`, `displayRate`, `progressTime` | 顯示核准值與流程時間欄位 |
 | `LoanApplicationView.vue` | `startAutoRefresh` | 每 30 秒自動刷新 |
 | `LoanContactLogModal.vue` | `fetchLogs` | GET `/api/admin/loan-applications/{id}/contact-logs` |
-| `LoanContactLogModal.vue` | `submitLog` | POST `/api/admin/loan-applications/{id}/contact-logs` |
+| `LoanContactLogModal.vue` | `submitLog`, `resetForm`, `showAlert`, `close` | 聯繫紀錄送出、重置與提示 |
 | `LoanReviewModal.vue` | `fetchReview` | GET `/api/admin/loan-applications/{id}/review` |
-| `LoanReviewModal.vue` | `saveDraft` | POST `/api/admin/loan-applications/{id}/review` |
-| `LoanReviewModal.vue` | `submitReview` | PATCH `/api/admin/loan-applications/{id}/review/submit` |
-| `LoanReviewModal.vue` | `amountDiff`, `periodDiff`, `rateDiff`, `hasDiff` | 顯示二次填單與原申請差異 |
-| `LoanDocumentModal.vue` | `loadDocs` | GET `/api/admin/loan-documents/{appId}` |
+| `LoanReviewModal.vue` | `prefillForm`, `fillFromApp`, `resetForm` | 將既有審核資料與原申請帶入表單 |
+| `LoanReviewModal.vue` | `saveDraft`, `submitReview` | POST / PATCH 二次填單 |
+| `LoanReviewModal.vue` | `isSubmitted`, `reviewStatusLabel`, `amountDiff`, `periodDiff`, `rateDiff`, `hasDiff` | 顯示狀態、差異與驗證結果 |
+| `LoanDocumentModal.vue` | `loadDocs`, `fileIcon`, `formatDateTime`, `close` | 載入並顯示補件內容 |
 | `LoanAccountAdminView.vue` | `fetchAccounts` | GET `/api/admin/loan-accounts` |
-| `LoanAccountAdminView.vue` | `openRepaymentModal` | GET `/api/admin/loan-accounts/{accountId}/repayments` |
-| `LoanAccountAdminView.vue` | `filteredAccounts`, `pagedAccounts` | 帳戶狀態 / 類型篩選與分頁 |
+| `LoanAccountAdminView.vue` | `setStatus`, `openRepaymentModal`, `closeModal` | 狀態切換、查還款表 |
+| `LoanAccountAdminView.vue` | `filteredAccounts`, `pagedAccounts`, `pageList` | 帳戶狀態 / 類型篩選與分頁 |
+| `LoanAccountAdminView.vue` | `statusLabel`, `repStatusLabel`, `progressPct`, `progressClass` | 帳戶與還款狀態顯示 |
 
 ### 10.3 路由
 
@@ -693,6 +757,7 @@ Base URL: `/api/loan-callbacks`
 
 | 方法 | 模板 | 用途 |
 |---|---|---|
+| `sendEmailWithAttachment` | 任意 HTML + 附件 | 寄送貸款契約 PDF |
 | `sendLoanAppliedNotification` | `mail/loan-applied` | 客戶送出申請 |
 | `sendLoanDocumentRequiredNotification` | `mail/loan-document-required` | 需要補件 |
 | `sendLoanRejectedNotification` | `mail/loan-rejected` | 申請拒絕 |
@@ -702,6 +767,7 @@ Base URL: `/api/loan-callbacks`
 | `sendLoanOverdueNotification` | `mail/loan-overdue` | 逾期 |
 | `sendLoanRepaymentReminderNotification` | `mail/loan-repayment-reminder` | 到期提醒 |
 | `formatLoanType` | - | 將貸款類型代碼轉中文 |
+| `formatLoanDocumentType` | - | 將文件類型代碼轉中文 |
 | `formatAnnualRate` | - | 格式化年利率 |
 
 ## 12. 主要流程對照
@@ -757,6 +823,20 @@ Base URL: `/api/loan-callbacks`
 
 ## 14. 使用到的技術方法
 本節只整理目前貸款模組實際使用到的技術實作方式，聚焦在程式層面的框架、方法、整合手法與防呆邏輯，不再重複業務流程說明。
+
+### 14.0 依對象與用途的快速分類
+
+| 分類 | 對象 | 代表檔案 | 核心用途 |
+|---|---|---|---|
+| 客戶申請 | 客戶 | `LoanApplyView.vue`, `LoanApplicationController`, `LoanApplicationService` | 建立申請、載入利率規則、選撥款帳戶 |
+| 客戶補件 | 客戶 | `LoanStatusView.vue`, `LoanDocumentController`, `LoanDocumentService` | 上傳、刪除、正式送出補件 |
+| 客戶查帳 / 還款 | 客戶 | `LoanAccountView.vue`, `LoanRepaymentView.vue`, `LoanAccountController`, `AccountIntegrationController` | 查貸款帳戶、查還款表、執行還款 |
+| 行員審核 | 行員 | `LoanApplicationView.vue`, `LoanReviewModal.vue`, `LoanAdminController`, `LoanApplicationService` | 聯繫、二次填單、送風控、重送補償 |
+| 行員查帳 | 行員 | `LoanAccountAdminView.vue`, `LoanAccountAdminController`, `LoanRepaymentService` | 查貸款帳戶、查還款期數、手動同步已繳 |
+| 風控整合 | 系統 / 外部 | `LoanRiskClient`, `LoanCallbackController`, `LoanApplicationService` | 送審、補件通知、接收核准 / 拒絕回調 |
+| 帳戶整合 | 系統 / 外部 | `AccountIntegrationService`, `LoanAccountService`, `LoanRepaymentService` | 建帳、撥款、還款、對帳、狀態同步 |
+| 通知輸出 | 客戶 / 系統 | `EmailService`, `LoanContractPdfService` | 寄通知信、寄契約 PDF、格式化輸出 |
+| 排程管理 | 系統 | `LoanRepaymentScheduler` | 掃描逾期與到期提醒 |
 
 ### 14.1 技術總覽
 
@@ -887,7 +967,7 @@ Base URL: `/api/loan-callbacks`
 
 | 技術 / 方法 | 使用位置 | 說明 |
 |---|---|---|
-| Vue 3 Composition API | `frontend/src/views/loan/*.vue` | 使用 `ref`、`reactive`、`computed`、`watch`、`onMounted` 管理頁面狀態 |
+| Vue 3 Composition API | `frontend/src/views/user/Loan*.vue`、`frontend/src/views/admin/Loan*.vue` | 使用 `ref`、`reactive`、`computed`、`watch`、`onMounted` 管理頁面狀態 |
 | Vue Router | `frontend/src/router/index.js` | 控制客戶端、行員端貸款頁面路由 |
 | Axios instance | `frontend/src/api/axios.js` | 集中處理 base URL、token、錯誤攔截 |
 | `api` 直接呼叫 | `LoanApplyView.vue`、`LoanStatusView.vue`、`LoanRepaymentView.vue`、`LoanApplicationView.vue` | 貸款前端目前多數直接在頁面內呼叫 `frontend/src/api/axios.js` 匯出的 `api` |
