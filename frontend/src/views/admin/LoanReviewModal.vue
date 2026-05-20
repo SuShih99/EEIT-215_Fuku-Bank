@@ -624,7 +624,7 @@ function formatDateTime(d) {
 
 .modal-title {
   font-family: 'Noto Serif TC', serif;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--ink);
 }
@@ -639,7 +639,7 @@ function formatDateTime(d) {
 
 .id-chip {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--accent);
   background: var(--accent-dim);
   border: 1px solid var(--accent-lt);
@@ -648,12 +648,12 @@ function formatDateTime(d) {
 }
 
 .applicant-hint {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted-2);
 }
 
 .review-status-badge {
-  font-size: 10px;
+  font-size: 12px;
   font-family: 'IBM Plex Mono', monospace;
   padding: 2px 8px;
   border-radius: 20px;
@@ -717,7 +717,7 @@ function formatDateTime(d) {
 }
 
 .section-title {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--muted-2);
   font-family: 'IBM Plex Mono', monospace;
@@ -740,7 +740,7 @@ function formatDateTime(d) {
   align-items: center;
   gap: 5px;
   padding: 4px 10px;
-  font-size: 11px;
+  font-size: 13px;
   font-family: 'Noto Sans TC', sans-serif;
   font-weight: 600;
   color: var(--primary-dk);
@@ -761,7 +761,7 @@ function formatDateTime(d) {
 }
 
 .review-id {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
   font-weight: 400;
 }
@@ -786,7 +786,7 @@ function formatDateTime(d) {
 }
 
 .info-label {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted-2);
   white-space: nowrap;
   flex-shrink: 0;
@@ -794,7 +794,7 @@ function formatDateTime(d) {
 }
 
 .info-val {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--ink-2);
   text-align: right;
   word-break: break-all;
@@ -817,13 +817,13 @@ function formatDateTime(d) {
 }
 
 .info-val.small {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--muted-2);
 }
 
 /* Type badge */
 .type-badge {
-  font-size: 11px;
+  font-size: 13px;
   font-family: 'IBM Plex Mono', monospace;
   padding: 2px 8px;
   border-radius: 4px;
@@ -917,7 +917,7 @@ function formatDateTime(d) {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--muted);
   padding: 14px 0;
 }
@@ -965,7 +965,7 @@ function formatDateTime(d) {
 }
 
 .field-label {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted-2);
   font-family: 'IBM Plex Mono', monospace;
   letter-spacing: 0.04em;
@@ -982,7 +982,7 @@ function formatDateTime(d) {
   border-radius: 8px;
   color: var(--ink);
   font-family: 'Noto Sans TC', sans-serif;
-  font-size: 13px;
+  font-size: 15px;
   padding: 9px 12px;
   outline: none;
   width: 100%;
@@ -1005,7 +1005,7 @@ function formatDateTime(d) {
 }
 
 .field-hint {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--muted);
   font-family: 'IBM Plex Mono', monospace;
 }
@@ -1046,7 +1046,7 @@ function formatDateTime(d) {
   color: var(--ink);
 }
 .emp-id-hint {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--muted);
 }
 
@@ -1059,7 +1059,7 @@ function formatDateTime(d) {
 }
 
 .diff-title {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--gold);
   margin-bottom: 8px;
@@ -1073,14 +1073,14 @@ function formatDateTime(d) {
 }
 
 .diff-label {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--gold);
   font-family: 'IBM Plex Mono', monospace;
 }
 
 .diff-val {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -1109,14 +1109,14 @@ function formatDateTime(d) {
 }
 
 .submitted-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--primary-dk);
   margin-bottom: 2px;
 }
 
 .submitted-sub {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--primary);
 }
 
@@ -1127,7 +1127,7 @@ function formatDateTime(d) {
   gap: 8px;
   padding: 10px 14px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .alert-success {
@@ -1144,7 +1144,7 @@ function formatDateTime(d) {
 
 /* Validate error */
 .validate-err {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--red);
   display: flex;
   align-items: center;
@@ -1153,7 +1153,7 @@ function formatDateTime(d) {
 
 /* Form hint row */
 .form-hint-row {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted-2);
   display: flex;
   align-items: center;
@@ -1181,7 +1181,7 @@ function formatDateTime(d) {
   cursor: pointer;
   transition: all 0.15s;
   font-weight: 500;
-  font-size: 13px;
+  font-size: 14px;
   padding: 9px 16px;
 }
 

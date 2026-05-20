@@ -202,10 +202,10 @@ function close() {
 }
 .header-left  { display: flex; align-items: flex-start; gap: 12px; }
 .modal-icon   { font-size: 24px; line-height: 1; }
-.modal-title  { font-size: 16px; font-weight: 700; color: #1a1a1a; }
+.modal-title  { font-size: 18px; font-weight: 700; color: #1a1a1a; }
 .modal-sub    { display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
 .id-chip {
-  font-size: 11px;
+  font-size: 13px;
   font-family: 'Courier New', monospace;
   background: #f0f4ff;
   color: #3a5bd9;
@@ -213,7 +213,7 @@ function close() {
   padding: 2px 7px;
   letter-spacing: 0.3px;
 }
-.applicant-hint { font-size: 12px; color: #888; }
+.applicant-hint { font-size: 14px; color: #888; }
 .close-btn {
   background: none;
   border: none;
@@ -251,7 +251,7 @@ function close() {
   color: #aaa;
 }
 .empty-icon { font-size: 36px; }
-.doc-empty p { font-size: 13px; margin: 0; }
+.doc-empty p { font-size: 14px; margin: 0; }
 
 /* Document list */
 .doc-list { display: flex; flex-direction: column; gap: 10px; }
@@ -271,7 +271,7 @@ function close() {
 .doc-info { flex: 1; min-width: 0; }
 .doc-name {
   display: block;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: #3a5bd9;
   text-decoration: none;
@@ -283,7 +283,7 @@ function close() {
 .doc-name:hover { text-decoration: underline; }
 .doc-meta-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .doc-type-badge {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   padding: 2px 7px;
   background: #eef2ff;
@@ -291,7 +291,7 @@ function close() {
   border-radius: 4px;
   white-space: nowrap;
 }
-.doc-meta { font-size: 11px; color: #aaa; white-space: nowrap; }
+.doc-meta { font-size: 13px; color: #aaa; white-space: nowrap; }
 .doc-actions {
   flex-shrink: 0;
   display: flex;
@@ -330,14 +330,14 @@ function close() {
   flex-shrink: 0;
   background: #fafafa;
 }
-.footer-count { font-size: 12px; color: #aaa; }
+.footer-count { font-size: 14px; color: #aaa; }
 .btn-close {
   padding: 8px 22px;
   background: #5C6B5F;
   color: #fff;
   border: none;
   border-radius: 9px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;

@@ -2,7 +2,7 @@
 ===============================================================================
 Java Easy Bank Account Mock Data
 - Requires customer_insert.sql first
-- Creates realistic customer accounts from 50 customer profiles
+- Creates realistic customer accounts from 100 customer profiles
 - Generates exactly 500 transaction log rows
 - JPY balances and transaction amounts are generated without fractional values
 ===============================================================================
@@ -27,18 +27,18 @@ IF OBJECT_ID('tempdb..#customers') IS NOT NULL DROP TABLE #customers;
 IF OBJECT_ID('tempdb..#mock_accounts') IS NOT NULL DROP TABLE #mock_accounts;
 IF OBJECT_ID('tempdb..#tx_accounts') IS NOT NULL DROP TABLE #tx_accounts;
 
-SELECT TOP (50)
-    ROW_NUMBER() OVER (ORDER BY customer_id) AS rn,
+SELECT TOP (100)
+    CAST(SUBSTRING(email, 9, 3) AS INT) AS rn,
     customer_id, cif, id_number, name, birthday, gender, email, phone, address,
     nationality, registered_address, current_address, occupation, employer,
     estimated_monthly_tx, account_purpose, fund_source, tax_residency, is_pep,
     id_front_url, id_back_url, second_id_url, risk_level, status
 INTO #customers
 FROM CUSTOMER_PROFILE
-ORDER BY customer_id;
+ORDER BY rn;
 
-IF (SELECT COUNT(*) FROM #customers) <> 50
-    THROW 51101, 'account_mockdata.sql requires exactly 50 customers. Run customer_insert.sql first.', 1;
+IF (SELECT COUNT(*) FROM #customers) <> 100
+    THROW 51101, 'account_mockdata.sql requires exactly 100 customers. Run customer_insert.sql first.', 1;
 
 CREATE TABLE #mock_accounts (
     account_number VARCHAR(14) NOT NULL PRIMARY KEY,
@@ -80,7 +80,8 @@ SELECT
     CAST('2026-05-13 09:00:00' AS DATETIME2),
     N'總行',
     N'總行'
-FROM #customers;
+FROM #customers
+WHERE rn NOT IN (45, 95);
 
 -- Foreign currency savings accounts for customers who applied for FX services.
 INSERT INTO #mock_accounts (
@@ -105,7 +106,7 @@ SELECT
     N'總行',
     N'總行'
 FROM #customers
-WHERE rn <= 24 AND status = 'ACTIVE';
+WHERE (rn <= 24 OR (rn >= 51 AND rn <= 74)) AND status = 'ACTIVE';
 
 -- Time deposits: fewer, larger, and lower activity.
 INSERT INTO #mock_accounts (
@@ -131,7 +132,7 @@ SELECT
     N'總行',
     N'總行'
 FROM #customers
-WHERE rn <= 12 AND status = 'ACTIVE';
+WHERE (rn <= 12 OR (rn >= 51 AND rn <= 62)) AND status = 'ACTIVE';
 
 -- Sub accounts only exist for customers who already have TWD checking accounts.
 INSERT INTO #mock_accounts (
@@ -153,7 +154,7 @@ SELECT
     N'總行',
     N'總行'
 FROM #customers
-WHERE rn <= 10 AND status = 'ACTIVE';
+WHERE (rn <= 10 OR (rn >= 51 AND rn <= 60)) AND status = 'ACTIVE';
 
 -- Credit-card payment accounts: hidden from general account views.
 INSERT INTO #mock_accounts (
@@ -175,7 +176,7 @@ SELECT
     N'總行',
     N'總行'
 FROM #customers
-WHERE rn <= 8 AND status = 'ACTIVE';
+WHERE (rn <= 8 OR (rn >= 51 AND rn <= 58)) AND status = 'ACTIVE';
 
 -- Loan accounts: balance stays 0; liability carries the loan principal.
 INSERT INTO #mock_accounts (
@@ -197,7 +198,7 @@ SELECT
     N'總行',
     N'總行'
 FROM #customers
-WHERE rn <= 5 AND status = 'ACTIVE';
+WHERE (rn <= 5 OR (rn >= 51 AND rn <= 55)) AND status = 'ACTIVE';
 
 IF NOT EXISTS (SELECT 1 FROM [ACCOUNT])
 INSERT INTO [ACCOUNT] (
@@ -211,7 +212,7 @@ FROM #mock_accounts
 WHERE parent_account_number IS NULL
 ORDER BY account_number;
 
-IF NOT EXISTS (SELECT 1 FROM [ACCOUNT])
+IF NOT EXISTS (SELECT 1 FROM [ACCOUNT] WHERE parent_account_number IS NOT NULL)
 INSERT INTO [ACCOUNT] (
     account_number, customer_id, account_type, currency, balance, liability,
     interest_rate, status, parent_account_number, created_at, changed_at, created_by, changed_by
@@ -290,21 +291,21 @@ FROM #customers c
 CROSS APPLY (
     SELECT
         CASE
-            WHEN c.rn = 45 THEN 'PENDING'
-            WHEN c.rn = 46 THEN 'SUPPLEMENT_REQUIRED'
-            WHEN c.rn = 47 THEN 'REJECTED'
-            WHEN c.rn = 48 THEN 'CANCELLED'
+            WHEN c.rn IN (45, 95) THEN 'PENDING'
+            WHEN c.rn IN (46, 96) THEN 'SUPPLEMENT_REQUIRED'
+            WHEN c.rn IN (47, 97) THEN 'REJECTED'
+            WHEN c.rn IN (48, 98) THEN 'CANCELLED'
             ELSE 'APPROVED'
         END AS application_status,
         CASE
-            WHEN c.rn = 46 THEN 'SAVINGS'
-            WHEN c.rn = 47 THEN 'TIME_DEPOSIT'
-            WHEN c.rn = 48 THEN 'SUB_ACCOUNT'
+            WHEN c.rn IN (46, 96) THEN 'SAVINGS'
+            WHEN c.rn IN (47, 97) THEN 'TIME_DEPOSIT'
+            WHEN c.rn IN (48, 98) THEN 'SUB_ACCOUNT'
             ELSE 'CHECKING'
         END AS account_type,
         CASE
-            WHEN c.rn = 46 THEN 'JPY'
-            WHEN c.rn = 47 THEN 'USD'
+            WHEN c.rn IN (46, 96) THEN 'JPY'
+            WHEN c.rn IN (47, 97) THEN 'USD'
             ELSE 'TWD'
         END AS currency,
         DATEADD(DAY, -60 + c.rn, CAST('2026-05-01 09:00:00' AS DATETIME2)) AS created_at
@@ -347,7 +348,7 @@ END;
 
 IF NOT EXISTS (SELECT 1 FROM FAVORITE_ACCOUNT)
 INSERT INTO FAVORITE_ACCOUNT (customer_id, bank_code, account_number, alias, bank_name, created_at, updated_at)
-SELECT TOP (12)
+SELECT TOP (24)
     customer_id,
     CASE rn % 4 WHEN 0 THEN '808' WHEN 1 THEN '812' WHEN 2 THEN '700' ELSE '004' END,
     CASE rn % 4
@@ -402,6 +403,8 @@ DECLARE
     @referenceId VARCHAR(30),
     @createdAt DATETIME2(3);
 
+IF NOT EXISTS (SELECT 1 FROM TRANS_LOG)
+BEGIN
 WHILE @i <= 500
 BEGIN
     SET @slot = ((@i - 1) % @accountCount) + 1;
@@ -513,7 +516,6 @@ BEGIN
     SET @referenceId = 'TXN-20260513-' + RIGHT(REPLICATE('0', 6) + CAST(@i AS VARCHAR(6)), 6);
     SET @createdAt = DATEADD(MINUTE, -(@i * 43), CAST('2026-05-13 10:00:00' AS DATETIME2(3)));
 
-    IF NOT EXISTS (SELECT 1 FROM TRANS_LOG)
     INSERT INTO TRANS_LOG (
         transaction_id, reference_id, account_number, counterpart_account,
         bank_code, bank_name, counterpart_bank_code, counterpart_bank_name,
@@ -553,6 +555,7 @@ BEGIN
 
     SET @i += 1;
 END;
+END; -- IF NOT EXISTS TRANS_LOG
 
 UPDATE a
 SET
@@ -595,6 +598,23 @@ PRINT N'account_mockdata.sql completed: customer accounts and 500 transaction lo
 DROP TABLE #tx_accounts;
 DROP TABLE #mock_accounts;
 DROP TABLE #customers;
+
+-- ===== Demo Test Accounts (seq 101-104) =====
+-- These 4 accounts are NOT in the TOP(100) auto-generation above.
+-- Insert them explicitly with controlled statuses.
+INSERT INTO [ACCOUNT] (account_number, customer_id, account_type, currency, balance, liability, interest_rate, status, parent_account_number, created_at, changed_at, created_by, changed_by)
+SELECT v.account_number, v.customer_id, v.account_type, v.currency, v.balance, v.liability, v.interest_rate, v.status, NULL, GETDATE(), GETDATE(), 'mock-demo', 'mock-demo'
+FROM (VALUES
+    ('090000000101', 'DM01NR01', 'CHECKING', 'TWD', 150000.0000, 0.0000, NULL, 'ACTIVE'),
+    ('090000000201', 'DM01NR01', 'SAVINGS',  'TWD', 500000.0000, 0.0000, 1.50, 'ACTIVE'),
+    ('090000000102', 'DM02NR02', 'CHECKING', 'TWD', 280000.0000, 0.0000, NULL, 'ACTIVE'),
+    ('090000000202', 'DM02NR02', 'SAVINGS',  'TWD', 1200000.0000, 0.0000, 1.50, 'ACTIVE'),
+    ('090000000103', 'DM03FZ01', 'CHECKING', 'TWD', 75000.0000, 0.0000, NULL, 'FROZEN'),
+    ('090000000203', 'DM03FZ01', 'SAVINGS',  'TWD', 300000.0000, 0.0000, 1.50, 'FROZEN'),
+    ('090000000104', 'DM04BK01', 'CHECKING', 'TWD', 95000.0000, 0.0000, NULL, 'ACTIVE'),
+    ('090000000204', 'DM04BK01', 'SAVINGS',  'TWD', 420000.0000, 0.0000, 1.50, 'ACTIVE')
+) AS v(account_number, customer_id, account_type, currency, balance, liability, interest_rate, status)
+WHERE NOT EXISTS (SELECT 1 FROM [ACCOUNT] a WHERE a.account_number = v.account_number);
 
 SET NOCOUNT OFF;
 GO

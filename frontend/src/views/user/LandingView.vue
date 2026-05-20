@@ -14,7 +14,7 @@
           </template>
           <template v-else>
             <button class="jb-btn jb-btn-secondary jb-btn-sm" @click="$router.push('/login')">登入</button>
-            <button class="jb-btn jb-btn-primary jb-btn-sm" @click="$router.push('/register')">立即開戶</button>
+            <button class="jb-btn jb-btn-primary jb-btn-sm" @click="$router.push('/register')">立即註冊</button>
           </template>
         </nav>
       </div>

@@ -15,6 +15,34 @@
       </div>
     </div>
 
+    <div class="dashboard-grid">
+      <button class="metric-card" type="button" @click="setStatus('PENDING_CONTACT')">
+        <span class="metric-label">今日新增申請</span>
+        <strong class="metric-value">{{ dashboardLoading ? '—' : dashboardStats.todayNew }}</strong>
+        <span class="metric-hint">依申請建立時間統計</span>
+      </button>
+      <button class="metric-card" type="button" @click="setStatus('PENDING_REVIEW')">
+        <span class="metric-label">待審核案件</span>
+        <strong class="metric-value">{{ dashboardLoading ? '—' : dashboardStats.pendingReview }}</strong>
+        <span class="metric-hint">狀態為審核中</span>
+      </button>
+      <button class="metric-card metric-warning" type="button" @click="setStatus('RETURNED')">
+        <span class="metric-label">需補件案件</span>
+        <strong class="metric-value">{{ dashboardLoading ? '—' : dashboardStats.returned }}</strong>
+        <span class="metric-hint">狀態為退回補件</span>
+      </button>
+      <div class="metric-card">
+        <span class="metric-label">本月核准金額</span>
+        <strong class="metric-value">{{ dashboardLoading ? '—' : formatAmount(dashboardStats.monthApprovedAmount) }}</strong>
+        <span class="metric-hint">依核准/撥款申請估算</span>
+      </div>
+      <div class="metric-card metric-primary">
+        <span class="metric-label">本月撥款金額</span>
+        <strong class="metric-value">{{ dashboardLoading ? '—' : formatAmount(dashboardStats.monthDisbursedAmount) }}</strong>
+        <span class="metric-hint">依已建立貸款帳戶本金</span>
+      </div>
+    </div>
+
     <!-- ── 篩選列 ── -->
     <div class="filter-bar">
       <!-- 申請狀態 pills -->
@@ -480,7 +508,10 @@ const SORT_LABEL = {
 // ── State ──
 const currentStatus = ref('PENDING_CONTACT')
 const applications = ref([])
+const allApplications = ref([])
+const loanAccounts = ref([])
 const loading = ref(false)
+const dashboardLoading = ref(false)
 const error = ref('')
 
 // ① 排序
@@ -545,6 +576,31 @@ const progressColumnLabel = computed(() =>
   STATUS_PROGRESS_STATUSES.has(currentStatus.value) ? '更新時間' : '最新聯繫'
 )
 
+const dashboardStats = computed(() => {
+  const todayStart = startOfToday()
+  const tomorrowStart = new Date(todayStart)
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1)
+
+  const monthStart = startOfMonth()
+  const nextMonthStart = new Date(monthStart)
+  nextMonthStart.setMonth(nextMonthStart.getMonth() + 1)
+
+  const apps = allApplications.value
+  const todayNew = apps.filter(app => isBetween(app.createTime, todayStart, tomorrowStart)).length
+  const pendingReview = apps.filter(app => app.applicationStatus === 'PENDING_REVIEW').length
+  const returned = apps.filter(app => app.applicationStatus === 'RETURNED').length
+  const monthApprovedAmount = apps
+    .filter(app => ['APPROVED', 'DISBURSED'].includes(app.applicationStatus))
+    .filter(app => isBetween(app.updateTime || app.createTime, monthStart, nextMonthStart))
+    .reduce((sum, app) => sum + Number(displayAmount(app) || 0), 0)
+
+  const monthDisbursedAmount = loanAccounts.value
+    .filter(acc => isBetween(acc.createTime || acc.startDate, monthStart, nextMonthStart))
+    .reduce((sum, acc) => sum + Number(acc.principalAmount || 0), 0)
+
+  return { todayNew, pendingReview, returned, monthApprovedAmount, monthDisbursedAmount }
+})
+
 /** 省略號分頁按鈕序列 */
 const pageNumbers = computed(() => {
   const total = totalPages.value
@@ -570,6 +626,37 @@ async function fetchApplications() {
     applications.value = []
   } finally {
     loading.value = false
+  }
+}
+
+async function fetchDashboardData() {
+  dashboardLoading.value = true
+  try {
+    const statusRequests = STATUS_OPTIONS.map(s =>
+      api.get(API_URL, {
+        params: {status: s.value},
+        headers: {'Cache-Control': 'no-cache', 'Pragma': 'no-cache'},
+      })
+    )
+    const [applicationResponses, accountResponse] = await Promise.all([
+      Promise.all(statusRequests),
+      api.get('/api/admin/loan-accounts', { params: {} }),
+    ])
+
+    const seen = new Set()
+    allApplications.value = applicationResponses
+      .flatMap(res => res.data.success ? res.data.data : [])
+      .filter(app => {
+        if (!app?.applicationId || seen.has(app.applicationId)) return false
+        seen.add(app.applicationId)
+        return true
+      })
+    loanAccounts.value = accountResponse.data.data || []
+  } catch (e) {
+    allApplications.value = applications.value
+    loanAccounts.value = []
+  } finally {
+    dashboardLoading.value = false
   }
 }
 
@@ -665,15 +752,38 @@ function formatTime(d) {
   return d ? d.replace('T', ' ').substring(11, 16) : ''
 }
 
+function startOfToday() {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+function startOfMonth() {
+  const d = new Date()
+  d.setDate(1)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+function isBetween(value, start, end) {
+  if (!value) return false
+  const d = new Date(value)
+  return !Number.isNaN(d.getTime()) && d >= start && d < end
+}
+
 // ── Auto-refresh（固定 30 秒）──
 let refreshTimer = null
 
 function startAutoRefresh() {
-  refreshTimer = setInterval(fetchApplications, 30_000)
+  refreshTimer = setInterval(() => {
+    fetchApplications()
+    fetchDashboardData()
+  }, 30_000)
 }
 
 onMounted(() => {
   fetchApplications();
+  fetchDashboardData()
   startAutoRefresh()
 })
 onUnmounted(() => clearInterval(refreshTimer))
@@ -738,6 +848,81 @@ onUnmounted(() => clearInterval(refreshTimer))
   gap: 10px;
 }
 
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.metric-card {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 106px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 10px 26px rgba(63, 74, 66, 0.04);
+  color: var(--ink);
+  text-align: left;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+button.metric-card {
+  cursor: pointer;
+}
+
+button.metric-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  box-shadow: 0 12px 28px rgba(63, 74, 66, 0.08);
+}
+
+.metric-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted-2);
+}
+
+.metric-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 24px;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.metric-hint {
+  margin-top: auto;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.metric-primary {
+  border-color: rgba(74, 140, 92, 0.24);
+  background: rgba(74, 140, 92, 0.06);
+}
+
+.metric-warning {
+  border-color: rgba(192, 57, 43, 0.22);
+  background: rgba(192, 57, 43, 0.05);
+}
+
+@media (max-width: 1180px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Auto-refresh */
 .auto-refresh-wrap {
   display: flex;
@@ -746,7 +931,7 @@ onUnmounted(() => clearInterval(refreshTimer))
 }
 
 .ar-label {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted-2);
   white-space: nowrap;
 }
@@ -760,7 +945,7 @@ onUnmounted(() => clearInterval(refreshTimer))
   align-items: center;
   gap: 5px;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--accent);
   background: var(--accent-dim);
   border: 1px solid var(--accent-lt);
@@ -812,7 +997,7 @@ onUnmounted(() => clearInterval(refreshTimer))
   gap: 6px;
   padding: 6px 13px;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 14px;
   font-family: 'IBM Plex Mono', monospace;
   cursor: pointer;
   border: 1px solid var(--border);
@@ -844,7 +1029,7 @@ onUnmounted(() => clearInterval(refreshTimer))
   background: rgba(37, 99, 235, 0.12);
   border-radius: 10px;
   padding: 1px 6px;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 /* ── Type Multi-Select Dropdown ── */
@@ -995,7 +1180,7 @@ onUnmounted(() => clearInterval(refreshTimer))
 }
 
 .dropdown-title {
-  font-size: 11px;
+  font-size: 13px;
   font-family: 'IBM Plex Mono', monospace;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1003,7 +1188,7 @@ onUnmounted(() => clearInterval(refreshTimer))
 }
 
 .clear-btn {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--accent);
   background: none;
   border: none;
@@ -1028,7 +1213,7 @@ onUnmounted(() => clearInterval(refreshTimer))
   gap: 9px;
   padding: 9px 14px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--ink-2);
   transition: background 0.1s;
 }
@@ -1114,7 +1299,7 @@ onUnmounted(() => clearInterval(refreshTimer))
 
 .item-count {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--muted);
   background: var(--surface-2);
   padding: 1px 7px;
@@ -1137,7 +1322,7 @@ onUnmounted(() => clearInterval(refreshTimer))
 
 .sort-hint {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--accent);
 }
 
@@ -1203,7 +1388,7 @@ onUnmounted(() => clearInterval(refreshTimer))
   color: var(--red);
   padding: 10px 16px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 14px;
   margin-bottom: 16px;
 }
 
@@ -1227,7 +1412,7 @@ onUnmounted(() => clearInterval(refreshTimer))
 }
 
 .toolbar-info {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted-2);
   font-family: 'IBM Plex Mono', monospace;
 }
@@ -1239,7 +1424,7 @@ onUnmounted(() => clearInterval(refreshTimer))
 }
 
 .size-label {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted-2);
   white-space: nowrap;
 }
@@ -1257,7 +1442,7 @@ onUnmounted(() => clearInterval(refreshTimer))
   border-radius: 6px;
   color: var(--ink);
   font-family: 'Noto Sans TC', sans-serif;
-  font-size: 12px;
+  font-size: 14px;
   padding: 5px 28px 5px 10px;
   cursor: pointer;
   outline: none;
@@ -1349,7 +1534,7 @@ onUnmounted(() => clearInterval(refreshTimer))
 .data-table th {
   text-align: left;
   padding: 11px 16px;
-  font-size: 11px;
+  font-size: 14px;
   font-family: 'IBM Plex Mono', monospace;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1371,7 +1556,7 @@ onUnmounted(() => clearInterval(refreshTimer))
 }
 
 .sort-icon {
-  font-size: 11px;
+  font-size: 13px;
   opacity: 0.45;
   margin-left: 4px;
 }
@@ -1403,7 +1588,7 @@ onUnmounted(() => clearInterval(refreshTimer))
   padding: 13px 16px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
-  font-size: 13px;
+  font-size: 15px;
   color: var(--ink-2);
 }
 
@@ -1422,7 +1607,7 @@ onUnmounted(() => clearInterval(refreshTimer))
 /* Cells */
 .id-chip {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--accent);
   background: var(--accent-dim);
   border: 1px solid var(--accent-lt);
@@ -1439,12 +1624,12 @@ onUnmounted(() => clearInterval(refreshTimer))
 
 .member-id {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--muted-2);
 }
 
 .member-name {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--ink);
   margin-left: 8px;
@@ -1475,7 +1660,7 @@ onUnmounted(() => clearInterval(refreshTimer))
   border-radius: 8px;
   color: var(--ink);
   font-family: 'Noto Sans TC', sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   padding: 6px 28px 6px 28px;
   outline: none;
   width: 180px;
@@ -1512,7 +1697,7 @@ onUnmounted(() => clearInterval(refreshTimer))
 }
 
 .nm-name {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--ink);
 }
@@ -1524,7 +1709,7 @@ onUnmounted(() => clearInterval(refreshTimer))
 }
 
 .nm-meta span {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--muted-2);
   font-family: 'IBM Plex Mono', monospace;
 }
@@ -1536,7 +1721,7 @@ onUnmounted(() => clearInterval(refreshTimer))
 }
 
 .type-badge {
-  font-size: 11px;
+  font-size: 13px;
   font-family: 'IBM Plex Mono', monospace;
   padding: 3px 9px;
   border-radius: 5px;
@@ -1590,13 +1775,13 @@ onUnmounted(() => clearInterval(refreshTimer))
 
 .amount {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--ink);
 }
 
 .confirmed-hint {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--green);
   font-family: 'IBM Plex Mono', monospace;
   margin-top: 2px;
@@ -1604,20 +1789,20 @@ onUnmounted(() => clearInterval(refreshTimer))
 }
 
 .meta-tag {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted-2);
   font-family: 'IBM Plex Mono', monospace;
 }
 
 .meta-rate {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--green);
   font-family: 'IBM Plex Mono', monospace;
   font-weight: 500;
 }
 
 .status-badge {
-  font-size: 11px;
+  font-size: 13px;
   font-family: 'IBM Plex Mono', monospace;
   padding: 4px 10px;
   border-radius: 20px;
@@ -1681,7 +1866,7 @@ onUnmounted(() => clearInterval(refreshTimer))
 }
 
 .contact-status {
-  font-size: 11px;
+  font-size: 13px;
   font-family: 'IBM Plex Mono', monospace;
   display: inline-block;
   font-weight: 500;
@@ -1708,7 +1893,7 @@ onUnmounted(() => clearInterval(refreshTimer))
 }
 
 .contact-time {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--muted);
   font-family: 'IBM Plex Mono', monospace;
   margin-top: 2px;
@@ -1720,14 +1905,14 @@ onUnmounted(() => clearInterval(refreshTimer))
 
 .date-main {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--ink-2);
   display: block;
 }
 
 .date-time {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--muted);
 }
 
@@ -1752,7 +1937,7 @@ onUnmounted(() => clearInterval(refreshTimer))
 
 .btn-sm {
   padding: 7px 14px;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .btn-xs {
@@ -1811,7 +1996,7 @@ onUnmounted(() => clearInterval(refreshTimer))
 }
 
 .footer-count {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted-2);
   font-family: 'IBM Plex Mono', monospace;
 }
@@ -1838,7 +2023,7 @@ onUnmounted(() => clearInterval(refreshTimer))
   justify-content: center;
   padding: 5px 9px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 14px;
   font-family: 'IBM Plex Mono', monospace;
   cursor: pointer;
   border: 1px solid var(--border);
