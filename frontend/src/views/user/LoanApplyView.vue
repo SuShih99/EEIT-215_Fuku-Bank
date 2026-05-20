@@ -76,7 +76,9 @@
         <div class="step-indicator">
           <span class="si active">1 填寫資料</span>
           <span class="si-sep">›</span>
-          <span class="si">2 送出完成</span>
+          <span class="si">2 同意書確認</span>
+          <span class="si-sep">›</span>
+          <span class="si">3 送出完成</span>
         </div>
       </div>
 
@@ -241,14 +243,13 @@
             </div>
           </div>
 
-          <!-- Submit -->
+          <!-- Submit → 前往同意書 -->
           <button
             class="btn btn-primary btn-submit"
-            @click="submitForm"
+            @click="goToConsent"
             :disabled="submitting"
           >
-            <span v-if="submitting" class="spin">⟳</span>
-            <span v-else>送出申請</span>
+            下一步：閱讀同意書 ›
           </button>
         </div>
 
@@ -305,6 +306,116 @@
     </div>
 
     <!-- ══════════════════════════════════════════
+         STEP 2：同意書確認
+    ══════════════════════════════════════════ -->
+    <div v-else-if="step === 'consent'" class="step-wrap">
+      <div class="step-header">
+        <button class="back-btn" @click="step = 'form'">← 返回</button>
+        <div class="step-indicator">
+          <span class="si done">1 填寫資料</span>
+          <span class="si-sep">›</span>
+          <span class="si active">2 同意書確認</span>
+          <span class="si-sep">›</span>
+          <span class="si">3 送出完成</span>
+        </div>
+      </div>
+
+      <div class="consent-outer">
+        <div class="consent-card">
+
+          <div class="consent-heading">
+            <span class="consent-icon"><i class="fa-solid fa-file-shield"></i></span>
+            <div>
+              <div class="consent-title">蒐集個人資料告知事項暨個人資料提供同意書</div>
+              <div class="consent-subtitle">請完整閱讀以下內容後方可勾選同意</div>
+            </div>
+          </div>
+
+          <!-- 全文內容 -->
+          <div class="consent-body" ref="consentBox" @scroll="onConsentScroll">
+            <p class="cb-section-title">蒐集個人資料告知事項：</p>
+            <p>教育部（以下簡稱本部）為遵守個人資料保護法規定，在您提供個人資料予本部前，依法告知下列事項：</p>
+
+            <p><strong>一、</strong>本部因辦理國立臺東專科學校校長遴選事務之特定目的而獲取之個人資料類別：</p>
+            <p class="cb-indent">（1）辨識個人者：如姓名、職業、聯絡方式（包括但不限於電話號碼、E-MAIL、居住或工作地址）等</p>
+            <p class="cb-indent">（2）辨識政府資料者：如國民身分證統一編號、護照號碼等</p>
+            <p class="cb-indent">（3）個人描述：如年齡、性別、出生年月日等</p>
+            <p class="cb-indent">（4）教育、考選、技術或其他專業：如學歷資格、專業技術、特別執照等</p>
+            <p class="cb-indent">（5）或其他得以直接或間接識別個人之資料，詳如「國立臺東專科學校校長候選人資料表」。</p>
+
+            <p><strong>二、</strong>本部將依個人資料保護法及相關法令之規定下，蒐集、處理及利用個人資料。</p>
+
+            <p><strong>三、</strong>本部將於蒐集目的（即國立臺東專科學校校長遴選事務）之存續期間合理利用個人資料。</p>
+
+            <p><strong>四、</strong>除蒐集之目的涉及國際業務或活動外，本部僅於中華民國領域內利用個人資料。</p>
+
+            <p><strong>五、</strong>本部將於原蒐集之特定目的（即國立臺東專科學校校長遴選事務）之目的範圍內，合理利用個人資料。</p>
+
+            <p><strong>六、</strong>依個人資料保護法第3條規定，就您之個人資料向本部行使下列權利：</p>
+            <p class="cb-indent">（一）查詢或請求閱覽。</p>
+            <p class="cb-indent">（二）請求製給複製本。</p>
+            <p class="cb-indent">（三）請求補充或更正。</p>
+            <p class="cb-indent">（四）請求停止蒐集、處理及利用。</p>
+            <p class="cb-indent">（五）請求刪除。</p>
+            <p>您因行使上述權利而導致權益產生減損時，本部不負相關賠償責任。</p>
+
+            <p><strong>七、</strong>若未提供正確之個人資料，本部將無法提供特定目的之相關業務。</p>
+
+            <p><strong>八、</strong>您瞭解此一同意書符合個人資料保護法及相關法規之要求，且同意本部留存此同意書，供日後取出查驗。</p>
+          </div>
+
+          <!-- 捲動提示 -->
+          <transition name="fade">
+            <div v-if="!consentScrolled" class="consent-scroll-hint">
+              <i class="fa-solid fa-angles-down"></i> 請向下捲動至底部閱讀完整內容
+            </div>
+          </transition>
+
+          <!-- 勾選區 -->
+          <div class="consent-checks" :class="{ locked: !consentScrolled }">
+            <label class="check-item" :class="{ disabled: !consentScrolled }">
+              <input
+                type="checkbox"
+                v-model="consentCheck1"
+                :disabled="!consentScrolled"
+                class="check-input"
+              />
+              <span class="check-box-ui"></span>
+              <span class="check-text">一、本人已充分知悉貴部上述告知事項。</span>
+            </label>
+            <label class="check-item" :class="{ disabled: !consentScrolled }">
+              <input
+                type="checkbox"
+                v-model="consentCheck2"
+                :disabled="!consentScrolled"
+                class="check-input"
+              />
+              <span class="check-box-ui"></span>
+              <span class="check-text">二、本人同意貴部蒐集、處理、利用本人之個人資料。</span>
+            </label>
+          </div>
+
+          <!-- 送出 -->
+          <transition name="fade">
+            <div v-if="submitError" class="form-error-banner" style="margin-bottom:12px">
+              ❌ {{ submitError }}
+            </div>
+          </transition>
+
+          <button
+            class="btn btn-primary btn-submit"
+            :disabled="!consentCheck1 || !consentCheck2 || submitting"
+            @click="submitForm"
+          >
+            <span v-if="submitting" class="spin">⟳</span>
+            <span v-else>確認同意並送出申請</span>
+          </button>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
          STEP 3：送出完成
     ══════════════════════════════════════════ -->
     <div v-else-if="step === 'done'" class="step-wrap">
@@ -349,7 +460,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import axios from 'axios'
 import { useCustomerAuthStore } from '@/stores/customerAuth'
 import { getMyAccounts } from '@/api/customerAccount'
@@ -400,6 +511,12 @@ const rateRules   = ref(null)
 const submitting  = ref(false)
 const submitError = ref('')
 const resultId    = ref('')
+
+// ── 同意書 ──
+const consentBox      = ref(null)   // template ref
+const consentScrolled = ref(false)
+const consentCheck1   = ref(false)
+const consentCheck2   = ref(false)
 
 const form = reactive({
   applyType:           '',
@@ -482,6 +599,39 @@ function goApply() {
   step.value = 'form'
 }
 
+// 驗證表單後前往同意書步驟
+function goToConsent() {
+  submitError.value = ''
+  if (!validateAll()) return
+  // 重置同意書狀態
+  consentScrolled.value = false
+  consentCheck1.value   = false
+  consentCheck2.value   = false
+  step.value = 'consent'
+  // 等 DOM 渲染後嘗試偵測是否內容已短到不需捲動
+  nextTick(() => {
+    checkConsentScrollable()
+  })
+}
+
+function checkConsentScrollable() {
+  const el = consentBox.value
+  if (!el) return
+  // 如果內容短到不需捲動，直接解鎖
+  if (el.scrollHeight <= el.clientHeight + 4) {
+    consentScrolled.value = true
+  }
+}
+
+function onConsentScroll() {
+  if (consentScrolled.value) return
+  const el = consentBox.value
+  if (!el) return
+  if (el.scrollTop + el.clientHeight >= el.scrollHeight - 8) {
+    consentScrolled.value = true
+  }
+}
+
 function onTypeSelect(key) {
   form.applyType = key
   errors.applyType = ''
@@ -560,6 +710,9 @@ function resetForm() {
 function resetAll() {
   resetForm()
   resultId.value = ''
+  consentScrolled.value = false
+  consentCheck1.value   = false
+  consentCheck2.value   = false
   step.value = 'entry'
 }
 
@@ -1048,6 +1201,150 @@ onUnmounted(() => clearInterval(showcaseTimer))
 .btn-outline:hover { border-color: var(--primary); color: var(--primary); background: rgba(92,107,95,0.05); }
 .btn-lg     { padding: 13px 32px; font-size: 15px; border-radius: 12px; }
 .btn-submit { width: 100%; padding: 13px; font-size: 15px; margin-top: 8px; }
+
+/* ── Consent ── */
+.consent-outer {
+  max-width: 720px;
+  margin: 0 auto;
+}
+.consent-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 32px;
+  box-shadow: 0 10px 26px rgba(63,74,66,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.consent-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.consent-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.consent-title {
+  font-family: 'Noto Serif TC', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.5;
+}
+.consent-subtitle {
+  font-size: 12px;
+  color: var(--muted-2);
+  margin-top: 4px;
+}
+
+/* 全文捲動區 */
+.consent-body {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px 22px;
+  height: 320px;
+  overflow-y: scroll;
+  font-size: 13.5px;
+  line-height: 1.9;
+  color: var(--ink-2);
+  scroll-behavior: smooth;
+}
+.consent-body p {
+  margin: 0 0 10px;
+}
+.consent-body p:last-child { margin-bottom: 0; }
+.cb-section-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  margin-bottom: 12px !important;
+}
+.cb-indent {
+  padding-left: 22px;
+}
+
+/* 捲動提示 */
+.consent-scroll-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--muted-2);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-lt);
+  border-radius: 8px;
+  padding: 9px 14px;
+  animation: hint-pulse 2s ease-in-out infinite;
+}
+@keyframes hint-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+
+/* 勾選區 */
+.consent-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  transition: opacity 0.3s;
+}
+.consent-checks.locked {
+  opacity: 0.4;
+  pointer-events: none;
+  filter: grayscale(0.4);
+}
+
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  cursor: pointer;
+  user-select: none;
+}
+.check-item.disabled { cursor: not-allowed; }
+
+.check-input { display: none; }
+
+.check-box-ui {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1.5px solid var(--border-2);
+  background: var(--surface);
+  flex-shrink: 0;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.check-input:checked + .check-box-ui {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.check-input:checked + .check-box-ui::after {
+  content: '\f00c';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  font-size: 11px;
+  color: #fff;
+}
+
+.check-text {
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.6;
+}
 
 /* ── Done ── */
 .done-card {

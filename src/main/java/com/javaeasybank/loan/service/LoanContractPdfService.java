@@ -74,7 +74,7 @@ public class LoanContractPdfService {
         String annualIncome = profile.getAnnualIncome() == null ? "-" : "NT$ " + formatMoney(BigDecimal.valueOf(profile.getAnnualIncome()));
 
         String loanType = safe(formatLoanType(loan.getApplyType()));
-        String purpose = safe(firstNonBlank(profile.getAccountPurpose(), loan.getReviewComment(), "-"));
+        String purpose = safe(formatPurposeByLoanType(loan.getApplyType()));
         String applyAmount = "NT$ " + formatMoney(loan.getApplyAmount());
         String confirmedAmount = "NT$ " + formatMoney(detail != null && detail.getConfirmedAmount() != null
                 ? detail.getConfirmedAmount() : loan.getApplyAmount());
@@ -325,6 +325,22 @@ public class LoanContractPdfService {
             case "HOUSE" -> "房屋貸款";
             case "LAND" -> "土地貸款";
             default -> loanType;
+        };
+    }
+
+    private String formatPurposeByLoanType(String loanType) {
+        if (loanType == null || loanType.isBlank()) {
+            return "-";
+        }
+        return switch (loanType.trim()) {
+            case "PERSONAL" -> "個人周轉";
+            case "CAR" -> "購車資金";
+            case "MOTOR" -> "機車購置";
+            case "STUDENT" -> "就學支出";
+            case "BUSINESS" -> "營運週轉";
+            case "HOUSE" -> "房屋相關";
+            case "LAND" -> "土地相關";
+            default -> "-";
         };
     }
 
