@@ -1,6 +1,6 @@
 import api from "./axios";
 // 建立一個 axios 實例，統一設定後端 API 的基礎 URL
-const BASE_URL = 'api/admin/cards'
+const BASE_URL = '/api/admin/cards'
 
 //查全部
 export const getCards = (params) => {

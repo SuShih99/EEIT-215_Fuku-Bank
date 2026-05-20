@@ -77,3 +77,6 @@ logs/
 
 # Uploads
 /uploads/
+
+# 不須上傳之文件
+/docs/
