@@ -1,7 +1,8 @@
 import axios from 'axios'
 import router from '@/router'
 
-export const BASE_URL = 'http://localhost:8080'
+export const BASE_URL = import.meta.env.VITE_API_BASE_URL
+// export const BASE_URL = 'http://localhost:8080'
 
 // 建立一個 axios 實例，統一設定後端 API 的基礎 URL
 const api = axios.create({

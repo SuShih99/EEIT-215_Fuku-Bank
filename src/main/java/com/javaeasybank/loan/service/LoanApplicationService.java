@@ -100,6 +100,9 @@ public class LoanApplicationService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private LoanContractPdfService loanContractPdfService;
+
     // ===查詢功能===
     // 依狀態顯示
     public List<LoanApplicationResponseDTO> getByStatus(LoanApplicationStatus status) {
@@ -533,6 +536,7 @@ public class LoanApplicationService {
                             "貸款已核准撥款",
                             "您的貸款已核准並完成撥款。",
                             "/user/loan-accounts");
+                    sendLoanContractNotification(applicationId);
                 } else {
                     log.warn("[LoanDisbursed] 略過通知：email={} detail={} applicationId={}",
                             disbEmail, detail, applicationId);
@@ -654,6 +658,50 @@ public class LoanApplicationService {
         LoanRiskRequestDTO riskDto = buildRiskRequest(loan, detail);
         log.info("[RetryRisk] 行員手動重送風控 applicationId={}", applicationId);
         loanRiskClient.submitForReview(riskDto);
+    }
+
+    private void sendLoanContractNotification(String applicationId) {
+        LoanApplication loan = laRepo.findById(applicationId)
+                .orElseThrow(() -> new BusinessException("找不到申請編號：" + applicationId));
+        String email = customerService.findEmailByCustomerId(loan.getCustomerId());
+        if (email == null || email.isBlank()) {
+            log.warn("[LoanContract] 客戶無 email，略過契約寄送。customerId={}", loan.getCustomerId());
+            return;
+        }
+
+        byte[] pdfBytes = loanContractPdfService.generateContractPdf(applicationId);
+        String customerName = customerProfileRepository.findById(loan.getCustomerId())
+                .map(profile -> profile.getName())
+                .orElse("親愛的客戶");
+        String contractNo = formatContractNumber(loan.getApplicationId());
+        String body = """
+                <html>
+                <body style="font-family: Microsoft JhengHei, Arial, sans-serif; color:#333; line-height:1.7;">
+                  <p>%s 您好：</p>
+                  <p>您的貸款已核准並完成撥款，附件為依最終填單內容產生之貸款契約書，請留存備查。</p>
+                  <p>契約編號：<b>%s</b></p>
+                  <p>Java Easy Bank 敬上</p>
+                </body>
+                </html>
+                """.formatted(customerName, contractNo);
+
+        emailService.sendEmailWithAttachment(
+                email,
+                "Java Easy Bank - 貸款契約書",
+                body,
+                "loan-contract-" + applicationId + ".pdf",
+                pdfBytes);
+        log.info("[LoanContract] 契約附件寄送完成 applicationId={} email={}", applicationId, email);
+    }
+
+    private String formatContractNumber(String applicationId) {
+        if (applicationId == null || applicationId.isBlank()) {
+            return "-";
+        }
+        if (applicationId.startsWith("LA")) {
+            return "LC-" + applicationId.substring(2);
+        }
+        return "LC-" + applicationId;
     }
 
     // 查填單內容

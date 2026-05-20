@@ -403,6 +403,51 @@ onBeforeUnmount(() => {
   box-shadow: 0 0 0 3px rgba(92, 107, 95, 0.14);
 }
 
+.jb-toast {
+  position: fixed;
+  top: 88px;
+  left: 50%;
+  z-index: 2200;
+  min-width: min(320px, calc(100vw - 32px));
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 13px 18px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(214, 206, 195, 0.92);
+  border-radius: 16px;
+  background: rgba(255, 249, 239, 0.96);
+  box-shadow: 0 14px 34px rgba(63, 74, 66, 0.12);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  animation: toast-breathe 1.8s ease-in-out infinite;
+}
+
+.jb-toast.toast-success {
+  border-color: rgba(92, 107, 95, 0.34);
+  color: var(--primary-dark);
+}
+
+.jb-toast.toast-error {
+  border-color: rgba(166, 90, 77, 0.34);
+  color: var(--accent);
+  background: rgba(255, 249, 239, 0.98);
+}
+
+@keyframes toast-breathe {
+  0%,
+  100% {
+    box-shadow: 0 14px 34px rgba(63, 74, 66, 0.11);
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    box-shadow: 0 18px 42px rgba(63, 74, 66, 0.16);
+    transform: translateX(-50%) scale(1.015);
+  }
+}
+
 .toast-fade-enter-active,
 .toast-fade-leave-active {
   transition: all 0.28s var(--ease);
@@ -411,7 +456,7 @@ onBeforeUnmount(() => {
 .toast-fade-enter-from,
 .toast-fade-leave-to {
   opacity: 0;
-  transform: translate(-50%, -10px);
+  transform: translate(-50%, -14px) scale(0.98);
 }
 
 @media (max-width: 768px) {
@@ -449,6 +494,12 @@ onBeforeUnmount(() => {
   .toggle-switch {
     margin-top: 4px;
     flex-shrink: 0;
+  }
+
+  .jb-toast {
+    top: 72px;
+    padding: 12px 14px;
+    font-size: 13px;
   }
 }
 </style>

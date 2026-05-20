@@ -107,6 +107,7 @@
             @mouseleave="handleMouseLeave"
           >
             <button
+              :ref="(el) => setMenuTriggerRef(el, idx)"
               class="mega-nav-trigger"
               :class="{ active: openMenu === idx }"
               :aria-expanded="openMenu === idx"
@@ -121,7 +122,11 @@
 
             <!-- 下拉面板 -->
             <transition name="dropdown">
-              <div v-if="openMenu === idx" class="mega-dropdown">
+              <div
+                v-if="openMenu === idx"
+                class="mega-dropdown"
+                :style="dropdownStyle"
+              >
                 <ul class="dropdown-list">
                   <li v-for="sub in menu.children" :key="sub.label">
                     <a
@@ -166,7 +171,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCustomerAuthStore } from '@/stores/customerAuth'
 import { BASE_URL } from '@/api/axios'
@@ -182,6 +187,8 @@ import dayjs from 'dayjs'
 const router = useRouter()
 const customerAuthStore = useCustomerAuthStore()
 const openMenu = ref(-1)
+const menuTriggerRefs = ref([])
+const dropdownStyle = ref({})
 const isNotificationOpen = ref(false)
 const isNotificationLoading = ref(false)
 const notificationError = ref(false)
@@ -189,21 +196,63 @@ const notifications = ref([])
 const unreadCount = ref(0)
 const notificationWrapRef = ref(null)
 let leaveTimer = null
+let compactNavMedia = null
+const isCompactNav = ref(false)
+
+function setMenuTriggerRef(el, idx) {
+  menuTriggerRefs.value[idx] = el || null
+}
+
+function updateCompactNavState() {
+  isCompactNav.value = window.innerWidth <= 900
+}
+
+function updateDropdownPosition(idx = openMenu.value) {
+  if (!isCompactNav.value || idx < 0) {
+    dropdownStyle.value = {}
+    return
+  }
+
+  const trigger = menuTriggerRefs.value[idx]
+  if (!trigger) return
+
+  const rect = trigger.getBoundingClientRect()
+  const viewportWidth = window.innerWidth
+  const dropdownWidth = Math.min(240, viewportWidth - 24)
+  const minLeft = 12
+  const maxLeft = Math.max(minLeft, viewportWidth - dropdownWidth - 12)
+  const left = Math.min(Math.max(rect.left, minLeft), maxLeft)
+
+  dropdownStyle.value = {
+    top: `${rect.bottom + 8}px`,
+    left: `${left}px`,
+    right: 'auto',
+    width: `${dropdownWidth}px`,
+    minWidth: `${Math.min(200, dropdownWidth)}px`,
+  }
+}
 
 function handleMouseEnter(idx) {
   clearTimeout(leaveTimer)
   openMenu.value = idx
+  nextTick(() => updateDropdownPosition(idx))
 }
 
 function handleMouseLeave() {
   leaveTimer = setTimeout(() => {
     openMenu.value = -1
+    dropdownStyle.value = {}
   }, 120)
 }
 
 function toggleMenu(idx) {
   clearTimeout(leaveTimer)
   openMenu.value = openMenu.value === idx ? -1 : idx
+  if (openMenu.value === -1) {
+    dropdownStyle.value = {}
+    return
+  }
+  nextTick(() => updateDropdownPosition(idx))
 }
 
 const customerName = computed(() => customerAuthStore.customer?.name || '會員')
@@ -263,12 +312,12 @@ const menus = [
     ],
   },
   {
-    label: '個人資料',
+    label: '個人設定',
     svg: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
     route: 'user-profile',
     children: [
       { label: '基本資料', desc: '查看與修改個人資訊', route: 'user-profile' },
-      { label: '通知中心', desc: '查看站內通知', action: 'notifications' },
+      { label: '通知設定', desc: '設定站內通知類型', route: 'user-notification-settings' },
     ],
   },
   {
@@ -376,9 +425,17 @@ function goNotificationSettings() {
 function closeOnOutsideClick(e) {
   if (!e.target.closest('.mega-nav-item')) {
     openMenu.value = -1
+    dropdownStyle.value = {}
   }
   if (!e.target.closest('.notification-bell-wrap')) {
     isNotificationOpen.value = false
+  }
+}
+
+function handleViewportChange() {
+  updateCompactNavState()
+  if (openMenu.value !== -1) {
+    nextTick(() => updateDropdownPosition())
   }
 }
 
@@ -432,7 +489,12 @@ function stopGraceTimer() {
 }
 
 onMounted(() => {
+  updateCompactNavState()
+  compactNavMedia = window.matchMedia('(max-width: 900px)')
   document.addEventListener('click', closeOnOutsideClick)
+  window.addEventListener('resize', handleViewportChange)
+  window.addEventListener('scroll', handleViewportChange, true)
+  compactNavMedia.addEventListener('change', handleViewportChange)
   loadNotifications()
 
   // 每 1 秒更新倒數
@@ -450,6 +512,9 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('click', closeOnOutsideClick)
+  window.removeEventListener('resize', handleViewportChange)
+  window.removeEventListener('scroll', handleViewportChange, true)
+  compactNavMedia?.removeEventListener('change', handleViewportChange)
   if (secondTimer) clearInterval(secondTimer)
   stopGraceTimer()
 })
@@ -1061,6 +1126,13 @@ function handleLogout() {
   }
 
   .mega-nav-icon { display: none; }
+
+  .mega-dropdown {
+    position: fixed;
+    width: min(240px, calc(100vw - 24px));
+    min-width: 200px;
+    border-radius: var(--radius-md);
+  }
 }
 
 @media (max-width: 768px) {
@@ -1164,13 +1236,6 @@ function handleLogout() {
     padding: 16px;
   }
 
-  .mega-dropdown {
-    position: fixed;
-    left: var(--space-3);
-    right: var(--space-3);
-    min-width: unset;
-    border-radius: var(--radius-md);
-  }
 }
 
 /* === Modal Styles (Consistent with Profile) === */

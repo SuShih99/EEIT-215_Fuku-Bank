@@ -26,7 +26,7 @@ CREATE TABLE REVIEW_TASK
     review_result         VARCHAR(20) NULL,
     assignee              VARCHAR(255) NULL,
     admin_comment         VARCHAR(50) NULL,
-    requiredDocumentsJson NVARCHAR(MAX) NULL,
+    required_documents_json NVARCHAR(MAX) NULL,
     priority              INT      DEFAULT 0,
     create_at             DATETIME DEFAULT GETDATE(), -- 自動記錄建立時間
     processed_at          DATETIME NULL,

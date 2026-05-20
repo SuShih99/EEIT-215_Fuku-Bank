@@ -148,8 +148,16 @@
 
               <!-- ── 右欄：填單表單 ── -->
               <div class="form-panel">
-                <div class="section-title">
-                  {{ review ? '更新草稿' : '建立草稿' }}
+                <div class="section-title section-title-row">
+                  <span>{{ review ? '更新草稿' : '建立草稿' }}</span>
+                  <button
+                    v-if="!isSubmitted"
+                    class="btn-autofill"
+                    @click="fillFromApp"
+                    title="將申請人原始申請資訊代入欄位"
+                  >
+                    一鍵代入
+                  </button>
                 </div>
 
                 <!-- Alert -->
@@ -421,6 +429,17 @@ function prefillForm(r) {
     : ''
   form.collateralNote = r.collateralNote ?? ''
   form.empId = r.empId ?? ''
+}
+
+function fillFromApp() {
+  if (!props.app) return
+  form.confirmedAmount = props.app.applyAmount ?? null
+  form.confirmedPeriod = props.app.applyPeriod ?? null
+  // app.rate 為 decimal（e.g. 0.0314），轉成百分比字串（"3.14"）
+  form.confirmedRate = props.app.rate != null
+    ? String(parseFloat((parseFloat(props.app.rate) * 100).toFixed(4)))
+    : ''
+  // collateralNote 不覆蓋，保留已填內容
 }
 
 function resetForm() {
@@ -708,6 +727,37 @@ function formatDateTime(d) {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btn-autofill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-family: 'Noto Sans TC', sans-serif;
+  font-weight: 600;
+  color: var(--primary-dk);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-lt);
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.btn-autofill:hover {
+  background: var(--accent-lt);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .review-id {
