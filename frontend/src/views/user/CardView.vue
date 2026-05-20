@@ -1,9 +1,28 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getMyCards,activateCard } from '@/api/userCard'
+import { getMyCards, activateCard } from '@/api/userCard'
 import { BASE_URL } from '@/api/axios'
 
 const cards = ref([])
+const showActivateModal = ref(false)
+const selectedCard = ref(null)
+
+const fillDemoActivateForm = () => {
+  activateForm.value.cardNumber = selectedCard.value.cardNumber
+
+  activateForm.value.expiryDate = formatExpiryDate(selectedCard.value.expiryDate)
+
+  activateForm.value.cvv = String(Math.floor(100 + Math.random() * 900))
+}
+
+const formatExpiryDate = (date) => {
+  if (!date) return ''
+
+  const [year, month] = date.split('-')
+
+  return `${month}/${year.slice(2)}`
+}
+
 
 const fetchCards = async () => {
   try {
@@ -17,9 +36,7 @@ const fetchCards = async () => {
 
 const getImageUrl = (url) => {
   if (!url) return ''
-  return url.startsWith('http')
-    ? url
-    : `${BASE_URL}/${url}`
+  return url.startsWith('http') ? url : `${BASE_URL}/${url}`
 }
 const handleActivateCard = async (cardId) => {
   try {
@@ -33,6 +50,43 @@ const handleActivateCard = async (cardId) => {
   }
 }
 
+
+
+
+const activateForm = ref({
+  cardNumber: '',
+  expiryDate: '',
+  cvv: '',
+})
+const openActivateModal = (card) => {
+  selectedCard.value = card
+
+  activateForm.value = {
+    cardNumber: '',
+    expiryDate: '',
+    cvv: '',
+  }
+
+  showActivateModal.value = true
+}
+const submitActivateCard = async () => {
+  if (!activateForm.value.cvv || activateForm.value.cvv.length !== 3) {
+    alert('請輸入 3 碼安全碼')
+    return
+  }
+
+  try {
+    await activateCard(selectedCard.value.cardId)
+
+    alert('開卡成功！')
+    showActivateModal.value = false
+    await fetchCards()
+  } catch (error) {
+    console.error(error)
+    alert('開卡失敗')
+  }
+}
+
 onMounted(() => {
   fetchCards()
 })
@@ -43,18 +97,11 @@ onMounted(() => {
     <h1 class="page-title">My Cards</h1>
 
     <div class="cards-grid">
-      <div
-        class="card-wrapper"
-        v-for="card in cards"
-        :key="card.cardId"
-      >
+      <div class="card-wrapper" v-for="card in cards" :key="card.cardId">
         <!-- 卡片上方資訊列 -->
         <div class="card-header">
           <!-- 狀態 -->
-          <span
-            class="status-badge"
-            :class="card.status?.toLowerCase()"
-          >
+          <span class="status-badge" :class="card.status?.toLowerCase()">
             {{ card.status }}
           </span>
 
@@ -62,7 +109,7 @@ onMounted(() => {
           <button
             v-if="card.status === 'INACTIVE'"
             class="activate-btn"
-            @click="handleActivateCard(card.cardId)"
+            @click="openActivateModal(card)"
           >
             開卡
           </button>
@@ -71,11 +118,7 @@ onMounted(() => {
         <!-- 信用卡 -->
         <div class="credit-card">
           <!-- 卡片背景 -->
-          <img
-            class="card-bg"
-            :src="getImageUrl(card.cardType?.cardImageUrl)"
-            alt=""
-          />
+          <img class="card-bg" :src="getImageUrl(card.cardType?.cardImageUrl)" alt="" />
 
           <!-- 黑色遮罩 -->
           <div class="card-overlay"></div>
@@ -101,6 +144,26 @@ onMounted(() => {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+    <div v-if="showActivateModal" class="modal-overlay">
+      <div class="modal">
+        <h2>信用卡開卡</h2>
+
+        <label>卡號</label>
+        <input v-model="activateForm.cardNumber" disabled />
+
+        <label>到期日</label>
+        <input v-model="activateForm.expiryDate" disabled />
+
+        <label>安全碼 CVV</label>
+        <input v-model="activateForm.cvv" maxlength="3" placeholder="請輸入卡片背面末 3 碼" />
+        <button class="demo-fill-btn" @click="fillDemoActivateForm">Demo 一鍵帶入</button>
+
+        <div class="modal-actions">
+          <button @click="showActivateModal = false">取消</button>
+          <button @click="submitActivateCard">確認開卡</button>
         </div>
       </div>
     </div>
@@ -130,7 +193,7 @@ onMounted(() => {
   height: 220px;
   border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
 }
 
 .card-bg {
@@ -142,7 +205,7 @@ onMounted(() => {
 .card-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.28);
+  background: rgba(0, 0, 0, 0.28);
 }
 
 .card-content {
@@ -241,5 +304,114 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal {
+  width: 420px;
+  background: white;
+  padding: 28px;
+  border-radius: 20px;
+}
+
+.modal input {
+  width: 100%;
+  margin: 8px 0 16px;
+  padding: 10px 12px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+.modal {
+  width: 420px;
+  background: #fff;
+  padding: 28px;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+.modal h2 {
+  margin-bottom: 18px;
+  color: #1f2a44;
+}
+
+.modal label {
+  display: block;
+  margin: 14px 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.modal input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 15px;
+  outline: none;
+}
+
+.modal input:disabled {
+  background: #f9fafb;
+  color: #374151;
+}
+
+.demo-fill-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 12px;
+  background: #f3f4f6;
+  color: #1f2a44;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.demo-fill-btn:hover {
+  background: #e5e7eb;
+}
+
+.modal-actions {
+  margin-top: 22px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.cancel-btn,
+.confirm-btn {
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cancel-btn {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.confirm-btn {
+  background: #22c55e;
+  color: white;
+}
+
+.confirm-btn:hover {
+  background: #16a34a;
 }
 </style>
