@@ -617,9 +617,6 @@ SELECT
     NULL AS update_time
 FROM repayment_rows;
 
-<<<<<<< HEAD
-PRINT 'loan_mockdata.sql completed: seeded 104 applications, 42 risk review tasks, 10 loan accounts, and repayment schedules.';
-=======
 IF NOT EXISTS (SELECT 1 FROM TRANS_LOG WHERE reference_id = 'LOAN-DISB-2026052005')
 BEGIN
     DECLARE @damingDisbursementBefore DECIMAL(19, 4);
@@ -687,4 +684,3 @@ BEGIN
 END;
 
 PRINT 'loan_mockdata.sql completed: seeded 104 applications, 43 risk review tasks, 11 loan accounts, and repayment schedules.';
->>>>>>> dev
