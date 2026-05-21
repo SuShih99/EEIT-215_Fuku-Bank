@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.data.domain.Persistable;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -29,7 +30,21 @@ import java.util.UUID;
 @Getter
 @Setter
 @NoArgsConstructor
-public class TransLog {
+public class TransLog implements Persistable<String> {
+
+    /** 讓 Spring Data JPA 的 save() 正確走 persist() 而非 merge() */
+    @Transient
+    private boolean isNew = true;
+
+    @Override
+    public String getId() { return transactionId; }
+
+    @Override
+    public boolean isNew() { return isNew; }
+
+    @PostPersist
+    @PostLoad
+    void markNotNew() { this.isNew = false; }
 
     /**
      * 交易 ID，主鍵，長度為 36 (UUID)，不可為空。
