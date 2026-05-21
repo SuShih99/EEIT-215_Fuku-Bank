@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -105,10 +106,12 @@ public class BillService {
                 List<CardTransaction> txns = cardTransactionRepository
                         .findByCard_CardAccount_IdAndBillIsNull(cardAccount.getId());
 
-                BigDecimal previousUnpaid = cardBillRepository
+                Optional<CardBill> previousBillOpt = cardBillRepository
                         .findTopByCardAccountIdAndBillStatusInOrderByBillingMonthDesc(
                                 cardAccount.getId(),
-                                List.of(BillStatus.UNPAID, BillStatus.PARTIAL))
+                                List.of(BillStatus.UNPAID, BillStatus.PARTIAL));
+
+                BigDecimal previousUnpaid = previousBillOpt
                         .map(oldBill -> oldBill.getTotalAmount().subtract(oldBill.getPaidAmount()))
                         .orElse(BigDecimal.ZERO);
 
@@ -147,6 +150,13 @@ public class BillService {
                 bill.setRewardPosted(false);
 
                 CardBill savedBill = cardBillRepository.save(bill);
+
+                if (previousUnpaid.compareTo(BigDecimal.ZERO) > 0) {
+                    previousBillOpt.ifPresent(oldBill -> {
+                        oldBill.setBillStatus(BillStatus.ROLLED_OVER);
+                        cardBillRepository.save(oldBill);
+                    });
+                }
 
                 /*
                  * 寄文字格式

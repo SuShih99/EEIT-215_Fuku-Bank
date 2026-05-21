@@ -48,37 +48,9 @@ const historyBills = computed(() => {
 const displayBill = computed(() => {
   if (bills.value.length === 0) return null
 
-  const unpaidBills = bills.value.filter((bill) => getRemainingAmount(bill) > 0)
-
-  // 如果有未繳帳單：顯示未繳合併
-  if (unpaidBills.length > 0) {
-    const sortedUnpaidBills = [...unpaidBills].sort((a, b) =>
-      String(b.billingMonth).localeCompare(String(a.billingMonth)),
-    )
-
-    const latestBill = sortedUnpaidBills[0]
-
-    const totalRemainingAmount = unpaidBills.reduce((sum, bill) => {
-      return sum + getRemainingAmount(bill)
-    }, 0)
-
-    const totalMinimumPayment = unpaidBills.reduce((sum, bill) => {
-      return sum + getMinimumDueAmount(bill)
-    }, 0)
-
-    return {
-      ...latestBill,
-      billIds: unpaidBills.map((bill) => bill.billId),
-      totalAmount: totalRemainingAmount,
-      minimumPayment: totalMinimumPayment,
-      paidAmount: 0,
-      billStatus: unpaidBills.some((bill) => bill.billStatus === 'PARTIAL') ? 'PARTIAL' : 'UNPAID',
-    }
-  }
-
-  // 如果全部繳清：顯示最新一期帳單
   return historyBills.value[0]
 })
+  
 
 const currentBill = computed(() => {
   if (selectedHistoryBill.value) {
@@ -289,7 +261,7 @@ onMounted(() => {
           <div class="form-section">
             <label>選擇帳單</label>
             <select v-model="selectedHistoryBill" class="history-select">
-              <option :value="null">最新應繳帳單</option>
+              <option :value="null">目前帳單</option>
               <option v-for="bill in historyBills" :key="bill.billId" :value="bill.billId">
                 {{ bill.billingMonth }} -
                 {{
