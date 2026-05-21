@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.domain.Persistable;
 
 import java.time.LocalDateTime;
 
@@ -20,7 +21,21 @@ import java.time.LocalDateTime;
 @Table(name = "CUSTOMER_AUTH")
 @Getter
 @Setter
-public class CustomerAuth {
+public class CustomerAuth implements Persistable<String> {
+
+    /** 讓 Spring Data JPA 的 save() 正確走 persist() 而非 merge() */
+    @Transient
+    private boolean isNew = true;
+
+    @Override
+    public String getId() { return authId; }
+
+    @Override
+    public boolean isNew() { return isNew; }
+
+    @PostPersist
+    @PostLoad
+    void markNotNew() { this.isNew = false; }
 
     @Id
     @Column(name = "auth_id", length = 20, nullable = false)

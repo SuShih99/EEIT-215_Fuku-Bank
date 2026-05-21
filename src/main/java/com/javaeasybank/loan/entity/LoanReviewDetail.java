@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.domain.Persistable;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,7 +16,20 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-public class LoanReviewDetail {
+public class LoanReviewDetail implements Persistable<String> {
+
+    @Transient
+    private boolean isNew = true;
+
+    @Override
+    public String getId() { return reviewId; }
+
+    @Override
+    public boolean isNew() { return isNew; }
+
+    @PostPersist
+    @PostLoad
+    void markNotNew() { this.isNew = false; }
 
     // 審核詳情唯一識別碼（UUID），作為主鍵
     @Id

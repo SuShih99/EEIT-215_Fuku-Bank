@@ -1,7 +1,7 @@
 -- ============================================================
 -- Loan Module Demo Mock Data
 -- Targets:
--- - Wang Daming: 5 new applications + 1 abandoned application
+-- - Wang Daming: 4 new applications + 1 disbursed application + 1 abandoned application
 -- - 45 more new applications
 -- - 10 in-contact applications
 -- - 10 under review applications
@@ -9,7 +9,7 @@
 -- - 15 approved applications
 -- - 2 rejected applications
 -- - 2 cancelled applications
--- - 10 disbursed applications with loan accounts
+-- - 11 disbursed applications with loan accounts
 -- - Risk review queue and credit-visible demo rows stay aligned
 -- ============================================================
 
@@ -137,7 +137,7 @@ INSERT INTO @apps (
 ('LA2026052002', 'Q8M4T7K2', 'CAR',      380000.00, 36, 0.025000, NULL, 'PENDING_CONTACT', '2026-05-21 10:00:00', NULL, NULL, NULL, NULL, 0, NULL, NULL, 'NEW'),
 ('LA2026052003', 'Q8M4T7K2', 'STUDENT',  220000.00, 84, 0.015000, NULL, 'PENDING_CONTACT', '2026-05-21 11:00:00', NULL, NULL, NULL, NULL, 0, NULL, NULL, 'NEW'),
 ('LA2026052004', 'Q8M4T7K2', 'BUSINESS', 600000.00, 60, 0.020000, NULL, 'PENDING_CONTACT', '2026-05-21 13:00:00', NULL, NULL, NULL, NULL, 0, NULL, NULL, 'NEW'),
-('LA2026052005', 'Q8M4T7K2', 'HOUSE',   2500000.00, 120, 0.018000, NULL, 'PENDING_CONTACT', '2026-05-21 14:00:00', NULL, NULL, NULL, NULL, 0, NULL, NULL, 'NEW'),
+('LA2026052005', 'Q8M4T7K2', 'HOUSE',   2500000.00, 120, 0.018000, '070000000001', 'DISBURSED', '2026-05-21 14:00:00', 'CONFIRMED', '2026-05-21 15:00:00', '2026-05-21 15:30:00', '2026-05-21 16:00:00', 0, 'HOUSE_COLLATERAL', 'DISBURSED', 'DISBURSED'),
 ('LA2026052006', 'Q8M4T7K2', 'PERSONAL',  80000.00, 24, 0.040000, NULL, 'CANCELLED',      '2026-05-16 16:00:00', 'DECLINED', '2026-05-16 16:30:00', NULL, '2026-05-16 16:30:00', 0, 'CUSTOMER_WITHDREW', NULL, 'CANCELLED');
 
 ;WITH nums AS (
@@ -287,7 +287,6 @@ INSERT INTO LOAN_APPLICATION (
     documents_submitted_at,
     update_time,
     current_supplement_batch_no,
-    admin_comment,
     required_documents,
     review_comment
 )
@@ -306,7 +305,6 @@ SELECT
     documents_submitted_at,
     update_time,
     current_supplement_batch_no,
-    admin_comment,
     required_documents,
     review_comment
 FROM @apps;
@@ -619,4 +617,74 @@ SELECT
     NULL AS update_time
 FROM repayment_rows;
 
+<<<<<<< HEAD
 PRINT 'loan_mockdata.sql completed: seeded 104 applications, 42 risk review tasks, 10 loan accounts, and repayment schedules.';
+=======
+IF NOT EXISTS (SELECT 1 FROM TRANS_LOG WHERE reference_id = 'LOAN-DISB-2026052005')
+BEGIN
+    DECLARE @damingDisbursementBefore DECIMAL(19, 4);
+    DECLARE @damingDisbursementAmount DECIMAL(19, 4) = 2500000.0000;
+
+    SELECT @damingDisbursementBefore = balance
+    FROM [ACCOUNT]
+    WHERE account_number = '070000000001'
+      AND customer_id = 'Q8M4T7K2'
+      AND account_type = 'CHECKING'
+      AND currency = 'TWD'
+      AND status = 'ACTIVE';
+
+    IF @damingDisbursementBefore IS NOT NULL
+    BEGIN
+        INSERT INTO TRANS_LOG (
+            transaction_id,
+            reference_id,
+            account_number,
+            counterpart_account,
+            bank_code,
+            bank_name,
+            counterpart_bank_code,
+            counterpart_bank_name,
+            is_interbank,
+            entry_type,
+            transaction_type,
+            amount,
+            fee_amount,
+            total_debit_amount,
+            balance_before,
+            balance_after,
+            currency,
+            note,
+            created_at
+        ) VALUES (
+            '00000000-0000-0000-0000-202605200005',
+            'LOAN-DISB-2026052005',
+            '070000000001',
+            '909000000001',
+            '909',
+            N'爪哇銀行',
+            '909',
+            N'爪哇銀行撥款帳戶',
+            0,
+            'CREDIT',
+            'LOAN_DISBURSEMENT',
+            @damingDisbursementAmount,
+            0.0000,
+            @damingDisbursementAmount,
+            @damingDisbursementBefore,
+            @damingDisbursementBefore + @damingDisbursementAmount,
+            'TWD',
+            N'貸款撥款 applicationId=LA2026052005',
+            '2026-05-21 16:00:00.000'
+        );
+
+        UPDATE [ACCOUNT]
+        SET
+            balance = @damingDisbursementBefore + @damingDisbursementAmount,
+            changed_at = '2026-05-21 16:00:00',
+            changed_by = 'loan-mock'
+        WHERE account_number = '070000000001';
+    END
+END;
+
+PRINT 'loan_mockdata.sql completed: seeded 104 applications, 43 risk review tasks, 11 loan accounts, and repayment schedules.';
+>>>>>>> dev

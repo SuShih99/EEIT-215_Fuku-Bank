@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.domain.Persistable;
 
 import java.time.LocalDateTime;
 
@@ -15,7 +16,20 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-public class LoanContactLog {
+public class LoanContactLog implements Persistable<String> {
+
+    @Transient
+    private boolean isNew = true;
+
+    @Override
+    public String getId() { return logId; }
+
+    @Override
+    public boolean isNew() { return isNew; }
+
+    @PostPersist
+    @PostLoad
+    void markNotNew() { this.isNew = false; }
 
     // 聯繫紀錄唯一識別碼（UUID），作為主鍵
     @Id
