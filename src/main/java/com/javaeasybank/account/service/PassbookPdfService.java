@@ -261,7 +261,7 @@ public class PassbookPdfService {
                     <div class="divider"></div>
                     <div class="field left-1"><span class="label">戶名</span><span class="value">%s</span></div>
                     <div class="field left-2"><span class="label">帳號</span><span class="value">%s</span></div>
-                    <div class="field left-3"><span class="label">開戶分行</span><span class="value">台北分行</span></div>
+                    <div class="field left-3"><span class="label">開戶分行</span><span class="value">總行</span></div>
                     <div class="field left-4"><span class="label">帳戶類型</span><span class="value">%s</span></div>
                     <div class="field right-1"><span class="label">幣別</span><span class="value pill">%s</span></div>
                     <div class="field right-2"><span class="label">銀行代號</span><span class="value">909</span></div>

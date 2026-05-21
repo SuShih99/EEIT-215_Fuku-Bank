@@ -115,7 +115,7 @@
           </div>
           <div class="info-row">
             <span>開戶分行</span>
-            <strong>台北分行</strong>
+            <strong>總行</strong>
           </div>
           <div class="info-row">
             <span>申請日期</span>
