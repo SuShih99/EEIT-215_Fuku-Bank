@@ -135,7 +135,7 @@ const handlePayment = async (bill) => {
     }
 
     await payCard({
-      billIds: bill.billIds || [bill.billId],
+      billId: bill.billId,
       fromAccountNumber: selectedAccount.value,
       creditCardAccountNumber: bill.creditCardAccountNumber,
       amount,
