@@ -55,6 +55,10 @@ public class CardTxnService {
         // 找商家
         var merchant = merchantRepository.findById(dto.getMerchantId())
                 .orElseThrow(() -> new BusinessException("Merchant not found"));
+        //金額不可為負數
+        if (dto.getTxnAmount() == null || dto.getTxnAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException("交易金額必須大於 0");
+        }
 
         // ===== 額度檢查 =====
         CardAccount cardAccount = card.getCardAccount();

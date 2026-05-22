@@ -11,8 +11,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -44,8 +44,8 @@ public class CardAccount {
     @Column(name = "due_days")
     private Integer dueDays;
 
-    @ManyToOne
-    @JoinColumn(name = "customer_id", nullable = false)
+    @OneToOne
+    @JoinColumn(name = "customer_id", nullable = false,unique = true)
     private CustomerProfile customer;
 
     @OneToMany(mappedBy = "cardAccount")

@@ -104,14 +104,27 @@ public class BillService {
 
                 List<CardTransaction> txns = cardTransactionRepository
                         .findByCard_CardAccount_IdAndBillIsNull(cardAccount.getId());
-                if (txns.isEmpty()) {
+
+                List<CardBill> previousBills = cardBillRepository
+                        .findByCardAccountIdAndBillStatusInOrderByBillingMonthAsc(
+                                cardAccount.getId(),
+                                List.of(BillStatus.UNPAID, BillStatus.PARTIAL));
+
+                BigDecimal previousUnpaid = previousBills.stream()
+                        .map(oldBill -> oldBill.getTotalAmount().subtract(oldBill.getPaidAmount()))
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                BigDecimal currentTotal = txns.stream()
+                        .map(CardTransaction::getTxnAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                BigDecimal total = previousUnpaid.add(currentTotal);
+
+                // 沒有任何應繳金額才跳過
+                if (total.compareTo(BigDecimal.ZERO) <= 0) {
                     skippedNoTxns++;
                     continue;
                 }
-
-                BigDecimal total = txns.stream()
-                        .map(CardTransaction::getTxnAmount)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
                 BigDecimal cashbackAmount = txns.stream()
                         .map(CardTransaction::getCashbackAmount)
@@ -136,6 +149,11 @@ public class BillService {
                 bill.setRewardPosted(false);
 
                 CardBill savedBill = cardBillRepository.save(bill);
+
+                if (previousUnpaid.compareTo(BigDecimal.ZERO) > 0) {
+                    previousBills.forEach(oldBill -> oldBill.setBillStatus(BillStatus.ROLLED_OVER));
+                    cardBillRepository.saveAll(previousBills);
+                }
 
                 /*
                  * 寄文字格式
