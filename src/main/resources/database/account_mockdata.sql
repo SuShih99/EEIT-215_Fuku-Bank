@@ -96,7 +96,7 @@ INSERT INTO #mock_accounts (
     interest_rate, status, parent_account_number, created_at, changed_at, created_by, changed_by
 )
 SELECT
-    '070' + RIGHT(REPLICATE('0', 9) + CAST(rn AS VARCHAR(9)), 9),
+    '070' + RIGHT(REPLICATE('0', 9) + CAST(100000000 + ((rn * 7919 + 314159) % 900000000) AS VARCHAR(9)), 9),
     customer_id,
     'CHECKING',
     'TWD',
@@ -118,7 +118,7 @@ INSERT INTO #mock_accounts (
     interest_rate, status, parent_account_number, created_at, changed_at, created_by, changed_by
 )
 SELECT
-    '071' + RIGHT(REPLICATE('0', 9) + CAST(rn AS VARCHAR(9)), 9),
+    '071' + RIGHT(REPLICATE('0', 9) + CAST(100000000 + ((rn * 13877 + 271828) % 900000000) AS VARCHAR(9)), 9),
     customer_id,
     'SAVINGS',
     CASE rn % 6 WHEN 0 THEN 'JPY' WHEN 1 THEN 'USD' WHEN 2 THEN 'EUR' WHEN 3 THEN 'GBP' WHEN 4 THEN 'CNY' ELSE 'AUD' END,
@@ -143,7 +143,7 @@ INSERT INTO #mock_accounts (
     interest_rate, status, parent_account_number, created_at, changed_at, created_by, changed_by
 )
 SELECT
-    '072' + RIGHT(REPLICATE('0', 9) + CAST(rn AS VARCHAR(9)), 9),
+    '072' + RIGHT(REPLICATE('0', 9) + CAST(100000000 + ((rn * 25789 + 161803) % 900000000) AS VARCHAR(9)), 9),
     customer_id,
     'TIME_DEPOSIT',
     CASE rn % 4 WHEN 0 THEN 'JPY' WHEN 1 THEN 'TWD' WHEN 2 THEN 'USD' ELSE 'EUR' END,
@@ -169,7 +169,7 @@ INSERT INTO #mock_accounts (
     interest_rate, status, parent_account_number, created_at, changed_at, created_by, changed_by
 )
 SELECT
-    '073' + RIGHT(REPLICATE('0', 9) + CAST(rn AS VARCHAR(9)), 9),
+    '073' + RIGHT(REPLICATE('0', 9) + CAST(100000000 + ((rn * 3203 + 141421) % 900000000) AS VARCHAR(9)), 9),
     customer_id,
     'SUB_ACCOUNT',
     'TWD',
@@ -177,7 +177,7 @@ SELECT
     0.0000,
     0.00500,
     'ACTIVE',
-    '070' + RIGHT(REPLICATE('0', 9) + CAST(rn AS VARCHAR(9)), 9),
+    '070' + RIGHT(REPLICATE('0', 9) + CAST(100000000 + ((rn * 7919 + 314159) % 900000000) AS VARCHAR(9)), 9),
     DATEADD(DAY, -45 + rn, CAST('2026-05-13 09:00:00' AS DATETIME2)),
     CAST('2026-05-13 09:00:00' AS DATETIME2),
     N'總行',
@@ -213,7 +213,9 @@ INSERT INTO #mock_accounts (
     interest_rate, status, parent_account_number, created_at, changed_at, created_by, changed_by
 )
 SELECT
-    '901' + RIGHT(REPLICATE('0', 11) + CAST(rn AS VARCHAR(11)), 11),
+    '901'
+        + RIGHT('00' + CAST(ASCII(UPPER(LEFT(id_number, 1))) - ASCII('A') + 1 AS VARCHAR(2)), 2)
+        + SUBSTRING(id_number, 2, LEN(id_number)),
     customer_id,
     'LOAN',
     'TWD',
@@ -227,7 +229,19 @@ SELECT
     N'總行',
     N'總行'
 FROM #customers
-WHERE (rn <= 5 OR (rn >= 51 AND rn <= 55)) AND status = 'ACTIVE';
+WHERE customer_id IN (
+    'Q8M4T7K2',
+    'A6R3M8J2',
+    'B3N8T5P9',
+    'B9P5N2W6',
+    'C6T8R4J3',
+    'C9W2M6R4',
+    'D5Q9T2W7',
+    'E2V7D9M5',
+    'E5J7Q3D8',
+    'F2P9V4K6',
+    'F7V4C8N2'
+) AND status = 'ACTIVE';
 
 IF NOT EXISTS (SELECT 1 FROM [ACCOUNT])
 INSERT INTO [ACCOUNT] (
@@ -308,7 +322,7 @@ SELECT
     END,
     CASE WHEN x.application_status IN ('APPROVED', 'REJECTED', 'SUPPLEMENT_REQUIRED') THEN 'E26001' ELSE NULL END,
     CASE WHEN x.application_status = 'APPROVED'
-        THEN '070' + RIGHT(REPLICATE('0', 9) + CAST(c.rn AS VARCHAR(9)), 9)
+        THEN approved_account.account_number
         ELSE NULL
     END,
     x.created_at,
@@ -338,7 +352,16 @@ CROSS APPLY (
             ELSE 'TWD'
         END AS currency,
         DATEADD(DAY, -60 + c.rn, CAST('2026-05-01 09:00:00' AS DATETIME2)) AS created_at
-) x;
+) x
+OUTER APPLY (
+    SELECT TOP 1 ma.account_number
+    FROM #mock_accounts ma
+    WHERE ma.customer_id = c.customer_id
+      AND ma.account_type = 'CHECKING'
+      AND ma.currency = 'TWD'
+      AND ma.status = 'ACTIVE'
+    ORDER BY ma.account_number
+) approved_account;
 
 UPDATE p
 SET
@@ -634,14 +657,14 @@ DROP TABLE #customers;
 INSERT INTO [ACCOUNT] (account_number, customer_id, account_type, currency, balance, liability, interest_rate, status, parent_account_number, created_at, changed_at, created_by, changed_by)
 SELECT v.account_number, v.customer_id, v.account_type, v.currency, v.balance, v.liability, v.interest_rate, v.status, NULL, GETDATE(), GETDATE(), 'mock-demo', 'mock-demo'
 FROM (VALUES
-    ('090000000101', 'DM01NR01', 'CHECKING', 'TWD', 163842.3700, 0.0000, NULL, 'ACTIVE'),
-    ('090000000201', 'DM01NR01', 'SAVINGS',  'TWD', 487915.6200, 0.0000, 1.50, 'ACTIVE'),
-    ('090000000102', 'DM02NR02', 'CHECKING', 'TWD', 296731.0500, 0.0000, NULL, 'ACTIVE'),
-    ('090000000202', 'DM02NR02', 'SAVINGS',  'TWD', 1136842.8100, 0.0000, 1.50, 'ACTIVE'),
-    ('090000000103', 'DM03FZ01', 'CHECKING', 'TWD', 68219.4400, 0.0000, NULL, 'FROZEN'),
-    ('090000000203', 'DM03FZ01', 'SAVINGS',  'TWD', 327508.1900, 0.0000, 1.50, 'FROZEN'),
-    ('090000000104', 'DM04BK01', 'CHECKING', 'TWD', 104376.9200, 0.0000, NULL, 'ACTIVE'),
-    ('090000000204', 'DM04BK01', 'SAVINGS',  'TWD', 398641.7300, 0.0000, 1.50, 'ACTIVE')
+    ('090483761205', 'DM01NR01', 'CHECKING', 'TWD', 163842.3700, 0.0000, NULL, 'ACTIVE'),
+    ('091726394518', 'DM01NR01', 'SAVINGS',  'TWD', 487915.6200, 0.0000, 1.50, 'ACTIVE'),
+    ('090617248930', 'DM02NR02', 'CHECKING', 'TWD', 296731.0500, 0.0000, NULL, 'ACTIVE'),
+    ('091382905764', 'DM02NR02', 'SAVINGS',  'TWD', 1136842.8100, 0.0000, 1.50, 'ACTIVE'),
+    ('090295846731', 'DM03FZ01', 'CHECKING', 'TWD', 68219.4400, 0.0000, NULL, 'FROZEN'),
+    ('091604173892', 'DM03FZ01', 'SAVINGS',  'TWD', 327508.1900, 0.0000, 1.50, 'FROZEN'),
+    ('090839572416', 'DM04BK01', 'CHECKING', 'TWD', 104376.9200, 0.0000, NULL, 'ACTIVE'),
+    ('091158630947', 'DM04BK01', 'SAVINGS',  'TWD', 398641.7300, 0.0000, 1.50, 'ACTIVE')
 ) AS v(account_number, customer_id, account_type, currency, balance, liability, interest_rate, status)
 WHERE NOT EXISTS (SELECT 1 FROM [ACCOUNT] a WHERE a.account_number = v.account_number);
 

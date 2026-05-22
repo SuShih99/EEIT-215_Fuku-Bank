@@ -204,6 +204,15 @@ IF NOT EXISTS (SELECT 1 FROM BLACK_LIST WHERE list_value = 'H200260604' AND list
 INSERT INTO BLACK_LIST (list_type, list_value, reason, source, status, created_at, updated_at)
 VALUES ('ID_CARD', 'H200260604', N'涉及洗錢風險，經風控審核後列入黑名單', N'風控部門', 1, '2026-05-15 10:00:00', '2026-05-15 10:00:00');
 
-IF NOT EXISTS (SELECT 1 FROM BLACK_LIST WHERE list_value = '090000000104' AND list_type = 'ACCOUNT_NO')
+DECLARE @demoBlacklistAccount VARCHAR(20);
+
+SELECT TOP 1 @demoBlacklistAccount = account_number
+FROM [ACCOUNT]
+WHERE customer_id = 'DM04BK01'
+  AND account_type = 'CHECKING'
+ORDER BY account_number;
+
+IF @demoBlacklistAccount IS NOT NULL
+    AND NOT EXISTS (SELECT 1 FROM BLACK_LIST WHERE list_value = @demoBlacklistAccount AND list_type = 'ACCOUNT_NO')
 INSERT INTO BLACK_LIST (list_type, list_value, reason, source, status, created_at, updated_at)
-VALUES ('ACCOUNT_NO', '090000000104', N'帳戶列入黑名單', N'風控部門', 1, '2026-05-15 10:00:00', '2026-05-15 10:00:00');
+VALUES ('ACCOUNT_NO', @demoBlacklistAccount, N'帳戶列入黑名單', N'風控部門', 1, '2026-05-15 10:00:00', '2026-05-15 10:00:00');

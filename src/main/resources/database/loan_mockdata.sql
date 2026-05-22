@@ -26,54 +26,78 @@ DELETE FROM RISK_EVENT_LOG WHERE business_id LIKE 'LA202605%';
 DECLARE @customerPool TABLE (
     seq INT PRIMARY KEY,
     customer_id NVARCHAR(50) NOT NULL,
-    checking_account_number VARCHAR(14) NOT NULL
+    checking_account_number VARCHAR(14) NULL
 );
 
 INSERT INTO @customerPool (seq, customer_id, checking_account_number) VALUES
-(1,  'A6R3M8J2', '070000000001'),
-(2,  'B3N8T5P9', '070000000002'),
-(3,  'B9P5N2W6', '070000000003'),
-(4,  'C6T8R4J3', '070000000004'),
-(5,  'C9W2M6R4', '070000000005'),
-(6,  'D5Q9T2W7', '070000000006'),
-(7,  'E2V7D9M5', '070000000007'),
-(8,  'E5J7Q3D8', '070000000008'),
-(9,  'F2P9V4K6', '070000000009'),
-(10, 'F7V4C8N2', '070000000010'),
-(11, 'G3K6P9M5', '070000000011'),
-(12, 'G8A5C2N7', '070000000012'),
-(13, 'H4D7R9M3', '070000000013'),
-(14, 'H7C2P8D4', '070000000014'),
-(15, 'J6K3W8Q5', '070000000015'),
-(16, 'J8R2D5A7', '070000000016'),
-(17, 'K2T8B4R7', '070000000017'),
-(18, 'L4N9T6Q3', '070000000018'),
-(19, 'L9M2T7A4', '070000000019'),
-(20, 'M9A5D2Q8', '070000000020'),
-(21, 'N5V8C3P6', '070000000022'),
-(22, 'P4W7N6C3', '070000000023'),
-(23, 'P7Q4J9D2', '070000000024'),
-(24, 'Q2R6M8W5', '070000000025'),
-(25, 'Q5H3K8A7', '070000000026'),
-(26, 'R5N9W3A6', '070000000028'),
-(27, 'R8J6N2C4', '070000000029'),
-(28, 'S4C8N5V2', '070000000031'),
-(29, 'S7A3K9P6', '070000000032'),
-(30, 'T3M9P5W7', '070000000033'),
-(31, 'T6D2P9M7', '070000000034'),
-(32, 'T8H2K5V9', '070000000035'),
-(33, 'U5D8M2R4', '070000000036'),
-(34, 'U8H5Q3R6', '070000000037'),
-(35, 'V3K7W4A9', '070000000038'),
-(36, 'V6J3X9M5', '070000000039'),
-(37, 'V7A4D8Q2', '070000000040'),
-(38, 'W2K6T9N5', '070000000041'),
-(39, 'W6M2C8D5', '070000000042'),
-(40, 'W9F4T7N2', '070000000043'),
-(41, 'X3J6Q8C5', '070000000044'),
-(42, 'X8C3R7M4', '070000000045'),
-(43, 'X9N5T3Q7', '070000000046'),
-(44, 'Y8L2V5D9', '070000000048');
+(1,  'A6R3M8J2', NULL),
+(2,  'B3N8T5P9', NULL),
+(3,  'B9P5N2W6', NULL),
+(4,  'C6T8R4J3', NULL),
+(5,  'C9W2M6R4', NULL),
+(6,  'D5Q9T2W7', NULL),
+(7,  'E2V7D9M5', NULL),
+(8,  'E5J7Q3D8', NULL),
+(9,  'F2P9V4K6', NULL),
+(10, 'F7V4C8N2', NULL),
+(11, 'G3K6P9M5', NULL),
+(12, 'G8A5C2N7', NULL),
+(13, 'H4D7R9M3', NULL),
+(14, 'H7C2P8D4', NULL),
+(15, 'J6K3W8Q5', NULL),
+(16, 'J8R2D5A7', NULL),
+(17, 'K2T8B4R7', NULL),
+(18, 'L4N9T6Q3', NULL),
+(19, 'L9M2T7A4', NULL),
+(20, 'M9A5D2Q8', NULL),
+(21, 'N5V8C3P6', NULL),
+(22, 'P4W7N6C3', NULL),
+(23, 'P7Q4J9D2', NULL),
+(24, 'Q2R6M8W5', NULL),
+(25, 'Q5H3K8A7', NULL),
+(26, 'R5N9W3A6', NULL),
+(27, 'R8J6N2C4', NULL),
+(28, 'S4C8N5V2', NULL),
+(29, 'S7A3K9P6', NULL),
+(30, 'T3M9P5W7', NULL),
+(31, 'T6D2P9M7', NULL),
+(32, 'T8H2K5V9', NULL),
+(33, 'U5D8M2R4', NULL),
+(34, 'U8H5Q3R6', NULL),
+(35, 'V3K7W4A9', NULL),
+(36, 'V6J3X9M5', NULL),
+(37, 'V7A4D8Q2', NULL),
+(38, 'W2K6T9N5', NULL),
+(39, 'W6M2C8D5', NULL),
+(40, 'W9F4T7N2', NULL),
+(41, 'X3J6Q8C5', NULL),
+(42, 'X8C3R7M4', NULL),
+(43, 'X9N5T3Q7', NULL),
+(44, 'Y8L2V5D9', NULL);
+
+UPDATE cp
+SET checking_account_number = a.account_number
+FROM @customerPool cp
+INNER JOIN [ACCOUNT] a
+    ON a.customer_id = cp.customer_id
+   AND a.account_type = 'CHECKING'
+   AND a.currency = 'TWD'
+   AND a.status = 'ACTIVE';
+
+IF EXISTS (
+    SELECT 1
+    FROM @customerPool cp
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM [ACCOUNT] a
+        WHERE a.customer_id = cp.customer_id
+          AND a.account_number = cp.checking_account_number
+          AND a.account_type = 'CHECKING'
+          AND a.currency = 'TWD'
+          AND a.status = 'ACTIVE'
+    )
+)
+    THROW 51301, 'loan_mockdata.sql requires each loan customer to have an ACTIVE TWD CHECKING account in account_mockdata.sql.', 1;
 
 DECLARE @typeRules TABLE (
     seq INT PRIMARY KEY,
@@ -132,12 +156,12 @@ INSERT INTO @apps (
     required_documents,
     review_comment
 ) VALUES
-('LA2026052001', 'Q8M4T7K2', 'PERSONAL', 120000.00, 12, 0.040000, '070000000001', 'PENDING_CONTACT', '2026-05-21 09:00:00', NULL, NULL, NULL, NULL, 0, NULL, NULL, 'NEW'),
-('LA2026052002', 'Q8M4T7K2', 'CAR',      380000.00, 36, 0.025000, '070000000001', 'PENDING_CONTACT', '2026-05-21 10:00:00', NULL, NULL, NULL, NULL, 0, NULL, NULL, 'NEW'),
-('LA2026052003', 'Q8M4T7K2', 'STUDENT',  220000.00, 84, 0.015000, '070000000001', 'PENDING_CONTACT', '2026-05-21 11:00:00', NULL, NULL, NULL, NULL, 0, NULL, NULL, 'NEW'),
-('LA2026052004', 'Q8M4T7K2', 'BUSINESS', 600000.00, 60, 0.020000, '070000000001', 'PENDING_CONTACT', '2026-05-21 13:00:00', NULL, NULL, NULL, NULL, 0, NULL, NULL, 'NEW'),
-('LA2026052005', 'Q8M4T7K2', 'HOUSE',   2500000.00, 120, 0.018000, '070000000001', 'DISBURSED', '2026-05-21 14:00:00', 'CONFIRMED', '2026-05-21 15:00:00', '2026-05-21 15:30:00', '2026-05-21 16:00:00', 0, 'HOUSE_COLLATERAL', 'DISBURSED', 'DISBURSED'),
-('LA2026052006', 'Q8M4T7K2', 'PERSONAL',  80000.00, 24, 0.040000, '070000000001', 'CANCELLED',      '2026-05-16 16:00:00', 'DECLINED', '2026-05-16 16:30:00', NULL, '2026-05-16 16:30:00', 0, 'CUSTOMER_WITHDREW', NULL, 'CANCELLED');
+('LA2026052001', 'Q8M4T7K2', 'PERSONAL', 120000.00, 12, 0.040000, NULL, 'PENDING_CONTACT', '2026-05-21 09:00:00', NULL, NULL, NULL, NULL, 0, NULL, NULL, 'NEW'),
+('LA2026052002', 'Q8M4T7K2', 'CAR',      380000.00, 36, 0.025000, NULL, 'PENDING_CONTACT', '2026-05-21 10:00:00', NULL, NULL, NULL, NULL, 0, NULL, NULL, 'NEW'),
+('LA2026052003', 'Q8M4T7K2', 'STUDENT',  220000.00, 84, 0.015000, NULL, 'PENDING_CONTACT', '2026-05-21 11:00:00', NULL, NULL, NULL, NULL, 0, NULL, NULL, 'NEW'),
+('LA2026052004', 'Q8M4T7K2', 'BUSINESS', 600000.00, 60, 0.020000, NULL, 'PENDING_CONTACT', '2026-05-21 13:00:00', NULL, NULL, NULL, NULL, 0, NULL, NULL, 'NEW'),
+('LA2026052005', 'Q8M4T7K2', 'HOUSE',   2500000.00, 120, 0.018000, NULL, 'DISBURSED', '2026-05-21 14:00:00', 'CONFIRMED', '2026-05-21 15:00:00', '2026-05-21 15:30:00', '2026-05-21 16:00:00', 0, 'HOUSE_COLLATERAL', 'DISBURSED', 'DISBURSED'),
+('LA2026052006', 'Q8M4T7K2', 'PERSONAL',  80000.00, 24, 0.040000, NULL, 'CANCELLED',      '2026-05-16 16:00:00', 'DECLINED', '2026-05-16 16:30:00', NULL, '2026-05-16 16:30:00', 0, 'CUSTOMER_WITHDREW', NULL, 'CANCELLED');
 
 
 ;WITH nums AS (
@@ -271,6 +295,31 @@ SELECT
         WHEN application_status = 'DISBURSED' THEN 'DISBURSED'
     END AS review_comment
 FROM planned;
+
+UPDATE a
+SET disbursement_account = checking.account_number
+FROM @apps a
+INNER JOIN [ACCOUNT] checking
+    ON checking.customer_id = a.customer_id
+   AND checking.account_type = 'CHECKING'
+   AND checking.currency = 'TWD'
+   AND checking.status = 'ACTIVE';
+
+IF EXISTS (
+    SELECT 1
+    FROM @apps a
+    WHERE a.application_status IN ('APPROVED', 'DISBURSED', 'PENDING_REVIEW', 'RETURNED', 'REJECTED')
+      AND NOT EXISTS (
+        SELECT 1
+        FROM [ACCOUNT] checking
+        WHERE checking.customer_id = a.customer_id
+          AND checking.account_number = a.disbursement_account
+          AND checking.account_type = 'CHECKING'
+          AND checking.currency = 'TWD'
+          AND checking.status = 'ACTIVE'
+    )
+)
+    THROW 51302, 'loan_mockdata.sql requires application disbursement accounts to come from ACTIVE TWD CHECKING accounts.', 1;
 
 INSERT INTO LOAN_APPLICATION (
     application_id,
@@ -522,7 +571,7 @@ INSERT INTO LOAN_ACCOUNT (
 )
 SELECT
     CONCAT('LAC20260521', RIGHT(CONCAT('00', CAST(ROW_NUMBER() OVER (ORDER BY a.seq) AS VARCHAR(2))), 2)) AS account_id,
-    (SELECT TOP 1 account_number FROM account WHERE customer_id = a.customer_id AND account_type = 'LOAN') AS account_number,
+    loan_account.account_number AS account_number,
     a.application_id,
     a.customer_id,
     a.apply_type,
@@ -550,6 +599,17 @@ SELECT
     DATEADD(HOUR, 1, a.create_time) AS create_time,
     DATEADD(HOUR, 2, a.create_time) AS update_time
 FROM @apps a
+INNER JOIN CUSTOMER_PROFILE cp
+    ON cp.customer_id = a.customer_id
+CROSS APPLY (
+    SELECT '901'
+        + RIGHT('00' + CAST(ASCII(UPPER(LEFT(cp.id_number, 1))) - ASCII('A') + 1 AS VARCHAR(2)), 2)
+        + SUBSTRING(cp.id_number, 2, LEN(cp.id_number)) AS expected_account_number
+) encoded
+INNER JOIN [ACCOUNT] loan_account
+    ON loan_account.customer_id = a.customer_id
+   AND loan_account.account_type = 'LOAN'
+   AND loan_account.account_number = encoded.expected_account_number
 WHERE a.application_status = 'DISBURSED';
 
 ;WITH period_numbers AS (
@@ -619,18 +679,21 @@ FROM repayment_rows;
 
 IF NOT EXISTS (SELECT 1 FROM TRANS_LOG WHERE reference_id = 'LOAN-DISB-2026052005')
 BEGIN
+    DECLARE @damingDisbursementAccount VARCHAR(14);
     DECLARE @damingDisbursementBefore DECIMAL(19, 4);
     DECLARE @damingDisbursementAmount DECIMAL(19, 4) = 2500000.0000;
 
-    SELECT @damingDisbursementBefore = balance
+    SELECT TOP 1
+        @damingDisbursementAccount = account_number,
+        @damingDisbursementBefore = balance
     FROM [ACCOUNT]
-    WHERE account_number = '070000000001'
-      AND customer_id = 'Q8M4T7K2'
+    WHERE customer_id = 'Q8M4T7K2'
       AND account_type = 'CHECKING'
       AND currency = 'TWD'
-      AND status = 'ACTIVE';
+      AND status = 'ACTIVE'
+    ORDER BY account_number;
 
-    IF @damingDisbursementBefore IS NOT NULL
+    IF @damingDisbursementAccount IS NOT NULL AND @damingDisbursementBefore IS NOT NULL
     BEGIN
         INSERT INTO TRANS_LOG (
             transaction_id,
@@ -655,7 +718,7 @@ BEGIN
         ) VALUES (
             '00000000-0000-0000-0000-202605200005',
             'LOAN-DISB-2026052005',
-            '070000000001',
+            @damingDisbursementAccount,
             '909000000001',
             '909',
             N'爪哇銀行',
@@ -679,7 +742,7 @@ BEGIN
             balance = @damingDisbursementBefore + @damingDisbursementAmount,
             changed_at = '2026-05-21 16:00:00',
             changed_by = 'loan-mock'
-        WHERE account_number = '070000000001';
+        WHERE account_number = @damingDisbursementAccount;
     END
 END;
 
