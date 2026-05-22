@@ -55,13 +55,14 @@ SELECT
 INTO #customers
 FROM (
     SELECT
-        TRY_CAST(SUBSTRING(email, 9, 3) AS INT) AS rn,
-        customer_id, cif, id_number, name, birthday, gender, email, phone, address,
-        nationality, registered_address, current_address, occupation, employer,
-        estimated_monthly_tx, account_purpose, fund_source, tax_residency, is_pep,
-        id_front_url, id_back_url, second_id_url, risk_level, status
-    FROM CUSTOMER_PROFILE
-    WHERE email LIKE 'customer[0-9][0-9][0-9]@java-bank.demo'
+        TRY_CAST(SUBSTRING(ca.username, 5, 4) AS INT) AS rn,
+        cp.customer_id, cp.cif, cp.id_number, cp.name, cp.birthday, cp.gender, cp.email, cp.phone, cp.address,
+        cp.nationality, cp.registered_address, cp.current_address, cp.occupation, cp.employer,
+        cp.estimated_monthly_tx, cp.account_purpose, cp.fund_source, cp.tax_residency, cp.is_pep,
+        cp.id_front_url, cp.id_back_url, cp.second_id_url, cp.risk_level, cp.status
+    FROM CUSTOMER_PROFILE cp
+    INNER JOIN CUSTOMER_AUTH ca ON ca.customer_id = cp.customer_id
+    WHERE ca.username LIKE 'cust[0-9][0-9][0-9][0-9]'
 ) mock_customers
 WHERE mock_customers.rn BETWEEN 1 AND 100
 ORDER BY mock_customers.rn;

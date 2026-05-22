@@ -149,7 +149,7 @@ public class RiskReviewService {
         RiskEventLog log = new RiskEventLog();
         log.setEventType(dto.getScene().name());
         log.setBusinessId(dto.getBusinessId());
-        log.setTargetIdentifier("客戶ID: "+dto.getCustomerId());
+        log.setTargetIdentifier(dto.getCustomerId());
         log.setRiskLevel(credit != null ? credit.getRiskLevel() : RiskLevel.HIGH);
         log.setDisposition(disposition);
         log.setTransactionAmount(dto.getAmount());

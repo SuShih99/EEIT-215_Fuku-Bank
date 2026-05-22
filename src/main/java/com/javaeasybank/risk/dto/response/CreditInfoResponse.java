@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 public class CreditInfoResponse {
     private String customerId;
+    private String cif;
     private String customerName;
     private BigDecimal annualIncome;
     private Occupation occupation;

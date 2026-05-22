@@ -60,19 +60,23 @@ public class CreditScoreService {
                 .map(CustomerCreditInfo::getCustomerId)
                 .toList();
 
-        Map<String, String> customerNames = cpRepos
+        Map<String, CustomerProfile> customerProfiles = cpRepos
                 .findAllById(customerIds)
                 .stream()
                 .collect(Collectors.toMap(
                         CustomerProfile::getCustomerId,
-                        CustomerProfile::getName));
+                        p -> p));
 
-        return creditPage.map(credit -> CreditInfoResponse.builder()
+        return creditPage.map(credit -> {
+            CustomerProfile cp = customerProfiles.get(credit.getCustomerId());
+            return CreditInfoResponse.builder()
                 .customerId(credit.getCustomerId())
-                .customerName(customerNames.getOrDefault(credit.getCustomerId(), "未知"))
+                .cif(cp != null ? cp.getCif() : null)
+                .customerName(cp != null ? cp.getName() : "未知")
                 .riskLevel(credit.getRiskLevel())
                 .lastUpdatedAt(credit.getLastUpdatedAt())
-                .build());
+                .build();
+        });
     }
 
     public CreditInfoResponse getCreditInfoByCustomerId(String customerId) {
@@ -85,6 +89,7 @@ public class CreditScoreService {
 
         return CreditInfoResponse.builder()
                 .customerId(credit.getCustomerId())
+                .cif(profile.getCif())
                 .customerName(profile.getName())
                 .riskLevel(credit.getRiskLevel())
                 .finalScore(credit.getFinalScore())

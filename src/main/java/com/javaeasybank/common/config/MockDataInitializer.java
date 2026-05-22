@@ -8,10 +8,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.jdbc.core.StatementCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.sql.ResultSet;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -76,7 +78,20 @@ public class MockDataInitializer implements ApplicationRunner {
                 .toList();
 
         for (String batch : batches) {
-            jdbcTemplate.execute(batch);
+            jdbcTemplate.execute((StatementCallback<Void>) statement -> {
+                boolean hasResultSet = statement.execute(batch);
+                while (true) {
+                    if (hasResultSet) {
+                        try (ResultSet ignored = statement.getResultSet()) {
+                            // Consume result sets so SQL Server surfaces errors from later statements.
+                        }
+                    } else if (statement.getUpdateCount() == -1) {
+                        break;
+                    }
+                    hasResultSet = statement.getMoreResults();
+                }
+                return null;
+            });
         }
 
         log.info("Executed mock data script: {}", scriptLocation);

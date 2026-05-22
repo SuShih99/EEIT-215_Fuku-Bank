@@ -34,7 +34,7 @@ public class RiskEventLog {
     @Column(name = "business_id", nullable = false, length = 100)
     private String businessId;
 
-    @Column(name = "target_identifier", nullable = false, length = 100)
+    @Column(name = "target_identifier", nullable = false, length = 100, columnDefinition = "NVARCHAR(100)")
     private String targetIdentifier;
 
     @Enumerated(EnumType.STRING)
