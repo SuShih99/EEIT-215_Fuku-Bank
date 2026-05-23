@@ -489,6 +489,7 @@ function stopGraceTimer() {
 }
 
 onMounted(() => {
+  document.body.classList.add('customer-ant-scope')
   updateCompactNavState()
   compactNavMedia = window.matchMedia('(max-width: 900px)')
   document.addEventListener('click', closeOnOutsideClick)
@@ -511,6 +512,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  document.body.classList.remove('customer-ant-scope')
   document.removeEventListener('click', closeOnOutsideClick)
   window.removeEventListener('resize', handleViewportChange)
   window.removeEventListener('scroll', handleViewportChange, true)
@@ -967,8 +969,8 @@ function handleLogout() {
   justify-content: center;
   gap: var(--space-2);
   width: 100%;
-  padding: 18px var(--space-3);
-  font-size: 16px;
+  padding: 16px var(--space-3);
+  font-size: 15px;
   font-family: var(--font-body);
   font-weight: 500;
   color: var(--text-primary);
@@ -1016,7 +1018,7 @@ function handleLogout() {
   position: absolute;
   top: 100%;
   left: 0;
-  min-width: 240px;
+  min-width: 220px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 0 0 var(--radius-md) var(--radius-md);
@@ -1034,7 +1036,7 @@ function handleLogout() {
 .dropdown-link {
   display: flex;
   flex-direction: column;
-  padding: var(--space-3) var(--space-4);
+  padding: 10px 16px;
   text-decoration: none;
   color: var(--text-primary);
   transition: background var(--duration) var(--ease);
@@ -1053,14 +1055,14 @@ function handleLogout() {
 }
 
 .dropdown-link-text {
-  font-size: var(--text-body);
+  font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
   line-height: 1.4;
 }
 
 .dropdown-link-desc {
-  font-size: var(--text-xs);
+  font-size: 11px;
   color: var(--text-secondary);
   margin-top: 2px;
   line-height: 1.4;
