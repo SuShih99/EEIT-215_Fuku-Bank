@@ -1,5 +1,22 @@
 <template>
-  <div class="customer-page landing">
+  <div class="customer-page landing" :style="landingBgStyle">
+    <transition name="intro-fade">
+      <div v-if="showIntro" class="landing-intro" aria-label="福庫銀行開場影片">
+        <video
+          ref="introVideo"
+          class="landing-intro-video"
+          src="/fukubank-intro.mp4"
+          autoplay
+          muted
+          playsinline
+          preload="auto"
+          @ended="finishIntro"
+          @error="finishIntro"
+        ></video>
+        <button type="button" class="intro-skip-btn" @click="finishIntro">略過</button>
+      </div>
+    </transition>
+
     <!-- 和紙紋理 -->
     <div class="washi-overlay" aria-hidden="true"></div>
 
@@ -35,7 +52,10 @@
             讓您的財務如流水般自在運行。
           </p>
           <div class="hero-chips" aria-label="核心服務">
-            <span v-for="chip in heroChips" :key="chip" class="hero-chip">{{ chip }}</span>
+            <span v-for="chip in heroChips" :key="chip.label" class="hero-chip" tabindex="0">
+              <span class="hero-chip-label">{{ chip.label }}</span>
+              <span class="hero-chip-detail">{{ chip.detail }}</span>
+            </span>
           </div>
           <div class="hero-actions">
             <button class="jb-btn jb-btn-primary jb-btn-lg" @click="$router.push('/register')">
@@ -114,15 +134,28 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import JbLogo from '@/components/JbLogo.vue'
+import landingWabiBg from '@/assets/landing-wabi-bg.webp'
 import { useCustomerAuthStore } from '@/stores/customerAuth'
 import { storeToRefs } from 'pinia'
 
 const customerAuthStore = useCustomerAuthStore()
 const { isLoggedIn, customer } = storeToRefs(customerAuthStore)
+const showIntro = ref(true)
+const introVideo = ref(null)
+let introFallbackTimer
 
-const heroChips = ['安全驗證', '即時查詢', '數位存摺', '貸款申辦']
+const landingBgStyle = {
+  backgroundImage: `radial-gradient(ellipse at center, rgba(245, 240, 231, 0.82) 0%, rgba(245, 240, 231, 0.66) 52%, rgba(245, 240, 231, 0.46) 100%), url(${landingWabiBg})`,
+}
+
+const heroChips = [
+  { label: '安心守護', detail: '多重驗證與交易保護' },
+  { label: '即時掌握', detail: '隨時查看餘額與交易狀態' },
+  { label: '清晰帳務', detail: '存摺、明細與資產一目了然' },
+  { label: '線上申貸', detail: '快速申請，流程透明可追蹤' },
+]
 
 const previewItems = [
   {
@@ -155,6 +188,9 @@ const valueItems = [
 
 // Scroll Reveal — subtle fade-in
 onMounted(() => {
+  document.body.classList.add('landing-intro-lock')
+  playIntro()
+
   const els = document.querySelectorAll('.reveal')
   if (!els.length) return
   const observer = new IntersectionObserver((entries) => {
@@ -167,13 +203,39 @@ onMounted(() => {
   }, { threshold: 0.15 })
   els.forEach(el => observer.observe(el))
 })
+
+onUnmounted(() => {
+  window.clearTimeout(introFallbackTimer)
+  document.body.classList.remove('landing-intro-lock')
+})
+
+async function playIntro() {
+  await nextTick()
+  introFallbackTimer = window.setTimeout(finishIntro, 9000)
+
+  try {
+    await introVideo.value?.play()
+  } catch (error) {
+    finishIntro()
+  }
+}
+
+function finishIntro() {
+  window.clearTimeout(introFallbackTimer)
+  document.body.classList.remove('landing-intro-lock')
+  showIntro.value = false
+}
 </script>
 
 <style scoped>
 .landing {
   min-height: 100vh;
-  background: var(--bg-primary);
   position: relative;
+  overflow-x: hidden;
+  background-color: var(--bg-primary);
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
 }
 
 /* === Washi Texture Overlay === */
@@ -186,9 +248,63 @@ onMounted(() => {
   opacity: 0.04;
 }
 
-.landing > *:not(.washi-overlay) {
+.landing > *:not(.washi-overlay):not(.landing-intro) {
   position: relative;
   z-index: 1;
+}
+
+.landing-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  background: #050504;
+}
+
+.landing-intro-video {
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  background: #050504;
+}
+
+.intro-skip-btn {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 10000;
+  min-height: 38px;
+  padding: 8px 16px;
+  color: rgba(255, 249, 239, 0.92);
+  background: rgba(43, 43, 43, 0.48);
+  border: 1px solid rgba(255, 249, 239, 0.42);
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+
+.intro-skip-btn:hover,
+.intro-skip-btn:focus-visible {
+  background: rgba(92, 107, 95, 0.72);
+  outline: none;
+}
+
+.intro-fade-enter-active,
+.intro-fade-leave-active {
+  transition: opacity 0.45s ease;
+}
+
+.intro-fade-enter-from,
+.intro-fade-leave-to {
+  opacity: 0;
+}
+
+:global(body.landing-intro-lock) {
+  overflow: hidden;
 }
 
 /* === Scroll Reveal === */
@@ -238,7 +354,7 @@ onMounted(() => {
 
 /* === Hero === */
 .hero {
-  padding: 100px var(--space-8) 140px;
+  padding: 84px var(--space-8) 84px;
 }
 
 .hero-inner {
@@ -247,7 +363,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-8);
+  gap: var(--space-6);
 }
 
 .hero-content {
@@ -301,21 +417,77 @@ onMounted(() => {
 }
 
 .hero-chips {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(132px, 168px));
   gap: 12px;
+  align-items: start;
+  justify-content: start;
   margin-bottom: var(--space-6);
 }
 
 .hero-chip {
+  width: 100%;
+  min-height: 38px;
   padding: 8px 14px;
   color: var(--text-secondary);
-  background-color: rgba(255, 249, 239, 0.62);
+  background-color: rgba(255, 249, 239, 0.68);
   border: 1px solid rgba(214, 206, 195, 0.9);
   border-radius: 999px;
   font-size: 14px;
   letter-spacing: 0.08em;
   box-shadow: 0 6px 16px rgba(63, 74, 66, 0.04);
+  cursor: default;
+  overflow: hidden;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  transition: transform 220ms ease,
+              max-width 220ms ease,
+              min-height 220ms ease,
+              padding 220ms ease,
+              box-shadow 220ms ease,
+              border-color 220ms ease,
+              background-color 220ms ease;
+}
+
+.hero-chip:hover,
+.hero-chip:focus-visible {
+  min-height: 58px;
+  padding: 9px 18px;
+  transform: translateY(-3px) scale(1.04);
+  background-color: rgba(255, 252, 246, 0.88);
+  border-color: rgba(92, 107, 95, 0.24);
+  box-shadow: 0 14px 28px rgba(63, 74, 66, 0.1);
+  outline: none;
+}
+
+.hero-chip-label {
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.hero-chip-detail {
+  max-height: 0;
+  opacity: 0;
+  color: rgba(76, 83, 75, 0.78);
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  transform: translateY(-2px);
+  transition: max-height 220ms ease,
+              opacity 180ms ease,
+              transform 220ms ease,
+              margin-top 220ms ease;
+}
+
+.hero-chip:hover .hero-chip-detail,
+.hero-chip:focus-visible .hero-chip-detail {
+  max-height: 20px;
+  margin-top: 3px;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .hero-actions {
@@ -324,16 +496,22 @@ onMounted(() => {
 }
 
 .hero-visual {
-  flex: 1;
+  flex: 1.08;
   display: flex;
   align-items: center;
-  justify-content: center;
-  max-width: 480px;
+  justify-content: flex-start;
+  max-width: 620px;
+  transform: translateX(-32px);
 }
 
 /* Logo 呼吸感動畫 */
 .hero-logo-breath {
   animation: breathe 10s ease-in-out infinite;
+}
+
+.hero-logo-breath :deep(.jb-logo--lg .jb-logo-img) {
+  height: 360px;
+  max-width: min(100%, 560px);
 }
 
 @keyframes breathe {
@@ -379,7 +557,7 @@ onMounted(() => {
 
 /* === Preview (服務預覽) === */
 .preview {
-  padding: 0 var(--space-8) 96px;
+  padding: 52px var(--space-8) 96px;
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -454,33 +632,39 @@ onMounted(() => {
 .value-item {
   padding: var(--space-5) var(--space-4);
   position: relative;
-  transition: border-color 0.3s var(--ease);
+  background: rgba(255, 252, 246, 0.34);
+  border: 1px solid rgba(70, 80, 65, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: opacity 0.7s var(--ease),
+              transform 220ms ease,
+              box-shadow 220ms ease,
+              background-color 220ms ease,
+              border-color 220ms ease;
 }
 
 .value-item:hover {
-  transform: translateY(-2px);
+  transform: translateY(-6px);
+  background: rgba(255, 252, 246, 0.72);
+  border-color: rgba(92, 107, 95, 0.16);
+  box-shadow: 0 16px 40px rgba(43, 50, 42, 0.08);
 }
 
-.value-item:not(:last-child)::after {
+.value-item::before {
   content: "";
   position: absolute;
-  right: -24px;
-  top: 12px;
-  width: 1px;
-  height: 72%;
-  background: linear-gradient(
-    transparent,
-    rgba(214, 206, 195, 0.9),
-    transparent
-  );
+  left: var(--space-4);
+  right: var(--space-4);
+  bottom: 0;
+  height: 2px;
+  background: rgba(92, 107, 95, 0.28);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 220ms ease;
 }
 
-.value-item:hover:not(:last-child)::after {
-  background: linear-gradient(
-    transparent,
-    rgba(92, 107, 95, 0.32),
-    transparent
-  );
+.value-item:hover::before {
+  transform: scaleX(1);
 }
 
 .value-num {
@@ -492,6 +676,11 @@ onMounted(() => {
   margin-bottom: var(--space-3);
   line-height: 1;
   letter-spacing: 2px;
+  transition: color 220ms ease;
+}
+
+.value-item:hover .value-num {
+  color: rgba(92, 107, 95, 0.48);
 }
 
 .value-item h3 {
@@ -570,7 +759,7 @@ onMounted(() => {
 
 /* === RWD === */
 @media (max-width: 900px) {
-  .hero { padding: 64px var(--space-4) 96px; }
+  .hero { padding: 52px var(--space-4) 72px; }
   .hero-inner {
     flex-direction: column;
     text-align: center;
@@ -578,12 +767,23 @@ onMounted(() => {
   }
   .hero-content { max-width: 100%; }
   .hero-actions { justify-content: center; }
-  .hero-chips { justify-content: center; }
-  .hero-visual { max-width: 280px; }
+  .hero-chips {
+    grid-template-columns: repeat(2, minmax(132px, 168px));
+    justify-content: center;
+  }
+  .hero-visual {
+    max-width: min(360px, 100%);
+    justify-content: center;
+    transform: none;
+  }
+  .hero-logo-breath :deep(.jb-logo--lg .jb-logo-img) {
+    height: 280px;
+    max-width: 100%;
+  }
   .hero-line-1 { font-size: 32px; }
   .hero-line-2 { font-size: 40px; }
   .hero-rule { margin: 0 auto var(--space-5); }
-  .preview { padding: 0 var(--space-4) 64px; }
+  .preview { padding: 48px var(--space-4) 64px; }
   .preview-grid { grid-template-columns: repeat(2, 1fr); }
   .values { padding: 64px var(--space-4) 96px; }
   .values-grid { grid-template-columns: 1fr; }
@@ -593,17 +793,31 @@ onMounted(() => {
 
 @media (max-width: 500px) {
   .header-inner { padding: var(--space-3); }
-  .hero { padding: var(--space-7) var(--space-3) var(--space-8); }
-  .preview { padding: 0 var(--space-3) var(--space-7); }
+  .hero { padding: var(--space-7) var(--space-3) var(--space-7); }
+  .preview { padding: var(--space-6) var(--space-3) var(--space-7); }
   .values { padding: var(--space-7) var(--space-3) var(--space-8); }
   .cta-section { padding: 0 var(--space-3) var(--space-7); }
   .preview-grid { grid-template-columns: 1fr; }
   .hero-line-1 { font-size: 28px; }
   .hero-line-2 { font-size: 34px; }
   .hero-chips { gap: 10px; }
+  .hero-chips {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
   .hero-chip {
+    min-height: 34px;
     padding: 7px 12px;
     font-size: 13px;
+  }
+  .hero-chip:hover,
+  .hero-chip:focus-visible {
+    min-height: 34px;
+    padding: 7px 12px;
+    transform: translateY(-2px);
+  }
+  .hero-chip-detail {
+    display: none;
   }
   .hero-actions {
     width: 100%;
@@ -611,6 +825,9 @@ onMounted(() => {
   }
   .hero-actions .jb-btn {
     width: 100%;
+  }
+  .hero-logo-breath :deep(.jb-logo--lg .jb-logo-img) {
+    height: 220px;
   }
   .preview-grid { grid-template-columns: 1fr; }
   .preview-card {

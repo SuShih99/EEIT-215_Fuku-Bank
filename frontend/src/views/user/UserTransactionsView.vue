@@ -139,7 +139,7 @@
       </div>
 
       <div v-if="transactions.length > 0" class="transactions-pagination">
-        <span>共 {{ transactions.length }} 筆</span>
+        <span>共 {{ transactionTotal }} 筆</span>
         <label>
           每頁
           <select v-model.number="pageSize" class="page-size-select">
@@ -168,6 +168,7 @@ const route = useRoute()
 const loading = ref(false)
 const accounts = ref([])
 const transactions = ref([])
+const transactionTotal = ref(0)
 const selectedAccount = ref('')
 const startDate = ref('')
 const endDate = ref('')
@@ -217,7 +218,7 @@ onUnmounted(() => {
 async function fetchTransactions() {
   loading.value = true
   try {
-    const params = {}
+    const params = { page: 0, size: 1000 }
     if (selectedAccount.value) params.accountNumber = selectedAccount.value
     if (txType.value) params.transactionType = txType.value
     if (startDate.value) params.startDate = startDate.value
@@ -229,8 +230,10 @@ async function fetchTransactions() {
       : Array.isArray(res)
         ? res
         : []
+    transactionTotal.value = Number(res?.totalElements ?? transactions.value.length)
   } catch (e) {
     console.error(e)
+    transactionTotal.value = 0
   } finally {
     loading.value = false
   }

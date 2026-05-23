@@ -3,7 +3,7 @@
 Java Easy Bank Account Mock Data
 - Requires customer_insert.sql first
 - Creates realistic customer accounts from 100 customer profiles
-- Generates exactly 500 transaction log rows
+- Generates exactly 10000 transaction log rows
 - JPY balances and transaction amounts are generated without fractional values
 ===============================================================================
 */
