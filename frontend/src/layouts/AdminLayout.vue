@@ -202,7 +202,7 @@
           <a-tag class="custom-role-tag">
             {{ authStore.user?.roleCode || 'ROLE' }}
           </a-tag>
-          <span class="user-name">{{ authStore.user?.empName || '員工姓名' }}</span>
+          <span class="user-name">{{ roleDisplayName[authStore.user?.roleCode] || authStore.user?.empName || '員工姓名' }}</span>
           <a-button shape="round" class="logout-btn" @click="handleLogout">
             <LogoutOutlined/>
             登出
@@ -253,6 +253,13 @@ const permLevel = computed(() => authStore.user?.permLevel ?? 0)
 const isCISO = computed(() => permLevel.value >= 4) // 資安長及以上
 const isManager = computed(() => permLevel.value >= 2) // 主管及以上（包含 CISO）
 const isBusinessStaff = computed(() => permLevel.value < 4) // 業務人員（職員 + 主管）
+
+// 角色 roleCode → 顯示名稱映射表
+const roleDisplayName = {
+  CISO: '系統管理員',
+  CFDM: '主管',
+  CFSO: '職員',
+}
 
 const selectedKeys = ref([route.name])
 const countdown = ref(300)

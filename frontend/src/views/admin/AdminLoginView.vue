@@ -102,14 +102,21 @@ const form = reactive({
 // 快速登入帳號（直接使用完整 email）
 // CISO=資安長(Lvl4) / CFDM=中階主管(Lvl2) / CFSO=一般職員(Lvl0)
 const testAccounts = [
-  { name: '鄭文華', role: 'CISO', email: 'wenhua.cheng@javabank.com' },
-  { name: '王淑芬', role: 'CFDM', email: 'shufen.wang@javabank.com' },
-  { name: '林家豪', role: 'CFSO', email: 'chiahao.lin@javabank.com' },
+  { name: '系統管理員', role: 'CISO', email: 'wenhua.cheng@javabank.com' },
+  { name: '主管', role: 'CFDM', email: 'shufen.wang@javabank.com' },
+  { name: '職員', role: 'CFSO', email: 'chiahao.lin@javabank.com' },
 ]
 
 function fillAccount(acc) {
   form.email = acc.email
   form.password = '123456'
+}
+
+// 角色 roleCode → 顯示名稱映射表
+const roleDisplayName = {
+  CISO: '系統管理員',
+  CFDM: '主管',
+  CFSO: '職員',
 }
 
 async function handleLogin() {
@@ -119,10 +126,16 @@ async function handleLogin() {
     const res = await login({ email: form.email, password: form.password })
     const userData = res.data.data
     authStore.setUser(userData)
-    message.success(`歡迎回來，${userData.empName}！`)
+    const displayName = roleDisplayName[userData.roleCode] || userData.empName
+    message.success(`歡迎回來，${displayName}！`)
     router.push({ name: 'admin-home' })
   } catch (err) {
-    message.error(err.response?.data?.message || '登入失敗，請檢查 Email 與密碼')
+    const errMsg = err.response?.data?.message || ''
+    if (errMsg.includes('停權') || errMsg.includes('停用') || errMsg.includes('SUSPENDED')) {
+      message.error('此帳號已被停權，請洽管理員')
+    } else {
+      message.error('帳號密碼錯誤')
+    }
   } finally {
     loading.value = false
   }
