@@ -2,7 +2,6 @@
   <div class="exchange-page">
     <section class="exchange-header">
       <div>
-        <p class="eyebrow">轉帳匯款</p>
         <h2>換匯</h2>
       </div>
       <button class="refresh-btn" type="button" :disabled="rateLoading" @click="refreshRates">
@@ -100,14 +99,27 @@
       </aside>
     </section>
 
-    <a-modal v-model:open="showResult" title="換匯結果" :footer="null" @cancel="closeResult">
-      <a-result :status="resultStatus" :title="resultTitle" :sub-title="resultSub">
-        <template #extra>
-          <a-button type="primary" @click="closeResult">再換一筆</a-button>
-          <a-button @click="$router.push({ name: 'user-transactions' })">查看紀錄</a-button>
-        </template>
-      </a-result>
-    </a-modal>
+    <transition name="modal-fade">
+      <div v-if="showResult" class="jb-modal-overlay">
+        <div class="jb-modal exchange-result-modal" role="dialog" aria-modal="true">
+          <h3 class="jb-modal-title">{{ resultTitle }}</h3>
+          <p class="jb-modal-content">{{ resultSub }}</p>
+          <div class="jb-modal-actions">
+            <button type="button" class="jb-btn jb-btn-primary" @click="closeResult">
+              {{ resultPrimaryText }}
+            </button>
+            <button
+              v-if="resultStatus !== 'error'"
+              type="button"
+              class="jb-btn jb-btn-secondary"
+              @click="$router.push({ name: 'user-transactions' })"
+            >
+              查看紀錄
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
 
     <!-- 無外幣帳戶提示 modal -->
     <transition name="modal-fade">
@@ -164,6 +176,7 @@ const resultStatus = ref('success')
 const resultTitle = ref('')
 const resultSub = ref('')
 const showNoForeignModal = ref(false)
+const resultPrimaryText = computed(() => (resultStatus.value === 'error' ? '重新填寫' : '再換一筆'))
 
 const exchangeAccounts = computed(() =>
   accounts.value.filter(a => a.status === 'ACTIVE' && a.accountType !== 'LOAN'),
@@ -393,7 +406,7 @@ h2 {
   margin: 0;
   color: var(--text-primary);
   font-family: var(--font-heading);
-  font-size: 42px;
+  font-size: 36px;
 }
 
 .exchange-shell {
@@ -414,6 +427,47 @@ h2 {
   padding: 28px;
 }
 
+.exchange-form :deep(.ant-form-item) {
+  margin-bottom: 22px;
+}
+
+.exchange-form :deep(.ant-form-item-label) {
+  padding-bottom: 8px;
+}
+
+.exchange-form :deep(.ant-form-item-label > label) {
+  font-size: 16px;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+.exchange-form :deep(.ant-input),
+.exchange-form :deep(.ant-input-number),
+.exchange-form :deep(.ant-select-selector) {
+  min-height: 48px;
+  font-size: 16px;
+}
+
+.exchange-form :deep(.ant-input),
+.exchange-form :deep(.ant-input-number-input),
+.exchange-form :deep(.ant-select-selection-item),
+.exchange-form :deep(.ant-select-selection-placeholder) {
+  font-size: 16px;
+}
+
+.exchange-form :deep(.ant-select-single .ant-select-selector) {
+  align-items: center;
+}
+
+.exchange-form :deep(.ant-select-arrow) {
+  font-size: 16px;
+}
+
+.exchange-form :deep(.ant-btn) {
+  min-height: 48px;
+  font-size: 16px;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -423,14 +477,15 @@ h2 {
 .hint {
   margin-top: 6px;
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .quote-card {
   display: grid;
   gap: 10px;
-  margin: 4px 0 24px;
-  padding: 18px;
+  margin: 4px 0 22px;
+  padding: 16px;
   background: rgba(250, 250, 247, 0.82);
   border: 1px solid rgba(214, 206, 195, 0.86);
   border-radius: 12px;
@@ -446,7 +501,7 @@ h2 {
 
 .quote-row {
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .quote-row strong {
@@ -467,14 +522,14 @@ h2 {
 .quote-time {
   margin: 2px 0 0;
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .rate-panel {
   position: relative;
   overflow: hidden;
   align-self: start;
-  padding: 22px;
+  padding: 20px;
 }
 
 .rate-panel.breathing {
@@ -496,13 +551,13 @@ h2 {
 
 .rate-loading-breath strong {
   font-family: var(--font-heading);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
 }
 
 .breath-orb {
-  width: 72px;
-  height: 72px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   border: 1px solid rgba(92, 107, 95, 0.28);
   background: radial-gradient(circle, rgba(92, 107, 95, 0.28), rgba(92, 107, 95, 0.06) 64%, transparent 68%);
@@ -512,11 +567,12 @@ h2 {
 .panel-title {
   margin-bottom: 16px;
   color: var(--text-primary);
+  font-size: 16px;
   font-weight: 700;
 }
 
 .rate-row {
-  padding: 13px 0;
+  padding: 12px 0;
   border-top: 1px solid rgba(214, 206, 195, 0.72);
   color: var(--text-secondary);
   font-size: 14px;
@@ -534,11 +590,13 @@ h2 {
 }
 
 .refresh-btn {
-  height: 42px;
+  min-height: 44px;
   padding: 0 16px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
   color: var(--primary-dark);
   background: rgba(255, 249, 239, 0.7);
   border: 1px solid var(--border);
@@ -588,48 +646,60 @@ h2 {
 .jb-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(43, 43, 43, 0.4);
-  backdrop-filter: blur(4px);
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  padding: 24px;
+  background: rgba(43, 43, 43, 0.4);
+  backdrop-filter: blur(4px);
 }
 .jb-modal {
-  width: 90%;
-  max-width: 400px;
-  padding: var(--space-6);
+  width: min(90vw, 520px);
+  padding: 48px 40px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: 24px;
+  text-align: center;
   border-radius: 12px;
   background: rgba(255, 249, 239, 0.96);
   border: 1px solid rgba(214, 206, 195, 0.86);
   box-shadow: 0 12px 36px rgba(63, 74, 66, 0.12);
 }
+.exchange-result-modal {
+  min-height: 300px;
+  justify-content: center;
+}
 .jb-modal-title {
   font-family: var(--font-heading);
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.35;
   color: var(--text-primary);
   margin: 0;
 }
 .jb-modal-content {
+  white-space: pre-line;
+  font-size: 16px;
   color: var(--text-secondary);
   margin: 0;
-  line-height: 1.6;
+  line-height: 1.65;
 }
 .jb-modal-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: var(--space-3);
-  margin-top: var(--space-2);
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
 }
 .modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.2s var(--ease); }
 .modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
 .jb-btn {
-  padding: 8px 16px;
+  min-width: 136px;
+  min-height: 42px;
+  padding: 8px 22px;
   border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   border: 1px solid transparent;
@@ -665,6 +735,39 @@ h2 {
   .exchange-shell,
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .exchange-shell > form {
+    padding: 20px 16px;
+  }
+
+  .exchange-form :deep(.ant-form-item-label > label),
+  .exchange-form :deep(.ant-input),
+  .exchange-form :deep(.ant-input-number-input),
+  .exchange-form :deep(.ant-select-selection-item),
+  .exchange-form :deep(.ant-select-selection-placeholder) {
+    font-size: 15px;
+  }
+
+  .jb-modal {
+    width: 100%;
+    padding: 36px 20px;
+  }
+
+  .jb-modal-title {
+    font-size: 22px;
+  }
+
+  .jb-modal-content {
+    font-size: 15px;
+  }
+
+  .jb-modal-actions {
+    flex-direction: column;
+  }
+
+  .jb-modal-actions .jb-btn {
+    width: 100%;
   }
 }
 </style>
