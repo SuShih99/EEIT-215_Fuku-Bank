@@ -2,6 +2,16 @@
 import { ref, onMounted, h, computed } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { DownOutlined, SearchOutlined } from '@ant-design/icons-vue'
+import { Bar, Doughnut } from 'vue-chartjs'
+import {
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  Chart as ChartJS,
+  Legend,
+  LinearScale,
+  Tooltip,
+} from 'chart.js'
 import { BASE_URL } from '@/api/axios'
 import { useAuthStore } from '@/stores/auth'
 import {
@@ -11,6 +21,8 @@ import {
   supplementAccountApplication,
 } from '@/api/accountApplication'
 import dayjs from 'dayjs'
+
+ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend)
 
 // === 角色權限判斷 ===
 const authStore = useAuthStore()
@@ -53,11 +65,73 @@ const accountTypeMap = {
   SUB_ACCOUNT: '子帳戶',
 }
 
+const chartPalette = ['#5C6B5F', '#A65A4D', '#C49A3C', '#78909C', '#8D7B68', '#B7A58E']
+const compactChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'bottom',
+      labels: { boxWidth: 10, usePointStyle: true },
+    },
+  },
+}
+const barChartOptions = {
+  ...compactChartOptions,
+  scales: {
+    y: {
+      beginAtZero: true,
+      ticks: { precision: 0 },
+      grid: { color: 'rgba(92, 107, 95, 0.09)' },
+    },
+    x: { grid: { display: false } },
+  },
+}
+
 const pagination = ref({
   current: 1,
   pageSize: 10,
   total: 0,
 })
+
+function countBy(items, getter) {
+  return items.reduce((acc, item) => {
+    const key = getter(item) || '未分類'
+    acc[key] = (acc[key] || 0) + 1
+    return acc
+  }, {})
+}
+
+function buildChartData(source, label) {
+  const entries = Object.entries(source)
+  return {
+    labels: entries.map(([key]) => key),
+    datasets: [{
+      label,
+      data: entries.map(([, value]) => value),
+      backgroundColor: entries.map((_, index) => chartPalette[index % chartPalette.length]),
+      borderWidth: 0,
+      borderRadius: 6,
+    }],
+  }
+}
+
+const totalApplicationsOnPage = computed(() => applications.value.length)
+const pendingApplications = computed(() => applications.value.filter(item => item.status === 'PENDING').length)
+const approvedApplications = computed(() => applications.value.filter(item => item.status === 'APPROVED').length)
+const watchedApplications = computed(() => applications.value.filter(item => item.riskFlag && item.riskFlag !== 'NORMAL').length)
+const statusChartData = computed(() => buildChartData(
+  countBy(applications.value, item => statusOptions.find(option => option.value === item.status)?.label || item.status),
+  '申請狀態',
+))
+const riskChartData = computed(() => buildChartData(
+  countBy(applications.value, item => riskFlagMap[item.riskFlag]?.label || item.riskFlag || '未標記'),
+  '風險標記',
+))
+const accountTypeChartData = computed(() => buildChartData(
+  countBy(applications.value, item => accountTypeMap[item.accountType] || item.accountType),
+  '帳戶類型',
+))
 
 // === 表格欄位 ===
 const columns = ref([
@@ -228,6 +302,47 @@ onMounted(fetchData)
     <div class="page-header">
       <h2 class="page-title">開戶申請審核</h2>
     </div>
+
+    <section class="analysis-panel" aria-label="開戶申請圖表分析">
+      <div class="metric-card">
+        <span>本頁申請</span>
+        <strong>{{ totalApplicationsOnPage }}</strong>
+        <small>目前查詢結果</small>
+      </div>
+      <div class="metric-card">
+        <span>待審核</span>
+        <strong>{{ pendingApplications }}</strong>
+        <small>需要主管處理</small>
+      </div>
+      <div class="metric-card">
+        <span>已核准</span>
+        <strong>{{ approvedApplications }}</strong>
+        <small>完成建帳流程</small>
+      </div>
+      <div class="metric-card risk">
+        <span>風險關注</span>
+        <strong>{{ watchedApplications }}</strong>
+        <small>非正常風險標記</small>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">狀態分布</div>
+        <div class="chart-body">
+          <Doughnut :data="statusChartData" :options="compactChartOptions" />
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">風險標記</div>
+        <div class="chart-body">
+          <Doughnut :data="riskChartData" :options="compactChartOptions" />
+        </div>
+      </div>
+      <div class="chart-card wide">
+        <div class="chart-title">帳戶類型</div>
+        <div class="chart-body">
+          <Bar :data="accountTypeChartData" :options="barChartOptions" />
+        </div>
+      </div>
+    </section>
 
     <!-- 搜尋列 -->
     <div class="action-bar">
@@ -492,6 +607,73 @@ onMounted(fetchData)
 </template>
 
 <style scoped>
+.analysis-panel {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.metric-card,
+.chart-card {
+  border: 1px solid rgba(214, 206, 195, 0.72);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 249, 239, 0.92), rgba(249, 244, 235, 0.82)),
+    url('/washi-texture.png');
+  background-size: auto, 260px 260px;
+  box-shadow: 0 10px 28px rgba(63, 74, 66, 0.08);
+}
+
+.metric-card {
+  min-height: 104px;
+  padding: 16px;
+  display: grid;
+  gap: 6px;
+}
+
+.metric-card span,
+.chart-title {
+  color: #5C6B5F;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.metric-card strong {
+  color: #2B2B2B;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.metric-card small {
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+.metric-card.risk strong {
+  color: #A65A4D;
+}
+
+.chart-card {
+  min-height: 260px;
+  padding: 16px;
+}
+
+.chart-card.wide {
+  grid-column: span 2;
+}
+
+.chart-body {
+  position: relative;
+  height: 205px;
+  margin-top: 10px;
+}
+
+.chart-body :deep(canvas) {
+  width: 100% !important;
+  height: 100% !important;
+}
+
 /* 人名 cell */
 .emp-name-cell { display: flex; align-items: center; gap: 12px; }
 .emp-avatar {
@@ -663,5 +845,19 @@ onMounted(fetchData)
   width: 18px;
   height: 3px;
   box-shadow: 0 10px 0 rgba(111, 102, 85, 0.3);
+}
+
+@media (max-width: 980px) {
+  .analysis-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .analysis-panel,
+  .chart-card.wide {
+    grid-template-columns: 1fr;
+    grid-column: auto;
+  }
 }
 </style>
