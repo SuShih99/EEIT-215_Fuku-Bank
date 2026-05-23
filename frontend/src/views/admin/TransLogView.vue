@@ -71,6 +71,47 @@
       </div>
     </div>
 
+    <section class="analysis-panel" aria-label="交易紀錄圖表分析">
+      <div class="metric-card">
+        <span>本頁交易</span>
+        <strong>{{ logsOnPage }}</strong>
+        <small>總查詢 {{ total }} 筆</small>
+      </div>
+      <div class="metric-card risk">
+        <span>轉出金額</span>
+        <strong>{{ formatCompactAmount(debitTotal) }}</strong>
+        <small>DEBIT 加總</small>
+      </div>
+      <div class="metric-card">
+        <span>轉入金額</span>
+        <strong>{{ formatCompactAmount(creditTotal) }}</strong>
+        <small>CREDIT 加總</small>
+      </div>
+      <div class="metric-card">
+        <span>最大單筆</span>
+        <strong>{{ formatCompactAmount(maxTransactionAmount) }}</strong>
+        <small>目前頁面最大值</small>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">收支方向</div>
+        <div class="chart-body">
+          <Doughnut :data="entryChartData" :options="compactChartOptions" />
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">幣別分布</div>
+        <div class="chart-body">
+          <Doughnut :data="currencyChartData" :options="compactChartOptions" />
+        </div>
+      </div>
+      <div class="chart-card wide">
+        <div class="chart-title">交易類型</div>
+        <div class="chart-body">
+          <Bar :data="transactionTypeChartData" :options="barChartOptions" />
+        </div>
+      </div>
+    </section>
+
     <!-- 表格 -->
     <a-table
       :columns="columns"
@@ -204,6 +245,16 @@
 import { ref, reactive, computed, h, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { CopyOutlined, DownOutlined, SearchOutlined, RollbackOutlined } from '@ant-design/icons-vue'
+import { Bar, Doughnut } from 'vue-chartjs'
+import {
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  Chart as ChartJS,
+  Legend,
+  LinearScale,
+  Tooltip,
+} from 'chart.js'
 import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
 import {
@@ -215,6 +266,8 @@ import {
   getAccount,
   reversal,
 } from '@/api/account'
+
+ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend)
 
 const searchType = ref('referenceId')
 const BUSINESS_ACCOUNT_LABEL = '銀行業務帳戶'
@@ -282,10 +335,83 @@ function formatAmount(value) {
   return Number(value).toLocaleString()
 }
 
+function formatCompactAmount(value) {
+  const amount = Number(value || 0)
+  if (amount >= 100000000) return `${(amount / 100000000).toFixed(1)} 億`
+  if (amount >= 10000) return `${(amount / 10000).toFixed(1)} 萬`
+  return amount.toLocaleString()
+}
+
 function formatTime(value) {
   if (!value) return '-'
   return value.replace('T', ' ').substring(0, 19)
 }
+
+const chartPalette = ['#5C6B5F', '#A65A4D', '#C49A3C', '#78909C', '#8D7B68', '#B7A58E']
+const compactChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'bottom',
+      labels: { boxWidth: 10, usePointStyle: true },
+    },
+  },
+}
+const barChartOptions = {
+  ...compactChartOptions,
+  scales: {
+    y: {
+      beginAtZero: true,
+      ticks: { precision: 0 },
+      grid: { color: 'rgba(92, 107, 95, 0.09)' },
+    },
+    x: { grid: { display: false } },
+  },
+}
+
+function countBy(items, getter) {
+  return items.reduce((acc, item) => {
+    const key = getter(item) || '未分類'
+    acc[key] = (acc[key] || 0) + 1
+    return acc
+  }, {})
+}
+
+function buildChartData(source, label) {
+  const entries = Object.entries(source)
+  return {
+    labels: entries.map(([key]) => key),
+    datasets: [{
+      label,
+      data: entries.map(([, value]) => value),
+      backgroundColor: entries.map((_, index) => chartPalette[index % chartPalette.length]),
+      borderWidth: 0,
+      borderRadius: 6,
+    }],
+  }
+}
+
+const logsOnPage = computed(() => logs.value.length)
+const debitTotal = computed(() => logs.value
+  .filter(log => log.entryType === 'DEBIT')
+  .reduce((sum, log) => sum + Number(log.amount || 0), 0))
+const creditTotal = computed(() => logs.value
+  .filter(log => log.entryType === 'CREDIT')
+  .reduce((sum, log) => sum + Number(log.amount || 0), 0))
+const maxTransactionAmount = computed(() => logs.value.reduce((max, log) => Math.max(max, Number(log.amount || 0)), 0))
+const entryChartData = computed(() => buildChartData(
+  countBy(logs.value, log => entryTypeMap[log.entryType] || log.entryType),
+  '交易方向',
+))
+const transactionTypeChartData = computed(() => buildChartData(
+  countBy(logs.value, log => transactionTypeMap[log.transactionType] || log.transactionType),
+  '交易類型',
+))
+const currencyChartData = computed(() => buildChartData(
+  countBy(logs.value, log => log.currency),
+  '幣別',
+))
 
 const columns = ref([
   { title: '交易編號', dataIndex: 'referenceId', key: 'referenceId', width: 260, resizable: true, sorter: (a, b) => (a.referenceId || '').localeCompare(b.referenceId || '') },
@@ -593,6 +719,73 @@ function isBusinessAccountLabel(value) {
 </script>
 
 <style scoped>
+.analysis-panel {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.metric-card,
+.chart-card {
+  border: 1px solid rgba(214, 206, 195, 0.72);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 249, 239, 0.92), rgba(249, 244, 235, 0.82)),
+    url('/washi-texture.png');
+  background-size: auto, 260px 260px;
+  box-shadow: 0 10px 28px rgba(63, 74, 66, 0.08);
+}
+
+.metric-card {
+  min-height: 104px;
+  padding: 16px;
+  display: grid;
+  gap: 6px;
+}
+
+.metric-card span,
+.chart-title {
+  color: #5C6B5F;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.metric-card strong {
+  color: #2B2B2B;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.metric-card small {
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+.metric-card.risk strong {
+  color: #A65A4D;
+}
+
+.chart-card {
+  min-height: 260px;
+  padding: 16px;
+}
+
+.chart-card.wide {
+  grid-column: span 2;
+}
+
+.chart-body {
+  position: relative;
+  height: 205px;
+  margin-top: 10px;
+}
+
+.chart-body :deep(canvas) {
+  width: 100% !important;
+  height: 100% !important;
+}
+
 /* 狀態標籤 */
 .status-tag {
   display: inline-flex;
@@ -640,5 +833,19 @@ function isBusinessAccountLabel(value) {
 .copy-reference-btn:focus {
   color: #3f4a42;
   background: rgba(92, 107, 95, 0.1);
+}
+
+@media (max-width: 980px) {
+  .analysis-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .analysis-panel,
+  .chart-card.wide {
+    grid-template-columns: 1fr;
+    grid-column: auto;
+  }
 }
 </style>
