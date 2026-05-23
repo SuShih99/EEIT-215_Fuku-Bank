@@ -120,6 +120,15 @@
           一鍵帶入新註冊帳號
           </button>
 
+          <button
+            class="jb-btn jb-btn-secondary jb-btn-block"
+            style="margin-top: var(--space-2)"
+            :disabled="loading"
+            @click="fillTestAccountModified"
+          >
+          一鍵帶入新註冊（更改密碼）
+          </button>
+
           <div class="login-divider">
             <span>或</span>
           </div>
@@ -197,6 +206,14 @@ async function loginAsWangDaming() {
 
 async function fillTestAccount() {
   fillLoginForm(WANG_XIAOMING_DEMO_ACCOUNT)
+  // 只填入表單，不自動登入
+}
+
+async function fillTestAccountModified() {
+  fillLoginForm({
+    ...WANG_XIAOMING_DEMO_ACCOUNT,
+    password: '09880988'
+  })
   // 只填入表單，不自動登入
 }
 
