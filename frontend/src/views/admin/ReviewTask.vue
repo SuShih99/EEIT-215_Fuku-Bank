@@ -261,7 +261,13 @@
               <strong v-else style="color: #cf1322;">已超過 DBR 22倍上限</strong>
             </a-descriptions-item>
 
-
+            <a-descriptions-item label="風控合規警示"
+                                 v-if="drawerMeta.isPep || drawerMeta.externalScore < 550">
+              <div style="color: #cf1322; font-weight: 600;">
+                <span v-if="drawerMeta.isPep">⚠️ 觸發 PEP 高風險反洗錢審查流程<br/></span>
+                <span v-if="drawerMeta.externalScore < 550">❌ 外部信用分數過低，請從嚴審核</span>
+              </div>
+            </a-descriptions-item>
             <a-descriptions-item label="有不動產">
               <a-tag :color="drawerMeta.isPep ? 'red' : 'default'" class="table-badge">
                 {{ drawerMeta.hasRealEstate ? '是' : '否' }}

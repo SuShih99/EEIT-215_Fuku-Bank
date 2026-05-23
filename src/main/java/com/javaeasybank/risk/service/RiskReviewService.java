@@ -38,7 +38,7 @@ public class RiskReviewService {
             log.info("[RiskReview] 命中黑名單 businessId={} hitTypes={}",
                     request.getBusinessId(), hitTypes);
             RiskEventLog eventLoglog = buildAndSaveLog(
-                    request, null, 0,
+                    request, null,
                     Disposition.REJECT,
                     "命中黑名單：" + hitTypes);
             // 黑名單直接 callback，不需要人審
@@ -92,8 +92,13 @@ public class RiskReviewService {
      * LOW    → PASS          自動通過
      * MEDIUM → MANUAL_REVIEW 轉人工審核
      * HIGH   → REJECT        自動拒絕
+     * <p>
+     * pep人士一律轉人工審核
      */
     private Disposition resolveDisposition(CustomerCreditInfo credit) {
+        if (Boolean.TRUE.equals(credit.getIsPep())) {
+            return Disposition.MANUAL_REVIEW;
+        }
         return switch (credit.getRiskLevel()) {
             case LOW -> Disposition.PASS;
             case MEDIUM -> Disposition.MANUAL_REVIEW;
@@ -115,7 +120,6 @@ public class RiskReviewService {
 
         RiskEventLog eventLog = buildAndSaveLog(
                 dto, credit,
-                credit.getFinalScore(),
                 disposition, null);
 
         return switch (disposition) {
@@ -142,7 +146,6 @@ public class RiskReviewService {
     private RiskEventLog buildAndSaveLog(
             RiskReviewRequest dto,
             CustomerCreditInfo credit,
-            int finalScore,
             Disposition disposition,
             String overrideReason) {
 
@@ -155,14 +158,15 @@ public class RiskReviewService {
         log.setTransactionAmount(dto.getAmount());
         log.setTriggerReason(overrideReason != null
                 ? overrideReason
-                : buildReason(credit, finalScore));
+                : buildReason(credit));
         log.setMetaData(credit != null ? buildMetaData(credit) : null);
         log.setCallbackUrl(dto.getCallbackUrl());
         return logRepository.save(log);
     }
 
-    private String buildReason(CustomerCreditInfo credit, int finalScore) {
+    private String buildReason(CustomerCreditInfo credit) {
         if (credit == null) return null;
+        if (Boolean.TRUE.equals(credit.getIsPep())) return "客戶具備政治敏感人士（PEP）身分，依法規轉人工審核";
         return switch (credit.getRiskLevel()) {
             case LOW -> "客戶信用評估結果良好，系統自動通過";
             case MEDIUM -> "客戶信用評分屬中等風險（評分區間 40–69），建議人工複核後決定是否核准";

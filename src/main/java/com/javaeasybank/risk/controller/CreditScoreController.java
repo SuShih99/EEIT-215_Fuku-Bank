@@ -32,7 +32,7 @@ public class CreditScoreController {
         authActionLogService.recordAction(
                 "LIST_CREDIT_INFO",
                 null,
-                "瀏覽客戶信用列表 keyword=" + keyword,
+                "瀏覽客戶信用列表",
                 getClientIp(request)
 
         );

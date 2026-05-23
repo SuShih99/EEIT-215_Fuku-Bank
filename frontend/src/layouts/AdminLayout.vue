@@ -18,7 +18,9 @@
 
         <a-menu v-model:selectedKeys="selectedKeys" mode="inline">
           <a-menu-item key="admin-home" @click="$router.push({ name: 'admin-home' })">
-            <template #icon><HomeOutlined /></template>
+            <template #icon>
+              <HomeOutlined/>
+            </template>
             <span>首頁</span>
           </a-menu-item>
 
@@ -26,7 +28,9 @@
           <template v-if="isBusinessStaff">
             <a-menu-item-group title="客戶管理">
               <a-menu-item key="admin-customers" @click="$router.push({ name: 'admin-customers' })">
-                <template #icon><UserOutlined /></template>
+                <template #icon>
+                  <UserOutlined/>
+                </template>
                 <span>客戶管理</span>
               </a-menu-item>
             </a-menu-item-group>
@@ -36,18 +40,24 @@
                 key="admin-account-applications"
                 @click="$router.push({ name: 'admin-account-applications' })"
               >
-                <template #icon><SolutionOutlined /></template>
+                <template #icon>
+                  <SolutionOutlined/>
+                </template>
                 <span>開戶申請審核</span>
               </a-menu-item>
               <a-menu-item key="admin-accounts" @click="$router.push({ name: 'admin-accounts' })">
-                <template #icon><BankOutlined /></template>
+                <template #icon>
+                  <BankOutlined/>
+                </template>
                 <span>帳戶管理</span>
               </a-menu-item>
               <a-menu-item
                 key="admin-trans-logs"
                 @click="$router.push({ name: 'admin-trans-logs' })"
               >
-                <template #icon><ProfileOutlined /></template>
+                <template #icon>
+                  <ProfileOutlined/>
+                </template>
                 <span>交易紀錄</span>
               </a-menu-item>
             </a-menu-item-group>
@@ -57,14 +67,18 @@
                 key="loan-applications"
                 @click="$router.push({ name: 'loan-applications' })"
               >
-                <template #icon><AuditOutlined /></template>
+                <template #icon>
+                  <AuditOutlined/>
+                </template>
                 <span>貸款申請管理</span>
               </a-menu-item>
               <a-menu-item
                 key="admin-loan-accounts"
                 @click="$router.push({ name: 'admin-loan-accounts' })"
               >
-                <template #icon><FundOutlined /></template>
+                <template #icon>
+                  <FundOutlined/>
+                </template>
                 <span>貸款帳戶管理</span>
               </a-menu-item>
             </a-menu-item-group>
@@ -74,29 +88,39 @@
                 key="admin-card-types"
                 @click="$router.push({ name: 'admin-card-types' })"
               >
-                <template #icon><AppstoreAddOutlined /></template>
+                <template #icon>
+                  <AppstoreAddOutlined/>
+                </template>
                 <span>信用卡卡別管理</span>
               </a-menu-item>
               <a-menu-item
                 key="admin-card-applications"
                 @click="$router.push({ name: 'admin-card-applications' })"
               >
-                <template #icon><SolutionOutlined /></template>
+                <template #icon>
+                  <SolutionOutlined/>
+                </template>
                 <span>信用卡開卡審核</span>
               </a-menu-item>
               <a-menu-item key="admin-cards" @click="$router.push({ name: 'admin-cards' })">
-                <template #icon><CreditCardOutlined /></template>
+                <template #icon>
+                  <CreditCardOutlined/>
+                </template>
                 <span>信用卡卡片管理</span>
               </a-menu-item>
               <a-menu-item key="admin-card-txns" @click="$router.push({ name: 'admin-card-txns' })">
-                <template #icon><ProfileOutlined /></template>
+                <template #icon>
+                  <ProfileOutlined/>
+                </template>
                 <span>信用卡交易管理</span>
               </a-menu-item>
               <a-menu-item
                 key="admin-card-bills"
                 @click="$router.push({ name: 'admin-card-bills' })"
               >
-                <template #icon><CreditCardOutlined /></template>
+                <template #icon>
+                  <CreditCardOutlined/>
+                </template>
                 <span>信用卡帳單管理</span>
               </a-menu-item>
             </a-menu-item-group>
@@ -105,25 +129,33 @@
                 key="admin-risk-events"
                 @click="$router.push({ name: 'admin-risk-events' })"
               >
-                <template #icon><AlertOutlined /></template>
+                <template #icon>
+                  <AlertOutlined/>
+                </template>
                 <span>風險事件</span>
               </a-menu-item>
               <a-menu-item key="admin-blacklist" @click="$router.push({ name: 'admin-blacklist' })">
-                <template #icon><StopOutlined /></template>
+                <template #icon>
+                  <StopOutlined/>
+                </template>
                 <span>黑名單</span>
               </a-menu-item>
               <a-menu-item
                 key="admin-review-task"
                 @click="$router.push({ name: 'admin-review-task' })"
               >
-                <template #icon><CheckCircleOutlined /></template>
+                <template #icon>
+                  <CheckCircleOutlined/>
+                </template>
                 <span>人工審核</span>
               </a-menu-item>
               <a-menu-item
                 key="admin-credit-list"
                 @click="$router.push({ name: 'admin-credit-list' })"
               >
-                <template #icon><DashboardOutlined /></template>
+                <template #icon>
+                  <SafetyOutlined />
+                </template>
                 <span>客戶信用評分</span>
               </a-menu-item>
             </a-menu-item-group>
@@ -133,11 +165,15 @@
           <template v-if="isCISO">
             <a-menu-item-group title="系統管理">
               <a-menu-item key="admin-employees" @click="$router.push({ name: 'admin-employees' })">
-                <template #icon><TeamOutlined /></template>
+                <template #icon>
+                  <TeamOutlined/>
+                </template>
                 <span>員工管理</span>
               </a-menu-item>
               <a-menu-item key="admin-logs" @click="$router.push({ name: 'admin-logs' })">
-                <template #icon><SettingOutlined /></template>
+                <template #icon>
+                  <SettingOutlined/>
+                </template>
                 <span>系統日誌</span>
               </a-menu-item>
             </a-menu-item-group>
@@ -160,32 +196,34 @@
             >
               保持登入
             </a-button>
-            <a-button size="small" class="demo-mode-badge" @click="triggerIdleAlert">Demo 模式</a-button>
+            <a-button size="small" class="demo-mode-badge" @click="triggerIdleAlert">Demo 模式
+            </a-button>
           </div>
           <a-tag class="custom-role-tag">
             {{ authStore.user?.roleCode || 'ROLE' }}
           </a-tag>
           <span class="user-name">{{ authStore.user?.empName || '員工姓名' }}</span>
           <a-button shape="round" class="logout-btn" @click="handleLogout">
-            <LogoutOutlined /> 登出
+            <LogoutOutlined/>
+            登出
           </a-button>
         </div>
       </a-layout-header>
 
       <a-layout-content class="admin-content">
-        <router-view />
+        <router-view/>
       </a-layout-content>
     </a-layout>
   </a-layout>
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { checkAuth, logout } from '@/api/auth'
-import { Modal } from 'ant-design-vue'
-import { onMounted, onUnmounted } from 'vue'
+import {ref, watch, computed} from 'vue'
+import {useRoute, useRouter} from 'vue-router'
+import {useAuthStore} from '@/stores/auth'
+import {checkAuth, logout} from '@/api/auth'
+import {Modal} from 'ant-design-vue'
+import {onMounted, onUnmounted} from 'vue'
 import {
   HomeOutlined,
   TeamOutlined,
@@ -202,7 +240,7 @@ import {
   AlertOutlined,
   StopOutlined,
   CheckCircleOutlined,
-  DashboardOutlined,
+  SafetyOutlined
 } from '@ant-design/icons-vue'
 
 const route = useRoute()
@@ -315,10 +353,12 @@ onUnmounted(() => {
 .sider-content::-webkit-scrollbar {
   width: 6px;
 }
+
 .sider-content::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.1);
   border-radius: 4px;
 }
+
 .sider-content::-webkit-scrollbar-track {
   background: transparent;
 }
@@ -511,8 +551,11 @@ onUnmounted(() => {
 .fade-leave-active {
   transition: opacity 0.2s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
 }
+
+
 </style>

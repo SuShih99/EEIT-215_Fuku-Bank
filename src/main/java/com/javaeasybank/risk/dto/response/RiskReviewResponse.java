@@ -40,7 +40,7 @@ public class RiskReviewResponse {
 
     /**
      * 處置原因說明
-     * PASS        → null 或 "自動審核通過"
+     * PASS        → "自動審核通過"
      * REJECT      → "信用分數不足 / 命中黑名單 / ..."
      * MANUAL_REVIEW → "分數介於閾值區間，需人工複核"
      */

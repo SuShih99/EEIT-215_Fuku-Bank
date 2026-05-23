@@ -26,6 +26,7 @@ public class RiskCheckService {
     private final RiskEventLogRepository relRepos;
     private final ReviewTaskService reviewTaskService;
     private final ObjectMapper objectMapper; // 確保 ObjectMapper 已注入
+    private final CreditScoreService creditScoreService;
 
     private static final BigDecimal SINGLE_LIMIT = new BigDecimal("50000"); // 單筆大額
     private static final BigDecimal STRUCTURING_THRESHOLD = new BigDecimal("45000"); // 拆單偵測 (90%)
@@ -37,6 +38,28 @@ public class RiskCheckService {
         RiskCheckResponse blacklistResult = checkBlacklist(request);
         if (blacklistResult != null)
             return blacklistResult; // 命中就提早結束
+
+        // ==========================================
+        // 【新增】PEP 政治敏感人士判斷
+        // 說明：高優順序，一律轉人工審核（Disposition.MANUAL_REVIEW）
+        // ==========================================
+        Boolean pep = creditScoreService.getCreditInfoByCustomerId(request.getCustomerId()).getIsPep();
+        if (Boolean.TRUE.equals(pep)) {
+            log.info("[RiskCheck] 觸發 PEP 政治敏感人士法規合規檢查 customerId={}", request.getCustomerId());
+
+            // 內部詳細原因 (存入資料庫)
+            String internalDetail = "客戶具備 PEP (政治敏感人士) 身分，依據防制洗錢法規一律轉人工審核。";
+            // 外部前端展示原因 (兼顧客戶體驗與資訊安全)
+            String displayReason = "基於合規與交易安全考量，此筆交易已轉由人工審核中，請耐心等候。";
+
+            RiskEventLog eventLog = buildAndSaveLog(
+                    request, RiskLevel.MEDIUM, Disposition.MANUAL_REVIEW, internalDetail);
+
+            // 自動觸發或建立人工審核工單 (可視現有架構調用 reviewTaskService)
+            // reviewTaskService.createTask(eventLog);
+
+            return buildRiskCheckResponse(eventLog, request, displayReason, Disposition.MANUAL_REVIEW, RiskLevel.MEDIUM);
+        }
 
         // 處理來自 Account 模組的預判警告 (如：頻率過高、日限額接近)
         if (request.getContext() != null && request.getContext().containsKey("internalWarning")) {
@@ -143,15 +166,13 @@ public class RiskCheckService {
     }
 
     private RiskCheckResponse checkBlacklist(RiskCheckRequest request) {
-        if (request.getTargetIdentifier() == null) {
-            return null;
-        }
+        if (request.getTargetIdentifier() == null) return null;
 
-        String raw = request.getTargetIdentifier().replace("轉入帳戶: ","");
+        String rawIdentifier = request.getTargetIdentifier().replace("轉入帳戶: ", "");
 
         boolean hit = blackListService.isBlacklisted(
                 BlacklistType.ACCOUNT_NO,
-                raw);
+                rawIdentifier);
         if (hit) {
             // 1. 準備內部理由（存資料庫用）
             String internalDetail = "收款帳號命中黑名單：" + request.getTargetIdentifier();
