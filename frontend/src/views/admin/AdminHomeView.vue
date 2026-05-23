@@ -106,8 +106,15 @@ const permLevel = computed(() => authStore.user?.permLevel ?? 0)
 const isCISO   = computed(() => permLevel.value >= 4)  // 資安長 (Lvl4+)
 const isManager = computed(() => permLevel.value >= 2) // 主管及以上
 
+// 角色 roleCode → 顯示名稱映射表
+const roleDisplayName = {
+  CISO: '系統管理員',
+  CFDM: '主管',
+  CFSO: '職員',
+}
+
 // ── 使用者資訊 ──
-const userName = computed(() => authStore.user?.empName || '使用者')
+const userName = computed(() => roleDisplayName[authStore.user?.roleCode] || authStore.user?.empName || '使用者')
 const userRole = computed(() => authStore.user?.roleCode || '未知')
 const lastLogin = computed(() => {
   const d = authStore.user?.lastLoginDate

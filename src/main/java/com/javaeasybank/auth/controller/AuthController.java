@@ -53,6 +53,14 @@ public class AuthController {
             HttpSession session,
             HttpServletRequest httpRequest) {
 
+        // 先查訢員工狀態：若帳號已被停權，主動回傳明確的錯誤訊息
+        authEmpRepository.findByEmail(request.getEmail()).ifPresent(emp -> {
+            if ("SUSPENDED".equals(emp.getStatus())) {
+                throw new com.javaeasybank.common.exception.BusinessException(
+                        "此帳號已被停權，請洽管理員");
+            }
+        });
+
         Authentication authentication;
         try {
             authentication = authenticationManager.authenticate(
