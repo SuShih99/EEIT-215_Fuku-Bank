@@ -117,7 +117,7 @@
               </a-button>
             </template>
 
-            <template v-else-if="record.status === 'INACTIVE' || record.status === 'DEACTIVATED'">
+            <template v-else-if="(record.status === 'INACTIVE' || record.status === 'DEACTIVATED') && canDeactivate">
               <a-button type="link" class="action-btn resume-btn" @click="handleActivate(record)">
                 啟用
               </a-button>
