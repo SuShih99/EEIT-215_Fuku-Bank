@@ -539,8 +539,7 @@ import {ref, reactive, onMounted, computed} from 'vue'
 import {message} from 'ant-design-vue'
 import {ReloadOutlined} from '@ant-design/icons-vue'
 import {useAuthStore} from '@/stores/auth'
-import {BASE_URL as SERVER_URL} from '@/api/axios'
-import axios from 'axios'
+import api, {BASE_URL as SERVER_URL} from '@/api/axios'
 
 const API_PREFIX = '/api/risk/reviewtask'
 
@@ -606,7 +605,7 @@ async function fetchTasks() {
       ? `${sortField.value},${sortOrder.value}`
       : 'createAt,desc'
 
-    const res = await axios.get(API_PREFIX, {params, withCredentials: true})
+    const res = await api.get(API_PREFIX, {params})
     const page = res.data.data
     tasks.value = page.content
     const backendPageNumber = Number(page.number || 0)
@@ -635,10 +634,9 @@ async function submitDecision() {
       adminComment: form.adminComment,
       requiredDocuments: form.reviewResult === 'RETURNED' ? form.requiredDocuments : []
     }
-    await axios.put(
+    await api.put(
       `${API_PREFIX}/${currentTask.value.taskId}/decision`,
-      payload,
-      {withCredentials: true},
+      payload
     )
     message.success('決策送出成功')
     modalVisible.value = false
@@ -695,7 +693,7 @@ async function handleReviewAction(task) {
   }
   if (task.status !== 'PROCESSING') {
     try {
-      await axios.put(`${API_PREFIX}/${task.taskId}/start`, {}, {withCredentials: true})
+      await api.put(`${API_PREFIX}/${task.taskId}/start`)
       await fetchTasks()
       const updated = tasks.value.find((t) => t.taskId === task.taskId)
       currentTask.value = updated || task

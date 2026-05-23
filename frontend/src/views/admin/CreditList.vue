@@ -55,7 +55,7 @@ import {ref, reactive, onMounted} from 'vue'
 import {message} from 'ant-design-vue'
 import {FileTextOutlined} from '@ant-design/icons-vue'
 import {useRouter} from 'vue-router'
-import axios from 'axios'
+import api from '@/api/axios'
 
 const router = useRouter()
 const BASE_URL = '/api/risk/creditscore'
@@ -103,7 +103,7 @@ async function fetchCredits() {
       ? `${sortField.value},${sortOrder.value}`
       : 'lastUpdatedAt,desc'
 
-    const res = await axios.get(BASE_URL, {params, withCredentials: true})
+    const res = await api.get(BASE_URL, {params})
     const page = res.data.data
     credits.value = page.content
     const backendPageNumber = Number(page.number || 0)

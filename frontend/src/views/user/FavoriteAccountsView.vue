@@ -337,11 +337,24 @@ h2 {
 
 .favorite-form :deep(.ant-input),
 .favorite-form :deep(.ant-select-selector) {
-  min-height: 48px;
+  height: 48px;
   border-color: rgba(198, 188, 174, 0.92);
   border-radius: 8px;
   background: rgba(250, 250, 247, 0.84);
   font-size: 16px;
+}
+
+.favorite-form :deep(.ant-select-selection-item),
+.favorite-form :deep(.ant-select-selection-placeholder) {
+  line-height: 46px !important;
+}
+
+.favorite-form :deep(.ant-select-selection-search-input) {
+  height: 46px !important;
+}
+
+.favorite-form :deep(.ant-select) {
+  height: 48px;
 }
 
 .favorite-form :deep(.ant-input:focus),
@@ -359,8 +372,8 @@ h2 {
 }
 
 .favorite-form :deep(.ant-btn) {
-  min-height: 44px;
-  font-size: 15px;
+  height: 48px;
+  font-size: 16px;
 }
 
 .favorite-form :deep(.ant-btn-primary:hover),
