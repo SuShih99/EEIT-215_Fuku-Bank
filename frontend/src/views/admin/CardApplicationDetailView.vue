@@ -22,11 +22,9 @@ const fetchDetail = async () => {
   loading.value = true
   //主申請資料
   applicationInfo.value = await getApplicationById(id)
-  console.log(applicationInfo.value)
 
   //明細
   const itemsData = await getApplicationItems(id)
-  console.log('items', itemsData)
   items.value = itemsData.map((item) => ({
     ...item,
     customLimit: item.approvedLimit,
