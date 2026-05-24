@@ -206,7 +206,7 @@ body {
   background-color: rgba(92, 107, 95, 0.05);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .page-container {
     padding: 16px 12px;
   }
@@ -215,8 +215,16 @@ body {
     border-radius: 8px;
   }
   /* 手機版取消表格固定欄位，避免擠壓中間內容 */
-  .ant-table-cell-fix-left,
-  .ant-table-cell-fix-right {
+  .ant-table-wrapper .ant-table-cell-fix-left,
+  .ant-table-wrapper .ant-table-cell-fix-right,
+  .ant-table-thead > tr > th.ant-table-cell-fix-left,
+  .ant-table-thead > tr > th.ant-table-cell-fix-right,
+  .ant-table-tbody > tr > td.ant-table-cell-fix-left,
+  .ant-table-tbody > tr > td.ant-table-cell-fix-right {
     position: static !important;
+    left: auto !important;
+    right: auto !important;
+    z-index: auto !important;
+    box-shadow: none !important;
   }
 }
