@@ -101,8 +101,6 @@ const fetchBills = async (page = 1) => {
       billStatus: searchForm.value.billStatus || undefined,
     })
 
-    console.log(response)
-
     bills.value = response.content.map((item) => ({
       ...item,
       dueDate: dayjs(item.dueDate).format('YYYY-MM-DD'),
@@ -129,9 +127,6 @@ const handleGenerateBills = async () => {
     message.success(`成功產生 ${count} 筆帳單`)
     await fetchBills(1)
   } catch (error) {
-    console.log(error)
-    console.log(error.response?.data?.message)
-
     message.error(error.response?.data?.message || '生成帳單失敗')
   } finally {
     generating.value = false
