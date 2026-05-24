@@ -16,10 +16,10 @@
       <!-- 右側表單 -->
       <section class="login-form-section">
         <div class="login-card">
-          <p class="login-eyebrow">Welcome Back</p>
-          <h1>歡迎回來</h1>
+          <p class="login-eyebrow">SECURE ACCESS</p>
+          <h1>身份驗證</h1>
           <div class="login-rule"></div>
-          <p class="login-subtitle">登入您的帳戶</p>
+          <p class="login-subtitle">確認身份後，繼續使用福庫銀行服務</p>
 
           <form @submit.prevent="handleLogin(false)" novalidate>
             <div class="jb-form-item">
