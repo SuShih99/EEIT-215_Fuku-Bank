@@ -6,6 +6,16 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from '@tailwindcss/vite'
 
 const backendTarget = 'http://127.0.0.1:8080'
+const userApiPrefixes = [
+  '/user/card-types',
+  '/user/card-applications',
+  '/user/card-application-documents',
+  '/user/card-txns',
+  '/user/card-payments',
+  '/user/card-bills',
+  '/user/card-accounts',
+  '/user/cards',
+]
 
 function backendProxy(label) {
   return {
@@ -37,7 +47,7 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': backendProxy('api'),
-      '/user': backendProxy('user'),
+      ...Object.fromEntries(userApiPrefixes.map((prefix) => [prefix, backendProxy(prefix)])),
       '/uploads': backendProxy('uploads'),
       '/img': backendProxy('img'),
     },
