@@ -242,13 +242,25 @@ async function applyCardType() {
   }
 }
 
+const isScrolled = ref(false)
+const cartExpanded = ref(false)
+
+function handleScroll() {
+  isScrolled.value = window.scrollY > 150
+  if (!isScrolled.value) {
+    cartExpanded.value = false
+  }
+}
+
 onMounted(() => {
   fetchCardTypes()
   fetchMyApplications()
+  window.addEventListener('scroll', handleScroll, { passive: true })
 })
 
 onBeforeUnmount(() => {
   revokeProofPreviewUrls()
+  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
@@ -324,28 +336,43 @@ onBeforeUnmount(() => {
           </article>
         </div>
 
-        <aside class="apply-cart">
+        <aside
+          class="apply-cart"
+          :class="{
+            'is-floating': isScrolled,
+            'is-expanded': cartExpanded
+          }"
+          @click="isScrolled && !cartExpanded ? (cartExpanded = true) : null"
+        >
           <div class="cart-head">
             <h3>申辦清單</h3>
             <span>{{ selectedCards.length }} 張卡</span>
+            <button
+              v-if="isScrolled && cartExpanded"
+              class="close-cart-btn"
+              type="button"
+              @click.stop="cartExpanded = false"
+            >✕</button>
           </div>
 
-          <div v-if="selectedCards.length === 0" class="cart-empty">
-            尚未加入卡片
-          </div>
-
-          <div v-else class="cart-list">
-            <div v-for="card in selectedCards" :key="card.cardTypeId" class="cart-item">
-              <span>{{ card.cardTypeName }}</span>
-
-              <button type="button" class="remove-btn" @click="removeFromCart(card.cardTypeId)">
-                移除
-              </button>
+          <div v-show="!isScrolled || cartExpanded" class="cart-body">
+            <div v-if="selectedCards.length === 0" class="cart-empty">
+              尚未加入卡片
             </div>
 
-            <button class="modal-confirm cart-submit" type="button" @click="openApplyModal">
-              立即申辦
-            </button>
+            <div v-else class="cart-list">
+              <div v-for="card in selectedCards" :key="card.cardTypeId" class="cart-item">
+                <span>{{ card.cardTypeName }}</span>
+
+                <button type="button" class="remove-btn" @click="removeFromCart(card.cardTypeId)">
+                  移除
+                </button>
+              </div>
+
+              <button class="modal-confirm cart-submit" type="button" @click="openApplyModal">
+                立即申辦
+              </button>
+            </div>
           </div>
         </aside>
       </div>
@@ -894,7 +921,8 @@ onBeforeUnmount(() => {
 }
 @media (max-width: 900px) {
   .card-layout {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
   }
 
   .card-type-grid {
@@ -902,7 +930,59 @@ onBeforeUnmount(() => {
   }
 
   .apply-cart {
+    order: -1;
+    margin-bottom: 24px;
+    width: 100%;
     position: static;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+
+  .apply-cart.is-floating {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    left: auto;
+    margin-bottom: 0;
+    width: auto;
+    border-radius: 999px;
+    padding: 12px 24px;
+    z-index: 100;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    cursor: pointer;
+  }
+
+  .apply-cart.is-floating .cart-head {
+    margin-bottom: 0;
+  }
+
+  .apply-cart.is-floating.is-expanded {
+    bottom: 24px;
+    right: 24px;
+    left: 24px;
+    width: auto;
+    border-radius: 16px;
+    padding: 20px;
+    cursor: default;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .apply-cart.is-floating.is-expanded .cart-head {
+    margin-bottom: 14px;
+  }
+
+  .close-cart-btn {
+    background: #f3f4f6;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    color: #4b5563;
   }
 }
 

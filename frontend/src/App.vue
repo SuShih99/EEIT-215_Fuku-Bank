@@ -1,5 +1,6 @@
 <script setup>
 import { RouterView } from 'vue-router'
+import ScrollToTop from '@/components/ScrollToTop.vue'
 
 // 核心解法：透過 Ant Design Vue 4 的 ConfigProvider 全域覆寫 Token
 const themeConfig = {
@@ -17,6 +18,7 @@ const themeConfig = {
   <!-- 將全站用 ConfigProvider 包裹，確保所有元件預設都是墨綠色 -->
   <a-config-provider :theme="themeConfig">
     <RouterView />
+    <ScrollToTop />
   </a-config-provider>
 </template>
 

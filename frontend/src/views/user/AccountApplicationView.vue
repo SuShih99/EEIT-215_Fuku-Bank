@@ -920,10 +920,10 @@ onMounted(async () => {
   max-width: 800px;
   margin: 0 auto;
   padding: var(--space-6) 0;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-6);
   box-sizing: border-box;
-  overflow-x: hidden;
 }
 
 /* === 頁面標題 === */
