@@ -3,21 +3,20 @@ import { ref, onMounted, onUnmounted } from 'vue'
 
 const showButton = ref(false)
 
+let scrollTarget = window
+
 function checkScroll(e) {
+  scrollTarget = e.target.nodeType === 9 ? window : e.target
   const scrollTop = e.target.scrollTop || window.scrollY || document.documentElement.scrollTop || 0
   showButton.value = scrollTop > 150
 }
 
 function scrollToTop() {
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth'
-  })
-  // Also scroll the main container if there is one
-  const userContent = document.querySelector('.user-content')
-  if (userContent) {
-    userContent.scrollTo({ top: 0, behavior: 'smooth' })
+  if (scrollTarget && typeof scrollTarget.scrollTo === 'function') {
+    scrollTarget.scrollTo({ top: 0, behavior: 'smooth' })
   }
+  // Fallback to ensure window scrolls
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 onMounted(() => {

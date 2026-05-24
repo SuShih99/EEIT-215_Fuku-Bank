@@ -948,8 +948,31 @@ onBeforeUnmount(() => {
     border-radius: 999px;
     padding: 12px 24px;
     z-index: 100;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
     cursor: pointer;
+  }
+
+  @keyframes cart-pop-in {
+    0% { transform: translateY(80px) scale(0.9); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+
+  @keyframes cart-breathe {
+    0% { box-shadow: 0 4px 12px rgba(92, 107, 95, 0.3), 0 0 0 0 rgba(92, 107, 95, 0.4); }
+    70% { box-shadow: 0 4px 12px rgba(92, 107, 95, 0.3), 0 0 0 12px rgba(92, 107, 95, 0); }
+    100% { box-shadow: 0 4px 12px rgba(92, 107, 95, 0.3), 0 0 0 0 rgba(92, 107, 95, 0); }
+  }
+
+  .apply-cart.is-floating:not(.is-expanded) {
+    background-color: var(--primary, #5c6b5f);
+    color: #ffffff;
+    border: none;
+    animation: cart-pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, cart-breathe 2s infinite ease-in-out 0.4s;
+  }
+
+  .apply-cart.is-floating:not(.is-expanded) .cart-title,
+  .apply-cart.is-floating:not(.is-expanded) .cart-count {
+    color: #ffffff;
+    margin: 0;
   }
 
   .apply-cart.is-floating .cart-head {
