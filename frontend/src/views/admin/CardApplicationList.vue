@@ -121,14 +121,11 @@ const fetchData = async () => {
       keyword: keyword.value,
       status: status.value,
     })
-    console.log(data);
     applications.value = data.content
-
-    console.log('applications:', applications.value)
 
     pagination.value.total = data.totalElements
   } catch (error) {
-    console.log(error)
+    message.error(error.response?.data?.message || '讀取申請資料失敗')
   } finally {
     loading.value = false
   }
@@ -144,7 +141,7 @@ const handleDelete = async (record) => {
         message.success('刪除成功')
         fetchData()
       } catch (error) {
-        console.log(error)
+        message.error(error.response?.data?.message || '刪除失敗')
       }
     },
   })
@@ -165,7 +162,7 @@ const handleUpdate = async (id, status) => {
     await updateApplicationStatus(id, status)
     fetchData()
   } catch (error) {
-    console.log(error)
+    message.error(error.response?.data?.message || '狀態更新失敗')
   }
 }
 
