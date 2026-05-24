@@ -3,8 +3,6 @@ package com.javaeasybank.creditcard.service;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
@@ -56,8 +54,6 @@ public class BillService {
     private final CardBillPDFService cardBillPDFService;
     private final NotificationService notificationService;
 
-    // 查帳單
-
     public Page<CardBillResponseDto> getBills(String customerName,
             String billingMonth,
             BillStatus billStatus,
@@ -73,18 +69,13 @@ public class BillService {
         return cardBillRepository.findAll(spec, sortedPageable).map(cardBillMapper::toDto);
     }
 
-    // 產生帳單
+    // 產生月結帳單，寄送 PDF 附件並入帳現金回饋。
     public Integer generateBills() throws IOException {
         int count = 0;
         int skippedExists = 0;
         int skippedNoTxns = 0;
         int processed = 0;
         String billingMonth = YearMonth.now().toString();
-
-        // if (cardBillRepository.existsByBillingMonth(billingMonth)) {
-        // throw new BusinessException("Bills for this month have already been
-        // generated");
-        // }
 
         int page = 0;
         int size = 20;
@@ -96,7 +87,6 @@ public class BillService {
             for (CardAccount cardAccount : cardAccountPage.getContent()) {
                 processed++;
 
-                // 已存在本月帳單則跳過
                 if (cardBillRepository.existsByCardAccountIdAndBillingMonth(cardAccount.getId(), billingMonth)) {
                     skippedExists++;
                     continue;
@@ -120,7 +110,6 @@ public class BillService {
 
                 BigDecimal total = previousUnpaid.add(currentTotal);
 
-                // 沒有任何應繳金額才跳過
                 if (total.compareTo(BigDecimal.ZERO) <= 0) {
                     skippedNoTxns++;
                     continue;
@@ -155,17 +144,6 @@ public class BillService {
                     cardBillRepository.saveAll(previousBills);
                 }
 
-                /*
-                 * 寄文字格式
-                 * emailService.sendCardBillStatementEmail(
-                 * cardAccount.getCustomer().getEmail(),
-                 * cardAccount.getCustomer().getName(),
-                 * billingMonth,
-                 * total,
-                 * minimumPayment,
-                 * savedBill.getDueDate(),
-                 * savedBill.getBillId());
-                 */
                 String idNumber = cardAccount.getCustomer().getIdNumber();
                 String pdfPassword = getIdNumberLast4(idNumber);
 
@@ -189,21 +167,6 @@ public class BillService {
                         "信用卡帳單已寄出",
                         "您的本期信用卡月結帳單已產生，請至信箱查看附件。",
                         "/user/card-bills");
-
-                // 寄檔案到本地
-                /*
-                 * CustomerProfile customer = cardAccount.getCustomer();
-                 * String last4 = customer.getIdNumber()
-                 * .substring(customer.getIdNumber().length() - 4);
-                 * Files.write(
-                 * Paths.get(
-                 * "uploads",
-                 * customer.getName()
-                 * + "-"
-                 * + last4
-                 * + ".pdf"),
-                 * pdfBytes);
-                 */
 
                 postCashbackReward(savedBill, cardAccount, cashbackAmount, billingMonth);
 
