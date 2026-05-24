@@ -85,8 +85,6 @@ const fetchBills = async () => {
   try {
     const res = await getBills(pagination.value.current - 1, pagination.value.pageSize)
 
-    console.log(res)
-
     bills.value = res.content
       .map((item) => ({
         ...item,
@@ -107,8 +105,6 @@ const fetchUnbilledTransactions = async () => {
 
   try {
     const res = await getUnbilledBills(pagination.value.current - 1, pagination.value.pageSize)
-
-    console.log(res)
 
     unbilledTransactions.value = res.content
       .map((item) => ({
@@ -167,8 +163,6 @@ const handlePayment = async (bill) => {
 const fetchAccounts = async () => {
   try {
     const res = await getPaymentAccounts()
-
-    console.log(res)
 
     paymentAccounts.value = res
 
