@@ -422,7 +422,6 @@ const displayTotalPages = computed(() => Math.max(totalPages.value || 1, 1))
 const fetchCards = async () => {
   try {
     const response = await getMyCards()
-    console.log(response)
 
     cards.value = Array.isArray(response) ? response : []
   } catch (error) {
@@ -435,7 +434,6 @@ const fetchTransactions = async () => {
   try {
     loading.value = true
     const response = await getTransactions(currentPage.value, pageSize.value)
-    console.log(response)
     transactions.value = Array.isArray(response?.content) ? response.content : []
     totalPages.value = response?.totalPages ?? 0
     totalElements.value = response?.totalElements ?? 0
