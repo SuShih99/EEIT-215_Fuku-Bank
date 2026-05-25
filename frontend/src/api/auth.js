@@ -1,7 +1,5 @@
 import api from './axios'
 
-// === 統一管理 Auth 的 API 設定 ===
-
 // 員工登入
 export function login(data) {
   return api.post('/api/auth/login', data)

@@ -294,8 +294,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import api from '@/api/axios'
-
-// ── 狀態變數 ──
 const accounts       = ref([])   // 貸款帳戶清單
 const loading        = ref(false)
 const error          = ref('')
@@ -304,8 +302,6 @@ const showModal      = ref(false)
 const modalAccount   = ref(null)
 const repayments     = ref([])   // Modal 中的帳戶還款明細
 const repaymentLoading = ref(false)
-
-// ── 貸款類型對照 ──
 const LOAN_TYPE_MAP = {
   PERSONAL: '個人信貸',
   CAR:      '汽車貸款',
@@ -315,22 +311,16 @@ const LOAN_TYPE_MAP = {
   HOUSE:    '房屋貸款',
   LAND:     '土地貸款',
 }
-
-// ── 帳戶狀態對照 ──
 const ACCOUNT_STATUS = {
   ACTIVE:   { label: '還款中',   cls: 'st-active'  },
   OVERDUE:  { label: '逾期',     cls: 'st-overdue' },
   PAID_OFF: { label: '已結清',   cls: 'st-paidoff' },
 }
-
-// ── 還款狀態對照 ──
 const REPAYMENT_STATUS = {
   SCHEDULED: { label: '待繳',   cls: 'rs-scheduled' },
   PAID:      { label: '已繳',   cls: 'rs-paid'      },
   OVERDUE:   { label: '逾期',   cls: 'rs-overdue'   },
 }
-
-// ── 排序 + 篩選 ──
 const filteredSortedAccounts = computed(() => {
   let list = filterStatus.value
     ? accounts.value.filter(a => a.accountStatus === filterStatus.value)
@@ -348,16 +338,10 @@ const filteredSortedAccounts = computed(() => {
     return da - db
   })
 })
-
-// ── helper：帳戶狀態 ──
 function statusLabel(st) { return ACCOUNT_STATUS[st]?.label || st }
 function statusClass(st) { return ACCOUNT_STATUS[st]?.cls   || '' }
-
-// ── helper：還款狀態 ──
 function repStatusLabel(st) { return REPAYMENT_STATUS[st]?.label || st }
 function repStatusClass(st) { return REPAYMENT_STATUS[st]?.cls   || '' }
-
-// ── helper：還款進度 ──
 function progressPct(acc) {
   const paid = Number(acc.paidPeriods || 0)
   const total = Number(acc.confirmedPeriod || 0)
@@ -369,8 +353,6 @@ function progressClass(acc) {
   if (acc.accountStatus === 'PAID_OFF') return 'prog-done'
   return 'prog-active'
 }
-
-// ── helper：圓形進度圖 ──
 function paidRatio(acc) {
   if (!acc.principalAmount || acc.principalAmount === 0) return 0
   const paid = acc.principalAmount - (acc.remainingPrincipal ?? acc.principalAmount)
@@ -381,20 +363,14 @@ function progressStroke(acc) {
   if (acc.accountStatus === 'PAID_OFF') return '#4A8C5C'
   return '#5C6B5F'
 }
-
-// ── helper：逾期判斷（用於下次繳款日變紅）──
 function isOverdue(acc) {
   return acc.accountStatus === 'OVERDUE'
 }
-
-// ── 表格列樣式（已繳列淡化）──
 function rowClass(st) {
   if (st === 'PAID')    return 'row-paid'
   if (st === 'OVERDUE') return 'row-overdue'
   return ''
 }
-
-// ── 格式化工具 ──
 function formatAmount(n) {
   return n != null ? Number(n).toLocaleString('zh-TW') : '—'
 }
@@ -412,8 +388,6 @@ function formatDate(d) {
   // 支援 LocalDate（YYYY-MM-DD）與 LocalDateTime
   return String(d).substring(0, 10)
 }
-
-// ── API：載入我的貸款帳戶 ──
 async function loadAccounts() {
   loading.value = true
   error.value = ''
@@ -429,8 +403,6 @@ async function loadAccounts() {
     loading.value = false
   }
 }
-
-// ── API：開啟還款明細 Modal ──
 async function openRepaymentModal(acc) {
   modalAccount.value = acc
   showModal.value = true

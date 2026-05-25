@@ -111,8 +111,6 @@ public class CreditScoreService {
         ccInfo.setOccupation(occupation);
         ccInfo.setAnnualIncome(annualIncome);
         ccInfo.setFundSource(fundSource);
-
-        // 💡 寫入開戶拿到的真實資料 (防呆處理)
         ccInfo.setIsPep(isPep != null ? isPep : false);
         // ccInfo.setJobTitle(job); // 儲存詳細職稱作未來稽核(KYC)使用
         CreditMockUtils.fillMissingFields(ccInfo, birthday);

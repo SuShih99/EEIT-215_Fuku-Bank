@@ -22,8 +22,6 @@ public class PendingTransfer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ── 轉帳資料 ──────────────────────────────────────
-
     /** 轉帳流水號（對外顯示用） */
     @Column(name = "reference_id", nullable = false, unique = true, length = 50)
     private String referenceId;
@@ -52,8 +50,6 @@ public class PendingTransfer {
     @Column(length = 200, columnDefinition = "NVARCHAR(200)")
     private String note;
 
-    // ── 風控關聯 ──────────────────────────────────────
-
     /** 對應的 RiskEventLog.logId */
     @Column(name = "risk_log_id")
     private Long riskLogId;
@@ -66,8 +62,6 @@ public class PendingTransfer {
     @Column(name = "hold_reason", length = 200, columnDefinition = "NVARCHAR(200)")
     private String holdReason;
 
-    // ── 狀態 ──────────────────────────────────────────
-
     /**
      * PENDING   → 等待人工審核
      * APPROVED  → 審核通過，轉帳執行中
@@ -77,8 +71,6 @@ public class PendingTransfer {
      */
     @Column(nullable = false, length = 20)
     private String status = "PENDING";
-
-    // ── 時間戳 ────────────────────────────────────────
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)

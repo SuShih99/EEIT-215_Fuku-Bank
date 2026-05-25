@@ -563,7 +563,6 @@ function handleLogout() {
   overflow-x: hidden;
 }
 
-/* === Header Top (Logo + User) === */
 .user-header {
   position: sticky;
   top: 0;
@@ -966,7 +965,6 @@ function handleLogout() {
   border-radius: 50%;
 }
 
-/* === Mega Nav Bar === */
 .mega-nav {
   border-bottom: 1px solid var(--border);
   background: rgba(245, 241, 234, 0.98);
@@ -1039,7 +1037,6 @@ function handleLogout() {
   transform: rotate(180deg);
 }
 
-/* === Dropdown Panel === */
 .mega-dropdown {
   position: absolute;
   top: 100%;
@@ -1102,7 +1099,6 @@ function handleLogout() {
   display: none;
 }
 
-/* === Dropdown Transition === */
 .dropdown-enter-active {
   transition: opacity 0.18s var(--ease), transform 0.18s var(--ease);
 }
@@ -1118,7 +1114,6 @@ function handleLogout() {
   transform: translateY(-4px);
 }
 
-/* === Content === */
 .user-content {
   width: 100%;
   max-width: 1400px;
@@ -1127,7 +1122,6 @@ function handleLogout() {
   overflow-x: hidden;
 }
 
-/* === Mobile === */
 @media (max-width: 900px) {
   .mega-nav {
     position: relative;
@@ -1364,7 +1358,6 @@ function handleLogout() {
   }
 }
 
-/* === Modal Styles (Consistent with Profile) === */
 .jb-modal-overlay {
   position: fixed;
   inset: 0;

@@ -94,10 +94,7 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
         this.creditScoreService = creditScoreService;
         this.customerCreditRepository = customerCreditRepository;
     }
-
-    // ===========================
     // 註冊
-    // ===========================
     @Override
     @Transactional
     public CustomerRespository.LoginResponse register(CustomerRespository.RegisterRequest request) {
@@ -174,10 +171,7 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
         response.setRole("CUSTOMER");
         return response;
     }
-
-    // ===========================
     // 登入
-    // ===========================
     @Override
     public CustomerRespository.LoginResponse login(CustomerRespository.LoginRequest request, String ipAddress,
                                                    String userAgent) {
@@ -282,10 +276,7 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
         auth.setVerificationToken(null);
         customerAuthRepository.save(auth);
     }
-
-    // ===========================
     // 取得個人資料
-    // ===========================
     @Override
     public CustomerRespository.CustomerResponse getProfile(String customerId) {
         CustomerProfile profile = customerProfileRepository.findById(customerId)
@@ -295,10 +286,7 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
 
         return convertToResponse(profile, auth);
     }
-
-    // ===========================
     // 修改個人資料
-    // ===========================
     @Override
     @Transactional
     public CustomerRespository.CustomerResponse updateProfile(String customerId,
@@ -364,10 +352,7 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
 
         return convertToResponse(profile, auth);
     }
-
-    // ===========================
     // 上傳大頭照
-    // ===========================
     @Override
     @Transactional
     public CustomerRespository.CustomerResponse uploadAvatar(String customerId, String avatarUrl) {
@@ -381,10 +366,7 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
                 .orElseThrow(() -> new BusinessException("認證資料異常"));
         return convertToResponse(profile, auth);
     }
-
-    // ===========================
     // 請求密碼重設（產生 token + 印出連結）
-    // ===========================
     @Override
     @Transactional
     public void requestPasswordReset(CustomerRespository.PasswordResetEmailRequest request) {
@@ -428,10 +410,7 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
                 "您已申請重設密碼，請依信件完成驗證。",
                 "/login");
     }
-
-    // ===========================
     // 執行密碼重設
-    // ===========================
     @Override
     @Transactional
     public void resetPassword(CustomerRespository.PasswordResetRequest request) {
@@ -455,10 +434,7 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
                 "Password reset completed",
                 "安全中心 / 密碼重設");
     }
-
-    // ===========================
     // 一鍵帶入客戶認證測試資料
-    // ===========================
     @Override
     @Transactional
     public void seedAuthTestData() {
@@ -484,10 +460,7 @@ public class CustomerAuthServiceImpl implements CustomerAuthService {
             }
         }
     }
-
-    // ===========================
     // 私有方法
-    // ===========================
     private void handleLoginFailure(CustomerAuth auth, CustomerProfile profile, String email, String location,
                                     String failReason,
                                     String ipAddress, String userAgent, String deviceName, String userErrorMessage) {

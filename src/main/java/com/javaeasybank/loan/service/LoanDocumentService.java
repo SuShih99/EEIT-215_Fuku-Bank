@@ -43,8 +43,6 @@ public class LoanDocumentService {
     @Autowired
     private LoanRiskClient loanRiskClient;
 
-    // ── 上傳 ─────────────────────────────────────────────────────────
-
     // 客戶上傳單份補件文件
     public LoanDocumentResponseDTO upload(String applicationId,
                                           String customerId,
@@ -103,8 +101,6 @@ public class LoanDocumentService {
         return toResponseDTO(doc);
     }
 
-    // ── 送出補件 ─────────────────────────────────────────────────────
-
     // 客戶確認補件已全數備妥並正式送出
     public void submitDocuments(String applicationId, String customerId) {
         LoanApplication loan = loanApplicationRepo.findById(applicationId)
@@ -162,8 +158,6 @@ public class LoanDocumentService {
         }
     }
 
-    // ── 刪除 ─────────────────────────────────────────────────────────
-
     // 客戶刪除自己上傳的補件文件（補件送出前才允許）
     public void delete(String documentId, String customerId) {
         LoanDocument doc = documentRepo.findById(documentId)
@@ -198,8 +192,6 @@ public class LoanDocumentService {
         log.info("[Document] 刪除完成 documentId={}", documentId);
     }
 
-    // ── 查詢 ─────────────────────────────────────────────────────────
-
     // 客戶端查詢補件文件清單（需驗證所有權）
     @Transactional(readOnly = true)
     public List<LoanDocumentResponseDTO> getByApplicationId(String applicationId, String customerId) {
@@ -232,8 +224,6 @@ public class LoanDocumentService {
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
     }
-
-    // ── 工具方法 ─────────────────────────────────────────────────────
 
     // 產生格式化識別碼：前綴 + yyyyMMddHHmmss + 4 位隨機數字
     private String generateId(String prefix) {

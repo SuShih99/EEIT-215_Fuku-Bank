@@ -682,7 +682,6 @@ h2 {
   }
 }
 
-/* === Modal Styles === */
 .jb-modal-overlay {
   position: fixed;
   inset: 0;

@@ -186,8 +186,6 @@ const columns = [
   { title: '操作', key: 'action', width: 80, fixed: 'right' },
 ]
 
-// ── API ──────────────────────────────────────────────
-
 async function fetchList() {
   loading.value = true
   try {
@@ -250,8 +248,6 @@ async function handleModalOk() {
     submitting.value = false
   }
 }
-
-// ── 事件處理 ─────────────────────────────────────────
 
 function handleTableChange(pag) {
   pagination.current = pag.current

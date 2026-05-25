@@ -1,7 +1,5 @@
 import api from './axios'
 
-// === 統一管理 Account 的 API 設定 ===
-
 // 建立帳戶
 export function createAccount(data) {
   return api.post('/api/accounts', data)

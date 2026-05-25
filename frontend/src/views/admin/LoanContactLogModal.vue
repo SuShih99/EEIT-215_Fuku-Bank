@@ -189,15 +189,11 @@
 <script setup>
 import { ref, watch, reactive } from 'vue'
 import api from '@/api/axios'
-
-// ── Props / Emits ──
 const props = defineProps({
   modelValue: Boolean,   // v-model 控制開關
   app: Object,           // 傳入的申請資料
 })
 const emit = defineEmits(['update:modelValue', 'log-added'])
-
-// ── Constants ──
 const currentEmpId = (() => {
   try { return JSON.parse(localStorage.getItem('auth_user'))?.empId || '' }
   catch { return '' }
@@ -230,8 +226,6 @@ const CHANNEL_OPTIONS = [
   { value: 'SMS',   label: 'SMS',  icon: 'fa-solid fa-comment-sms'  },
 ]
 const CHANNEL_ICON = { PHONE: 'fa-solid fa-square-phone', EMAIL: 'fa-solid fa-envelope', SMS: 'fa-solid fa-comment-sms' }
-
-// ── State ──
 const logs        = ref([])
 const logsLoading = ref(false)
 const submitLoading = ref(false)
@@ -244,8 +238,6 @@ const form = reactive({
   note: '',
 })
 const formAlert = reactive({ show: false, type: 'success', msg: '' })
-
-// ── Watch：開啟 modal 時載入紀錄 ──
 watch(() => props.modelValue, (open) => {
   if (open && props.app?.applicationId) {
     fetchLogs()
@@ -253,8 +245,6 @@ watch(() => props.modelValue, (open) => {
     form.empId = currentEmpId
   }
 })
-
-// ── Methods ──
 async function fetchLogs() {
   logsLoading.value = true
   try {
@@ -312,8 +302,6 @@ function showAlert(type, msg) {
 function close() {
   emit('update:modelValue', false)
 }
-
-// ── Formatters ──
 function formatDateTime(d) {
   if (!d) return '—'
   return d.replace('T', ' ').substring(0, 16)

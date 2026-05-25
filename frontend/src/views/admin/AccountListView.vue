@@ -366,8 +366,6 @@ ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Le
 const authStore = useAuthStore()
 const canCreateAccounts = computed(() => authStore.user?.roleCode === 'CFDM')
 const canSeeAccountActions = computed(() => ['CFDM', 'CFSO'].includes(authStore.user?.roleCode))
-
-// === 狀態/型別 中文對照 ===
 const statusMap = {
   PENDING: '待啟用',
   ACTIVE: '正常',
@@ -384,8 +382,6 @@ const typeMap = {
   SUB_ACCOUNT: '子帳戶',
   CREDIT_CARD: '信用卡',
 }
-
-// === 格式化工具 ===
 function formatAmount(value) {
   if (value == null) return '-'
   return Number(value).toLocaleString()
@@ -402,8 +398,6 @@ function formatTime(value) {
   if (!value) return '-'
   return value.replace('T', ' ').substring(0, 19)
 }
-
-// === 查詢相關 ===
 const customerNameSearch = ref('')
 const accountNumberSearch = ref('')
 const customerId = ref('')
@@ -707,8 +701,6 @@ function validateCustomerId() {
     ? '客戶 ID 不可包含中文'
     : ''
 }
-
-// === 建立帳戶相關 ===
 const showCreateModal = ref(false)
 const createLoading = ref(false)
 
@@ -791,8 +783,6 @@ async function doCreateAccount(data) {
     createLoading.value = false
   }
 }
-
-// === 一鍵帶入 Demo 資料 ===
 // customer_profile 的真實 customer_id（來自 seed 資料）
 const demoCustomerIds = [
   'X7K9P2M4', 'V4L6T1Y8', 'D3H8F5G2', 'B9W1C7R5', 'P6M4N2Q8',
@@ -821,8 +811,6 @@ async function handleClear() {
   currentPage.value = 1
   await fetchData()
 }
-
-// === 狀態變更相關 ===
 const showStatusModal = ref(false)
 const statusModalLoading = ref(false)
 const statusTarget = reactive({

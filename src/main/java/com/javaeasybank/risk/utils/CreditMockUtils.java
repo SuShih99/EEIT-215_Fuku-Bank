@@ -10,16 +10,7 @@ import java.time.LocalDate;
 import java.time.Period;
 import java.util.concurrent.ThreadLocalRandom;
 
-/**
- * 信用資料模擬工具
- * 只負責填入開戶蒐集不到的欄位：
- *   - externalScore（聯徵分數）
- *   - otherBankDebt（他行負債）
- *   - hasRealEstate（有無不動產）
- *
- * occupation / annualIncome / fundSource / isPep / industry
- * 已由開戶真實資料填入，不在此產生。
- */
+
 public class CreditMockUtils {
 
     private CreditMockUtils() {}
@@ -43,8 +34,6 @@ public class CreditMockUtils {
         info.setHasRealEstate(
                 generateHasRealEstate(info.getAnnualIncome(), info.getFundSource(), age));
     }
-
-    // ── 聯徵分數 ──────────────────────────────────────────────────────────────
 
     /**
      * 依職業穩定性為基礎，年收入加成，加上隨機擾動。
@@ -77,8 +66,6 @@ public class CreditMockUtils {
         return Math.clamp(base + incomeBonus + jitter, 300, 800);
     }
 
-    // ── 他行負債 ──────────────────────────────────────────────────────────────
-
     /**
      * 依資金來源決定負債傾向，隨機生成年收入的 0 ~ maxRatio 倍。
      */
@@ -101,8 +88,6 @@ public class CreditMockUtils {
         return annualIncome.multiply(BigDecimal.valueOf(ratio))
                 .setScale(2, RoundingMode.HALF_UP);
     }
-
-    // ── 有無不動產 ────────────────────────────────────────────────────────────
 
     /**
      * 依年齡為基礎機率，高收入與特定資金來源加成。
@@ -131,8 +116,6 @@ public class CreditMockUtils {
         double probability = Math.min(0.85, base + incomeBonus + sourceBonus);
         return ThreadLocalRandom.current().nextDouble() < probability;
     }
-
-    // ── 驗證 ──────────────────────────────────────────────────────────────────
 
     private static void validateBirthday(LocalDate birthday) {
         if (birthday == null) {

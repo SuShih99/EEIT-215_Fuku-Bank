@@ -22,19 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-/**
- * 開戶申請 Controller
- *
- * 客戶端：
- *   POST   /api/customer/account-applications          提交開戶申請（multipart）
- *   GET    /api/customer/account-applications           查詢我的申請列表
- *
- * 管理端：
- *   GET    /api/admin/account-applications              查詢全部申請（可篩選狀態）
- *   GET    /api/admin/account-applications/{id}         查詢單筆申請詳情
- *   PATCH  /api/admin/account-applications/{id}/approve 核准
- *   PATCH  /api/admin/account-applications/{id}/reject  駁回
- */
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -45,10 +33,7 @@ public class AccountApplicationController {
     private final JwtUtil jwtUtil;
 
     private static final String ID_CARDS_DIR = "id-cards";
-
-    // =========================================================
     // 客戶端
-    // =========================================================
 
     /**
      * 提交開戶申請（含三張證件圖片上傳）
@@ -88,10 +73,7 @@ public class AccountApplicationController {
         List<AccountApplicationResponse> list = applicationService.getMyApplications(customerId);
         return ResponseEntity.ok(ApiResponse.success(list));
     }
-
-    // =========================================================
     // 管理端
-    // =========================================================
 
     /**
      * 查詢申請列表（可選狀態篩選，分頁）
@@ -176,16 +158,10 @@ public class AccountApplicationController {
                 applicationService.reject(id, rejectRequest.reason(), reviewedBy);
         return ResponseEntity.ok(ApiResponse.success("開戶申請已駁回", response));
     }
-
-    // =========================================================
     // Inner DTO
-    // =========================================================
 
     public record RejectRequest(String reason) {}
-
-    // =========================================================
     // Private Helpers
-    // =========================================================
 
     private String getAdminUsername(HttpServletRequest request) {
         // 從 Security Context 取得管理員帳號

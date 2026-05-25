@@ -59,8 +59,6 @@ public class CardTxnService {
         if (dto.getTxnAmount() == null || dto.getTxnAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException("交易金額必須大於 0");
         }
-
-        // ===== 額度檢查 =====
         CardAccount cardAccount = card.getCardAccount();
         if (cardAccount == null || cardAccount.getCreditLimit() == null) {
             throw new BusinessException("Credit card account limit is not configured");
@@ -72,8 +70,6 @@ public class CardTxnService {
         if (dto.getTxnAmount().compareTo(availableCredit) > 0) {
             throw new BusinessException("信用額度不足");
         }
-
-        // ===== 建立交易 =====
         CardTransaction txn = new CardTransaction();
 
         txn.setTxnAmount(dto.getTxnAmount());
@@ -93,8 +89,6 @@ public class CardTxnService {
                         ? dto.getChannel()
                         : TransactionChannel.CARD);
         txn.setExternalTxnId(dto.getExternalTxnId());
-
-        // ===== 更新已使用額度 =====
         card.setCurrentDebt(zeroIfNull(card.getCurrentDebt()).add(dto.getTxnAmount()));
         // 計算回饋
         // 初始值為0，避免為null
@@ -177,30 +171,18 @@ public class CardTxnService {
 
         // 建立刷退交易
         CardTransaction refundTxn = new CardTransaction();
-
-        // ===== 基本資料 =====
         refundTxn.setCard(originalTxn.getCard());
 
         refundTxn.setMerchant(originalTxn.getMerchant());
 
         refundTxn.setTxnDate(LocalDateTime.now());
-
-        // ===== 刷退金額（負數）=====
         refundTxn.setTxnAmount(
                 originalTxn.getTxnAmount().negate());
-
-        // ===== 類型 =====
         refundTxn.setTxnType(TxnType.REFUND);
-
-        // ===== 描述 =====
         refundTxn.setDescription(
                 "Refund - " + originalTxn.getDescription());
-
-        // ===== 可選：紀錄原交易 =====
         // refundTxn.setOriginalTxn(originalTxn);
         refundTxn.setRefTxn(originalTxn);
-
-        // ===== 更新信用卡已使用額度 =====
         CreditCard card = originalTxn.getCard();
         card.setCurrentDebt(zeroIfNull(card.getCurrentDebt()).subtract(originalTxn.getTxnAmount()));
         // 計算回饋

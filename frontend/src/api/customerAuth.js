@@ -1,7 +1,5 @@
 import api from './axios'
 
-// === 統一管理 Customer Auth 的 API 設定 ===
-
 // 客戶註冊
 export function customerRegister(data) {
   return api.post('/api/customer/auth/register', data)

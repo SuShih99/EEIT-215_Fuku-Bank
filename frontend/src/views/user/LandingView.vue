@@ -265,7 +265,6 @@ function updateIntroMode() {
   background-repeat: no-repeat;
 }
 
-/* === Washi Texture Overlay === */
 .washi-overlay {
   position: fixed;
   inset: 0;
@@ -348,7 +347,6 @@ function updateIntroMode() {
   overflow: hidden;
 }
 
-/* === Scroll Reveal === */
 .reveal {
   opacity: 0;
   transform: translateY(16px);
@@ -359,7 +357,6 @@ function updateIntroMode() {
   transform: translateY(0);
 }
 
-/* === Header === */
 .landing-header {
   position: sticky;
   top: 0;
@@ -393,7 +390,6 @@ function updateIntroMode() {
   margin-right: var(--space-3);
 }
 
-/* === Hero === */
 .hero {
   padding: 84px var(--space-8) 84px;
 }
@@ -560,7 +556,6 @@ function updateIntroMode() {
   50% { transform: scale(1.03); opacity: 1; }
 }
 
-/* === Section Header === */
 .section-header {
   text-align: center;
   margin-bottom: var(--space-7);
@@ -596,7 +591,6 @@ function updateIntroMode() {
   color: var(--text-secondary);
 }
 
-/* === Preview (服務預覽) === */
 .preview {
   padding: 52px var(--space-8) 96px;
   max-width: 1400px;
@@ -657,7 +651,6 @@ function updateIntroMode() {
   line-height: var(--leading);
 }
 
-/* === Values (品牌特色) === */
 .values {
   padding: 96px var(--space-8) 140px;
   max-width: 1400px;
@@ -736,7 +729,6 @@ function updateIntroMode() {
   line-height: 1.9;
 }
 
-/* === CTA === */
 .cta-section {
   padding: 0 var(--space-8) 120px;
   max-width: 1400px;
@@ -773,7 +765,6 @@ function updateIntroMode() {
   opacity: 0.9;
 }
 
-/* === Footer === */
 .landing-footer {
   text-align: center;
   padding: var(--space-7) var(--space-6);
@@ -798,7 +789,6 @@ function updateIntroMode() {
   letter-spacing: 1px;
 }
 
-/* === RWD === */
 @media (max-width: 900px) {
   .hero { padding: 52px var(--space-4) 72px; }
   .hero-inner {

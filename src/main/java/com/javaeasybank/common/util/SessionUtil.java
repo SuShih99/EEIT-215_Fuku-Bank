@@ -2,17 +2,7 @@ package com.javaeasybank.common.util;
 
 import jakarta.servlet.http.HttpSession;
 
-/**
- * 登入驗證工具。
- *
- * 統一管理 Session 的 key 名稱與驗證邏輯。
- * 所有需要驗證登入的 Controller 都呼叫這裡的方法，
- * 不要各自從 session 取 attribute 自己判斷。
- *
- * 目前為階段一做法：Security 全部放行，手動用 SessionUtil 驗證。
- * 階段二（Week 3）會切換到 Spring Security 統一管控，屆時由組長處理。
- *
- */
+
 public class SessionUtil {
 
     // Session 裡存放登入資訊的 key，統一在這裡定義
@@ -22,15 +12,11 @@ public class SessionUtil {
     private static final String ROLE_KEY = "loginRole";
 
     // 經理角色的 roleId，與 auth 模組的 role 表對應
-    // TODO: 未來可改為從設定檔或資料庫讀取，目前先寫死
     private static final int MANAGER_ROLE_ID = 1;
 
     // 工具類別不需要被實例化，constructor 設為 private
     private SessionUtil() {}
-
-    // ==========================================
     // 寫入 Session（登入）
-    // ==========================================
 
     /**
      * 行員登入，將登入標記與角色 ID 寫入 Session。
@@ -52,10 +38,7 @@ public class SessionUtil {
     public static void loginCustomer(HttpSession session, Long customerId) {
         session.setAttribute(CLIENT_KEY, customerId);
     }
-
-    // ==========================================
     // 讀取 Session（驗證）
-    // ==========================================
 
     /**
      * 確認行員是否已登入。
@@ -102,10 +85,7 @@ public class SessionUtil {
         Object customerId = session.getAttribute(CLIENT_KEY);
         return customerId != null ? (Long) customerId : null;
     }
-
-    // ==========================================
     // 登出
-    // ==========================================
 
     /**
      * 登出，銷毀整個 session。

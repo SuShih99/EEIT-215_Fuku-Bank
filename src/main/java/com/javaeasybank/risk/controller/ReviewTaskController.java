@@ -48,7 +48,7 @@ public class ReviewTaskController {
     @PreAuthorize("hasAnyRole('CISO', 'CFDM')")
     public ResponseEntity<ApiResponse<Void>> startProcessing(
             @PathVariable Long taskId,
-            Authentication authentication) { // 👈 1. 注入當前登入用戶的驗證資訊
+            Authentication authentication) {
 
         // 2. 取得管理員的標識（對應前端 Vue 的 currentUser.email 或 username）
         String currentAdminIdentifier = authentication.getName();

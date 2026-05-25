@@ -806,8 +806,6 @@ const currentTrigger = computed(() => {
     return null
   }
 })
-
-// 2. ✨ 新增：專門用來安全解析後端 metaData 欄位的屬性
 const drawerMeta = computed(() => {
   if (!drawerTask.value?.metaData) return null
   try {
@@ -887,8 +885,7 @@ function isImage(url) {
 .page-container {
   display: flex;
   flex-direction: column;
-  gap: 16px; /* 💡 保持一致的留白 */
-}
+  gap: 16px; }
 
 /* ── 頁首：標題 + 篩選列 同一列，左右對齊 ── */
 .page-header {
@@ -900,7 +897,6 @@ function isImage(url) {
   margin-bottom: 8px;
 }
 
-/* 💡 調整：放大頁面主標題到 24px 完全同步 */
 .page-title {
   margin: 0;
   font-size: 24px;
@@ -920,8 +916,7 @@ function isImage(url) {
   background: #ffffff;
   border: 1px solid #f0f0f0;
   border-radius: 8px;
-  padding: 18px 32px; /* 💡 加寬襯墊更舒適 */
-  margin-bottom: 8px;
+  padding: 18px 32px; margin-bottom: 8px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
@@ -940,7 +935,6 @@ function isImage(url) {
   margin: 0 12px;
 }
 
-/* 💡 調整：統計卡片字級調整放大 */
 .stat-label {
   font-size: 14px;
   color: #8c8c8c;
@@ -994,7 +988,6 @@ function isImage(url) {
   background: #fafafa;
 }
 
-/* 💡 控制頂部篩選下拉選單與按鈕的字體 */
 :deep(.ant-select) {
   font-size: 16px !important;
 }
@@ -1013,7 +1006,6 @@ function isImage(url) {
   color: #595959;
 }
 
-/* 💡 調整：表格內部與卡片內的 Tag 統一文字大小 */
 .table-badge {
   font-size: 15px !important;
   padding: 2px 8px !important;
@@ -1090,7 +1082,6 @@ function isImage(url) {
   font-size: 16px !important;
 }
 
-/* ── 💡 調整：沉穩、專業金融質感的風險藥丸樣式 ── */
 .status-tag {
   display: inline-flex;
   align-items: center;

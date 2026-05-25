@@ -21,8 +21,6 @@ public class CustomerCreditInfo {
     @Id
     @Column(name = "customer_id", length = 20)
     private String customerId;
-
-    // --- 財務維度 (模擬外部輸入) ---
     @Column(name = "annual_income", precision = 15, scale = 2)
     private BigDecimal annualIncome = BigDecimal.ZERO;
 
@@ -34,8 +32,6 @@ public class CustomerCreditInfo {
     @Nationalized
     @Column(name = "job", length = 100, columnDefinition = "NVARCHAR(100)")
     private String  job;
-
-    // --- 信用維度 (模擬聯徵/外部資料) ---
     @Column(name = "external_score")
     private Integer externalScore = 0; // 300 ~ 800
 
@@ -51,8 +47,6 @@ public class CustomerCreditInfo {
 
     @Column(name = "is_pep", columnDefinition = "BIT NOT NULL DEFAULT 0")
     private Boolean isPep = false;
-
-    // --- 評分結果 (Service計算後回填) ---
 
 
     @Column(name = "final_score")

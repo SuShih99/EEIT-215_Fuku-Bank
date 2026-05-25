@@ -465,9 +465,6 @@ import axios from 'axios'
 import { useCustomerAuthStore } from '@/stores/customerAuth'
 import { getMyAccounts } from '@/api/customerAccount'
 import { useRouter } from 'vue-router'
-
-
-// ── Constants ──
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 const router = useRouter()
 
@@ -481,17 +478,11 @@ const LOAN_TYPE_LIST = [
   { key: 'LAND',     name: '土地貸款', icon: 'fa-solid fa-earth-asia',    desc: '土地投資，靈活運用資金'      },
 ]
 const LOAN_TYPE_MAP = Object.fromEntries(LOAN_TYPE_LIST.map(t => [t.key, t.name]))
-
-// ── Showcase 輪播 ──
 const showcaseIndex = ref(0)
 let showcaseTimer = null
-
-// ── Auth Store ──
 const customerAuthStore = useCustomerAuthStore()
 const customerCif  = computed(() => customerAuthStore.customer?.cif  || '')
 const customerName = computed(() => customerAuthStore.customer?.name || '')
-
-// ── Account State ──
 const accounts        = ref([])
 const accountsLoading = ref(false)
 const accountsError   = ref('')
@@ -504,15 +495,11 @@ const twdCheckingAccounts = computed(() =>
          a.status === 'ACTIVE'
   )
 )
-
-// ── State ──
 const step        = ref('entry')
 const rateRules   = ref(null)
 const submitting  = ref(false)
 const submitError = ref('')
 const resultId    = ref('')
-
-// ── 同意書 ──
 const consentBox      = ref(null)   // template ref
 const consentScrolled = ref(false)
 const consentCheck1   = ref(false)
@@ -531,8 +518,6 @@ const errors = reactive({
   applyPeriod:         '',
   disbursementAccount: '',
 })
-
-// ── Computed ──
 const availablePeriods = computed(() => {
   if (!rateRules.value || !form.applyType) return []
   return rateRules.value.types[form.applyType]?.periods || []
@@ -562,13 +547,9 @@ const estimatedMonthly = computed(() => {
   const m = pv * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1)
   return '$ ' + Math.round(m).toLocaleString('zh-TW')
 })
-
-// ── Watch ──
 watch(() => form.applyType, () => {
   form.applyPeriod = null
 })
-
-// ── Methods ──
 async function loadRateRules() {
   try {
     const r = await axios.get(`${BASE_URL}/api/loan-applications/rate-rules`)
@@ -743,8 +724,6 @@ async function loadAccounts() {
     accountsLoading.value = false
   }
 }
-
-// ── Lifecycle ──
 onMounted(() => {
   loadRateRules()
   loadAccounts()

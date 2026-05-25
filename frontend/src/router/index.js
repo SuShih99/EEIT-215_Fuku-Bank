@@ -3,7 +3,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // === 客戶端：登入前 ===
     {
       path: '/',
       name: 'landing',
@@ -29,8 +28,6 @@ const router = createRouter({
       name: 'reset-password',
       component: () => import('../views/user/ResetPasswordView.vue'),
     },
-
-    // === 客戶端：登入後 ===
     {
       path: '/user',
       component: () => import('../layouts/UserLayout.vue'),
@@ -163,15 +160,11 @@ const router = createRouter({
         },
       ],
     },
-
-    // === 管理端登入 ===
     {
       path: '/admin/login',
       name: 'admin-login',
       component: () => import('../views/admin/AdminLoginView.vue'),
     },
-
-    // === 管理端頁面（登入後） ===
     {
       path: '/admin',
       component: () => import('../layouts/AdminLayout.vue'),
@@ -318,8 +311,6 @@ const router = createRouter({
         },
       ],
     },
-
-    // === 403 頁面 ===
     {
       path: '/forbidden',
       name: 'forbidden',
@@ -342,18 +333,13 @@ const router = createRouter({
     },
   ],
 })
-
-// === 路由守衛 ===
 router.beforeEach(async (to) => {
-  // --- 客戶端路由守衛 ---
   if (to.matched.some((record) => record.meta.requiresCustomerAuth)) {
     const customerToken = localStorage.getItem('customer_token')
     if (!customerToken) {
       return { name: 'user-login' }
     }
   }
-
-  // --- 管理端路由守衛 ---
   if (to.matched.some((record) => record.meta.requiresAuth)) {
     const authUser = localStorage.getItem('auth_user')
     if (!authUser) {
@@ -369,15 +355,11 @@ router.beforeEach(async (to) => {
     } catch {
       // ignore parse error
     }
-
-    // --- 檢查系統管理員權限 (僅系統與日誌需要) ---
     if (to.matched.some((record) => record.meta.requiresBusiness)) {
       if (parsedUser?.permLevel >= 4 || parsedUser?.roleCode === 'CISO') {
         return { name: 'forbidden' }
       }
     }
-
-    // --- 檢查系統管理員權限 (僅系統與日誌需要) ---
     if (to.matched.some((record) => record.meta.requiresAdmin)) {
       if (parsedUser) {
         // 放寬後的業務模組已拔除 requiresAdmin

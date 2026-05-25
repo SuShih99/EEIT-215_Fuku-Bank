@@ -195,10 +195,6 @@ function goHome() {
 </script>
 
 <style scoped>
-/* ======================================
-   Fuku Bank — 帳戶總覽 侘寂風格
-   幣別低飽和識別色系統
-   ====================================== */
 
 /* --- 幣別輔助色 tokens --- */
 .user-accounts {
@@ -228,9 +224,6 @@ function goHome() {
   letter-spacing: 0.5px;
 }
 
-/* ==========================================
-   幣別 Tabs — 選中時顯示對應幣別色底線
-   ========================================== */
 .currency-tabs {
   display: flex;
   gap: var(--space-1);
@@ -303,9 +296,6 @@ function goHome() {
 .tab-hkd.active        { color: var(--currency-hkd); }
 .tab-hkd.active::after  { background: var(--currency-hkd); }
 
-/* ==========================================
-   帳戶卡片 Grid
-   ========================================== */
 .account-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -334,9 +324,6 @@ function goHome() {
 .status-card-closed  { opacity: 0.55; }
 .status-card-dormant { opacity: 0.72; }
 
-/* ==========================================
-   1) 左側色條 — 依幣別
-   ========================================== */
 .card-accent-bar {
   width: 5px;
   flex-shrink: 0;
@@ -354,9 +341,6 @@ function goHome() {
 .currency-chf .card-accent-bar { background: var(--currency-chf); }
 .currency-hkd .card-accent-bar { background: var(--currency-hkd); }
 
-/* ==========================================
-   3) 極淡卡片背景 tint — 依幣別
-   ========================================== */
 .currency-twd { background-color: rgba(92, 107, 95, 0.04); }
 .currency-usd { background-color: rgba(79, 99, 88, 0.04); }
 .currency-jpy { background-color: rgba(138, 111, 77, 0.05); }
@@ -368,9 +352,6 @@ function goHome() {
 .currency-chf { background-color: rgba(92, 95, 107, 0.04); }
 .currency-hkd { background-color: rgba(95, 107, 104, 0.04); }
 
-/* ==========================================
-   卡片內容
-   ========================================== */
 .card-content {
   flex: 1;
   padding: var(--space-3) var(--space-4);
@@ -449,9 +430,6 @@ function goHome() {
   margin-top: var(--space-1);
 }
 
-/* ==========================================
-   2) 幣別 Badge — 依幣別色
-   ========================================== */
 .currency-badge {
   display: inline-flex;
   align-items: center;
@@ -477,9 +455,6 @@ function goHome() {
 .badge-chf { background: var(--currency-chf); }
 .badge-hkd { background: var(--currency-hkd); }
 
-/* ==========================================
-   金額 — 使用清晰的金融資訊字體
-   ========================================== */
 .balance-amount {
   font-family: 'Inter', 'Noto Sans TC', var(--font-body);
   font-size: 26px;

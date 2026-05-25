@@ -40,8 +40,6 @@ public class LoanApplication implements Persistable<String> {
     // 客戶內部識別碼（系統內部使用，不對外顯示）
     private String customerId;
 
-    // ── 申請條件 ─────────────────────────────────────────────────────
-
     // 貸款種類，例如 "PERSONAL"（信貸）、"HOUSE"（房貸）
     private String applyType;
 
@@ -57,8 +55,6 @@ public class LoanApplication implements Persistable<String> {
     // 客戶選擇的撥款入帳帳號（台幣活存），核准後撥款使用
     private String disbursementAccount;
 
-    // ── 狀態 ─────────────────────────────────────────────────────────
-
     // 申請目前的狀態，以字串形式存入 DB，參見 LoanApplicationStatus
     @Enumerated(EnumType.STRING)
     private LoanApplicationStatus applicationStatus;
@@ -72,8 +68,6 @@ public class LoanApplication implements Persistable<String> {
 
     // 申請建立時間
     private LocalDateTime createTime;
-
-    // ── 聯繫紀錄快照（從 LoanContactLog 更新而來）────────────────────
 
     // 最近一筆聯繫紀錄的結果狀態快照
     @Enumerated(EnumType.STRING)

@@ -191,7 +191,6 @@ public class AccountIntegrationService {
                         loanApplicationService.handleAccountDisbursedCallback(appId, disbursedLoanAccountNumber);
                     } catch (Exception e) {
                         log.error("[Disbursement] Loan 回調失敗 applicationId={}", appId, e);
-                        // TODO（第五部）：寫入補傳表，搭配排程重試
                     }
                 }
             });

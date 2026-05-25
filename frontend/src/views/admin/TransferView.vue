@@ -144,8 +144,6 @@ function formatTime(value) {
   if (!value) return '-'
   return value.replace('T', ' ').substring(0, 19)
 }
-
-// === Demo 快速帶入 ===
 const demoLoading = ref(false)
 const demoHint = ref('')
 

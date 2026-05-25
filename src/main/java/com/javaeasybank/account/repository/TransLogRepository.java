@@ -83,14 +83,7 @@ public interface TransLogRepository extends JpaRepository<TransLog, String>, Jpa
             @Param("excludedType") AccountType excludedType,
             Pageable pageable);
 
-    /**
-     * 根據客戶 ID 查詢該客戶名下所有帳戶的所有交易紀錄，並進行分頁。
-     * 此查詢涉及跨表 JOIN。
-     *
-     * @param customerId 客戶 ID。
-     * @param pageable   分頁資訊。
-     * @return 包含交易日誌實體的分頁列表。
-     */
+
     @Query("SELECT t FROM TransLog t JOIN Account a ON t.accountNumber = a.accountNumber WHERE a.customerId = :customerId")
     Page<TransLog> findByCustomerId(@Param("customerId") String customerId, Pageable pageable);
 
@@ -106,15 +99,7 @@ public interface TransLogRepository extends JpaRepository<TransLog, String>, Jpa
             @Param("excludedType") AccountType excludedType,
             Pageable pageable);
 
-    /**
-     * 根據客戶 ID 和日期範圍查詢該客戶名下所有帳戶的所有交易紀錄，並進行分頁。
-     *
-     * @param customerId 客戶 ID。
-     * @param startDate  查詢的起始日期時間。
-     * @param endDate    查詢的結束日期時間。
-     * @param pageable   分頁資訊。
-     * @return 包含交易日誌實體的分頁列表。
-     */
+
     @Query("SELECT t FROM TransLog t JOIN Account a ON t.accountNumber = a.accountNumber " +
             "WHERE a.customerId = :customerId AND t.createdAt >= :startDate AND t.createdAt <= :endDate")
     Page<TransLog> findByCustomerIdAndDateRange(
@@ -139,16 +124,7 @@ public interface TransLogRepository extends JpaRepository<TransLog, String>, Jpa
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable);
 
-    /**
-     * [風險監控 B1] 短時間高頻交易偵測。
-     * 統計指定時間後，某帳戶作為「發起方」(轉出)的特定交易類型次數。
-     *
-     * @param accountNumber   要統計的帳號。
-     * @param entryType       記帳類型 (例如 DEBIT)。
-     * @param transactionType 交易類型 (例如 TRANSFER)。
-     * @param sinceTime       起始時間點。
-     * @return 匹配的交易次數。
-     */
+
     @Query("SELECT COUNT(t) FROM TransLog t " +
             "WHERE t.accountNumber = :accountNumber " +
             "AND t.entryType = :entryType " +
@@ -160,16 +136,7 @@ public interface TransLogRepository extends JpaRepository<TransLog, String>, Jpa
             @Param("transactionType") TransactionType transactionType,
             @Param("sinceTime") LocalDateTime sinceTime);
 
-    /**
-     * [風險監控 B2] 24 小時累積金額偵測。
-     * 統計指定時間後，某帳戶作為「轉出方」(轉帳或提款)的累積金額。
-     *
-     * @param accountNumber    要統計的帳號。
-     * @param entryType        記帳類型 (例如 DEBIT)。
-     * @param transactionTypes 交易類型列表 (例如 TRANSFER, WITHDRAW)。
-     * @param sinceTime        起始時間點。
-     * @return 匹配的累積金額，如果沒有交易則返回 0。
-     */
+
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM TransLog t " +
             "WHERE t.accountNumber = :accountNumber " +
             "AND t.entryType = :entryType " +
@@ -227,10 +194,7 @@ public interface TransLogRepository extends JpaRepository<TransLog, String>, Jpa
             @Param("entryType") EntryType entryType,
             @Param("transactionType") TransactionType transactionType,
             @Param("sinceTime") LocalDateTime sinceTime);
-
-    // ==========================================
     // 統計用 (Dashboard)
-    // ==========================================
     @Query("SELECT t.entryType, COUNT(t) FROM TransLog t GROUP BY t.entryType")
     List<Object[]> countByEntryTypeGroup();
 

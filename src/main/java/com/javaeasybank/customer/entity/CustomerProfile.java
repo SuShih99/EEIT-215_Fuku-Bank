@@ -32,8 +32,6 @@ public class CustomerProfile implements Persistable<String> {
     @Id
     @Column(name = "customer_id", length = 20, nullable = false)
     private String customerId;
-
-    // 💡 確保 CIF 的長度為 20，對應 SQL 的 VARCHAR(20)
     @Column(length = 20, nullable = false, unique = true)
     private String cif;
 

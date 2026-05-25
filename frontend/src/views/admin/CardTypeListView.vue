@@ -31,7 +31,6 @@ const form = ref({
 const editingId = ref(null)
 // modal控制
 const open = ref(false)
-//==工具函式==
 // 取得圖片路徑
 const getImageUrl = (path) => {
   if (!path) return ''

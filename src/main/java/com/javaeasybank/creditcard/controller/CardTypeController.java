@@ -20,14 +20,10 @@ import lombok.RequiredArgsConstructor;
 public class CardTypeController {
 
     private final CardTypeService cardTypeService;
-
-    // 🔹 1. 查全部卡別
     @GetMapping
     public ResponseEntity<ApiResponse<List<CardTypeResponseDto>>> getAll() {
         return ResponseEntity.ok(ApiResponse.success(cardTypeService.findAll()));
     }
-
-    // 🔹 2. 查單一卡別
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<CardTypeResponseDto>> getById(@PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.success(cardTypeService.findById(id)));

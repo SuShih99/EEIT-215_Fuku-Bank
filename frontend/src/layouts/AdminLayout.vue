@@ -273,8 +273,6 @@ import {
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
-
-// === 角色判斷：統一以 permLevel 數字為準 ===
 // Lvl 0 = 職員(CFSO)  |  Lvl 2 = 主管(CFDM)  |  Lvl 4 = 資安長(CISO)
 const permLevel = computed(() => authStore.user?.permLevel ?? 0)
 const isCISO = computed(() => permLevel.value >= 4) // 資安長及以上

@@ -1,8 +1,6 @@
 
 import api from './axios'
 
-// === Card Type API ===
-
 //查詢卡別
 export const getCardTypes = async () =>
   (await api.get('/api/admin/card-types')).data.data
@@ -21,12 +19,8 @@ export const deleteCardType = async (id) =>
 //上傳圖片
 export const uploadImage = async (formData) =>
   (await api.post('/api/admin/card-types/upload', formData)).data.data
-
-// === User Card Type API ===
 export const getUserCardTypes = async () =>
   (await api.get('/user/card-types')).data.data
 
 export const getUserCardTypeById = async (id) =>
   (await api.get(`/user/card-types/${id}`)).data.data
-
-// ===

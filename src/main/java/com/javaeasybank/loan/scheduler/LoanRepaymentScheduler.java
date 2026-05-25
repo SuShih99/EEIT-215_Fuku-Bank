@@ -42,8 +42,6 @@ public class LoanRepaymentScheduler {
 
         LocalDate today = LocalDate.now();
         log.info("[OverdueScan] 開始掃描 date={}", today);
-
-        // ── 1. 逾期標記 ──────────────────────────────────────────────
         // 應繳日 < 今天 且 仍為 SCHEDULED → 標記為 OVERDUE
         List<LoanRepayment> overdues = repaymentRepo
                 .findByScheduledDateBeforeAndRepaymentStatus(today, LoanRepaymentStatus.SCHEDULED);
@@ -110,8 +108,6 @@ public class LoanRepaymentScheduler {
         } else {
             log.info("[OverdueScan] 無逾期期數");
         }
-
-        // ── 2. 到期提醒（距應繳日 1 ~ 3 天內）────────────────────────
         LocalDate reminderStart = today.plusDays(1);
         LocalDate reminderEnd   = today.plusDays(3);
 

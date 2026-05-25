@@ -355,13 +355,9 @@ import api from '@/api/axios'
 const applications = ref([])
 const loading = ref(false)
 const error = ref('')
-
-// ── 分頁 ──
 const PAGE_SIZE_OPTIONS = [5, 10, 20]
 const pageSize = ref(5)
 const currentPage = ref(1)
-
-// ── 補件面板狀態 ──
 const docPanelId = ref(null)   // 目前展開的申請 ID
 const docs = ref({})     // { [applicationId]: LoanDocumentResponseDTO[] }
 const docLoading = ref(false)
@@ -372,8 +368,6 @@ const uploadError = ref('')
 const uploadSuccess = ref(false)
 const deletingId = ref(null)
 const submittingAppId = ref(null)
-
-// ── 貸款種類篩選 ──
 const selectedLoanType = ref('')
 const selectedStatus = ref('')
 
@@ -388,8 +382,6 @@ const STATUS_ORDER = [
   'REJECTED',
   'CANCELLED',
 ]
-
-// ── Computed: 只列出申請中有出現的貸款種類 ──
 const availableLoanTypes = computed(() => {
   const seen = new Set()
   return applications.value
@@ -404,8 +396,6 @@ const availableStatuses = computed(() => {
     .filter(s => existing.has(s))
     .map(s => ({ key: s, label: STATUS_MAP[s]?.label || s }))
 })
-
-// ── Computed: 依最近活動時間排序（新改動在上） ──
 function lastActivity(app) {
   const times = [app.updateTime, app.latestContactTime, app.documentsSubmittedAt, app.createTime]
     .filter(Boolean)
@@ -415,8 +405,6 @@ function lastActivity(app) {
 const sortedApplications = computed(() =>
   [...applications.value].sort((a, b) => lastActivity(b).localeCompare(lastActivity(a)))
 )
-
-// ── Computed: 套用類型篩選 ──
 const filteredApplications = computed(() => {
   return sortedApplications.value.filter(a => {
     const matchType = !selectedLoanType.value || a.applyType === selectedLoanType.value
@@ -448,8 +436,6 @@ function clearFilters() {
   selectedStatus.value = ''
   currentPage.value = 1
 }
-
-// ── Computed: 分頁 ──
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredApplications.value.length / pageSize.value)))
 const pageStart = computed(() =>
   filteredApplications.value.length === 0 ? 0 : (currentPage.value - 1) * pageSize.value + 1
@@ -472,8 +458,6 @@ function goToPage(page) {
   if (page < 1 || page > totalPages.value) return
   currentPage.value = page
 }
-
-// ── 文件類型對照 ──
 const DOC_TYPE_MAP = {
   ID_CARD: '身分證',
   INCOME_CERT: '收入證明',
@@ -483,8 +467,6 @@ const DOC_TYPE_MAP = {
   TITLE_DEED: '所有權狀',
   OTHER: '其他',
 }
-
-// ── 貸款類型 ──
 const LOAN_TYPE_MAP = {
   PERSONAL: '個人信貸',
   CAR: '汽車貸款',
@@ -494,8 +476,6 @@ const LOAN_TYPE_MAP = {
   HOUSE: '房屋貸款',
   LAND: '土地貸款',
 }
-
-// ── 申請狀態 ──
 const STATUS_MAP = {
   PENDING_CONTACT: {label: '新申請（待聯繫）', cls: 'st-pending'},
   IN_CONTACT: {label: '聯繫中', cls: 'st-contact'},
@@ -507,8 +487,6 @@ const STATUS_MAP = {
   DISBURSED: {label: '已撥款', cls: 'st-disbursed'},
   CLOSED: {label: '已結案', cls: 'st-closed'},
 }
-
-// ── 聯繫狀態：標籤 / 圖示 / 說明文字 / 顏色 ──
 const CONTACT_MAP = {
   NOT_CONTACTED: {
     label: '尚未聯繫',
@@ -581,8 +559,6 @@ function formatTime(t) {
     hour: '2-digit', minute: '2-digit',
   })
 }
-
-// ── API ──
 async function load() {
   loading.value = true
   error.value = ''
@@ -598,8 +574,6 @@ async function load() {
     loading.value = false
   }
 }
-
-// ── 補件面板邏輯 ──
 function docCount(appId) {
   return docs.value[appId]?.length || 0
 }

@@ -29,7 +29,7 @@ public class TransLogController {
 
     /**
      * 根據交易參考 ID 檢索交易紀錄。
-     * 
+     *
      * @param referenceId 交易參考 ID。
      * @return 包含交易紀錄響應列表的 ResponseEntity。
      */
@@ -40,14 +40,7 @@ public class TransLogController {
         return ResponseEntity.ok(ApiResponse.success(responses));
     }
 
-    /**
-     * 根據帳號檢索交易紀錄分頁列表（包含影響帳號與對手方帳號）。
-     *
-     * @param accountNumber 帳號。
-     * @param page          頁碼（默認為0）。
-     * @param size          每頁紀錄數量（默認為10）。
-     * @return 包含交易紀錄分頁列表響應的 ResponseEntity。
-     */
+
     @GetMapping("/account/{accountNumber}")
     public ResponseEntity<ApiResponse<PageResponse<TransLogResponse>>> getByAccountNumber(
             @PathVariable String accountNumber,
@@ -63,14 +56,7 @@ public class TransLogController {
         return ResponseEntity.ok(ApiResponse.success(pageResponse));
     }
 
-    /**
-     * 檢索指定客戶的交易紀錄分頁列表。
-     *
-     * @param customerId 客戶 ID。
-     * @param page       頁碼（默認為0）。
-     * @param size       每頁紀錄數量（默認為10）。
-     * @return 包含交易紀錄分頁列表響應的 ResponseEntity。
-     */
+
     @GetMapping("/customer/{customerId}")
     public ResponseEntity<ApiResponse<PageResponse<TransLogResponse>>> getByCustomerId(
             @PathVariable String customerId,
@@ -86,16 +72,7 @@ public class TransLogController {
         return ResponseEntity.ok(ApiResponse.success(pageResponse));
     }
 
-    /**
-     * 檢索指定客戶在特定日期區間的交易紀錄分頁列表。
-     *
-     * @param customerId 客戶 ID。
-     * @param startDate  起始日期時間 (ISO 格式)。
-     * @param endDate    結束日期時間 (ISO 格式)。
-     * @param page       頁碼（默認為0）。
-     * @param size       每頁紀錄數量（默認為10）。
-     * @return 包含交易紀錄分頁列表響應的 ResponseEntity。
-     */
+
     @GetMapping("/customer/{customerId}/range")
     public ResponseEntity<ApiResponse<PageResponse<TransLogResponse>>> getByCustomerIdAndDateRange(
             @PathVariable String customerId,

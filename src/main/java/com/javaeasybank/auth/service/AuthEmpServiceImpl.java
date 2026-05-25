@@ -94,10 +94,7 @@ public class AuthEmpServiceImpl implements AuthEmpService {
         }
         recordLog(empId, empName, "LOGOUT", empId, "員工登出系統", ipAddress);
     }
-
-    // ===========================
     // 員工 CRUD
-    // ===========================
     @Override
     public Long getEmpCount() {
         return authEmpRepository.count();
@@ -213,10 +210,7 @@ public class AuthEmpServiceImpl implements AuthEmpService {
                   "重新啟用員工：" + emp.getEmpName() + "（" + empId + "）",
                   null);
     }
-
-    // ===========================
     // 一鍵帶入測試資料
-    // ===========================
     @Override
     public void seedTestData() {
         if (authEmpRepository.count() > 0) {
@@ -254,10 +248,7 @@ public class AuthEmpServiceImpl implements AuthEmpService {
         String[] cur = resolveCurrentEmp();
         recordLog(cur[0], cur[1], "SEED_DATA", null, "一鍵帶入員工測試資料（13筆）", null);
     }
-
-    // ===========================
     // 給其他模組對接用
-    // ===========================
     @Override
     public AuthRespository.AuthEmpResponse getEmpByEmpId(String empId) {
         AuthEmp emp = authEmpRepository.findById(empId)

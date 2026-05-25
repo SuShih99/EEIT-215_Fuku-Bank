@@ -8,15 +8,7 @@ import org.springframework.data.domain.Persistable;
 
 import java.time.LocalDateTime;
 
-/**
- * 客戶認證表：儲存客戶的登入帳號、密碼與角色資訊。
- *
- * 設計決策：
- * - 與 customer_profile 為一對一關聯（共用 customer_id）
- * - 密碼使用 BCrypt 加密
- * - role 預設為 CUSTOMER，未來可擴展
- * - resetToken / resetTokenExpiry 用於密碼重設郵件連結
- */
+
 @Entity
 @Table(name = "CUSTOMER_AUTH")
 @Getter

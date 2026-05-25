@@ -228,10 +228,7 @@ function handleClear() {
 function goCreate() {
   router.push({ name: 'admin-employees-create' })
 }
-
-// ===========================
 // 編輯 Modal
-// ===========================
 const showEditModal = ref(false)
 const submitLoading = ref(false)
 
@@ -292,10 +289,7 @@ async function handleSubmitEdit() {
     submitLoading.value = false
   }
 }
-
-// ===========================
 // 停用員工（帶確認對話框）
-// ===========================
 function handleSuspend(record) {
   Modal.confirm({
     title: '確定要停用此員工嗎？',
@@ -314,10 +308,7 @@ function handleSuspend(record) {
     },
   })
 }
-
-// ===========================
 // 重新啟用員工
-// ===========================
 function handleResume(record) {
   Modal.confirm({
     title: '確定要重新啟用此員工嗎？',

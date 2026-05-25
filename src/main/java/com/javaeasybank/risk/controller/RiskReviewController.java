@@ -23,14 +23,7 @@ public class RiskReviewController {
     private final RiskReviewService riskReviewService;
     private final ReviewTaskService reviewTaskService;
 
-    /**
-     * 統一送審入口
-     * 貸款模組：scene=LOAN_APPLY,   businessId=applicationId
-     * 帳戶模組：scene=ACCOUNT_OPEN, businessId=accountId
-     * 信用卡：  scene=CARD_APPLY,   businessId=cardApplicationId
-     * <p>
-     * POST /api/risk/reviews
-     */
+
     /**
      * 補件附件接收
      * 貸款模組在客戶送出補件後呼叫，將文件清單附加到對應的 ReviewTask

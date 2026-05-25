@@ -75,15 +75,7 @@ public class TransLogService {
                 transLogRepository.findByCustomerIdExcludingAccountType(customerId, AccountType.BUSINESS, pageable));
     }
 
-    /**
-     * 根據客戶 ID 和日期範圍查詢該客戶名下所有帳戶的交易紀錄分頁列表。
-     *
-     * @param customerId 客戶 ID。
-     * @param startDate  起始日期時間。
-     * @param endDate    結束日期時間。
-     * @param pageable   分頁資訊。
-     * @return 包含交易紀錄響應的分頁列表。
-     */
+
     @Transactional(readOnly = true)
     public Page<TransLogResponse> getByCustomerIdAndDateRange(String customerId, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
         log.debug("Fetching trans logs by customerId: {} and date range: {} to {}", customerId, startDate, endDate);

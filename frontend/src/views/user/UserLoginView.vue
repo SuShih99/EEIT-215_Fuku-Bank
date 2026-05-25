@@ -288,7 +288,6 @@ async function handleLogin(bypass = false) {
   position: relative;
 }
 
-/* === Washi === */
 .washi-overlay {
   position: fixed;
   inset: 0;

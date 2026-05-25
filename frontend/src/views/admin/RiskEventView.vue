@@ -227,7 +227,6 @@ onMounted(() => loadData())
 </script>
 
 <style scoped>
-/* 💡 樣式優化：完全比照 CreditList 規範的大字體風格 */
 .page-container {
   display: flex;
   flex-direction: column;
@@ -277,7 +276,6 @@ onMounted(() => loadData())
   font-size: 15px !important;
 }
 
-/* ── 💡 調整：沉穩、專業金融質感的風險藥丸樣式 ── */
 .status-tag {
   display: inline-flex;
   align-items: center;

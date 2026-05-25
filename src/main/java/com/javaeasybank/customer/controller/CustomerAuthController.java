@@ -34,15 +34,11 @@ public class CustomerAuthController {
         this.customerAuthService = customerAuthService;
         this.jwtUtil = jwtUtil;
     }
-
-    // ===== 客戶註冊（所有人都能打）=====
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<CustomerRespository.LoginResponse>> register(
             @RequestBody CustomerRespository.RegisterRequest request) {
         return ResponseEntity.ok(ApiResponse.success(customerAuthService.register(request)));
     }
-
-    // ===== 客戶登入（所有人都能打）=====
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<CustomerRespository.LoginResponse>> login(
             HttpServletRequest httpRequest,
@@ -53,15 +49,11 @@ public class CustomerAuthController {
                 resolveUserAgent(httpRequest)
         )));
     }
-
-    // ===== 電子郵件驗證 =====
     @GetMapping("/verify-email")
     public ResponseEntity<ApiResponse<String>> verifyEmail(@RequestParam("token") String token) {
         customerAuthService.verifyEmail(token);
         return ResponseEntity.ok(ApiResponse.success("電子郵件驗證成功，請重新登入"));
     }
-
-    // ===== 取得目前客戶資訊（需登入）=====
     @PreAuthorize("hasRole('CUSTOMER')")
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<CustomerRespository.CustomerResponse>> getProfile(
@@ -69,8 +61,6 @@ public class CustomerAuthController {
         String customerId = extractCustomerId(request);
         return ResponseEntity.ok(ApiResponse.success(customerAuthService.getProfile(customerId)));
     }
-
-    // ===== 修改個人資料（需登入，僅能改自己的）=====
     @PreAuthorize("hasRole('CUSTOMER')")
     @PutMapping("/profile")
     public ResponseEntity<ApiResponse<CustomerRespository.CustomerResponse>> updateProfile(
@@ -79,8 +69,6 @@ public class CustomerAuthController {
         String customerId = extractCustomerId(httpRequest);
         return ResponseEntity.ok(ApiResponse.success(customerAuthService.updateProfile(customerId, request)));
     }
-
-    // ===== 上傳大頭照（需登入）=====
     @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<CustomerRespository.CustomerResponse>> uploadAvatar(
@@ -111,39 +99,29 @@ public class CustomerAuthController {
         return ResponseEntity.ok(ApiResponse.success(customerAuthService.uploadAvatar(customerId, avatarUrl)));
 
     }
-
-    // ===== 請求密碼重設（發送 Email 連結）=====
     @PostMapping("/request-reset")
     public ResponseEntity<ApiResponse<String>> requestPasswordReset(
             @RequestBody CustomerRespository.PasswordResetEmailRequest request) {
         customerAuthService.requestPasswordReset(request);
         return ResponseEntity.ok(ApiResponse.success("密碼重設連結已發送至您的電子信箱"));
     }
-
-    // ===== 執行密碼重設 =====
     @PostMapping("/reset-password")
     public ResponseEntity<ApiResponse<String>> resetPassword(
             @RequestBody CustomerRespository.PasswordResetRequest request) {
         customerAuthService.resetPassword(request);
         return ResponseEntity.ok(ApiResponse.success("密碼已成功重設，請使用新密碼登入"));
     }
-    // ===== 解除被鎖定客戶 =====
     @PatchMapping("/{customerId}/unlock")
     public ResponseEntity<Void> unlockCustomer(@PathVariable String customerId) {
         customerAuthService.unlockCustomer(customerId);
         return ResponseEntity.ok().build();
     }
-
-    // ===== 一鍵帶入客戶認證測試資料 =====
     @PostMapping("/seed")
     public ResponseEntity<ApiResponse<String>> seedAuthData() {
         customerAuthService.seedAuthTestData();
         return ResponseEntity.ok(ApiResponse.success("客戶認證測試資料已帶入"));
     }
-
-    // ===========================
     // 私有方法
-    // ===========================
 
     /**
      * 從 Request Header 的 JWT Token 中取得 customerId。

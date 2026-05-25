@@ -10,8 +10,6 @@ import {
 } from '@/data/customerDemoAccounts'
 
 const router = useRouter()
-
-// ===== 步驟 =====
 const step = ref(1)
 const totalSteps = 5
 const submitting = ref(false)
@@ -31,8 +29,6 @@ const UI_ACCOUNT_TYPE = {
   SUB_ACCOUNT: 'SUB_ACCOUNT',
   TIME_DEPOSIT: 'TIME_DEPOSIT',
 }
-
-// ===== 表單資料 =====
 const form = reactive({
   // Step 1: 帳戶類型
   accountType: '',
@@ -73,8 +69,6 @@ const idBackPreview = ref(null)
 const secondIdPreview = ref(null)
 const supplementMessage = ref('')
 const supplementMessageAppId = ref(null)
-
-// ===== 驗證 =====
 const errors = reactive({})
 
 function clearErrors() {
@@ -114,8 +108,6 @@ function validateStep(s) {
   }
   return Object.keys(errors).length === 0
 }
-
-// ===== 步驟導航 =====
 function nextStep() {
   if (validateStep(step.value)) {
     step.value++
@@ -126,8 +118,6 @@ function prevStep() {
   clearErrors()
   step.value--
 }
-
-// ===== 地址同步 =====
 function syncAddress() {
   if (form.sameAddress) {
     form.currentAddress = form.registeredAddress
@@ -136,8 +126,6 @@ function syncAddress() {
     form.address = form.currentAddress || form.registeredAddress
   }
 }
-
-// ===== 圖片壓縮 =====
 function compressImage(file, maxWidth = 1200, quality = 0.8) {
   return new Promise((resolve) => {
     const img = new Image()
@@ -172,8 +160,6 @@ function compressImage(file, maxWidth = 1200, quality = 0.8) {
     img.src = URL.createObjectURL(file)
   })
 }
-
-// ===== 檔案處理 =====
 async function handleFile(field, event) {
   const file = event.target.files[0]
   if (!file) return
@@ -203,8 +189,6 @@ async function handleFile(field, event) {
   }
   reader.readAsDataURL(compressed)
 }
-
-// ===== 帳戶類型選項 =====
 const currencies = [
   { value: 'TWD', label: '新台幣 TWD' },
   { value: 'USD', label: '美元 USD' },
@@ -310,8 +294,6 @@ function resolvePayloadCurrency() {
   }
   return form.currency || 'TWD'
 }
-
-// ===== 提交 =====
 async function handleSubmit() {
   if (!validateStep(4)) return
 
@@ -358,8 +340,6 @@ async function handleSubmit() {
     submitting.value = false
   }
 }
-
-// ===== 載入既有申請 =====
 async function fetchApplications() {
   loadingApps.value = true
   try {
@@ -477,8 +457,6 @@ function normalizeAnnualIncomeRange(value) {
   if (amountInTenThousands <= 1000) return 1000
   return 1001
 }
-
-// ===== 一鍵帶入測試資料 =====
 async function fillMockData() {
   // Step 1
   form.accountType = accountTypes.value[0]?.value || UI_ACCOUNT_TYPE.CHECKING_TWD
@@ -926,7 +904,6 @@ onMounted(async () => {
   box-sizing: border-box;
 }
 
-/* === 頁面標題 === */
 .page-header {
   text-align: center;
 }
@@ -987,7 +964,6 @@ onMounted(async () => {
   background: rgba(166, 90, 77, 0.12);
 }
 
-/* === 步驟指示器 === */
 .stepper {
   display: flex;
   justify-content: center;
@@ -1062,7 +1038,6 @@ onMounted(async () => {
   color: var(--text-secondary);
 }
 
-/* === 步驟卡片 === */
 .step-card {
   background: rgba(255, 249, 239, 0.78);
   border: 1px solid rgba(214, 206, 195, 0.92);
@@ -1085,7 +1060,6 @@ onMounted(async () => {
   gap: var(--space-3);
 }
 
-/* === 帳戶類型選擇 === */
 .type-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -1123,7 +1097,6 @@ onMounted(async () => {
   color: var(--text-secondary);
 }
 
-/* === 表單 grid === */
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1153,7 +1126,6 @@ onMounted(async () => {
   accent-color: var(--primary);
 }
 
-/* === 法遵 === */
 .compliance-section {
   display: grid;
   gap: var(--space-5);
@@ -1193,7 +1165,6 @@ onMounted(async () => {
   line-height: 1.5;
 }
 
-/* === 上傳 === */
 .upload-section {
   margin-bottom: var(--space-4);
 }
@@ -1256,7 +1227,6 @@ onMounted(async () => {
   text-align: center;
 }
 
-/* === 結果 === */
 .result-card {
   text-align: center;
   padding: var(--space-8) var(--space-6);
@@ -1276,7 +1246,6 @@ onMounted(async () => {
   margin: 0 auto var(--space-4);
 }
 
-/* === 提交錯誤 === */
 .submit-error {
   color: var(--accent);
   font-size: var(--text-sm);
@@ -1287,7 +1256,6 @@ onMounted(async () => {
   margin-top: var(--space-4);
 }
 
-/* === 歷史紀錄 === */
 .history-section {
   border-top: 1px solid var(--border);
   padding-top: var(--space-6);

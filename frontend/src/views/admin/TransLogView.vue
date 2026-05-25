@@ -621,8 +621,6 @@ async function handleClear() {
   currentPage.value = 1
   await fetchData()
 }
-
-// === 匯出功能 ===
 function handleExport({ key }) {
   if (key === 'excel') exportExcel()
   else if (key === 'json') exportJson()
@@ -677,8 +675,6 @@ function exportXml() {
   saveAs(blob, '交易紀錄.xml')
   message.success('XML 匯出成功')
 }
-
-// === 沖正功能 ===
 const showReversalModal = ref(false)
 const reversalLoading = ref(false)
 const reversalResult = ref(null)

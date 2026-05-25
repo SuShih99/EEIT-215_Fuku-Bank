@@ -22,14 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class RiskCheckController {
 
-    /**
-     * 交易風險檢查。
-     * 在特定業務流程（如轉帳、登入、修改資料）執行前呼叫，用於實時判斷潛在風險。
-     * 這類 API 屬於「同步檢查」，不產生人工審核任務，僅回傳風險評分或等級。
-     * 1. 執行實時風控規則判斷。
-     * 2. 記錄所有風險事件至 RISK_EVENT_LOG。
-     * 3. 若判定為 MANUAL_REVIEW，則建立人工審核任務 (ReviewTask)。
-     */
+
 
     private final RiskCheckService riskCheckService;
 

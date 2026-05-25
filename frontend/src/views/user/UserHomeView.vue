@@ -415,8 +415,6 @@ Chart.register(...registerables)
 
 const router = useRouter()
 const customerAuthStore = useCustomerAuthStore()
-
-// === 是否已開戶 ===
 const hasAccount = ref(true) // 預設 true 避免閃爍
 
 const onboardFeatures = [
@@ -436,8 +434,6 @@ const onboardFeatures = [
     icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>',
   },
 ]
-
-//==信用卡==
 async function fetchCreditSummary() {
   try {
     const bills = await getBills(0, 10)
@@ -473,8 +469,6 @@ async function fetchCreditSummary() {
     console.error('首頁信用卡金額取得失敗', e)
   }
 }
-
-// === 貸款帳戶 ===
 const accountsList = ref([])
 const loanAccounts = ref([])
 
@@ -519,8 +513,6 @@ async function checkAccountStatus() {
     hasAccount.value = true
   }
 }
-
-// === 個人資訊 ===
 const customerName = computed(() => customerAuthStore.customer?.name || '會員')
 const customerInitial = computed(() => (customerAuthStore.customer?.name || '會')[0])
 const avatarSrc = computed(() => {
@@ -538,7 +530,6 @@ const todayStr = computed(() => {
   const d = new Date()
   return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
 })
-// === 資產資料 ===
 const assetData = ref({
   deposit: 0,
   twdAsset: 0,
@@ -641,8 +632,6 @@ function formatWholeMoney(n) {
 function comingSoon() {
   alert('此功能即將推出，敬請期待！')
 }
-
-// === 財務組成 ===
 const distributionData = ref([
   { label: '臺幣存款', pct: 0, color: 'var(--primary)' },
   { label: '外幣折合', pct: 0, color: '#8BA58E' },
@@ -687,8 +676,6 @@ function drawDonut() {
     },
   })
 }
-
-// === 歷史水位圖 ===
 const lineCanvas = ref(null)
 const activePeriod = ref('all')
 const periods = [
@@ -899,7 +886,6 @@ onMounted(async () => {
   z-index: 1;
 }
 
-/* === 開戶引導 === */
 .onboard-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
@@ -984,7 +970,6 @@ onMounted(async () => {
   }
 }
 
-/* === 上方佈局 === */
 .dashboard-top {
   display: grid;
   grid-template-columns: 320px 1fr;
@@ -995,7 +980,6 @@ onMounted(async () => {
   min-width: 0;
 }
 
-/* === 左側：個人資訊卡片 (Profile Summary) === */
 .profile-summary-card {
   background-color: rgba(255, 249, 239, 0.72);
   border: 1px solid rgba(214, 206, 195, 0.92);
@@ -1099,7 +1083,6 @@ onMounted(async () => {
   transform: translateX(2px);
 }
 
-/* === 右側：資產總覽主卡 (Asset Overview) === */
 .asset-overview-card {
   background-color: rgba(255, 249, 239, 0.78);
   border: 1px solid rgba(214, 206, 195, 0.92);
@@ -1271,7 +1254,6 @@ onMounted(async () => {
   gap: 8px;
 }
 
-/* === 下方佈局 === */
 .dashboard-bottom {
   display: grid;
   grid-template-columns: 280px 1fr 1fr;
@@ -1280,7 +1262,6 @@ onMounted(async () => {
   min-width: 0;
 }
 
-/* === 通用卡片標題 === */
 .card-title {
   font-family: var(--font-heading);
   font-size: 18px;
@@ -1328,7 +1309,6 @@ onMounted(async () => {
   margin: var(--space-3) 0;
 }
 
-/* === 財務組成 === */
 .distribution-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
@@ -1381,7 +1361,6 @@ onMounted(async () => {
   font-family: 'Inter', 'Noto Sans TC', var(--font-body);
 }
 
-/* === 匯率 === */
 .exchange-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
@@ -1471,7 +1450,6 @@ onMounted(async () => {
   }
 }
 
-/* === 歷史水位圖 === */
 .watermark-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
@@ -1537,7 +1515,6 @@ onMounted(async () => {
   border-radius: 2px;
 }
 
-/* === RWD === */
 @media (max-width: 1100px) {
   .dashboard-top {
     grid-template-columns: 1fr;

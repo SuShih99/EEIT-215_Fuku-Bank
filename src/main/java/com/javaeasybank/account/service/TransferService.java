@@ -103,8 +103,6 @@ public class TransferService {
             throw new TransferException("INTERBANK_TWD_ONLY", "跨行轉帳僅支援台幣帳戶");
         }
 
-        // ── 風控 ──────────────────────────────────
-
         // 建立一個暫存變數
         LocalDateTime now = LocalDateTime.now(clock);
         String internalWarning = null;
@@ -193,8 +191,6 @@ public class TransferService {
 
             return TransferResponse.pending(finalReason);
         }
-
-        // ────────────────────────────────────────────────
 
         return executeTransfer(request, referenceId, riskResult);
     }
@@ -762,10 +758,7 @@ public class TransferService {
         detail.setBalanceAfter(balanceAfter);
         return detail;
     }
-
-    // ==========================================
     // 存款
-    // ==========================================
 
     /**
      * 執行存款。
@@ -790,10 +783,7 @@ public class TransferService {
     public CashResponse creditCardReward(CashRequest request) {
         return cashTransaction(request, EntryType.CREDIT, TransactionType.CARD_REWARD, "信用卡回饋");
     }
-
-    // ==========================================
     // 提款
-    // ==========================================
 
     /**
      * 執行提款。
@@ -806,27 +796,9 @@ public class TransferService {
     public CashResponse withdraw(CashRequest request) {
         return cashTransaction(request, EntryType.DEBIT, TransactionType.WITHDRAW, "提款");
     }
-
-    // ==========================================
     // 沖正
-    // ==========================================
 
-    /**
-     * 執行沖正（Reversal）。
-     * 根據原始交易編號找出所有交易紀錄，對每筆紀錄反向操作帳戶餘額，
-     * 並寫入新的沖正交易紀錄。不會修改或刪除原始紀錄。
-     *
-     * <p>
-     * 沖正邏輯：
-     * <ul>
-     * <li>原始 DEBIT（扣款）→ 沖正時把錢加回去，寫一筆 CREDIT + REVERSAL</li>
-     * <li>原始 CREDIT（入帳）→ 沖正時把錢扣回來，寫一筆 DEBIT + REVERSAL</li>
-     * </ul>
-     *
-     * @param request 沖正請求（含原始交易編號與沖正原因）。
-     * @return 沖正響應，包含新沖正編號與各帳戶沖正明細。
-     * @throws TransferException 若原始交易不存在或已被沖正過。
-     */
+
     @Transactional
     public ReversalResponse reversal(ReversalRequest request) {
         String originalRefId = request.getOriginalReferenceId();

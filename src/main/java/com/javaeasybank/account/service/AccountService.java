@@ -30,14 +30,7 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final CustomerProfileRepository customerProfileRepository;
 
-    /**
-     * 建立新帳戶。
-     * 執行 KYC 驗證、帳戶類型規則驗證，並根據帳戶類型設定初始餘額和利率。
-     *
-     * @param request 帳戶創建請求。
-     * @return 創建成功的帳戶響應。
-     * @throws AccountException 如果 KYC 驗證失敗或帳戶類型規則不符。
-     */
+
     @Transactional
     public AccountResponse createAccount(AccountCreateRequest request) {
         // 1. KYC 驗證 (Mock: 假設都通過)
@@ -53,7 +46,7 @@ public class AccountService {
         account.setAccountType(request.getAccountType());
         account.setCurrency(request.getCurrency());
         account.setStatus(AccountStatus.PENDING); // 預設 PENDING
-        
+
         // 處理子帳戶的父帳戶綁定
         if (request.getAccountType() == AccountType.SUB_ACCOUNT) {
              account.setParentAccountNumber(request.getParentAccountNumber());
@@ -116,14 +109,7 @@ public class AccountService {
                 .map(this::toResponse);
     }
 
-    /**
-     * 根據帳戶類型和貨幣篩選帳戶並進行分頁。
-     *
-     * @param type     要篩選的帳戶類型。
-     * @param currency 要篩選的貨幣。
-     * @param pageable 分頁資訊。
-     * @return 包含帳戶響應的分頁列表。
-     */
+
     @Transactional(readOnly = true)
     public Page<AccountResponse> getAccountsByTypeAndCurrency(AccountType type, Currency currency, Pageable pageable) {
         if (type == AccountType.BUSINESS) {
@@ -189,20 +175,7 @@ public class AccountService {
                 ));
     }
 
-    /**
-     * 變更帳戶狀態。
-     * 依據合法的狀態流轉規則進行驗證，不合法的轉換將被拒絕。
-     *
-     * 合法轉換:
-     *   PENDING → ACTIVE
-     *   ACTIVE → FROZEN, DORMANT, CLOSED
-     *   FROZEN → ACTIVE, CLOSED
-     *   DORMANT → ACTIVE, CLOSED
-     *
-     * @param accountNumber 帳號
-     * @param newStatus 目標狀態
-     * @return 更新後的帳戶響應
-     */
+
     @Transactional
     public AccountResponse updateAccountStatus(String accountNumber, AccountStatus newStatus) {
         Account account = accountRepository.findById(accountNumber)
@@ -239,24 +212,9 @@ public class AccountService {
         log.info("Account {} status changed: {} → {}", accountNumber, currentStatus, newStatus);
         return toResponse(updated);
     }
-
-    // ==========================================
     // Private Helper Methods
-    // ==========================================
 
-    /**
-     * 驗證帳戶狀態轉換是否合法。
-     * 依據開發文件定義的狀態機:
-     *   PENDING → ACTIVE
-     *   ACTIVE → FROZEN, DORMANT, CLOSED
-     *   FROZEN → ACTIVE, CLOSED
-     *   DORMANT → ACTIVE, CLOSED
-     *   CLOSED → (不可轉換)
-     *
-     * @param from 目前狀態
-     * @param to 目標狀態
-     * @return 合法回傳 true，否則 false
-     */
+
     private boolean isValidStatusTransition(AccountStatus from, AccountStatus to) {
         return switch (from) {
             case PENDING -> to == AccountStatus.ACTIVE;
@@ -317,7 +275,7 @@ public class AccountService {
         if (type == AccountType.CHECKING) {
             // CHECKING(活存): 同客戶 + 同 currency 只能有一個
             boolean hasDuplicateChecking = accountRepository.existsByCustomerIdAndAccountTypeAndCurrency(customerId, type, currency);
-            
+
             if (hasDuplicateChecking) {
                 throw new AccountException("DUPLICATE_CHECKING_ACCOUNT", "Customer already has a checking account in " + currency);
             }

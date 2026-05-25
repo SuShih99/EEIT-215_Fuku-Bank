@@ -29,13 +29,9 @@ public class AccountApplication {
     @Column(name = "application_no", nullable = false, unique = true, length = 30)
     private String applicationNo;
 
-    // ===== 關聯 =====
-
     /** 申請人（已註冊客戶） */
     @Column(name = "customer_id", nullable = false, length = 20)
     private String customerId;
-
-    // ===== 帳戶資訊 =====
 
     /** 申請的帳戶類型 */
     @Enumerated(EnumType.STRING)
@@ -46,8 +42,6 @@ public class AccountApplication {
     @Enumerated(EnumType.STRING)
     @Column(length = 3)
     private Currency currency;
-
-    // ===== KYC 個人資料（部分可從 CustomerProfile 帶入） =====
 
     @Column(name = "customer_name", nullable = false, length = 50, columnDefinition = "NVARCHAR(50)")
     private String name;
@@ -82,8 +76,6 @@ public class AccountApplication {
     @Column(name = "current_address", nullable = false, length = 255, columnDefinition = "NVARCHAR(255)")
     private String currentAddress;
 
-    // ===== 職業與財務背景 =====
-
     /** 職業別 */
     @Column(length = 50, columnDefinition = "NVARCHAR(50)")
     private String occupation;
@@ -106,8 +98,6 @@ public class AccountApplication {
     @Column(name = "fund_source", length = 30)
     private FundSource fundSource;
 
-    // ===== 法遵 =====
-
     /** 稅務居民國別碼（ISO 3166，CRS 規範） */
     @Column(name = "tax_residency", length = 10)
     private String taxResidency;
@@ -115,8 +105,6 @@ public class AccountApplication {
     /** PEPs 聲明：本人或家庭成員是否為重要政治性職務之人 */
     @Column(name = "is_pep", columnDefinition = "BIT NOT NULL DEFAULT 0")
     private Boolean isPep = false;
-
-    // ===== 證件圖片 =====
 
     /** 身分證正面圖片路徑 */
     @Column(name = "id_front_url", nullable = false, length = 255)
@@ -130,8 +118,6 @@ public class AccountApplication {
     @Column(name = "second_id_url", nullable = false, length = 255)
     private String secondIdUrl;
 
-    // ===== 風控 =====
-
     /** 風險標記 */
     @Enumerated(EnumType.STRING)
     @Column(name = "risk_flag", nullable = false, length = 30)
@@ -140,8 +126,6 @@ public class AccountApplication {
     /** 申請時的 IP 位址 */
     @Column(name = "apply_ip", length = 45)
     private String applyIp;
-
-    // ===== 審核 =====
 
     /** 申請狀態 */
     @Enumerated(EnumType.STRING)
@@ -163,8 +147,6 @@ public class AccountApplication {
     /** 審核通過後建立的帳號 */
     @Column(name = "created_account_number", length = 14)
     private String createdAccountNumber;
-
-    // ===== 時間戳 =====
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

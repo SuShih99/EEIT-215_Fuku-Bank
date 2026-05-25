@@ -100,8 +100,6 @@ import { getCustomers } from '@/api/customer'
 import { getEmployeeCount } from '@/api/auth'
 
 const authStore = useAuthStore()
-
-// ── 角色權限（permLevel 數字判斷，統一來源）──
 const permLevel = computed(() => authStore.user?.permLevel ?? 0)
 const isCISO   = computed(() => permLevel.value >= 4)  // 資安長 (Lvl4+)
 const isManager = computed(() => permLevel.value >= 2) // 主管及以上
@@ -112,8 +110,6 @@ const roleDisplayName = {
   CFDM: '主管',
   CFSO: '職員',
 }
-
-// ── 使用者資訊 ──
 const userName = computed(() => roleDisplayName[authStore.user?.roleCode] || authStore.user?.empName || '使用者')
 const userRole = computed(() => authStore.user?.roleCode || '未知')
 const lastLogin = computed(() => {
@@ -121,8 +117,6 @@ const lastLogin = computed(() => {
   if (!d) return ''
   return new Date(d).toLocaleString('zh-TW')
 })
-
-// ── 時間 ──
 const todayDate = ref('')
 const currentTime = ref('')
 let timer = null
@@ -140,8 +134,6 @@ const greeting = computed(() => {
   if (h < 18) return '午安'
   return '晚安'
 })
-
-// ── 統計卡片 ──
 const accountCount = ref(0)
 const customerCount = ref(0)
 const employeeCount = ref(0)
@@ -157,8 +149,6 @@ const iconTones = {
   card: { bg: 'rgba(106, 92, 116, 0.10)', color: '#665A70' },
   system: { bg: 'rgba(91, 96, 101, 0.10)', color: '#5B6065' },
 }
-
-// ── 統計卡片：依角色切換 ──
 const stats = computed(() => {
   if (isCISO.value) {
     // 資安長視角：稽核數據
@@ -177,8 +167,6 @@ const stats = computed(() => {
     { label: '最新交易', value: todayTransCount.value, icon: SwapOutlined,  ...iconTones.transaction, loading: statsLoading.value },
   ]
 })
-
-// ── 快捷入口：依角色切換 ──
 const businessShortcuts = [
   { label: '帳戶管理',   desc: '查看與管理帳戶',    route: '/admin/accounts',          icon: BankOutlined,     ...iconTones.account },
   { label: '交易紀錄',   desc: '查看所有交易紀錄',    route: '/admin/trans-logs',       icon: FileTextOutlined, ...iconTones.transaction },
@@ -191,8 +179,6 @@ const cisoShortcuts = [
   { label: '員工管理', desc: '帳號與權限管理',   route: '/admin/employees', icon: TeamOutlined,     ...iconTones.employee },
 ]
 const shortcuts = computed(() => isCISO.value ? cisoShortcuts : businessShortcuts)
-
-// ── 最新交易表格 ──
 const recentTrans = ref([])
 const transLoading = ref(true)
 
@@ -230,9 +216,6 @@ function formatDate(d) {
   if (!d) return ''
   return new Date(d).toLocaleString('zh-TW')
 }
-
-
-// ── 載入資料 ──
 async function loadStats() {
   statsLoading.value = true
   try {

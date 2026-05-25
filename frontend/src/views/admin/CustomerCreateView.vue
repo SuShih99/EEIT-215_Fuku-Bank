@@ -125,10 +125,7 @@ import { createCustomer } from '@/api/customer'
 const router = useRouter()
 const formRef = ref(null)
 const submitLoading = ref(false)
-
-// ===========================
 // 10 筆固定輪播示範資料
-// ===========================
 const demoCustomers = [
   { idNumber: 'A123456789', name: '張志豪', gender: 'M', birthday: '1985-03-15', email: 'jason.chang@gmail.com',  phone: '0912345678', address: '台北市大安區忠孝東路100號3樓' },
   { idNumber: 'B234567890', name: '陳怡君', gender: 'F', birthday: '1990-07-22', email: 'ivy.chen@gmail.com',    phone: '0923456789', address: '新北市板橋區民生路55號8樓' },
@@ -155,10 +152,7 @@ function fillNextDemo() {
   form.address = demo.address
   demoIndex.value = (demoIndex.value + 1) % demoCustomers.length
 }
-
-// ===========================
 // 表單資料
-// ===========================
 const form = reactive({
   idNumber: '',
   name: '',

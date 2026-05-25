@@ -65,8 +65,6 @@ public class RiskReviewService {
         return handleDisposition(request, credit, disposition);
     }
 
-    // ── 私有方法 ─────────────────────────────────────────────────────────
-
     /**
      * 從 dto 組黑名單比對 Map
      * null 的欄位不放入，避免 checkAll 誤判
@@ -87,14 +85,7 @@ public class RiskReviewService {
         return creditScoreService.rescore(dto.getCustomerId());
     }
 
-    /**
-     * RiskLevel → Disposition 對應規則
-     * LOW    → PASS          自動通過
-     * MEDIUM → MANUAL_REVIEW 轉人工審核
-     * HIGH   → REJECT        自動拒絕
-     * <p>
-     * pep人士一律轉人工審核
-     */
+
     private Disposition resolveDisposition(CustomerCreditInfo credit) {
         if (Boolean.TRUE.equals(credit.getIsPep())) {
             return Disposition.MANUAL_REVIEW;

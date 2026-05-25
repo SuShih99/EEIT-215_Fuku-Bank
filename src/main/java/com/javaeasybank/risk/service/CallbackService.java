@@ -19,14 +19,7 @@ public class CallbackService {
 
     private final RestTemplate restTemplate;
 
-    /**
-     * 通知來源模組審核結果
-     * callbackUrl 由 RiskReviewRequest.callbackUrl 帶入
-     * 例：http://loan-service/api/loan-callbacks/LOAN-001/status
-     *
-     * @param requiredDocuments 退回補件時審核人員要求的文件清單（非 RETURNED 傳 null 即可）
-     * @param adminComment      審核人員備註（可為 null）
-     */
+
     public void notify(String callbackUrl, Disposition disposition, RiskEventLog eventLog,
                        List<String> requiredDocuments, String adminComment) {
 

@@ -149,8 +149,6 @@ public class AccountApplicationResponse {
                 .build();
     }
 
-    // ===== 遮蔽工具 =====
-
     /** 身分證遮蔽：A123456789 → A12****789 */
     private static String maskIdNumber(String idNumber) {
         if (idNumber == null || idNumber.length() < 6) return idNumber;

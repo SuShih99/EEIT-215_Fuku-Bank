@@ -8,9 +8,6 @@ body {
   background-color: var(--admin-bg) !important;
 }
 
-/* =========================================
-   側邊欄 (Sidebar) 選單圓弧化
-========================================= */
 .ant-menu-item {
   border-radius: 14px !important;
   margin: 4px 12px !important;
@@ -27,9 +24,6 @@ body {
   color: #ffffff !important;
 }
 
-/* =========================================
-   卡片與表格 (Card & Table) 圓弧化
-========================================= */
 .ant-card {
   border-radius: 14px !important;
   border: 1px solid rgba(214, 206, 195, 0.78) !important;
@@ -50,9 +44,6 @@ body {
   font-weight: 600;
 }
 
-/* =========================================
-   修正 fixed 欄位水平滾動時 header 重疊問題
-   ========================================= */
 /* 固定欄的 header 要有實色背景 + 更高 z-index，避免其他 header 捲過時文字重疊 */
 .ant-table-thead > tr > th.ant-table-cell-fix-left,
 .ant-table-thead > tr > th.ant-table-cell-fix-right {
@@ -79,9 +70,6 @@ body {
   box-shadow: none !important;
 }
 
-/* =========================================
-   全域按鈕 (Button) 變色與圓弧
-========================================= */
 .ant-btn {
   border-radius: 12px !important;
 }
@@ -96,9 +84,6 @@ body {
   border-color: var(--admin-primary-hover) !important;
 }
 
-/* =========================================
-   隱藏選單外框與加高 Header
-========================================= */
 .ant-menu-item:focus-visible,
 .ant-menu-item:focus {
   outline: none !important;
@@ -115,9 +100,6 @@ body {
   justify-content: space-between !important;
 }
 
-/* =========================================
-   F-Pattern 全域佈局設計
-========================================= */
 .page-container {
   padding: 32px 40px;
   width: 100%;

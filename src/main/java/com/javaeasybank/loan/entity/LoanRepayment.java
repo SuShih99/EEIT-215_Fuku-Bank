@@ -25,8 +25,6 @@ public class LoanRepayment {
     // 關聯的貸款帳戶識別碼
     private String accountId;
 
-    // ── 期數資訊 ─────────────────────────────────────────────────────
-
     // 期數序號（1-based），第一期為 1
     private Integer periodIndex;
 
@@ -35,8 +33,6 @@ public class LoanRepayment {
 
     // 實際繳款日
     private LocalDate paidDate;
-
-    // ── 金額明細（由 AmortizationCalculator 預算，還款後更新） ────────
 
     // 本期應繳總額（本金 + 利息），單位
     private BigDecimal totalAmount;
@@ -50,13 +46,9 @@ public class LoanRepayment {
     // 繳清本期後的預計剩餘本金，單位：新台幣
     private BigDecimal remainingAfter;
 
-    // ── 狀態 ─────────────────────────────────────────────────────────
-
     // 本期還款狀態，以字串形式存入 DB
     @Enumerated(EnumType.STRING)
     private LoanRepaymentStatus repaymentStatus;
-
-    // ── 時間戳 ──────────────────────────────────────────────────────
 
     // 此筆還款紀錄的建立時間（撥款時批次寫入）
     private LocalDateTime createTime;

@@ -52,14 +52,7 @@ public interface AccountRepository extends JpaRepository<Account, String> {
 
     Page<Account> findByStatusAndAccountTypeNot(AccountStatus status, AccountType accountType, Pageable pageable);
 
-    /**
-     * 根據帳戶類型和貨幣篩選帳戶並進行分頁。
-     *
-     * @param accountType 要篩選的帳戶類型。
-     * @param currency    要篩選的貨幣。
-     * @param pageable    分頁資訊。
-     * @return 包含帳戶實體的分頁列表。
-     */
+
     Page<Account> findByAccountTypeAndCurrency(AccountType accountType, Currency currency, Pageable pageable);
 
     @Query("""
@@ -77,7 +70,7 @@ public interface AccountRepository extends JpaRepository<Account, String> {
               AND (:status IS NULL OR a.status = :status)
               AND (:accountType IS NULL OR a.accountType = :accountType)
               AND (:currency IS NULL OR a.currency = :currency)
-            ORDER BY 
+            ORDER BY
               CASE WHEN a.accountType = com.javaeasybank.account.enums.AccountType.CHECKING THEN 0 ELSE 1 END,
               a.createdAt DESC
             """)
@@ -103,25 +96,10 @@ public interface AccountRepository extends JpaRepository<Account, String> {
             Currency currency,
             AccountStatus status);
 
-    /**
-     * 檢查指定客戶是否已擁有特定帳戶類型和貨幣的帳戶。
-     *
-     * @param customerId  客戶 ID。
-     * @param accountType 帳戶類型。
-     * @param currency    貨幣。
-     * @return 如果存在則返回 true，否則返回 false。
-     */
+
     boolean existsByCustomerIdAndAccountTypeAndCurrency(String customerId, AccountType accountType, Currency currency);
 
-    /**
-     * 檢查指定客戶是否擁有特定帳戶類型、貨幣和狀態的帳戶。
-     *
-     * @param customerId  客戶 ID。
-     * @param accountType 帳戶類型。
-     * @param currency    貨幣。
-     * @param status      帳戶狀態。
-     * @return 如果存在則返回 true，否則返回 false。
-     */
+
     boolean existsByCustomerIdAndAccountTypeAndCurrencyAndStatus(String customerId, AccountType accountType, Currency currency, AccountStatus status);
 
     /**
@@ -143,10 +121,7 @@ public interface AccountRepository extends JpaRepository<Account, String> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT a FROM Account a WHERE a.accountNumber IN :accountNumbers ORDER BY a.accountNumber")
     List<Account> findAllByAccountNumberInForUpdate(@Param("accountNumbers") Collection<String> accountNumbers);
-
-    // ==========================================
     // 統計用 (Dashboard)
-    // ==========================================
     @Query("SELECT a.status, COUNT(a) FROM Account a WHERE a.accountType != com.javaeasybank.account.enums.AccountType.BUSINESS GROUP BY a.status")
     List<Object[]> countByStatusGroup();
 

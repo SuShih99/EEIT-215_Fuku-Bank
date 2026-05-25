@@ -40,8 +40,6 @@ public class CustomerController {
         this.authEmpRepository = authEmpRepository;
         this.actionLogService = actionLogService;
     }
-
-    // ===== 查詢客戶（支援模糊搜尋）=====
     @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ApiResponse<List<CustomerRespository.CustomerResponse>>> getCustomers(
@@ -54,8 +52,6 @@ public class CustomerController {
         }
         return ResponseEntity.ok(ApiResponse.success(result));
     }
-
-    // ===== 新增客戶 =====
     @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<ApiResponse<CustomerRespository.CustomerResponse>> createCustomer(
@@ -73,8 +69,6 @@ public class CustomerController {
             throw ex;
         }
     }
-
-    // ===== 修改客戶聯絡資訊 =====
     @PreAuthorize("isAuthenticated()")
     @PutMapping("/{customerId}")
     public ResponseEntity<ApiResponse<CustomerRespository.CustomerResponse>> updateCustomer(
@@ -93,8 +87,6 @@ public class CustomerController {
             throw ex;
         }
     }
-
-    // ===== 上傳客戶證件圖片 =====
     @PreAuthorize("isAuthenticated()")
     @PostMapping(value = "/documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<Map<String, String>>> uploadCustomerDocument(
@@ -112,8 +104,6 @@ public class CustomerController {
             throw ex;
         }
     }
-
-    // ===== 註銷客戶（軟刪除） =====
     @PreAuthorize("isAuthenticated()")
     @PutMapping("/{customerId}/deactivate")
     public ResponseEntity<ApiResponse<Void>> deactivateCustomer(@PathVariable String customerId) {
@@ -135,8 +125,6 @@ public class CustomerController {
             throw ex;
         }
     }
-
-    // ===== 啟用客戶 =====
     @PreAuthorize("isAuthenticated()")
     @PutMapping("/{customerId}/activate")
     public ResponseEntity<ApiResponse<Void>> activateCustomer(@PathVariable String customerId) {
@@ -153,8 +141,6 @@ public class CustomerController {
             throw ex;
         }
     }
-
-    // ===== 一鍵帶入資料 =====
     @PreAuthorize("isAuthenticated()") 
     @PostMapping("/seed")
     public ResponseEntity<ApiResponse<String>> seedCustomers() {

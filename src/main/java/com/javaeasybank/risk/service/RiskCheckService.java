@@ -38,11 +38,8 @@ public class RiskCheckService {
         RiskCheckResponse blacklistResult = checkBlacklist(request);
         if (blacklistResult != null)
             return blacklistResult; // 命中就提早結束
-
-        // ==========================================
         // 【新增】PEP 政治敏感人士判斷
         // 說明：高優順序，一律轉人工審核（Disposition.MANUAL_REVIEW）
-        // ==========================================
         Boolean pep = creditScoreService.getCreditInfoByCustomerId(request.getCustomerId()).getIsPep();
         if (Boolean.TRUE.equals(pep)) {
             log.info("[RiskCheck] 觸發 PEP 政治敏感人士法規合規檢查 customerId={}", request.getCustomerId());

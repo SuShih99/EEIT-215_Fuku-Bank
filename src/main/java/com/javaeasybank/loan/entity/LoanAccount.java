@@ -31,8 +31,6 @@ public class LoanAccount {
     // 客戶內部識別碼（系統內部使用，不對外顯示）
     private String customerId;
 
-    // ── 核准條件（從行員二次填單複製而來）───────────────────────────
-
     // 貸款種類，例如 "PERSONAL"（信貸）、"HOUSE"（房貸）
     private String applyType;
 
@@ -48,15 +46,11 @@ public class LoanAccount {
     // 每期（月）應繳總金額，由 AmortizationCalculator 計算
     private BigDecimal monthlyPayment;
 
-    // ── 還款進度 ─────────────────────────────────────────────────────
-
     // 目前已繳清的期數，初始為 0，每次繳款後 +1
     private Integer paidPeriods;
 
     // 目前尚未還清的本金餘額（新台幣）
     private BigDecimal remainingPrincipal;
-
-    // ── 日期 ─────────────────────────────────────────────────────────
 
     // 撥款日，同時作為還款起算日（第一期應繳日從此日起算一個月）
     private LocalDate startDate;
@@ -64,13 +58,9 @@ public class LoanAccount {
     // 下一期的應繳截止日，繳款後更新為下一期的 scheduledDate
     private LocalDate nextPaymentDate;
 
-    // ── 帳戶狀態 ─────────────────────────────────────────────────────
-
     // 帳戶還款狀態，以字串形式存入 DB，參見 LoanAccountStatus
     @Enumerated(EnumType.STRING)
     private LoanAccountStatus accountStatus;
-
-    // ── 時間戳 ──────────────────────────────────────────────────────
 
     // 帳戶建立時間（即撥款時間）
     private LocalDateTime createTime;

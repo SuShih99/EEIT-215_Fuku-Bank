@@ -54,10 +54,7 @@ public class CustomerServiceImpl implements CustomerService {
         this.customerCreditRepository = customerCreditRepository; // 初始化
         this.jdbcTemplate = jdbcTemplate;
     }
-
-    // ===========================
     // CRUD
-    // ===========================
     @Override
     public List<CustomerRespository.CustomerResponse> getAllCustomers() {
         return customerProfileRepository.findAll().stream()
@@ -186,10 +183,7 @@ public class CustomerServiceImpl implements CustomerService {
             customerAuthRepository.save(auth);
         });
     }
-
-    // ===========================
     // 一鍵帶入測試資料（直接執行 SQL）
-    // ===========================
     @Override
     @Transactional // 確保整段 SQL 執行過程若有錯誤會自動 Rollback
     public void seedTestData() {
@@ -322,10 +316,7 @@ public class CustomerServiceImpl implements CustomerService {
                 LEFT JOIN customer_risk_tag r ON p.customer_id = r.customer_id
                 """);
     }
-
-    // ===========================
     // 給其他模組對接用
-    // ===========================
     @Override
     public CustomerRespository.CustomerResponse findByCustomerId(String customerId) {
         CustomerProfile profile = customerProfileRepository.findById(customerId)
@@ -420,10 +411,7 @@ public class CustomerServiceImpl implements CustomerService {
         CustomerProfile saved = customerProfileRepository.save(profile);
         return convertToResponse(saved);
     }
-
-    // ===========================
     // 私有方法
-    // ===========================
     private CustomerRespository.CustomerResponse convertToResponse(CustomerProfile profile) {
         CustomerRespository.CustomerResponse res = new CustomerRespository.CustomerResponse();
         BeanUtils.copyProperties(profile, res);

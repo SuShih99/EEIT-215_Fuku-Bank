@@ -6,10 +6,8 @@ export const BASE_URL = import.meta.env.VITE_API_BASE_URL
 // 建立一個 axios 實例，統一設定後端 API 的基礎 URL
 const api = axios.create({
   baseURL: BASE_URL,
-  withCredentials: true, // ← 帶上 Session Cookie，Spring Security 才認得（管理端用）
+  withCredentials: true,
 })
-
-// === 請求攔截器：自動帶入 JWT Token（客戶端用） ===
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('customer_token')
@@ -36,8 +34,6 @@ api.interceptors.request.use(
   },
   (error) => Promise.reject(error),
 )
-
-// === 回應攔截器：遇到 401 自動跳轉登入頁 ===
 api.interceptors.response.use(
   (response) => response,
   (error) => {

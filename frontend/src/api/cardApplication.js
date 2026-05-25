@@ -27,11 +27,6 @@ export async function deleteApplication(id){
     const res = await api.delete(`/api/admin/card-applications/${id}`)
     return unwrap(res)
 }
-
-
-
-
-//--申請明細--
 //修改備註
 export async function updateApplicationRemark(id, remark) {
   const res = await api.put(`/api/admin/card-applications/${id}/remark`, {

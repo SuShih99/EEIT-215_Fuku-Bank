@@ -66,8 +66,6 @@ public class CardTypeAdminController {
 
         Files.createDirectories(path.getParent());
         Files.write(path, file.getBytes());
-
-        // ✅ 只回傳相對路徑
         String url = "uploads/" + filename;
 
         return ResponseEntity.ok(ApiResponse.success(Map.of("url", url)));

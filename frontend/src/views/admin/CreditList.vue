@@ -206,7 +206,6 @@ onMounted(fetchCredits)
   padding: 0;
 }
 
-/* ── 💡 調整：沉穩、專業金融質感的風險藥丸樣式 ── */
 .status-tag {
   display: inline-flex;
   align-items: center;

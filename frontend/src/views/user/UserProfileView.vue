@@ -332,8 +332,6 @@ function handleBeforeUnload(e) {
     e.returnValue = ''
   }
 }
-
-// --- Custom Toast & Modal ---
 const toast = reactive({ visible: false, text: '', type: 'success', timer: null })
 function showToast(text, type = 'success') {
   toast.text = text
@@ -360,7 +358,6 @@ function showConfirm(title, content) {
     confirmModal.onCancel = () => { confirmModal.visible = false; resolve(false) }
   })
 }
-// ----------------------------
 
 onMounted(async () => {
   window.addEventListener('beforeunload', handleBeforeUnload)

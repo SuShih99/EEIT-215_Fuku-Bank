@@ -5,8 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
-
-// ===外部模組回調：更新申請狀態===
 // 風控模組：PENDING_REVIEW → APPROVED / REJECTED
 // 帳戶模組：APPROVED → DISBURSED
 @Getter

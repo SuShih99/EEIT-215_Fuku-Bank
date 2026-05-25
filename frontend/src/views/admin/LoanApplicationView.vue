@@ -403,8 +403,6 @@ import LoanContactLogModal from './LoanContactLogModal.vue'
 import LoanReviewModal from './LoanReviewModal.vue'
 import LoanDocumentModal from './LoanDocumentModal.vue'
 import { useAuthStore } from '@/stores/auth'
-
-// ── 角色權限判斷 ──
 const authStore = useAuthStore()
 // 雙重判斷：permLevel 數字 或 roleCode 字串
 const APPROVER_ROLES = ['CFDM', 'CSDM', 'CRDM', 'CRO', 'COO', 'CISO', 'ISSA']
@@ -413,17 +411,11 @@ const canApprove = computed(() => {
   const code = authStore.user?.roleCode ?? ''
   return level >= 2 || APPROVER_ROLES.includes(code)
 })
-
-// ── Emits ──
 defineEmits([])
-
-// ── Constants ──
 const API_URL = '/api/admin/loan-applications'
 
 // ② 每頁筆數選項
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100]
-
-// ── Contact Modal state ──
 const contactModalOpen = ref(false)
 const contactModalApp = ref(null)
 
@@ -435,8 +427,6 @@ function openContactModal(app) {
 function onLogAdded() {
   fetchApplications()
 }
-
-// ── Review Modal state ──
 const reviewModalOpen = ref(false)
 const reviewModalApp = ref(null)
 
@@ -448,8 +438,6 @@ function openReviewModal(app) {
 function onReviewUpdated() {
   fetchApplications()
 }
-
-// ── Document Modal state ──
 const docModalOpen = ref(false)
 const docModalApp  = ref(null)
 
@@ -504,8 +492,6 @@ const SORT_LABEL = {
   applyPeriod: '期數', rate: '利率', applicationStatus: '申請狀態',
   progressTime: '更新時間', createTime: '申請時間',
 }
-
-// ── State ──
 const currentStatus = ref('PENDING_CONTACT')
 const applications = ref([])
 const allApplications = ref([])
@@ -528,8 +514,6 @@ const typeDropdownOpen = ref(false)
 
 // ⑤ 姓名模糊搜尋
 const nameQuery = ref('')
-
-// ── Computed ──
 
 /** ④ 類型篩選 ＋ ⑤ 姓名搜尋 → ① 排序 */
 const filteredApplications = computed(() => {
@@ -610,8 +594,6 @@ const pageNumbers = computed(() => {
   if (cur >= total - 3) return [1, '…', total - 4, total - 3, total - 2, total - 1, total]
   return [1, '…', cur - 1, cur, cur + 1, '…', total]
 })
-
-// ── Methods ──
 async function fetchApplications() {
   loading.value = true
   error.value = ''
@@ -695,8 +677,6 @@ function clearTypes() {
 function countByType(key) {
   return applications.value.filter(a => a.applyType === key).length
 }
-
-// ── 顯示值選擇：審核中/已核准/已撥款/已結案 使用確認值，其餘用申請值 ──
 function displayAmount(app) {
   return POST_REVIEW_STATUSES.has(app.applicationStatus) && app.confirmedAmount != null
     ? app.confirmedAmount
@@ -715,8 +695,6 @@ function displayRate(app) {
 function isConfirmedValue(app) {
   return POST_REVIEW_STATUSES.has(app.applicationStatus) && app.confirmedAmount != null
 }
-
-// ── Formatters ──
 function sortLabel(key) {
   return key === 'progressTime' ? progressColumnLabel.value : (SORT_LABEL[key] || key)
 }
@@ -770,8 +748,6 @@ function isBetween(value, start, end) {
   const d = new Date(value)
   return !Number.isNaN(d.getTime()) && d >= start && d < end
 }
-
-// ── Auto-refresh（固定 30 秒）──
 let refreshTimer = null
 
 function startAutoRefresh() {

@@ -102,8 +102,6 @@ public class LoanApplicationService {
 
     @Autowired
     private LoanContractPdfService loanContractPdfService;
-
-    // ===查詢功能===
     // 依狀態顯示
     public List<LoanApplicationResponseDTO> getByStatus(LoanApplicationStatus status) {
         return laRepo.findByApplicationStatusOrderByCreateTimeDesc(status)
@@ -119,8 +117,6 @@ public class LoanApplicationService {
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
     }
-
-    // ===新增功能===
 
     /// 會員申請
     public String insertMember(String customerId, LoanMemberRequestDTO dto) {
@@ -175,8 +171,6 @@ public class LoanApplicationService {
         loan.setApplyPeriod(applyPeriod);
         loan.setRate(rate);
     }
-
-    // ===聯繫紀錄===
     // 新增聯繫紀錄，同步更新主表最新聯繫狀態
     public void addContactLog(String applicationId, LoanContactLogRequestDTO dto) {
 
@@ -218,8 +212,6 @@ public class LoanApplicationService {
                 .map(this::toContactLogResponseDTO)
                 .collect(Collectors.toList());
     }
-
-    // ===二次填單===
     // 儲存草稿：有草稿就覆蓋同一筆，沒有就新建
     // 送審後不可修改
     public void saveReviewDetail(String applicationId, LoanReviewDetailRequestDTO dto) {
@@ -320,8 +312,8 @@ public class LoanApplicationService {
 
         // 風控必填
         dto.setScene("LOAN_APPLY");
-        dto.setBusinessId(loan.getApplicationId()); // ← businessId
-        dto.setAmount(detail.getConfirmedAmount()); // ← amount
+        dto.setBusinessId(loan.getApplicationId());
+        dto.setAmount(detail.getConfirmedAmount());
 
         dto.setCif(cif);
         dto.setApplyType(loan.getApplyType());
@@ -721,8 +713,6 @@ public class LoanApplicationService {
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
     }
-
-    // ===利率規則===
     // 回傳利率規則表，供前端頁面載入時抓取
     // 前端依此規則：
     // 1. 根據貸款種類顯示合法期數下拉選單
@@ -777,8 +767,6 @@ public class LoanApplicationService {
 
         return rules;
     }
-
-    // ===DTO轉換===
     // Entity → LoanApplicationResponseDTO
     private LoanApplicationResponseDTO toResponseDTO(LoanApplication loan) {
         LoanApplicationResponseDTO dto = new LoanApplicationResponseDTO();

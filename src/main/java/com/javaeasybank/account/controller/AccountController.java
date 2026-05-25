@@ -63,14 +63,7 @@ public class AccountController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    /**
-     * 檢索指定客戶的帳戶分頁列表。
-     *
-     * @param customerId 客戶ID。
-     * @param page       頁碼（默認為0）。
-     * @param size       每頁帳戶數量（默認為10）。
-     * @return 包含帳戶分頁列表響應的 ResponseEntity。
-     */
+
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<AccountResponse>>> getAccountsByCustomerId(
             @RequestParam String customerId,
@@ -109,14 +102,7 @@ public class AccountController {
         return ResponseEntity.ok(ApiResponse.success(pageResponse));
     }
 
-    /**
-     * 檢索按狀態過濾的帳戶分頁列表。
-     *
-     * @param status 要檢索的帳戶狀態。
-     * @param page   頁碼（默認為0）。
-     * @param size   每頁帳戶數量（默認為10）。
-     * @return 包含帳戶分頁列表響應的 ResponseEntity。
-     */
+
     @GetMapping("/status/{status}")
     public ResponseEntity<ApiResponse<PageResponse<AccountResponse>>> getAccountsByStatus(
             @PathVariable AccountStatus status,
@@ -128,15 +114,7 @@ public class AccountController {
         return ResponseEntity.ok(ApiResponse.success(pageResponse));
     }
 
-    /**
-     * 檢索按類型和貨幣過濾的帳戶分頁列表。
-     *
-     * @param type     要檢索的帳戶類型。
-     * @param currency 要檢索的帳戶貨幣。
-     * @param page     頁碼（默認為0）。
-     * @param size     每頁帳戶數量（默認為10）。
-     * @return 包含帳戶分頁列表響應的 ResponseEntity。
-     */
+
     @GetMapping("/filter")
     public ResponseEntity<ApiResponse<PageResponse<AccountResponse>>> getAccountsByTypeAndCurrency(
             @RequestParam AccountType type,

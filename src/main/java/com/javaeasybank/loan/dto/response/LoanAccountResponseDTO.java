@@ -32,8 +32,6 @@ public class LoanAccountResponseDTO {
     // 客戶姓名，前端列表直接顯示用
     private String memberName;
 
-    // ── 核准條件 ─────────────────────────────────────────────────────
-
     // 貸款種類，例如 "PERSONAL"（信貸）、"HOUSE"（房貸）
     private String applyType;
 
@@ -49,8 +47,6 @@ public class LoanAccountResponseDTO {
     // 每期（月）應繳總金額，由 AmortizationCalculator 計算
     private BigDecimal monthlyPayment;
 
-    // ── 還款進度 ─────────────────────────────────────────────────────
-
     // 目前已繳清的期數
     private Integer paidPeriods;
 
@@ -63,15 +59,11 @@ public class LoanAccountResponseDTO {
     // 下一期應繳款截止日，逾期後排程會自動標記為 OVERDUE
     private LocalDate nextPaymentDate;
 
-    // ── 帳戶狀態 ─────────────────────────────────────────────────────
-
     // 帳戶目前還款狀態，參見 LoanAccountStatus
     private LoanAccountStatus accountStatus;
 
     // 帳戶建立時間（即撥款時間）
     private LocalDateTime createTime;
-
-    // ── 還款明細 ─────────────────────────────────────────────────────
 
     // 各期還款明細清單（依期數升序排列）
     private List<LoanRepaymentResponseDTO> repayments;

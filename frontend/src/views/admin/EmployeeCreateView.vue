@@ -152,10 +152,7 @@ import { createEmployee } from '@/api/auth'
 const router = useRouter()
 const formRef = ref(null)
 const submitLoading = ref(false)
-
-// ===========================
 // 10 筆固定輪播示範資料
-// ===========================
 const demoEmployees = [
   { empId: 'E26101', empName: '周政廷', deptId: 'DPT001', roleId: 'R001', email: 'jason.chou@javabank.com',   password: '123456', permissionExpire: '2026-12-31T00:00:00' },
   { empId: 'E26102', empName: '許家瑩', deptId: 'DPT002', roleId: 'R003', email: 'karen.hsu@javabank.com',    password: '123456', permissionExpire: '2026-12-31T00:00:00' },
@@ -183,10 +180,7 @@ function fillNextDemo() {
   form.permissionExpire = demo.permissionExpire
   demoIndex.value = (demoIndex.value + 1) % demoEmployees.length
 }
-
-// ===========================
 // 部門 & 角色對應
-// ===========================
 const allRoles = [
   { id: 'R001', deptId: 'DPT001', code: 'CFSO',    name: '消金業務專員' },
   { id: 'R002', deptId: 'DPT001', code: 'CFDM',    name: '消金部經理' },
@@ -211,10 +205,7 @@ const filteredRoles = computed(() => {
 function handleDeptChange() {
   form.roleId = undefined
 }
-
-// ===========================
 // 表單資料
-// ===========================
 const form = reactive({
   empId: '',
   empName: '',

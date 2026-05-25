@@ -45,8 +45,6 @@ public class AuthController {
         this.actionLogService = actionLogService;
         this.jwtUtil = jwtUtil;
     }
-
-    // ===== 登入（所有人都能打）=====
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthRespository.AuthEmpResponse>> login(
             @RequestBody AuthRespository.LoginRequest request,
@@ -81,8 +79,6 @@ public class AuthController {
         response.setToken(jwtUtil.generateToken(response.getEmail(), response.getRoleCode(), response.getEmpId()));
         return ResponseEntity.ok(ApiResponse.success(response));
     }
-
-    // ===== 確認登入狀態（給前端路由守衛用）=====
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<AuthRespository.AuthEmpResponse>> me(Authentication authentication) {
         if (authentication == null
@@ -103,8 +99,6 @@ public class AuthController {
         AuthRespository.AuthEmpResponse employee = authEmpService.getEmpByEmail(email);
         return ResponseEntity.ok(ApiResponse.success(employee));
     }
-
-    // ===== 登出 =====
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(HttpSession session,
                                                      HttpServletRequest httpRequest) {
@@ -121,14 +115,10 @@ public class AuthController {
         session.invalidate();
         return ResponseEntity.ok(ApiResponse.success(null));
     }
-
-    // ===== 員工人數（所有已登入角色皆可存取）=====
     @GetMapping("/employees/count")
     public ResponseEntity<ApiResponse<Long>> getEmpCount() {
         return ResponseEntity.ok(ApiResponse.success(authEmpService.getEmpCount()));
     }
-
-    // ===== 查詢員工（支援模糊搜尋）=====
     @PreAuthorize("hasAnyRole('CISO', 'ISSA')")
     @GetMapping("/employees")
     public ResponseEntity<ApiResponse<List<AuthRespository.AuthEmpResponse>>> getEmps(
@@ -141,16 +131,12 @@ public class AuthController {
         }
         return ResponseEntity.ok(ApiResponse.success(result));
     }
-
-    // ===== 新增員工 =====
     @PreAuthorize("hasAnyRole('CISO', 'ISSA')")
     @PostMapping("/employees")
     public ResponseEntity<ApiResponse<AuthRespository.AuthEmpResponse>> createEmp(
             @RequestBody AuthRespository.AuthEmpRequest request) {
         return ResponseEntity.ok(ApiResponse.success(authEmpService.createEmp(request)));
     }
-
-    // ===== 修改員工 =====
     @PreAuthorize("hasAnyRole('CISO', 'ISSA')")
     @PutMapping("/employees/{empId}")
     public ResponseEntity<ApiResponse<AuthRespository.AuthEmpResponse>> updateEmp(
@@ -158,31 +144,23 @@ public class AuthController {
             @RequestBody AuthRespository.AuthEmpRequest request) {
         return ResponseEntity.ok(ApiResponse.success(authEmpService.updateEmp(empId, request)));
     }
-
-    // ===== 停用員工（軟刪除） =====
     @PreAuthorize("hasAnyRole('CISO', 'ISSA')")
     @DeleteMapping("/employees/{empId}/suspend")
     public ResponseEntity<ApiResponse<Void>> suspendEmp(@PathVariable String empId) {
         authEmpService.suspendEmp(empId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
-
-    // ===== 重新啟用員工 =====
     @PreAuthorize("hasAnyRole('CISO', 'ISSA')")
     @PutMapping("/employees/{empId}/resume")
     public ResponseEntity<ApiResponse<Void>> resumeEmp(@PathVariable String empId) {
         authEmpService.resumeEmp(empId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
-
-    // ===== 一鍵帶入資料 =====
     @PostMapping("/employees/seed")
     public ResponseEntity<ApiResponse<String>> seedEmployees() {
         authEmpService.seedTestData();
         return ResponseEntity.ok(ApiResponse.success("已成功帶入資料"));
     }
-
-    // ===== 工具方法：取得真實 IP =====
     private String getClientIp(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isEmpty()) {

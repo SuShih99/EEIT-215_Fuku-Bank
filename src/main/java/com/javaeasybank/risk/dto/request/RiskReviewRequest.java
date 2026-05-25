@@ -12,16 +12,7 @@ import java.util.List;
 
 @Getter
 @Setter
-//********待修正********
-//審核用資料需要調整
 public class RiskReviewRequest {
-
-    // ── 路由資訊 ──────────────────────────────────────────
-
-    /**
-     * 業務場景：LOAN_APPLY / ACCOUNT_OPEN / CARD_APPLY
-     * 風控 Service 依此走不同評分策略
-     */
     @NotNull(message = "scene 不可為空")
     private BusinessScene scene;
 
@@ -40,8 +31,6 @@ public class RiskReviewRequest {
      */
     @NotBlank(message = "callbackUrl 不可為空")
     private String callbackUrl;
-
-    // ── 客戶身份 ──────────────────────────────────────────
 
     /**
      * 客戶ID（對應 CustomerCreditInfo.customerId）
@@ -67,8 +56,6 @@ public class RiskReviewRequest {
      */
     @Size(max = 20)
     private String phone;
-
-    // ── 財務資訊（補充或覆蓋 CustomerCreditInfo）────────────
 
     /**
      * 本次申請金額

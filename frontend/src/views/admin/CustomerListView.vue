@@ -885,10 +885,7 @@ function applicationStatusClass(status) {
     .toLowerCase()
     .replace('_', '-')
 }
-
-// ===========================
 // 編輯 Modal
-// ===========================
 const showEditModal = ref(false)
 const submitLoading = ref(false)
 const editingCustomerId = ref('')
@@ -1125,10 +1122,7 @@ function openDocument(url) {
   if (!href) return
   window.open(href, '_blank', 'noopener,noreferrer')
 }
-
-// ===========================
 // 停用客戶（帶確認對話框）
-// ===========================
 function handleDeactivate(record) {
   Modal.confirm({
     title: '確定要停用此客戶嗎？',
@@ -1147,10 +1141,7 @@ function handleDeactivate(record) {
     },
   })
 }
-
-// ===========================
 // 重新啟用客戶
-// ===========================
 function handleActivate(record) {
   Modal.confirm({
     title: '確定要重新啟用此客戶嗎？',
@@ -1169,10 +1160,7 @@ function handleActivate(record) {
     },
   })
 }
-
-// ===========================
 // 解除客戶資安鎖定
-// ===========================
 function handleUnlock(record) {
   Modal.confirm({
     title: '確定要解除該客戶的資安鎖定嗎？',

@@ -12,8 +12,6 @@ import java.util.List;
 @Setter
 public class LoanRiskRequestDTO {
 
-    // ── 申請基本資料 ─────────────────────────────────────────────────
-
     // 貸款申請唯一識別碼，對應 LoanApplication.applicationId
     private String applicationId;
 
@@ -25,8 +23,6 @@ public class LoanRiskRequestDTO {
 
     // 貸款種類，例如 "PERSONAL"、"HOUSE"
     private String applyType;
-
-    // ── 行員二次填單確認值 ────────────────────────────────────────────
 
     // 行員確認的核准金額（新台幣）
     private BigDecimal confirmedAmount;
@@ -43,15 +39,11 @@ public class LoanRiskRequestDTO {
     // 客戶在聯繫階段已送出的申請文件清單（選填）
     private List<LoanDocumentInfoDTO> documents;
 
-    // ── 行員資訊 ─────────────────────────────────────────────────────
-
     // 送審行員工號
     private String empId;
 
     // 行員送出審核的時間戳記
     private LocalDateTime submittedTime;
-
-    // ── 風控回調設定 ──────────────────────────────────────────────────
 
     // 風控系統完成審核後回呼的 URL，指向 LoanCallbackController
     private String callbackUrl;

@@ -317,22 +317,16 @@
 import {ref, reactive, computed, watch} from 'vue'
 import axios from '@/api/axios'
 import api from "@/api/axios";
-
-// ── Props / Emits ──
 const props = defineProps({
   modelValue: Boolean,
   app: Object,
 })
 const emit = defineEmits(['update:modelValue', 'review-updated'])
 
-// ── Constants ──
-
 const LOAN_TYPE_NAME = {
   PERSONAL: '個人信貸', CAR: '汽車貸款', MOTOR: '機車貸款', STUDENT: '學貸',
   BUSINESS: '創業貸款', HOUSE: '房屋貸款', LAND: '土地貸款',
 }
-
-// ── State ──
 const review = ref(null)
 const reviewLoading = ref(false)
 const saveLoading = ref(false)
@@ -348,8 +342,6 @@ const form = reactive({
 })
 
 const alert = reactive({show: false, type: 'success', msg: ''})
-
-// ── Computed ──
 const isSubmitted = computed(() => review.value?.reviewStatus === 'SUBMITTED')
 
 const reviewStatusLabel = computed(() => ({
@@ -391,16 +383,12 @@ const rateDiff = computed(() => {
 const hasDiff = computed(() =>
   amountDiff.value !== null || periodDiff.value !== null || rateDiff.value !== null
 )
-
-// ── Watch：開啟時載入 ──
 watch(() => props.modelValue, async (open) => {
   if (open && props.app?.applicationId) {
     await fetchReview()
     form.empId = JSON.parse(localStorage.getItem('auth_user'))?.empId || ''
   }
 })
-
-// ── Methods ──
 async function fetchReview() {
   reviewLoading.value = true
   review.value = null
@@ -519,8 +507,6 @@ function showAlert(type, msg) {
 function close() {
   emit('update:modelValue', false)
 }
-
-// ── Formatters ──
 function formatAmount(n) {
   return n ? '$ ' + Number(n).toLocaleString('zh-TW') : '—'
 }

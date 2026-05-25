@@ -1,8 +1,5 @@
 package com.javaeasybank.common.config;
 
-import java.time.Duration;
-import java.util.List;
-
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,24 +11,19 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.expression.WebExpressionAuthorizationManager;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.security.web.access.expression.WebExpressionAuthorizationManager;
 
-/**
- * Spring Security 設定
- * <p>
- * 重點：
- * 1. @EnableMethodSecurity → 啟用 @PreAuthorize 註解
- * 2. 管理端：Session-based 認證（/api/auth/**）
- * 3. 客戶端：JWT-based 認證（/api/customer/auth/**）
- * 4. JwtAuthenticationFilter 在 UsernamePasswordAuthenticationFilter 之前執行
- */
+import java.time.Duration;
+import java.util.List;
+
+
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity  // ← 這行讓 @PreAuthorize 生效
+@EnableMethodSecurity
 public class SecurityConfig {
     private static final Duration ADMIN_SESSION_TIMEOUT = Duration.ofHours(8);
 
@@ -56,31 +48,23 @@ public class SecurityConfig {
 
                 // 路由權限設定
                 .authorizeHttpRequests(auth -> auth
-                        // === 管理端：登入/登出 不需驗證 ===
                         .requestMatchers("/api/auth/login").permitAll()
                         .requestMatchers("/api/auth/logout").permitAll()
-
-                        // === 管理端：Seed 測試資料 ===
                         .requestMatchers("/api/auth/employees/seed").permitAll()
                         .requestMatchers("/api/customers/seed").permitAll()
-
-                        // === 客戶端：註冊、登入、密碼重設 不需驗證 ===
                         .requestMatchers("/api/customer/auth/register").permitAll()
                         .requestMatchers("/api/customer/auth/login").permitAll()
                         .requestMatchers("/api/customer/auth/request-reset").permitAll()
                         .requestMatchers("/api/customer/auth/reset-password").permitAll()
                         .requestMatchers("/api/customer/auth/verify-email").permitAll()
                         .requestMatchers("/api/customer/auth/seed").permitAll()
-
                         // === 靜態資源：大頭照可公開存取 & 圖片可公開存取 ===
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/img/**").permitAll()
-
                         // === 公開 API & 付款API===
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/linepay/**").permitAll()
                         .requestMatchers("/api/loan-applications/rate-rules").permitAll()
-
                         // === 風控接口全部鎖在本機ip ===
                         .requestMatchers("/api/risk/**").access(new WebExpressionAuthorizationManager("hasIpAddress('127.0.0.1') or hasIpAddress('::1')"))
                         .requestMatchers("/api/loan-callbacks/**").access(new WebExpressionAuthorizationManager("hasIpAddress('127.0.0.1') or hasIpAddress('::1')"))
@@ -99,11 +83,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /**
-     * 密碼加密器
-     * 目前測試階段密碼都是 $2a$10$dummyhash...
-     * 正式上線要用 BCrypt 加密
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

@@ -260,8 +260,6 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/api/axios'
-
-// ── 對照表 ──
 const LOAN_TYPE_MAP = {
   PERSONAL: '個人信貸', CAR: '汽車貸款', MOTOR: '機車貸款',
   STUDENT: '學貸',     BUSINESS: '創業貸款', HOUSE: '房屋貸款', LAND: '土地貸款',
@@ -271,8 +269,6 @@ const STATUS_MAP = {
   OVERDUE:  { label: '逾期',   cls: 'st-overdue' },
   PAID_OFF: { label: '已結清', cls: 'st-paidoff' },
 }
-
-// ── 狀態 ──
 const loanAccounts  = ref([])
 const loanLoading   = ref(false)
 const selectedLoan  = ref(null)
@@ -285,20 +281,14 @@ const form = ref({ fromAccountNumber: '', note: '' })
 const submitting  = ref(false)
 const submitError = ref('')
 const lastResult  = ref(null)
-
-// ── 待繳期數清單（SCHEDULED + OVERDUE，依 periodIndex 排序）──
 const unpaidRepayments = ref([])
 // 本次欲繳期數（1 ～ unpaidRepayments.length）
 const periodCount = ref(1)
-
-// ── 本次應繳金額 = 前 N 期 totalAmount 加總（含利息，完整整期）──
 const paymentAmount = computed(() => {
   const periods = unpaidRepayments.value.slice(0, periodCount.value)
   if (periods.length === 0) return 0
   return Math.round(periods.reduce((acc, rp) => acc + Number(rp.totalAmount || 0), 0))
 })
-
-// ── 本金 / 利息 拆分（供顯示用）──
 const paymentPrincipal = computed(() => {
   return Math.round(unpaidRepayments.value.slice(0, periodCount.value)
     .reduce((acc, rp) => acc + Number(rp.principalPortion || 0), 0))
@@ -312,8 +302,6 @@ const history        = ref([])
 const historyLoading = ref(false)
 const currentPage    = ref(0)
 const totalPages     = ref(0)
-
-// ── helpers ──
 const token = () => localStorage.getItem('customer_token')
 const auth  = () => ({ headers: { Authorization: `Bearer ${token()}` } })
 
@@ -337,8 +325,6 @@ function fmtDateTime(d) {
     hour: '2-digit', minute: '2-digit',
   })
 }
-
-// ── 可送出條件 ──
 const canSubmit = computed(() =>
   !!form.value.fromAccountNumber &&
   !!selectedLoan.value?.accountNumber &&
@@ -346,8 +332,6 @@ const canSubmit = computed(() =>
   paymentAmount.value > 0 &&
   !submitting.value
 )
-
-// ── API：貸款帳戶 ──
 async function loadLoanAccounts() {
   loanLoading.value = true
   try {
@@ -356,8 +340,6 @@ async function loadLoanAccounts() {
   } catch { loanAccounts.value = [] }
   finally { loanLoading.value = false }
 }
-
-// ── API：可扣款帳戶 ──
 async function loadDebitAccounts() {
   debitLoading.value = true
   debitAccounts.value = []
@@ -372,8 +354,6 @@ async function loadDebitAccounts() {
   } catch { debitAccounts.value = [] }
   finally { debitLoading.value = false }
 }
-
-// ── 選取貸款 ──
 async function selectLoan(acc) {
   selectedLoan.value = acc
   form.value.note   = ''
@@ -402,8 +382,6 @@ async function loadCurrentRepaymentAmount() {
     periodCount.value = 1
   }
 }
-
-// ── API：送出還款 ──
 async function submitRepayment() {
   submitError.value = ''
   submitting.value  = true
@@ -429,16 +407,12 @@ async function submitRepayment() {
     submitting.value = false
   }
 }
-
-// ── 還款成功後重置表單 ──
 function afterSuccess() {
   lastResult.value  = null
   periodCount.value = 1
   form.value.note   = ''
   loadCurrentRepaymentAmount()
 }
-
-// ── 取消 / 重置 ──
 function reset() {
   selectedLoan.value = null
   currentRepayment.value = null
@@ -450,8 +424,6 @@ function reset() {
   lastResult.value  = null
   history.value     = []
 }
-
-// ── API：還款紀錄 ──
 async function loadHistory(page = 0) {
   if (!selectedLoan.value) return
   historyLoading.value = true

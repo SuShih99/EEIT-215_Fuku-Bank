@@ -1,7 +1,5 @@
 import api from './axios'
 
-// === 統一管理 Customer 的 API 設定 ===
-
 // 查詢客戶（支援 keyword 模糊搜尋）
 // GET /api/customers           → 全部
 // GET /api/customers?keyword=王 → 姓名含「王」的

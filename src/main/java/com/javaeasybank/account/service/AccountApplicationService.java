@@ -55,10 +55,7 @@ public class AccountApplicationService {
     private final NotificationService notificationService;
     private final JdbcTemplate jdbcTemplate;
     private final CreditScoreService creditScoreService;
-
-    // =========================================================
     // 客戶端：提交申請
-    // =========================================================
 
     /**
      * 提交開戶申請。
@@ -177,10 +174,7 @@ public class AccountApplicationService {
 
         return AccountApplicationResponse.fromEntity(saved);
     }
-
-    // =========================================================
     // 客戶端：查詢我的申請
-    // =========================================================
 
     @Transactional(readOnly = true)
     public List<AccountApplicationResponse> getMyApplications(String customerId) {
@@ -189,10 +183,7 @@ public class AccountApplicationService {
                 .map(AccountApplicationResponse::fromEntity)
                 .collect(Collectors.toList());
     }
-
-    // =========================================================
     // 管理端：查詢申請列表
-    // =========================================================
 
     @Transactional(readOnly = true)
     public Page<AccountApplicationResponse> listByStatus(ApplicationStatus status, Pageable pageable) {
@@ -263,10 +254,7 @@ public class AccountApplicationService {
                         row -> ((Number) row[1]).longValue()
                 ));
     }
-
-    // =========================================================
     // 管理端：審核 — 通過
-    // =========================================================
 
     /**
      * 審核通過：自動建立 Account，並回寫帳號至申請單。
@@ -316,10 +304,7 @@ public class AccountApplicationService {
         syncCustomerProfileFromApplication(updated);
         return AccountApplicationResponse.fromEntityForAdmin(updated);
     }
-
-    // =========================================================
     // 管理端：審核 — 需補件
-    // =========================================================
 
     @Transactional
     public AccountApplicationResponse requestSupplement(Long applicationId, String reason, String reviewedBy) {
@@ -342,10 +327,7 @@ public class AccountApplicationService {
         log.info("Account application supplement requested: id={}, reason={}", applicationId, reason);
         return AccountApplicationResponse.fromEntityForAdmin(updated);
     }
-
-    // =========================================================
     // 管理端：審核 — 駁回
-    // =========================================================
 
     @Transactional
     public AccountApplicationResponse reject(Long applicationId, String rejectReason, String reviewedBy) {
@@ -366,10 +348,7 @@ public class AccountApplicationService {
         log.info("Account application rejected: id={}, reason={}", applicationId, rejectReason);
         return AccountApplicationResponse.fromEntityForAdmin(updated);
     }
-
-    // =========================================================
     // Private Helpers
-    // =========================================================
 
     /**
      * 決定幣別：台幣活存 / 定存預設 TWD，外幣帳戶由前端指定。

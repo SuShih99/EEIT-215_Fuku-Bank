@@ -57,8 +57,6 @@ public class LoanRepaymentService {
     @Autowired
     private NotificationService notificationService;
 
-    // ── 還款時間表建立 ────────────────────────────────────────────────
-
     // 依攤還表預建指定帳戶的所有還款期數，由 LoanAccountService 在撥款時呼叫
     public void createSchedule(LoanAccount account) {
         List<AmortizationCalculator.RepaymentRow> rows = AmortizationCalculator.buildSchedule(
@@ -87,8 +85,6 @@ public class LoanRepaymentService {
                 account.getAccountId(), repayments.size());
     }
 
-    // ── 繳款處理（公開入口） ──────────────────────────────────────────
-
     // 依申請編號處理單期繳款（便利方法）
     public void processRepayment(String applicationId) {
         LoanAccount account = loanAccountRepo.findByApplicationId(applicationId)
@@ -110,8 +106,6 @@ public class LoanRepaymentService {
         validateAccountingAlreadyDeducted(account);
         processRepayments(account, 1);
     }
-
-    // ── 繳款處理（私有核心） ──────────────────────────────────────────
 
     // 驗證帳務模組的負債餘額是否已等於「當前待繳期繳清後的剩餘本金」
     private void validateAccountingAlreadyDeducted(LoanAccount account) {
@@ -259,8 +253,6 @@ public class LoanRepaymentService {
                 .orElseThrow(() -> new BusinessException("No pending repayment found accountId=" + account.getAccountId()));
     }
 
-    // ── 查詢 ─────────────────────────────────────────────────────────
-
     // 取得指定帳戶的完整還款時間表，依期數升序排列
     @Transactional(readOnly = true)
     public List<LoanRepaymentResponseDTO> getByAccountId(String accountId) {
@@ -269,8 +261,6 @@ public class LoanRepaymentService {
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
     }
-
-    // ── 結案 ─────────────────────────────────────────────────────────
 
     // 全數還清後將關聯的貸款申請狀態更新為 CLOSED，並寄送結清通知 Email
     private void closeApplication(LoanAccount account) {
@@ -306,8 +296,6 @@ public class LoanRepaymentService {
             }
         });
     }
-
-    // ── 工具方法 ─────────────────────────────────────────────────────
 
     // 將 LoanRepayment Entity 轉換為回應 DTO
     private LoanRepaymentResponseDTO toResponseDTO(LoanRepayment rp) {

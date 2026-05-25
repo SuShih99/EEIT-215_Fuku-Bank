@@ -343,8 +343,6 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import api from '@/api/axios'
-
-// ── 常數 ──
 const LOAN_TYPE_NAME = {
   PERSONAL: '個人信貸',
   CAR:      '汽車貸款',
@@ -374,8 +372,6 @@ const REPAYMENT_STATUS = {
   PAID:      { label: '已繳', cls: 'rs-paid'      },
   OVERDUE:   { label: '逾期', cls: 'rs-overdue'   },
 }
-
-// ── 狀態 ──
 const accounts        = ref([])
 const loading         = ref(false)
 const error           = ref('')
@@ -395,8 +391,6 @@ const sortOrder       = ref('desc') // 'asc' 或 'desc'
 // Modal 狀態
 const showModal    = ref(false)
 const modalAccount = ref(null)
-
-// ── 篩選 ──
 const filteredAccounts = computed(() => {
   let list = accounts.value
   if (currentStatus.value) {
@@ -456,8 +450,6 @@ const pageList = computed(() => {
   pages.push(total)
   return pages
 })
-
-// ── 操作 ──
 function setStatus(val) {
   currentStatus.value = val
   currentPage.value   = 1
@@ -513,8 +505,6 @@ function closeModal() {
   repayments.value   = []
   document.body.style.overflow = ''
 }
-
-// ── helpers ──
 function statusLabel(st) { return ACCOUNT_STATUS[st]?.label || st }
 function statusClass(st)  { return ACCOUNT_STATUS[st]?.cls   || '' }
 function repStatusLabel(st) { return REPAYMENT_STATUS[st]?.label || st }

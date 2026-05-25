@@ -24,8 +24,6 @@ import {
 import dayjs from 'dayjs'
 
 ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend)
-
-// === 角色權限判斷 ===
 const authStore = useAuthStore()
 // 雙重判斷：permLevel 數字 或 roleCode 字串
 const APPROVER_ROLES = ['CFDM', 'CSDM', 'CRDM', 'CRO', 'COO', 'CISO', 'ISSA']
@@ -34,8 +32,6 @@ const canApprove = computed(() => {
   const code = authStore.user?.roleCode ?? ''
   return level >= 2 || APPROVER_ROLES.includes(code)
 })
-
-// === 資料 ===
 const applications = ref([])
 const loading = ref(false)
 const status = ref(null)
@@ -182,8 +178,6 @@ const accountTypeChartData = computed(() => {
   })
   return buildChartData(source, '帳戶類型')
 })
-
-// === 表格欄位 ===
 const columns = ref([
   { title: '申請編號', dataIndex: 'applicationNo', key: 'applicationNo', width: 240, resizable: true, sorter: (a, b) => (a.applicationNo || '').localeCompare(b.applicationNo || '') },
   { title: '申請人', dataIndex: 'name', key: 'name', width: 140, resizable: true, sorter: (a, b) => (a.name || '').localeCompare(b.name || '') },
@@ -205,11 +199,7 @@ const columns = ref([
 function handleResizeColumn(w, col) {
   col.width = w
 }
-
-// === 展開列 ===
 const expandedRowKeys = ref([])
-
-// === 取得資料 ===
 const fetchData = async () => {
   loading.value = true
   try {
@@ -238,8 +228,6 @@ const fetchStats = async () => {
     console.error('Failed to fetch stats:', error)
   }
 }
-
-// === 核准 ===
 const handleApprove = (record) => {
   Modal.confirm({
     title: '確認核准此開戶申請？',
@@ -258,8 +246,6 @@ const handleApprove = (record) => {
     },
   })
 }
-
-// === 要求補件 ===
 const handleSupplement = (record) => {
   let reason = ''
   Modal.confirm({
@@ -293,8 +279,6 @@ const handleSupplement = (record) => {
     },
   })
 }
-
-// === 駁回 ===
 const handleReject = (record) => {
   let reason = ''
   Modal.confirm({
@@ -329,8 +313,6 @@ const handleReject = (record) => {
     },
   })
 }
-
-// === 查看證件圖片 ===
 const previewVisible = ref(false)
 const previewImage = ref('')
 const previewTitle = ref('')
@@ -340,14 +322,10 @@ const showImage = (url, title) => {
   previewTitle.value = title
   previewVisible.value = true
 }
-
-// === 分頁 ===
 const handlePageChange = (page) => {
   pagination.value.current = page.current
   fetchData()
 }
-
-// === 格式化 ===
 const formatDate = (val) => {
   if (!val) return '-'
   return dayjs(val).format('YYYY-MM-DD HH:mm')

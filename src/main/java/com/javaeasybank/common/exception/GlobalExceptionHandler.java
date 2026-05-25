@@ -16,17 +16,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.stream.Collectors;
 
-/**
- * 全域例外處理器。
- *
- * 任何 Controller 拋出的例外都會被這裡攔截，
- * 統一包成 ApiResponse 格式回傳給前端。
- *
- * 規則：
- * - 業務邏輯錯誤 → throw new BusinessException("說明")
- * - 不要自己 catch、不要自己寫回傳格式
- * - 這裡會自動處理
- */
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

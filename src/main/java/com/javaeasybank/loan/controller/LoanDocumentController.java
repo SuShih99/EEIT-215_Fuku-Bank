@@ -24,8 +24,6 @@ public class LoanDocumentController {
     private final LoanDocumentService loanDocumentService;
     private final JwtUtil jwtUtil;
 
-    // ── 客戶端 ────────────────────────────────────────────────────────
-
     // 上傳補件文件（multipart/form-data）
     @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping(value = "/api/loan-documents/{applicationId}/upload",
@@ -78,8 +76,6 @@ public class LoanDocumentController {
                 loanDocumentService.getByApplicationId(applicationId, customerId)));
     }
 
-    // ── 行員端 ────────────────────────────────────────────────────────
-
     // 查詢任意申請的補件文件清單（行員端）
     @GetMapping("/api/admin/loan-documents/{applicationId}")
     public ResponseEntity<ApiResponse<List<LoanDocumentResponseDTO>>> getAdminDocs(
@@ -88,8 +84,6 @@ public class LoanDocumentController {
         return ResponseEntity.ok(ApiResponse.success(
                 loanDocumentService.getByApplicationId(applicationId)));
     }
-
-    // ── 共用 ─────────────────────────────────────────────────────────
 
     // 取得所有可用的文件類型及其中文名稱（客戶端 / 行員端共用）
     @GetMapping("/api/loan-documents/types")

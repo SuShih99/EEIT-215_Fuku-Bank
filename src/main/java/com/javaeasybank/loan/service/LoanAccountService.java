@@ -45,8 +45,6 @@ public class LoanAccountService {
     @Autowired
     private LoanRepaymentService loanRepaymentService;
 
-    // ── 撥款協調 ─────────────────────────────────────────────────────
-
     // 撥款完成後建立貸款帳戶（不帶貸款帳號的多載版本）
     public void createOnDisbursement(String applicationId) {
         createOnDisbursement(applicationId, null);
@@ -109,8 +107,6 @@ public class LoanAccountService {
         log.info("[Disbursement] Step-D 完成 applicationId={}", applicationId);
     }
 
-    // ── 查詢 ─────────────────────────────────────────────────────────
-
     // 查詢客戶自己的所有貸款帳戶，按建立時間降序排列
     @Transactional(readOnly = true)
     public List<LoanAccountResponseDTO> getMyAccounts(String customerId) {
@@ -144,8 +140,6 @@ public class LoanAccountService {
                 .orElseThrow(() -> new BusinessException("找不到貸款帳戶：" + accountId));
         return toResponseDTO(account);
     }
-
-    // ── 工具方法 ─────────────────────────────────────────────────────
 
     // 將 LoanAccount Entity 轉換為 LoanAccountResponseDTO
     private LoanAccountResponseDTO toResponseDTO(LoanAccount account) {

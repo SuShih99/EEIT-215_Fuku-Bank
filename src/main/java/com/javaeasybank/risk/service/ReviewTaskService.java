@@ -222,8 +222,8 @@ public class ReviewTaskService {
                 .processedAt(task.getProcessedAt())
                 .attachments(task.getAttachments());
         if (eventLog != null) {
-            builder.riskLevel(eventLog.getRiskLevel())           // ← 確認有這行
-                    .triggerReason(eventLog.getTriggerReason())   // ← 確認有這行
+            builder.riskLevel(eventLog.getRiskLevel())
+                    .triggerReason(eventLog.getTriggerReason())
                     .transactionAmount(eventLog.getTransactionAmount())
                     .metaData(eventLog.getMetaData())
                     .logCreatedAt(eventLog.getCreatedAt());
