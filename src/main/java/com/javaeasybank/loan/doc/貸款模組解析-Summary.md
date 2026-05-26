@@ -21,8 +21,8 @@
 | Customer | 取得客戶姓名、CIF、電話、Email |
 | Account | 建立貸款帳務帳戶、撥款、還款、查交易紀錄 |
 | Risk | 送風控審核、補件通知、接收 callback |
-| Common | 使用 Security、JWT、Email、檔案儲存、RestTemplate、例外處理 |
-| Mail / Notification | 寄送申請、補件、核准、還款、逾期、結清通知 |
+| Common | 使用 Security、JWT、Email、檔案儲存、RestTemplate、例外處理與 PDF 中文字型載入 |
+| Mail / Notification | 寄送申請、補件、拒絕、核准撥款、契約附件、還款、逾期、結清通知 |
 | Frontend | 提供客戶端貸款頁與行員端管理頁 |
 
 ## 3. 客戶端功能
@@ -66,7 +66,7 @@
 | `LoanDocumentService.java` | 補件文件管理，包含收檔、存檔、刪檔、送出 |
 | `LoanAccountService.java` | 撥款後建立貸款帳戶，提供帳戶查詢 |
 | `LoanRepaymentService.java` | 建立攤還表、查還款期數、同步已繳、結清 |
-| `LoanContractPdfService.java` | 產生貸款契約 PDF |
+| `LoanContractPdfService.java` | 產生貸款契約 PDF，並使用共用中文字型工具 |
 | `LoanRiskClient.java` | 呼叫風控模組 |
 | `LoanRepaymentScheduler.java` | 每日逾期掃描與到期提醒 |
 | `AmortizationCalculator.java` | 計算月付金與攤還表 |
@@ -95,18 +95,19 @@
 | 帳戶模組 | `AccountIntegrationService` | 建貸款帳務帳戶、撥款、還款、交易紀錄 |
 | 風控模組 | `LoanRiskClient`, `LoanCallbackController` | 送審、補件通知、接收核准 / 拒絕 / 補件結果 |
 | 檔案儲存 | `FileStorageService`, `LoanDocumentService` | 儲存與刪除補件檔案 |
-| 通知信 | `EmailService` | 申請成立、補件、核准撥款、還款、逾期、結清通知 |
-| PDF | `LoanContractPdfService` | 產生貸款契約書 |
+| 通知信 | `EmailService` | 申請成立、補件、核准撥款、契約附件、還款、逾期、結清通知 |
+| PDF | `LoanContractPdfService`, `PdfCjkFontLoader` | 產生貸款契約書並處理中文顯示 |
 
 ## 8. 資料庫與資源
 
 | 檔案 | 用途 |
 |---|---|
 | `src/main/resources/database/loan_init.sql` | 貸款資料表 |
-| `src/main/resources/database/loan_mockdata.sql` | 貸款測試資料 |
+| `src/main/resources/database/loan_mockdata.sql` | 貸款測試資料，包含貸款本金與帳務負債對齊情境 |
 | `src/main/resources/database/loan_document_batch_migration.sql` | 補件批次欄位調整 |
 | `src/main/resources/templates/mail/loan-*.html` | 貸款通知信模板 |
-| `src/main/resources/fonts/SourceHanSansTC-Normal.otf` | PDF 中文字型 |
+| `src/main/resources/templates/mail/loan-contract.html` | 貸款契約附件通知模板 |
+| `src/main/resources/fonts/NotoSansTC-Regular.ttf` | PDF 中文字型 |
 | `src/main/java/com/javaeasybank/loan/utils/test.http` | 手動測試 API |
 
 ## 9. 建議閱讀順序
@@ -139,3 +140,4 @@
 4. `FileStorageService.java`
 5. `EmailService.java`
 6. `LoanContractPdfService.java`
+7. `PdfCjkFontLoader.java`
