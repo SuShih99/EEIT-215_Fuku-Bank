@@ -267,10 +267,22 @@ public class LoanContractPdfService {
     }
 
     private void registerCjkFont(PdfRendererBuilder builder) {
-        Path fontPath = findCjkFontPath();
-        if (fontPath != null) {
-            builder.useFont(fontPath.toFile(), PDF_FONT_FAMILY);
-        }
+        builder.useFont(() -> {
+            java.io.InputStream is = getClass().getClassLoader().getResourceAsStream("fonts/SourceHanSansTC-Normal.otf");
+            if (is == null) {
+                log.warn("[LoanContractPdf] 無法載入 classpath 中的中文字型 fonts/SourceHanSansTC-Normal.otf，嘗試使用系統字型");
+                Path systemFontPath = findCjkFontPath();
+                if (systemFontPath != null) {
+                    try {
+                        return new java.io.FileInputStream(systemFontPath.toFile());
+                    } catch (Exception e) {
+                        log.error("[LoanContractPdf] 載入後備系統字型失敗: {}", e.getMessage());
+                    }
+                }
+                throw new RuntimeException("無法載入中文字型！");
+            }
+            return is;
+        }, PDF_FONT_FAMILY);
     }
 
     private Path findCjkFontPath() {

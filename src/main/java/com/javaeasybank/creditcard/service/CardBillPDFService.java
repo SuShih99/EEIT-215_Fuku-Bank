@@ -44,15 +44,23 @@ public class CardBillPDFService {
                                         PdfWriter.ALLOW_PRINTING,
                                         PdfWriter.ENCRYPTION_AES_128);
 
-                        String fontPath = getClass()
+                        byte[] fontBytes;
+                        try (java.io.InputStream fontStream = getClass()
                                         .getClassLoader()
-                                        .getResource("fonts/SourceHanSansTC-Normal.otf")
-                                        .getPath();
+                                        .getResourceAsStream("fonts/SourceHanSansTC-Normal.otf")) {
+                                if (fontStream == null) {
+                                        throw new RuntimeException("字型檔案 fonts/SourceHanSansTC-Normal.otf 未能在 classpath 中找到");
+                                }
+                                fontBytes = fontStream.readAllBytes();
+                        }
 
                         BaseFont baseFont = BaseFont.createFont(
-                                        fontPath,
+                                        "SourceHanSansTC-Normal.otf",
                                         BaseFont.IDENTITY_H,
-                                        BaseFont.EMBEDDED);
+                                        BaseFont.EMBEDDED,
+                                        true,
+                                        fontBytes,
+                                        null);
 
                         Font chineseFont = new Font(baseFont, 12);
 

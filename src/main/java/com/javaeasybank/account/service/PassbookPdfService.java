@@ -288,10 +288,21 @@ public class PassbookPdfService {
     }
 
     private void registerCjkFont(PdfRendererBuilder builder) {
-        Path fontPath = findCjkFontPath();
-        if (fontPath != null) {
-            builder.useFont(fontPath.toFile(), PDF_FONT_FAMILY);
-        }
+        builder.useFont(() -> {
+            java.io.InputStream is = getClass().getClassLoader().getResourceAsStream("fonts/SourceHanSansTC-Normal.otf");
+            if (is == null) {
+                Path systemFontPath = findCjkFontPath();
+                if (systemFontPath != null) {
+                    try {
+                        return new java.io.FileInputStream(systemFontPath.toFile());
+                    } catch (Exception e) {
+                        // ignore
+                    }
+                }
+                throw new RuntimeException("無法載入中文字型！");
+            }
+            return is;
+        }, PDF_FONT_FAMILY);
     }
 
     private Path findCjkFontPath() {
