@@ -1,0 +1,746 @@
+-- ============================================================
+-- Card Module Mock Data (重新生成版)
+-- 依賴：customer_profile 與 ACCOUNT 表必須先有資料
+-- ============================================================
+
+-- ===== 清除舊資料（依 FK 順序由下往上刪）=====
+DELETE FROM CARD_TRANSACTION;
+DELETE FROM CARD_BILL;
+DELETE FROM CREDIT_CARD;
+DELETE FROM CARD_ACCOUNT;
+DELETE FROM CARD_APPLICATION_ITEM;
+DELETE FROM CARD_APPLICATION;
+DELETE FROM MERCHANT;
+DELETE FROM CARD_TYPE;
+
+IF OBJECT_ID('tempdb..#card_mock_customers') IS NOT NULL DROP TABLE #card_mock_customers;
+
+DECLARE @eligibleCardCustomerCount INT;
+
+SELECT @eligibleCardCustomerCount = COUNT(*)
+FROM ACCOUNT a
+JOIN CUSTOMER_PROFILE p ON p.customer_id = a.customer_id
+WHERE a.account_type = 'CHECKING'
+  AND a.currency = 'TWD'
+  AND a.status = 'ACTIVE'
+  AND p.status = 'ACTIVE'
+  AND a.customer_id NOT IN ('DM01NR01', 'DM02NR02');
+
+IF @eligibleCardCustomerCount = 0
+    THROW 51201, 'card_mockdata.sql requires customers with ACTIVE TWD CHECKING accounts. Run account_mockdata.sql first.', 1;
+
+;WITH eligible_customers AS (
+    SELECT
+        ROW_NUMBER() OVER (ORDER BY a.customer_id) AS rn,
+        a.customer_id
+    FROM ACCOUNT a
+    JOIN CUSTOMER_PROFILE p ON p.customer_id = a.customer_id
+    WHERE a.account_type = 'CHECKING'
+      AND a.currency = 'TWD'
+      AND a.status = 'ACTIVE'
+      AND p.status = 'ACTIVE'
+      AND a.customer_id NOT IN ('DM01NR01', 'DM02NR02')
+),
+card_slots AS (
+    SELECT TOP (100)
+        ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS slot
+    FROM sys.all_objects
+)
+SELECT
+    s.slot,
+    e.customer_id
+INTO #card_mock_customers
+FROM card_slots s
+JOIN eligible_customers e
+  ON e.rn = ((s.slot - 1) % @eligibleCardCustomerCount) + 1;
+
+-- ===== 重置 IDENTITY 種子 =====
+DBCC CHECKIDENT ('CARD_TYPE', RESEED, 0) WITH NO_INFOMSGS;
+DBCC CHECKIDENT ('CARD_APPLICATION', RESEED, 0) WITH NO_INFOMSGS;
+DBCC CHECKIDENT ('CARD_APPLICATION_ITEM', RESEED, 0) WITH NO_INFOMSGS;
+DBCC CHECKIDENT ('CARD_ACCOUNT', RESEED, 0) WITH NO_INFOMSGS;
+DBCC CHECKIDENT ('CREDIT_CARD', RESEED, 0) WITH NO_INFOMSGS;
+DBCC CHECKIDENT ('CARD_TRANSACTION', RESEED, 0) WITH NO_INFOMSGS;
+DBCC CHECKIDENT ('CARD_BILL', RESEED, 0) WITH NO_INFOMSGS;
+
+-- ===== 1. CARD_TYPE =====
+SET IDENTITY_INSERT CARD_TYPE ON;
+IF NOT EXISTS (SELECT 1 FROM CARD_TYPE)
+INSERT INTO CARD_TYPE (card_type_id, card_type_name, brand, annual_fee, cashback_rate, card_image_url) VALUES
+(1, N'現金回饋卡', 'VISA', 1000, 1.5, 'img/cashback1.webp'),
+(2, N'旅遊卡', 'Master', 2000, 2.0, 'img/travel1.webp'),
+(3, N'百貨聯名卡', 'JCB', 1500, 1.2, 'img/store1.webp'),
+(4, N'加油卡', 'VISA', 800, 3.0, 'img/gas1.webp'),
+(5, N'學生卡', 'Master', 0, 0.5, 'img/student1.webp'),
+(6, N'商務卡', 'VISA', 5000, 2.5, 'img/business1.webp'),
+(7, N'航空哩程卡', 'JCB', 3000, 2.2, 'img/airline1.webp'),
+(8, N'購物卡', 'Master', 1200, 1.8, 'img/shop1.webp'),
+(9, N'美食卡', 'VISA', 900, 2.0, 'img/food1.webp'),
+(10, N'頂級黑卡', 'Master', 10000, 3.5, 'img/black1.webp');
+SET IDENTITY_INSERT CARD_TYPE OFF;
+
+DBCC CHECKIDENT ('CARD_TYPE', RESEED, 10) WITH NO_INFOMSGS;
+
+-- ===== 2. MERCHANT =====
+IF NOT EXISTS (SELECT 1 FROM MERCHANT)
+INSERT INTO MERCHANT (merchant_id, merchant_name, merchant_category) VALUES
+(1, '7-11', 'SHOPPING'),
+(2, 'FamilyMart', 'SHOPPING'),
+(3, 'Starbucks', 'FOOD'),
+(4, 'McDonalds', 'FOOD'),
+(5, 'TSR', 'TRAVEL'),
+(6, 'Uber', 'TRAVEL'),
+(7, 'Shopee', 'SHOPPING'),
+(8, 'Netflix', 'ENTERTAINMENT'),
+(9, 'Eslite Bookstore', 'SHOPPING'),
+(10, 'Carrefour', 'SHOPPING');
+
+-- ===== 3. CARD_APPLICATION（30 筆）=====
+SET IDENTITY_INSERT CARD_APPLICATION ON;
+IF NOT EXISTS (SELECT 1 FROM CARD_APPLICATION)
+INSERT INTO CARD_APPLICATION (application_id, customer_id, apply_date, status, remark) VALUES
+(1, 'Q8M4T7K2', GETDATE(), 'COMPLETED', N'信用紀錄不良'),
+(2, 'R5N9W3A6', GETDATE(), 'COMPLETED', NULL),
+(3, 'H7C2P8D4', GETDATE(), 'COMPLETED', NULL),
+(4, 'V6J3X9M5', GETDATE(), 'COMPLETED', N'信用評分不足'),
+(5, 'K2T8B4R7', GETDATE(), 'COMPLETED', N'信用評分不足'),
+(6, 'M9A5D2Q8', GETDATE(), 'COMPLETED', N'年齡限制'),
+(7, 'P4W7N6C3', GETDATE(), 'COMPLETED', NULL),
+(8, 'T8H2K5V9', GETDATE(), 'PENDING', NULL),
+(9, 'A6R3M8J2', GETDATE(), 'COMPLETED', NULL),
+(10, 'D5Q9T2W7', GETDATE(), 'PENDING', NULL),
+(11, 'F7V4C8N2', GETDATE(), 'PENDING', NULL),
+(12, 'G3K6P9M5', GETDATE(), 'COMPLETED', N'VIP核准'),
+(13, 'J8R2D5A7', GETDATE(), 'COMPLETED', N'優質客戶'),
+(14, 'L4N9T6Q3', GETDATE(), 'COMPLETED', N'信用良好'),
+(15, 'N2W5H8C4', GETDATE(), 'COMPLETED', NULL),
+(16, 'S7A3K9P6', GETDATE(), 'COMPLETED', NULL),
+(17, 'U5D8M2R4', GETDATE(), 'COMPLETED', NULL),
+(18, 'W9F4T7N2', GETDATE(), 'COMPLETED', N'信用良好'),
+(19, 'X3J6Q8C5', GETDATE(), 'COMPLETED', NULL),
+(20, 'Y8L2V5D9', GETDATE(), 'PENDING', NULL),
+(21, 'Z4M7A3K8', GETDATE(), 'COMPLETED', NULL),
+(22, 'B9P5N2W6', GETDATE(), 'COMPLETED', N'優質客戶'),
+(23, 'C6T8R4J3', GETDATE(), 'PENDING', NULL),
+(24, 'E2V7D9M5', GETDATE(), 'PENDING', NULL),
+(25, 'Q5H3K8A7', GETDATE(), 'PENDING', NULL),
+(26, 'R8J6N2C4', GETDATE(), 'COMPLETED', N'VIP核准'),
+(27, 'T3M9P5W7', GETDATE(), 'COMPLETED', N'優質客戶'),
+(28, 'V7A4D8Q2', GETDATE(), 'COMPLETED', N'年齡限制'),
+(29, 'W2K6T9N5', GETDATE(), 'COMPLETED', N'信用良好'),
+(30, 'X8C3R7M4', GETDATE(), 'COMPLETED', N'信用良好');
+SET IDENTITY_INSERT CARD_APPLICATION OFF;
+
+UPDATE ca
+SET ca.customer_id = cmc.customer_id
+FROM CARD_APPLICATION ca
+JOIN #card_mock_customers cmc ON cmc.slot = ca.application_id;
+
+-- ===== 4. CARD_APPLICATION_ITEM =====
+SET IDENTITY_INSERT CARD_APPLICATION_ITEM ON;
+IF NOT EXISTS (SELECT 1 FROM CARD_APPLICATION_ITEM)
+INSERT INTO CARD_APPLICATION_ITEM
+(item_id, application_id, card_type_id, result, approved_limit, annual_fee, create_card_flag, remark) VALUES
+(1, 1, 1, 'REJECTED', NULL, NULL, 0, N'評分不足'),
+(2, 2, 2, 'APPROVED', 120000, 2000, 1, NULL),
+(3, 3, 3, 'APPROVED', 200000, 1500, 1, NULL),
+(4, 4, 4, 'REJECTED', NULL, NULL, 0, N'評分不足'),
+(5, 5, 5, 'REJECTED', NULL, NULL, 0, N'評分不足'),
+(6, 6, 6, 'REJECTED', NULL, NULL, 0, N'評分不足'),
+(7, 7, 7, 'APPROVED', 100000, 3000, 1, NULL),
+(8, 8, 8, 'PENDING', NULL, NULL, 0, NULL),
+(9, 9, 9, 'APPROVED', 300000, 900, 1, NULL),
+(10, 10, 10, 'PENDING', NULL, NULL, 0, NULL),
+(11, 11, 1, 'PENDING', NULL, NULL, 0, NULL),
+(12, 12, 2, 'APPROVED', 50000, 2000, 1, NULL),
+(13, 13, 3, 'APPROVED', 150000, 1500, 1, NULL),
+(14, 14, 4, 'APPROVED', 500000, 800, 1, NULL),
+(15, 15, 5, 'APPROVED', 150000, 0, 1, NULL),
+(16, 16, 6, 'APPROVED', 80000, 5000, 1, NULL),
+(17, 17, 7, 'APPROVED', 120000, 3000, 1, NULL),
+(18, 18, 8, 'APPROVED', 150000, 1200, 1, NULL),
+(19, 19, 9, 'APPROVED', 50000, 900, 1, NULL),
+(20, 20, 10, 'PENDING', NULL, NULL, 0, NULL),
+(21, 21, 1, 'APPROVED', 500000, 1000, 1, NULL),
+(22, 22, 2, 'APPROVED', 80000, 2000, 1, NULL),
+(23, 23, 3, 'PENDING', NULL, NULL, 0, NULL),
+(24, 24, 4, 'PENDING', NULL, NULL, 0, NULL),
+(25, 25, 5, 'PENDING', NULL, NULL, 0, NULL),
+(26, 26, 6, 'APPROVED', 100000, 5000, 1, NULL),
+(27, 27, 7, 'APPROVED', 80000, 3000, 1, NULL),
+(28, 28, 8, 'REJECTED', NULL, NULL, 0, N'評分不足'),
+(29, 29, 9, 'APPROVED', 500000, 900, 1, NULL),
+(30, 30, 10, 'APPROVED', 300000, 10000, 1, NULL);
+SET IDENTITY_INSERT CARD_APPLICATION_ITEM OFF;
+
+-- ===== 5. CREDIT_CARD（50 筆）=====
+SET IDENTITY_INSERT CREDIT_CARD ON;
+IF NOT EXISTS (SELECT 1 FROM CREDIT_CARD)
+INSERT INTO CREDIT_CARD
+(card_id, customer_id, card_type_id, application_item_id, card_number, expiry_date, current_debt, status) VALUES
+(1, 'Q8M4T7K2', 1, 2, '4000000010000001', '2028-01-28', 5850, 'ACTIVE'),
+(2, 'R5N9W3A6', 2, 3, '4000000010000002', '2028-02-28', 6003, 'ACTIVE'),
+(3, 'H7C2P8D4', 3, 7, '4000000010000003', '2028-03-28', 7910, 'BLOCKED'),
+(4, 'V6J3X9M5', 4, 9, '4000000010000004', '2028-04-28', 4767, 'ACTIVE'),
+(5, 'K2T8B4R7', 5, 12, '4000000010000005', '2028-05-28', 48896, 'ACTIVE'),
+(6, 'M9A5D2Q8', 6, 13, '4000000010000006', '2028-06-28', 84796, 'ACTIVE'),
+(7, 'P4W7N6C3', 7, 14, '4000000010000007', '2029-07-28', 9240, 'ACTIVE'),
+(8, 'T8H2K5V9', 8, 15, '4000000010000008', '2029-08-28', 9968, 'ACTIVE'),
+(9, 'A6R3M8J2', 9, 16, '4000000010000009', '2029-09-28', 21385, 'ACTIVE'),
+(10, 'D5Q9T2W7', 10, 17, '4000000010000010', '2029-10-28', 4492, 'ACTIVE'),
+(11, 'F7V4C8N2', 1, 18, '4000000010000011', '2029-11-28', 3737, 'ACTIVE'),
+(12, 'G3K6P9M5', 2, 19, '4000000010000012', '2029-12-28', 42153, 'ACTIVE'),
+(13, 'J8R2D5A7', 3, 21, '4000000010000013', '2030-01-28', 1416, 'ACTIVE'),
+(14, 'L4N9T6Q3', 4, 22, '4000000010000014', '2030-02-28', 6421, 'ACTIVE'),
+(15, 'N2W5H8C4', 5, 26, '4000000010000015', '2030-03-28', 15637, 'BLOCKED'),
+(16, 'S7A3K9P6', 6, 27, '4000000010000016', '2030-04-28', 2893, 'ACTIVE'),
+(17, 'U5D8M2R4', 7, 29, '4000000010000017', '2030-05-28', 7361, 'BLOCKED'),
+(18, 'W9F4T7N2', 8, 30, '4000000010000018', '2030-06-28', 92081, 'ACTIVE'),
+(19, 'X3J6Q8C5', 9, NULL, '4000000010000019', '2028-07-28', 11339, 'ACTIVE'),
+(20, 'Y8L2V5D9', 10, NULL, '4000000010000020', '2028-08-28', 16107, 'BLOCKED'),
+(21, 'Z4M7A3K8', 1, NULL, '4000000010000021', '2029-09-28', 10572, 'ACTIVE'),
+(22, 'B9P5N2W6', 2, NULL, '4000000010000022', '2029-10-28', 6139, 'ACTIVE'),
+(23, 'C6T8R4J3', 3, NULL, '4000000010000023', '2029-11-28', 2771, 'ACTIVE'),
+(24, 'E2V7D9M5', 4, NULL, '4000000010000024', '2029-12-28', 8104, 'ACTIVE'),
+(25, 'Q5H3K8A7', 5, NULL, '4000000010000025', '2029-01-28', 53122, 'ACTIVE'),
+(26, 'R8J6N2C4', 6, NULL, '4000000010000026', '2029-02-28', 5700, 'ACTIVE'),
+(27, 'T3M9P5W7', 7, NULL, '4000000010000027', '2029-03-28', 16590, 'ACTIVE'),
+(28, 'V7A4D8Q2', 8, NULL, '4000000010000028', '2029-04-28', 4690, 'ACTIVE'),
+(29, 'W2K6T9N5', 9, NULL, '4000000010000029', '2029-05-28', 11110, 'ACTIVE'),
+(30, 'X8C3R7M4', 10, NULL, '4000000010000030', '2029-06-28', 8792, 'ACTIVE'),
+(31, 'Y5Q9V2H6', 1, NULL, '4000000010000031', '2030-07-28', 1726, 'BLOCKED'),
+(32, 'Z7D4A8K3', 2, NULL, '4000000010000032', '2030-08-28', 34065, 'ACTIVE'),
+(33, 'B3N8T5P9', 3, NULL, '4000000010000033', '2030-09-28', 12034, 'ACTIVE'),
+(34, 'C9W2M6R4', 4, NULL, '4000000010000034', '2030-10-28', 25978, 'ACTIVE'),
+(35, 'E5J7Q3D8', 5, NULL, '4000000010000035', '2030-11-28', 2112, 'ACTIVE'),
+(36, 'F2P9V4K6', 6, NULL, '4000000010000036', '2030-12-28', 18103, 'ACTIVE'),
+(37, 'G8A5C2N7', 7, NULL, '4000000010000037', '2030-01-28', 16328, 'ACTIVE'),
+(38, 'H4D7R9M3', 8, NULL, '4000000010000038', '2030-02-28', 12148, 'ACTIVE'),
+(39, 'J6K3W8Q5', 9, NULL, '4000000010000039', '2030-03-28', 35435, 'ACTIVE'),
+(40, 'L9M2T7A4', 10, NULL, '4000000010000040', '2030-04-28', 10129, 'ACTIVE'),
+(41, 'N5V8C3P6', 1, NULL, '4000000010000041', '2031-05-28', 6691, 'ACTIVE'),
+(42, 'P7Q4J9D2', 2, NULL, '4000000010000042', '2031-06-28', 8233, 'ACTIVE'),
+(43, 'Q2R6M8W5', 3, NULL, '4000000010000043', '2031-07-28', 48036, 'ACTIVE'),
+(44, 'R9T3A7K4', 4, NULL, '4000000010000044', '2031-08-28', 4807, 'ACTIVE'),
+(45, 'S4C8N5V2', 5, NULL, '4000000010000045', '2031-09-28', 24309, 'ACTIVE'),
+(46, 'T6D2P9M7', 6, NULL, '4000000010000046', '2031-10-28', 9594, 'ACTIVE'),
+(47, 'U8H5Q3R6', 7, NULL, '4000000010000047', '2031-11-28', 7782, 'BLOCKED'),
+(48, 'V3K7W4A9', 8, NULL, '4000000010000048', '2031-12-28', 62038, 'ACTIVE'),
+(49, 'W6M2C8D5', 9, NULL, '4000000010000049', '2031-01-28', 27662, 'BLOCKED'),
+(50, 'X9N5T3Q7', 10, NULL, '4000000010000050', '2031-02-28', 44008, 'ACTIVE');
+SET IDENTITY_INSERT CREDIT_CARD OFF;
+
+UPDATE c
+SET c.customer_id = cmc.customer_id
+FROM CREDIT_CARD c
+JOIN #card_mock_customers cmc ON cmc.slot = c.card_id;
+
+-- Keep Wang Da-Ming (cust0001 / Q8M4T7K2) with one active credit card.
+-- Card 26 reuses existing April mock transactions: 4/3, 4/7, 4/17 billed and 4/30 unbilled.
+UPDATE CARD_APPLICATION
+SET customer_id = 'Q8M4T7K2'
+WHERE application_id = 26;
+
+UPDATE CREDIT_CARD
+SET
+    customer_id = 'Q8M4T7K2',
+    application_item_id = 26,
+    status = 'ACTIVE'
+WHERE card_id = 26;
+
+-- ===== Demo Test Cards (aligned with customer/account/risk demo data) =====
+-- DM01NR01, DM02NR02: normal active customers.
+-- DM03FZ01, DM04BK01 intentionally have no credit cards.
+SET IDENTITY_INSERT CARD_APPLICATION ON;
+IF NOT EXISTS (SELECT 1 FROM CARD_APPLICATION WHERE application_id BETWEEN 31 AND 32)
+INSERT INTO CARD_APPLICATION (application_id, customer_id, apply_date, status, remark) VALUES
+(31, 'DM01NR01', GETDATE(), 'COMPLETED', N'Demo normal customer card'),
+(32, 'DM02NR02', GETDATE(), 'COMPLETED', N'Demo normal customer card');
+SET IDENTITY_INSERT CARD_APPLICATION OFF;
+
+SET IDENTITY_INSERT CARD_APPLICATION_ITEM ON;
+IF NOT EXISTS (SELECT 1 FROM CARD_APPLICATION_ITEM WHERE item_id BETWEEN 31 AND 32)
+INSERT INTO CARD_APPLICATION_ITEM
+(item_id, application_id, card_type_id, result, approved_limit, annual_fee, create_card_flag, remark) VALUES
+(31, 31, 1, 'APPROVED', 120000, 1000, 1, N'Demo normal approved card'),
+(32, 32, 2, 'APPROVED', 180000, 2000, 1, N'Demo normal approved card');
+SET IDENTITY_INSERT CARD_APPLICATION_ITEM OFF;
+
+SET IDENTITY_INSERT CREDIT_CARD ON;
+IF NOT EXISTS (SELECT 1 FROM CREDIT_CARD WHERE card_id BETWEEN 51 AND 52)
+INSERT INTO CREDIT_CARD
+(card_id, customer_id, card_type_id, application_item_id, card_number, expiry_date, current_debt, status) VALUES
+(51, 'DM01NR01', 1, 31, '4000000010000051', '2031-03-28', 3650, 'ACTIVE'),
+(52, 'DM02NR02', 2, 32, '4000000010000052', '2031-04-28', 14300, 'ACTIVE');
+SET IDENTITY_INSERT CREDIT_CARD OFF;
+
+IF EXISTS (
+    SELECT 1
+    FROM CREDIT_CARD c
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM ACCOUNT a
+        WHERE a.customer_id = c.customer_id
+          AND a.account_type = 'CHECKING'
+          AND a.currency = 'TWD'
+          AND a.status = 'ACTIVE'
+    )
+      AND c.status = 'ACTIVE'
+)
+    THROW 51202, 'card_mockdata.sql generated a credit card customer without an ACTIVE TWD CHECKING account.', 1;
+
+-- ===== 5-1. CARD_ACCOUNT =====
+-- Keep one card account per mock card, and mirror each payment account into ACCOUNT.
+;WITH missing_payment_accounts AS (
+    SELECT
+        CONCAT('801', RIGHT(CONCAT('00000000000', CAST(c.card_id AS VARCHAR(11))), 11)) AS account_number,
+        customer_id,
+        c.status AS card_status,
+        ROW_NUMBER() OVER (ORDER BY c.card_id) AS rn
+    FROM CREDIT_CARD c
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM ACCOUNT a
+        WHERE a.account_number = CONCAT('801', RIGHT(CONCAT('00000000000', CAST(c.card_id AS VARCHAR(11))), 11))
+          AND a.account_type = 'CREDIT_CARD'
+          AND a.currency = 'TWD'
+    )
+)
+INSERT INTO ACCOUNT (
+    account_number, customer_id, account_type, currency, balance, liability,
+    interest_rate, status, parent_account_number, created_at, changed_at, created_by, changed_by
+)
+SELECT
+    account_number,
+    customer_id,
+    'CREDIT_CARD',
+    'TWD',
+    0.0000,
+    0.0000,
+    NULL,
+    CASE WHEN card_status = 'BLOCKED' THEN 'FROZEN' ELSE 'ACTIVE' END,
+    NULL,
+    GETDATE(),
+    GETDATE(),
+    'card-mock',
+    'card-mock'
+FROM missing_payment_accounts;
+
+UPDATE a
+SET
+    a.customer_id = c.customer_id,
+    a.account_type = 'CREDIT_CARD',
+    a.currency = 'TWD',
+    a.liability = 0.0000,
+    a.interest_rate = NULL,
+    a.status = CASE WHEN c.status = 'BLOCKED' THEN 'FROZEN' ELSE 'ACTIVE' END,
+    a.changed_at = GETDATE(),
+    a.changed_by = 'card-mock'
+FROM ACCOUNT a
+JOIN CREDIT_CARD c
+  ON a.account_number = CONCAT('801', RIGHT(CONCAT('00000000000', CAST(c.card_id AS VARCHAR(11))), 11));
+
+-- One card account per mock card so bill generation keeps its per-card mock shape.
+IF NOT EXISTS (SELECT 1 FROM CARD_ACCOUNT)
+INSERT INTO CARD_ACCOUNT (account_number, credit_limit, statement_day, due_days, customer_id)
+SELECT
+    CONCAT('801', RIGHT(CONCAT('00000000000', CAST(card_id AS VARCHAR(11))), 11)),
+    CASE
+        WHEN current_debt + 50000 < 80000 THEN 80000
+        ELSE current_debt + 50000
+    END,
+    25,
+    14,
+    customer_id
+FROM CREDIT_CARD;
+
+UPDATE c
+SET
+    c.card_account_id = ca.id,
+    c.credit_card_account_number = ca.account_number
+FROM CREDIT_CARD c
+JOIN CARD_ACCOUNT ca
+  ON ca.account_number = CONCAT('801', RIGHT(CONCAT('00000000000', CAST(c.card_id AS VARCHAR(11))), 11));
+
+-- ===== 5-2. 同步 CARD_ACCOUNT 的 account_number 至 ACCOUNT 表 =====
+-- account_mockdata.sql 只替前 8 名客戶建 CREDIT_CARD 帳戶，
+-- 此處將所有持卡客戶的 CARD_ACCOUNT.account_number 同步寫入 ACCOUNT 表，
+-- 確保 payCreditCard() 能透過 customerId 查到對應的 CREDIT_CARD 帳戶。
+DELETE FROM [ACCOUNT]
+WHERE account_type = 'CREDIT_CARD'
+  AND account_number IN (
+      SELECT account_number FROM CARD_ACCOUNT
+  );
+
+INSERT INTO [ACCOUNT] (
+    account_number, customer_id, account_type, currency,
+    balance, liability, interest_rate, status,
+    parent_account_number, created_at, changed_at, created_by, changed_by
+)
+SELECT
+    ca.account_number,
+    ca.customer_id,
+    'CREDIT_CARD',
+    'TWD',
+    0.0000,
+    0.0000,
+    NULL,
+    CASE WHEN c.status = 'BLOCKED' THEN 'FROZEN' ELSE 'ACTIVE' END,
+    NULL,
+    GETDATE(),
+    GETDATE(),
+    'mock',
+    'mock'
+FROM CARD_ACCOUNT ca
+JOIN CREDIT_CARD c ON c.card_account_id = ca.id
+WHERE NOT EXISTS (
+    SELECT 1 FROM [ACCOUNT] a
+    WHERE a.account_number = ca.account_number
+);
+
+-- ===== 6. CARD_TRANSACTION（200 筆）=====
+SET IDENTITY_INSERT CARD_TRANSACTION ON;
+IF NOT EXISTS (SELECT 1 FROM CARD_TRANSACTION)
+INSERT INTO CARD_TRANSACTION
+(txn_id, card_id, merchant_id, ref_txn_id, txn_amount, txn_type, txn_date, description) VALUES
+(1, 6, 6, NULL, 50, 'PURCHASE', '2025-11-03 09:01:47', N'計程車'),
+(2, 36, 1, NULL, 250, 'PURCHASE', '2025-11-01 11:14:08', N'便利商店'),
+(3, 26, 9, NULL, 600, 'PURCHASE', '2026-03-05 09:43:47', N'誠品購書'),
+(4, 37, 7, NULL, 100, 'PURCHASE', '2025-11-04 09:37:27', N'蝦皮購物'),
+(5, 3, 4, NULL, -100, 'REFUND', '2025-11-01 08:05:13', N'麥當勞用餐'),
+(6, 36, 3, NULL, 1000, 'PURCHASE', '2025-11-03 16:38:01', N'星巴克咖啡'),
+(7, 32, 8, NULL, 5000, 'PURCHASE', '2025-11-07 11:45:41', N'串流訂閱'),
+(8, 27, 8, NULL, 450, 'PURCHASE', '2025-11-09 16:26:14', N'串流訂閱'),
+(9, 50, 4, NULL, 1500, 'PURCHASE', '2025-11-08 17:17:51', N'餐廳消費'),
+(10, 33, 8, NULL, 300, 'PURCHASE', '2025-11-12 08:48:51', N'Netflix 訂閱'),
+(11, 47, 6, NULL, 2000, 'PURCHASE', '2025-11-08 19:27:21', N'Uber 叫車'),
+(12, 14, 10, NULL, 250, 'PURCHASE', '2025-11-09 10:13:48', N'日用品採購'),
+(13, 25, 8, NULL, 300, 'PURCHASE', '2025-11-10 09:05:24', N'串流訂閱'),
+(14, 36, 1, NULL, 3000, 'PURCHASE', '2025-11-09 13:54:22', N'便利商店'),
+(15, 24, 4, NULL, 250, 'PURCHASE', '2025-11-14 12:51:02', N'麥當勞用餐'),
+(16, 40, 9, NULL, 2500, 'PURCHASE', '2025-11-16 15:34:07', N'文具用品'),
+(17, 5, 1, NULL, 300, 'PURCHASE', '2025-11-15 09:35:18', N'便利商店'),
+(18, 11, 6, NULL, 200, 'PURCHASE', '2025-11-19 18:39:56', N'計程車'),
+(19, 46, 10, NULL, 5000, 'PURCHASE', '2025-11-20 13:36:12', N'家樂福採購'),
+(20, 32, 7, NULL, 200, 'PURCHASE', '2025-11-20 09:02:42', N'網購'),
+(21, 11, 1, NULL, 300, 'PURCHASE', '2025-11-17 20:18:05', N'便利商店'),
+(22, 37, 8, NULL, 200, 'PURCHASE', '2025-11-22 11:55:06', N'串流訂閱'),
+(23, 14, 6, NULL, 450, 'PURCHASE', '2025-11-20 12:29:40', N'Uber 叫車'),
+(24, 28, 4, NULL, 390, 'PURCHASE', '2025-11-24 13:10:23', N'麥當勞用餐'),
+(25, 49, 9, NULL, 800, 'PURCHASE', '2025-11-21 11:42:17', N'誠品購書'),
+(26, 3, 7, NULL, 450, 'PURCHASE', '2025-11-25 22:43:41', N'網購'),
+(27, 5, 7, NULL, 250, 'PURCHASE', '2025-11-21 17:40:10', N'蝦皮購物'),
+(28, 50, 8, NULL, 300, 'PURCHASE', '2025-11-26 19:15:10', N'串流訂閱'),
+(29, 46, 8, NULL, 100, 'PURCHASE', '2025-11-26 14:17:59', N'Netflix 訂閱'),
+(30, 21, 4, NULL, 150, 'PURCHASE', '2025-11-29 19:35:14', N'外送平台'),
+(31, 41, 8, NULL, 2000, 'PURCHASE', '2025-11-30 13:53:49', N'Netflix 訂閱'),
+(32, 48, 6, NULL, 300, 'PURCHASE', '2025-12-01 08:14:52', N'計程車'),
+(33, 29, 10, NULL, 250, 'PURCHASE', '2025-11-26 20:20:25', N'日用品採購'),
+(34, 7, 9, NULL, -800, 'REFUND', '2025-11-29 09:13:58', N'文具用品'),
+(35, 37, 3, NULL, 2000, 'PURCHASE', '2025-12-02 22:45:20', N'星巴克咖啡'),
+(36, 37, 5, NULL, 1200, 'PURCHASE', '2025-11-30 18:31:25', N'高鐵車票'),
+(37, 38, 8, NULL, 2500, 'PURCHASE', '2025-12-05 15:09:16', N'串流訂閱'),
+(38, 13, 10, NULL, 250, 'PURCHASE', '2025-12-02 11:47:35', N'家樂福採購'),
+(39, 35, 5, NULL, -500, 'REFUND', '2025-12-06 12:47:37', N'高鐵車票'),
+(40, 37, 9, NULL, 1200, 'PURCHASE', '2025-12-06 22:37:25', N'誠品購書'),
+(41, 39, 8, NULL, 50, 'PURCHASE', '2025-12-06 11:08:32', N'Netflix 訂閱'),
+(42, 35, 4, NULL, 250, 'PURCHASE', '2025-12-07 09:48:03', N'外送平台'),
+(43, 32, 9, NULL, 800, 'PURCHASE', '2025-12-11 09:09:40', N'誠品購書'),
+(44, 29, 9, NULL, 150, 'PURCHASE', '2025-12-07 20:43:27', N'誠品購書'),
+(45, 45, 5, NULL, 390, 'PURCHASE', '2025-12-11 09:24:24', N'交通費'),
+(46, 27, 3, NULL, 3000, 'PURCHASE', '2025-12-12 15:33:16', N'咖啡廳'),
+(47, 14, 4, NULL, 250, 'PURCHASE', '2025-12-13 21:00:43', N'餐廳消費'),
+(48, 19, 8, NULL, 450, 'PURCHASE', '2025-12-15 09:43:56', N'Netflix 訂閱'),
+(49, 23, 3, NULL, 50, 'PURCHASE', '2025-12-15 20:17:49', N'咖啡廳'),
+(50, 13, 9, NULL, 390, 'PURCHASE', '2025-12-17 13:07:18', N'文具用品'),
+(51, 44, 4, NULL, 500, 'PURCHASE', '2025-12-16 10:29:00', N'餐廳消費'),
+(52, 20, 4, NULL, 500, 'PURCHASE', '2025-12-18 22:46:16', N'外送平台'),
+(53, 38, 1, NULL, 50, 'PURCHASE', '2025-12-18 20:11:32', N'7-11 消費'),
+(54, 23, 8, NULL, 100, 'PURCHASE', '2025-12-15 21:40:19', N'Netflix 訂閱'),
+(55, 6, 10, NULL, -1000, 'REFUND', '2025-12-22 18:32:38', N'日用品採購'),
+(56, 17, 9, NULL, 2000, 'PURCHASE', '2025-12-18 10:23:48', N'文具用品'),
+(57, 39, 9, NULL, 500, 'PURCHASE', '2025-12-19 16:49:59', N'誠品購書'),
+(58, 13, 6, NULL, 1200, 'PURCHASE', '2025-12-23 22:00:38', N'計程車'),
+(59, 19, 4, NULL, 390, 'PURCHASE', '2025-12-22 15:01:07', N'麥當勞用餐'),
+(60, 8, 4, NULL, 2500, 'PURCHASE', '2025-12-23 22:53:51', N'餐廳消費'),
+(61, 22, 1, NULL, 2500, 'PURCHASE', '2025-12-24 11:03:15', N'7-11 消費'),
+(62, 40, 10, NULL, 3000, 'PURCHASE', '2025-12-26 09:05:46', N'日用品採購'),
+(63, 22, 7, NULL, 2500, 'PURCHASE', '2025-12-26 21:04:48', N'網購'),
+(64, 47, 1, NULL, 200, 'PURCHASE', '2025-12-28 20:08:08', N'7-11 消費'),
+(65, 1, 4, NULL, 3000, 'PURCHASE', '2026-03-18 15:35:10', N'麥當勞用餐'),
+(66, 26, 10, NULL, 1200, 'PURCHASE', '2026-03-12 16:55:38', N'家樂福採購'),
+(67, 21, 5, NULL, 1500, 'PURCHASE', '2025-12-30 11:59:34', N'高鐵車票'),
+(68, 37, 9, NULL, 250, 'PURCHASE', '2026-01-03 19:44:12', N'文具用品'),
+(69, 28, 7, NULL, -800, 'REFUND', '2026-01-03 12:25:42', N'蝦皮購物'),
+(70, 19, 10, NULL, 1000, 'PURCHASE', '2026-01-04 13:28:57', N'家樂福採購'),
+(71, 31, 6, NULL, 2000, 'PURCHASE', '2026-01-03 15:07:15', N'Uber 叫車'),
+(72, 47, 8, NULL, -100, 'REFUND', '2026-01-01 09:21:01', N'Netflix 訂閱'),
+(73, 31, 8, NULL, 2000, 'PURCHASE', '2026-01-05 16:14:37', N'Netflix 訂閱'),
+(74, 11, 10, NULL, 100, 'PURCHASE', '2026-01-03 08:04:45', N'家樂福採購'),
+(75, 1, 2, NULL, 2000, 'PURCHASE', '2026-03-28 08:14:04', N'全家消費'),
+(76, 19, 7, NULL, 390, 'PURCHASE', '2026-01-04 21:21:04', N'蝦皮購物'),
+(77, 14, 4, NULL, 500, 'PURCHASE', '2026-01-09 11:17:42', N'外送平台'),
+(78, 40, 8, NULL, 2500, 'PURCHASE', '2026-01-09 11:34:08', N'Netflix 訂閱'),
+(79, 42, 5, NULL, 150, 'PURCHASE', '2026-01-12 22:56:36', N'高鐵車票'),
+(80, 44, 10, NULL, 500, 'PURCHASE', '2026-01-12 15:15:50', N'日用品採購'),
+(81, 28, 10, NULL, 200, 'PURCHASE', '2026-01-12 20:26:12', N'日用品採購'),
+(82, 11, 8, NULL, 600, 'PURCHASE', '2026-01-09 09:42:27', N'串流訂閱'),
+(83, 14, 1, NULL, 800, 'PURCHASE', '2026-01-12 14:26:29', N'便利商店'),
+(84, 4, 6, NULL, 200, 'PURCHASE', '2026-01-17 19:03:43', N'Uber 叫車'),
+(85, 20, 4, NULL, 300, 'PURCHASE', '2026-01-17 18:06:03', N'餐廳消費'),
+(86, 8, 3, NULL, 390, 'PURCHASE', '2026-01-16 19:21:51', N'星巴克咖啡'),
+(87, 12, 1, NULL, 100, 'PURCHASE', '2026-01-20 09:15:12', N'7-11 消費'),
+(88, 26, 10, NULL, 250, 'PURCHASE', '2026-03-26 16:28:08', N'家樂福採購'),
+(89, 32, 3, NULL, 1200, 'PURCHASE', '2026-01-19 10:17:29', N'星巴克咖啡'),
+(90, 41, 3, NULL, 390, 'PURCHASE', '2026-01-18 21:59:04', N'咖啡廳'),
+(91, 39, 4, NULL, 1500, 'PURCHASE', '2026-01-21 20:55:54', N'餐廳消費'),
+(92, 19, 4, NULL, 390, 'PURCHASE', '2026-01-22 09:03:41', N'餐廳消費'),
+(93, 5, 5, NULL, 2000, 'PURCHASE', '2026-01-23 21:00:05', N'高鐵車票'),
+(94, 3, 4, NULL, 50, 'PURCHASE', '2026-01-26 21:15:10', N'餐廳消費'),
+(95, 42, 9, NULL, 50, 'PURCHASE', '2026-01-24 15:30:13', N'誠品購書'),
+(96, 40, 5, NULL, 390, 'PURCHASE', '2026-01-28 14:57:03', N'交通費'),
+(97, 34, 1, NULL, 800, 'PURCHASE', '2026-01-24 14:00:24', N'便利商店'),
+(98, 45, 7, NULL, 50, 'PURCHASE', '2026-01-26 22:50:50', N'蝦皮購物'),
+(99, 17, 10, NULL, 2500, 'PURCHASE', '2026-01-28 12:27:44', N'日用品採購'),
+(100, 30, 3, NULL, 50, 'PURCHASE', '2026-01-31 20:35:42', N'星巴克咖啡'),
+(101, 14, 3, NULL, 2500, 'PURCHASE', '2026-02-01 15:09:12', N'咖啡廳'),
+(102, 32, 6, NULL, 50, 'PURCHASE', '2026-01-29 11:03:37', N'計程車'),
+(103, 13, 2, NULL, 50, 'PURCHASE', '2026-02-02 16:03:47', N'全家消費'),
+(104, 19, 6, NULL, 100, 'PURCHASE', '2026-01-31 08:03:37', N'計程車'),
+(105, 7, 6, NULL, 1000, 'PURCHASE', '2026-02-02 16:58:54', N'Uber 叫車'),
+(106, 4, 7, NULL, 2000, 'PURCHASE', '2026-02-04 10:03:32', N'網購'),
+(107, 35, 9, NULL, 1000, 'PURCHASE', '2026-02-01 21:11:04', N'誠品購書'),
+(108, 39, 9, NULL, 50, 'PURCHASE', '2026-02-06 09:43:55', N'文具用品'),
+(109, 19, 10, NULL, 800, 'PURCHASE', '2026-02-04 14:07:56', N'家樂福採購'),
+(110, 29, 5, NULL, 3000, 'PURCHASE', '2026-02-08 11:37:38', N'高鐵車票'),
+(111, 30, 6, NULL, 2000, 'PURCHASE', '2026-02-05 17:05:26', N'計程車'),
+(112, 36, 1, NULL, 250, 'PURCHASE', '2026-02-10 17:36:33', N'便利商店'),
+(113, 8, 2, NULL, 3000, 'PURCHASE', '2026-02-08 22:16:13', N'全家消費'),
+(114, 12, 2, NULL, 3000, 'PURCHASE', '2026-02-12 19:20:15', N'全家消費'),
+(115, 39, 7, NULL, 3000, 'PURCHASE', '2026-02-10 14:08:42', N'蝦皮購物'),
+(116, 3, 6, NULL, 2500, 'PURCHASE', '2026-02-14 12:29:20', N'Uber 叫車'),
+(117, 33, 1, NULL, 100, 'PURCHASE', '2026-02-16 22:04:00', N'7-11 消費'),
+(118, 36, 4, NULL, 50, 'PURCHASE', '2026-02-14 17:36:06', N'餐廳消費'),
+(119, 9, 3, NULL, 1000, 'PURCHASE', '2026-02-12 16:13:32', N'咖啡廳'),
+(120, 50, 7, NULL, 1200, 'PURCHASE', '2026-02-15 10:59:22', N'網購'),
+(121, 21, 6, NULL, 2000, 'PURCHASE', '2026-02-14 22:15:23', N'計程車'),
+(122, 7, 5, NULL, 1000, 'PURCHASE', '2026-02-16 10:28:53', N'高鐵車票'),
+(123, 16, 4, NULL, 3000, 'PURCHASE', '2026-02-19 19:19:39', N'麥當勞用餐'),
+(124, 6, 8, NULL, 1200, 'PURCHASE', '2026-02-22 18:33:00', N'Netflix 訂閱'),
+(125, 2, 9, NULL, 1500, 'PURCHASE', '2026-02-22 21:35:19', N'誠品購書'),
+(126, 8, 9, NULL, 300, 'PURCHASE', '2026-02-23 09:56:08', N'文具用品'),
+(127, 39, 2, NULL, 2500, 'PURCHASE', '2026-02-21 09:56:06', N'全家消費'),
+(128, 38, 9, NULL, 2500, 'PURCHASE', '2026-02-25 16:09:17', N'文具用品'),
+(129, 8, 6, NULL, 1000, 'PURCHASE', '2026-02-23 17:13:45', N'Uber 叫車'),
+(130, 18, 6, NULL, 150, 'PURCHASE', '2026-02-24 11:43:40', N'計程車'),
+(131, 16, 5, NULL, 800, 'PURCHASE', '2026-03-01 12:32:31', N'高鐵車票'),
+(132, 30, 9, NULL, 250, 'PURCHASE', '2026-02-25 22:58:54', N'文具用品'),
+(133, 37, 5, NULL, 200, 'PURCHASE', '2026-02-24 09:40:27', N'交通費'),
+(134, 31, 4, NULL, 800, 'PURCHASE', '2026-03-03 12:02:00', N'麥當勞用餐'),
+(135, 26, 10, NULL, 200, 'PURCHASE', '2026-04-03 20:08:40', N'日用品採購'),
+(136, 26, 6, NULL, 450, 'PURCHASE', '2026-04-07 10:47:28', N'計程車'),
+(137, 20, 7, NULL, 390, 'PURCHASE', '2026-03-04 19:27:35', N'網購'),
+(138, 28, 9, NULL, 1000, 'PURCHASE', '2026-03-01 09:04:56', N'文具用品'),
+(139, 3, 7, NULL, 2500, 'PURCHASE', '2026-03-07 22:09:34', N'網購'),
+(140, 19, 7, NULL, 150, 'PURCHASE', '2026-03-03 21:23:37', N'網購'),
+(141, 16, 1, NULL, 500, 'PURCHASE', '2026-03-07 10:27:08', N'7-11 消費'),
+(142, 30, 4, NULL, 1000, 'PURCHASE', '2026-03-04 12:23:57', N'餐廳消費'),
+(143, 39, 2, NULL, 200, 'PURCHASE', '2026-03-11 21:02:57', N'全家消費'),
+(144, 17, 8, NULL, 100, 'PURCHASE', '2026-03-08 11:43:15', N'串流訂閱'),
+(145, 50, 4, NULL, 100, 'PURCHASE', '2026-03-12 09:22:49', N'麥當勞用餐'),
+(146, 35, 4, NULL, 2500, 'PURCHASE', '2026-03-12 22:55:26', N'餐廳消費'),
+(147, 34, 3, NULL, 600, 'PURCHASE', '2026-03-13 19:09:59', N'咖啡廳'),
+(148, 36, 1, NULL, 1000, 'PURCHASE', '2026-03-11 21:10:51', N'便利商店'),
+(149, 26, 5, NULL, 1500, 'PURCHASE', '2026-04-17 10:56:26', N'高鐵車票'),
+(150, 32, 1, NULL, 250, 'PURCHASE', '2026-03-12 10:47:59', N'便利商店'),
+(151, 42, 7, NULL, 2000, 'PURCHASE', '2026-03-15 20:59:26', N'蝦皮購物'),
+(152, 26, 1, NULL, 1500, 'PURCHASE', '2026-04-30 18:55:47', N'便利商店'),
+(153, 31, 2, NULL, 3000, 'PURCHASE', '2026-03-20 11:17:10', N'全家消費'),
+(154, 47, 6, NULL, 300, 'PURCHASE', '2026-03-21 19:06:24', N'計程車'),
+(155, 40, 7, NULL, 50, 'PURCHASE', '2026-03-22 08:54:30', N'蝦皮購物'),
+(156, 28, 8, NULL, 450, 'PURCHASE', '2026-03-18 11:52:58', N'Netflix 訂閱'),
+(157, 3, 10, NULL, 500, 'PURCHASE', '2026-03-21 13:19:52', N'家樂福採購'),
+(158, 8, 9, NULL, 2500, 'PURCHASE', '2026-03-25 21:14:14', N'誠品購書'),
+(159, 48, 1, NULL, 5000, 'PURCHASE', '2026-03-20 18:12:25', N'7-11 消費'),
+(160, 31, 5, NULL, 1200, 'PURCHASE', '2026-03-23 12:55:04', N'交通費'),
+(161, 24, 7, NULL, 250, 'PURCHASE', '2026-03-28 12:22:41', N'網購'),
+(162, 3, 9, NULL, 250, 'PURCHASE', '2026-03-26 14:43:53', N'誠品購書'),
+(163, 4, 6, NULL, 390, 'PURCHASE', '2026-03-27 13:01:07', N'Uber 叫車'),
+(164, 33, 8, NULL, 1500, 'PURCHASE', '2026-03-26 10:37:16', N'Netflix 訂閱'),
+(165, 3, 7, NULL, 2500, 'PURCHASE', '2026-03-25 09:38:27', N'蝦皮購物'),
+(166, 21, 5, NULL, 1000, 'PURCHASE', '2026-03-28 19:50:20', N'高鐵車票'),
+(167, 5, 9, NULL, 1200, 'PURCHASE', '2026-03-30 17:32:07', N'誠品購書'),
+(168, 9, 2, NULL, 450, 'PURCHASE', '2026-03-31 22:36:12', N'全家消費'),
+(169, 3, 9, NULL, 800, 'PURCHASE', '2026-03-31 08:45:27', N'文具用品'),
+(170, 22, 3, NULL, 100, 'PURCHASE', '2026-03-30 16:59:51', N'星巴克咖啡'),
+(171, 15, 9, NULL, 500, 'PURCHASE', '2026-04-04 18:46:47', N'文具用品'),
+(172, 41, 8, NULL, 500, 'PURCHASE', '2026-04-05 18:12:23', N'Netflix 訂閱'),
+(173, 20, 10, NULL, 800, 'PURCHASE', '2026-04-04 09:42:58', N'家樂福採購'),
+(174, 5, 10, NULL, 600, 'PURCHASE', '2026-04-04 17:20:42', N'日用品採購'),
+(175, 30, 5, NULL, 3000, 'PURCHASE', '2026-04-09 09:46:57', N'高鐵車票'),
+(176, 3, 9, NULL, 1000, 'PURCHASE', '2026-04-06 16:19:42', N'文具用品'),
+(177, 30, 9, NULL, 1000, 'PURCHASE', '2026-04-08 13:25:44', N'文具用品'),
+(178, 31, 3, NULL, 2000, 'PURCHASE', '2026-04-08 16:08:12', N'咖啡廳'),
+(179, 14, 1, NULL, 3000, 'PURCHASE', '2026-04-10 18:24:43', N'7-11 消費'),
+(180, 3, 9, NULL, 500, 'PURCHASE', '2026-04-13 22:11:39', N'文具用品'),
+(181, 24, 9, NULL, 100, 'PURCHASE', '2026-04-13 12:25:35', N'誠品購書'),
+(182, 7, 9, NULL, 390, 'PURCHASE', '2026-04-15 08:19:18', N'文具用品'),
+(183, 42, 6, NULL, 5000, 'PURCHASE', '2026-04-11 14:50:37', N'Uber 叫車'),
+(184, 1, 4, NULL, 50, 'PURCHASE', '2026-04-15 18:20:29', N'麥當勞用餐'),
+(185, 23, 7, NULL, 450, 'PURCHASE', '2026-04-15 15:43:13', N'蝦皮購物'),
+(186, 25, 6, NULL, 800, 'PURCHASE', '2026-04-17 15:50:57', N'Uber 叫車'),
+(187, 10, 7, NULL, 500, 'PURCHASE', '2026-04-20 19:10:42', N'蝦皮購物'),
+(188, 28, 6, NULL, 300, 'PURCHASE', '2026-04-15 12:32:42', N'Uber 叫車'),
+(189, 2, 3, NULL, 100, 'PURCHASE', '2026-04-21 17:21:05', N'咖啡廳'),
+(190, 7, 6, NULL, 390, 'PURCHASE', '2026-04-23 20:15:43', N'Uber 叫車'),
+(191, 37, 1, NULL, 2000, 'PURCHASE', '2026-04-20 11:51:12', N'便利商店'),
+(192, 34, 3, NULL, 3000, 'PURCHASE', '2026-04-19 08:02:15', N'星巴克咖啡'),
+(193, 1, 5, NULL, 800, 'PURCHASE', '2026-04-22 17:54:49', N'交通費'),
+(194, 30, 4, NULL, 3000, 'PURCHASE', '2026-04-20 15:26:56', N'餐廳消費'),
+(195, 39, 6, NULL, 1000, 'PURCHASE', '2026-04-26 17:12:45', N'計程車'),
+(196, 25, 3, NULL, 600, 'PURCHASE', '2026-04-27 14:31:25', N'咖啡廳'),
+(197, 11, 2, NULL, 5000, 'PURCHASE', '2026-04-24 10:41:44', N'全家消費'),
+(198, 25, 4, NULL, 450, 'PURCHASE', '2026-04-24 22:48:55', N'餐廳消費'),
+(199, 27, 9, NULL, 100, 'PURCHASE', '2026-04-29 22:06:49', N'誠品購書'),
+(200, 32, 7, NULL, 5000, 'PURCHASE', '2026-04-29 11:11:51', N'網購');
+SET IDENTITY_INSERT CARD_TRANSACTION OFF;
+
+SET IDENTITY_INSERT CARD_TRANSACTION ON;
+IF NOT EXISTS (SELECT 1 FROM CARD_TRANSACTION WHERE txn_id BETWEEN 201 AND 206)
+INSERT INTO CARD_TRANSACTION
+(txn_id, card_id, merchant_id, ref_txn_id, txn_amount, txn_type, txn_date, description) VALUES
+(201, 51, 1, NULL, 1200, 'PURCHASE', '2026-04-10 09:30:00', N'Demo normal billed transaction'),
+(202, 51, 7, NULL, 2000, 'PURCHASE', '2026-04-24 14:20:00', N'Demo normal billed transaction'),
+(203, 51, 3, NULL, 450, 'PURCHASE', '2026-04-28 18:45:00', N'Demo normal unbilled transaction'),
+(204, 52, 2, NULL, 5000, 'PURCHASE', '2026-04-05 12:10:00', N'Demo normal billed transaction'),
+(205, 52, 8, NULL, 7500, 'PURCHASE', '2026-04-22 20:05:00', N'Demo normal billed transaction'),
+(206, 52, 9, NULL, 1800, 'PURCHASE', '2026-04-29 16:35:00', N'Demo normal unbilled transaction');
+SET IDENTITY_INSERT CARD_TRANSACTION OFF;
+
+-- ===== 7. CARD_BILL（50 筆）=====
+SET IDENTITY_INSERT CARD_BILL ON;
+IF NOT EXISTS (SELECT 1 FROM CARD_BILL)
+INSERT INTO CARD_BILL
+(bill_id, card_id, billing_month, bill_date, due_date, total_amount, minimum_payment, paid_amount, bill_status) VALUES
+(1, 1, '2026-04', '2026-04-25', '2026-05-10', 5850, 585, 0, 'UNPAID'),
+(2, 2, '2026-04', '2026-04-25', '2026-05-10', 15000, 1500, 0, 'UNPAID'),
+(3, 3, '2026-03', '2026-03-25', '2026-04-10', 15000, 1500, 15000, 'PAID'),
+(4, 4, '2026-04', '2026-04-25', '2026-05-10', 15000, 1500, 8387, 'PARTIAL'),
+(5, 5, '2026-03', '2026-03-25', '2026-04-10', 3000, 300, 0, 'UNPAID'),
+(6, 6, '2026-02', '2026-02-25', '2026-03-10', 20000, 2000, 19667, 'PARTIAL'),
+(7, 7, '2026-03', '2026-03-25', '2026-04-10', 5000, 500, 0, 'UNPAID'),
+(8, 8, '2026-04', '2026-04-25', '2026-05-10', 5000, 500, 5000, 'PAID'),
+(9, 9, '2026-04', '2026-04-25', '2026-05-10', 15000, 1500, 0, 'UNPAID'),
+(10, 10, '2026-01', '2026-01-25', '2026-02-10', 3000, 300, 3000, 'PAID'),
+(11, 11, '2026-03', '2026-03-25', '2026-04-10', 20000, 2000, 14408, 'PARTIAL'),
+(12, 12, '2026-04', '2026-04-25', '2026-05-10', 2000, 200, 2000, 'PAID'),
+(13, 13, '2026-01', '2026-01-25', '2026-02-10', 20000, 2000, 10169, 'PARTIAL'),
+(14, 14, '2026-02', '2026-02-25', '2026-03-10', 30000, 3000, 30000, 'PAID'),
+(15, 15, '2026-01', '2026-01-25', '2026-02-10', 10000, 1000, 0, 'UNPAID'),
+(16, 16, '2026-03', '2026-03-25', '2026-04-10', 20000, 2000, 20000, 'PAID'),
+(17, 17, '2026-04', '2026-04-25', '2026-05-10', 2000, 200, 0, 'UNPAID'),
+(18, 18, '2026-02', '2026-02-25', '2026-03-10', 15000, 1500, 0, 'UNPAID'),
+(19, 19, '2026-04', '2026-04-25', '2026-05-10', 15000, 1500, 15000, 'PAID'),
+(20, 20, '2026-01', '2026-01-25', '2026-02-10', 7000, 700, 0, 'UNPAID'),
+(21, 21, '2026-03', '2026-03-25', '2026-04-10', 10000, 1000, 0, 'UNPAID'),
+(22, 22, '2026-01', '2026-01-25', '2026-02-10', 1000, 100, 0, 'UNPAID'),
+(23, 23, '2026-02', '2026-02-25', '2026-03-10', 30000, 3000, 30000, 'PAID'),
+(24, 24, '2026-02', '2026-02-25', '2026-03-10', 7000, 700, 0, 'UNPAID'),
+(25, 25, '2026-03', '2026-03-25', '2026-04-10', 5000, 500, 5000, 'PAID'),
+(26, 26, '2026-04', '2026-04-25', '2026-05-10', 4200, 420, 0, 'UNPAID'),
+(27, 27, '2026-01', '2026-01-25', '2026-02-10', 15000, 1500, 0, 'UNPAID'),
+(28, 28, '2026-02', '2026-02-25', '2026-03-10', 5000, 500, 5000, 'PAID'),
+(29, 29, '2026-01', '2026-01-25', '2026-02-10', 10000, 1000, 10000, 'PAID'),
+(30, 30, '2026-02', '2026-02-25', '2026-03-10', 5000, 500, 5000, 'PAID'),
+(31, 31, '2026-03', '2026-03-25', '2026-04-10', 2000, 200, 0, 'UNPAID'),
+(32, 32, '2026-02', '2026-02-25', '2026-03-10', 30000, 3000, 0, 'UNPAID'),
+(33, 33, '2026-02', '2026-02-25', '2026-03-10', 7000, 700, 0, 'UNPAID'),
+(34, 34, '2026-04', '2026-04-25', '2026-05-10', 3000, 300, 3000, 'PAID'),
+(35, 35, '2026-04', '2026-04-25', '2026-05-10', 7000, 700, 0, 'UNPAID'),
+(36, 36, '2026-01', '2026-01-25', '2026-02-10', 1000, 100, 824, 'PARTIAL'),
+(37, 37, '2026-02', '2026-02-25', '2026-03-10', 5000, 500, 5000, 'PAID'),
+(38, 38, '2026-04', '2026-04-25', '2026-05-10', 5000, 500, 0, 'UNPAID'),
+(39, 39, '2026-01', '2026-01-25', '2026-02-10', 20000, 2000, 20000, 'PAID'),
+(40, 40, '2026-03', '2026-03-25', '2026-04-10', 20000, 2000, 20000, 'PAID'),
+(41, 41, '2026-02', '2026-02-25', '2026-03-10', 3000, 300, 0, 'UNPAID'),
+(42, 42, '2026-01', '2026-01-25', '2026-02-10', 2000, 200, 0, 'UNPAID'),
+(43, 43, '2026-03', '2026-03-25', '2026-04-10', 10000, 1000, 0, 'UNPAID'),
+(44, 44, '2026-03', '2026-03-25', '2026-04-10', 3000, 300, 3000, 'PAID'),
+(45, 45, '2026-03', '2026-03-25', '2026-04-10', 7000, 700, 1651, 'PARTIAL'),
+(46, 46, '2026-04', '2026-04-25', '2026-05-10', 1000, 100, 1000, 'PAID'),
+(47, 47, '2026-02', '2026-02-25', '2026-03-10', 2000, 200, 1870, 'PARTIAL'),
+(48, 48, '2026-01', '2026-01-25', '2026-02-10', 30000, 3000, 0, 'UNPAID'),
+(49, 49, '2026-01', '2026-01-25', '2026-02-10', 7000, 700, 0, 'UNPAID'),
+(50, 50, '2026-03', '2026-03-25', '2026-04-10', 2000, 200, 2000, 'PAID');
+SET IDENTITY_INSERT CARD_BILL OFF;
+
+SET IDENTITY_INSERT CARD_BILL ON;
+IF NOT EXISTS (SELECT 1 FROM CARD_BILL WHERE bill_id BETWEEN 51 AND 52)
+INSERT INTO CARD_BILL
+(bill_id, card_id, billing_month, bill_date, due_date, total_amount, minimum_payment, paid_amount, bill_status) VALUES
+(51, 51, '2026-04', '2026-04-25', '2026-05-10', 3200, 320, 0, 'UNPAID'),
+(52, 52, '2026-04', '2026-04-25', '2026-05-10', 12500, 1250, 6000, 'PARTIAL');
+SET IDENTITY_INSERT CARD_BILL OFF;
+
+-- 1. 先補交易回饋
+UPDATE ct
+SET
+    cashback_rate = ctype.cashback_rate,
+    cashback_amount = ROUND(ct.txn_amount * ctype.cashback_rate / 100, 0)
+FROM CARD_TRANSACTION ct
+JOIN CREDIT_CARD cc ON ct.card_id = cc.card_id
+JOIN CARD_TYPE ctype ON cc.card_type_id = ctype.card_type_id
+WHERE ct.txn_type IN ('PURCHASE', 'REFUND');
+
+-- 2. 先把交易掛到帳單
+UPDATE t
+SET t.bill_id = b.bill_id
+FROM CARD_TRANSACTION t
+JOIN CARD_BILL b ON b.card_id = t.card_id
+WHERE t.txn_id <= 150;
+
+UPDATE t
+SET t.bill_id = b.bill_id
+FROM CARD_TRANSACTION t
+JOIN CARD_BILL b ON b.card_id = t.card_id
+WHERE t.card_id = 1
+  AND b.billing_month = '2026-04'
+  AND t.txn_date >= '2026-03-01'
+  AND t.txn_date < '2026-05-01';
+
+UPDATE t
+SET t.bill_id = b.bill_id
+FROM CARD_TRANSACTION t
+JOIN CARD_BILL b ON b.card_id = t.card_id
+WHERE t.card_id = 26
+  AND b.billing_month = '2026-04'
+  AND t.txn_date >= '2026-03-01'
+  AND t.txn_date <= '2026-04-25 23:59:59';
+
+UPDATE t
+SET t.bill_id = b.bill_id
+FROM CARD_TRANSACTION t
+JOIN CARD_BILL b ON b.card_id = t.card_id
+WHERE t.card_id IN (51, 52)
+  AND b.billing_month = '2026-04'
+  AND t.txn_date >= '2026-04-01'
+  AND t.txn_date <= '2026-04-25 23:59:59';
+
+-- 3. 再補帳單 card_account_id
+UPDATE b
+SET b.card_account_id = c.card_account_id
+FROM CARD_BILL b
+JOIN CREDIT_CARD c ON c.card_id = b.card_id;
+
+-- 4. 最後才算帳單回饋總額
+UPDATE b
+SET
+    cashback_amount = ISNULL(x.total_cashback, 0),
+    reward_posted = 0,
+    reward_reference_id = NULL
+FROM CARD_BILL b
+OUTER APPLY (
+    SELECT SUM(ISNULL(t.cashback_amount, 0)) AS total_cashback
+    FROM CARD_TRANSACTION t
+    WHERE t.bill_id = b.bill_id
+) x;

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuku Bank - 帳號鎖定安全通知</title>
+    <style>
+        /* 基礎重置 - 禪意水墨風格 */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f3e9; /* 溫暖宣紙米色 */
+            font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* 佈局容器 */
+        .wrapper {
+            width: 100%;
+            background-color: #f8f3e9;
+            padding: 40px 20px;
+            box-sizing: border-box;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fdfbf7;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            border: 1px solid #e8e2d5;
+        }
+
+        /* 頂部 Header */
+        .header {
+            padding: 45px 30px 30px;
+            text-align: center;
+            border-bottom: 1px solid #e8e2d5;
+            position: relative;
+        }
+        
+        .header-logo {
+            font-size: 26px;
+            font-weight: 500;
+            color: #3e3a35;
+            letter-spacing: 4px;
+            margin: 0;
+            font-family: "Noto Serif TC", "Songti TC", serif;
+        }
+        
+        .header-subtitle {
+            color: #8c867a;
+            font-size: 13px;
+            margin-top: 12px;
+            letter-spacing: 6px;
+            font-family: "Noto Serif TC", "Songti TC", serif;
+        }
+        
+        .seal {
+            display: inline-block;
+            background-color: #a84238; /* 紅色印章 */
+            color: #fdfbf7;
+            font-size: 11px;
+            padding: 2px 4px;
+            border-radius: 2px;
+            margin-left: 8px;
+            vertical-align: middle;
+            font-family: "PMingLiU", serif;
+            letter-spacing: 1px;
+        }
+
+        /* 內容區域 */
+        .content {
+            padding: 40px 40px 35px;
+            color: #4a4641;
+            line-height: 1.8;
+            font-size: 15px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        
+        .content p {
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
+
+        .greeting {
+            font-size: 19px;
+            font-weight: 600;
+            color: #3e3a35;
+            margin-bottom: 24px;
+            margin-top: 0;
+            font-family: "Noto Serif TC", "Songti TC", serif;
+        }
+
+        /* 按鈕設計 */
+        .btn {
+            display: inline-block;
+            background-color: #5b6b55; /* 苔蘚綠 / 灰綠 */
+            color: #ffffff !important;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 2px;
+            font-weight: 500;
+            font-size: 15px;
+            letter-spacing: 2px;
+            transition: background-color 0.3s ease;
+            margin: 20px 0;
+            text-align: center;
+            border: 1px solid #4a5746;
+        }
+        
+        .btn:hover {
+            background-color: #4a5746;
+        }
+        
+        /* 表格設計 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            background-color: #fdfbf7;
+            border-radius: 2px;
+            overflow: hidden;
+            border: 1px solid #e8e2d5;
+        }
+        .data-table th, .data-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e8e2d5;
+            text-align: left;
+            font-size: 14px;
+        }
+        .data-table tr:last-child th, .data-table tr:last-child td {
+            border-bottom: none;
+        }
+        .data-table th {
+            width: 140px;
+            color: #757065;
+            font-weight: 500;
+            background-color: #f5efe6;
+            border-right: 1px solid #e8e2d5;
+        }
+        .data-table td {
+            color: #3e3a35;
+            font-weight: 500;
+        }
+
+        /* 底部 Footer */
+        .footer {
+            background-color: #f5efe6;
+            padding: 35px 40px;
+            text-align: center;
+            border-top: 1px solid #e8e2d5;
+        }
+        
+        .footer p {
+            margin: 0 0 8px;
+            font-size: 12px;
+            color: #8c867a;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        
+        .footer-logo {
+            font-family: "Noto Serif TC", "Songti TC", serif;
+            color: #757065;
+            font-size: 14px;
+            margin-top: 20px;
+            letter-spacing: 2px;
+        }
+
+        /* 備用連結 */
+        .fallback-link {
+            background-color: #f5efe6;
+            border-left: 3px solid #b8b0a1;
+            padding: 16px;
+            margin-top: 32px;
+            font-size: 13px;
+        }
+        
+        .fallback-link p {
+            margin-top: 0;
+            margin-bottom: 8px;
+            color: #757065;
+        }
+
+        .fallback-link span {
+            word-break: break-all;
+            color: #5b6b55;
+            text-decoration: underline;
+        }
+
+        /* 響應式調整 */
+        @media only screen and (max-width: 600px) {
+            .wrapper {
+                padding: 15px 10px;
+            }
+            .content {
+                padding: 30px 20px 20px;
+            }
+            .footer {
+                padding: 25px 20px;
+            }
+        }
+</style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="container">
+            <!-- 頂部區塊 -->
+            <div class="header">
+                <div style="margin-bottom: 15px;">
+                    <img src="cid:logoImage" alt="Fuku Bank Logo" style="height: 80px; max-width: 100%;">
+                </div>
+                <h1 class="header-logo">Fuku Bank<img src="cid:sealImage" alt="福庫" style="height: 36px; vertical-align: middle; margin-left: 12px;"></h1>
+                <div class="header-subtitle">靜心理財 安穩致遠</div>
+            </div>
+            
+            <!-- 主要內容 -->
+            <div class="content">
+                <h2 class="greeting">親愛的客戶您好，</h2>
+<p>系統偵測到您的網路銀行帳號 <strong th:text="${username}"></strong> 由於**連續登入失敗次數過多**，為了保障您的資安與資產安全，我們已於系統時間 <span th:text="${time}"></span> **暫時鎖定該帳號的登入權限**。</p>
+<div class="warning-box">
+            安全提示：帳號目前處於「鎖定（LOCKED）」狀態，已無法透過輸入密碼登入。
+        </div>
+<table class="data-table">
+<tr>
+<th>安全狀態</th>
+<td style="color: #c94a4a; font-weight: bold;">已被系統暫時鎖定</td>
+</tr>
+<tr>
+<th>觸發位置</th>
+<td th:text="${location}"></td>
+</tr>
+</table>
+<h3>◎ 該如何處理？</h3>
+<ul>
+<li><strong>如果您並未執行此登入操作：</strong> 這代表您的帳號密碼可能已在外流的外流名單中並遭到駭客惡意嘗試。請您在成功解鎖帳號後，<strong>務必立即變更密碼</strong>，並檢查帳戶交易狀態。</li>
+<li><strong>如果您是本人不慎忘記密碼：</strong> 請不要繼續嘗試登入。您可以透過官方網站的「忘記密碼」功能進行密碼重設，或直接攜帶雙證件至鄰近分行、撥打 24 小時客服專線進行身分驗證與解鎖。</li>
+</ul>
+            </div>
+            
+            <!-- 底部區塊 -->
+            <div class="footer">
+                <p>此為系統自動發送之信件，請勿直接回覆。</p>
+                <p>如需協助，請聯繫我們的客服中心。</p>
+                <div class="footer-logo">福庫銀行 Fuku Bank</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

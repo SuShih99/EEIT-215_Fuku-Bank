@@ -1,0 +1,116 @@
+import api from './axios'
+
+// 建立帳戶
+export function createAccount(data) {
+  return api.post('/api/accounts', data)
+}
+
+// 查詢單一帳戶
+export function getAccount(accountNumber) {
+  return api.get(`/api/accounts/${accountNumber}`)
+}
+
+// 依客戶查詢帳戶（分頁）
+export function getAccountsByCustomerId(customerId, page = 0, size = 10) {
+  return api.get('/api/accounts', {
+    params: { customerId, page, size },
+  })
+}
+
+// 後台複合搜尋帳戶（可同時依姓名、客戶 ID、帳號、狀態、型別、幣別查詢）
+export function searchAdminAccounts(params = {}, page = 0, size = 10) {
+  return api.get('/api/accounts/search', {
+    params: { ...params, page, size },
+  })
+}
+
+// 依狀態篩選（分頁）
+export function getAccountsByStatus(status, page = 0, size = 10) {
+  return api.get(`/api/accounts/status/${status}`, {
+    params: { page, size },
+  })
+}
+
+// 依型別+幣別篩選（分頁）
+export function getAccountsByTypeAndCurrency(type, currency, page = 0, size = 10) {
+  return api.get('/api/accounts/filter', {
+    params: { type, currency, page, size },
+  })
+}
+
+// 查詢最新帳戶（分頁）
+export function getLatestAccounts(page = 0, size = 10) {
+  return api.get('/api/accounts/latest', {
+    params: { page, size },
+  })
+}
+
+// 轉帳
+export function transfer(data) {
+  return api.post('/api/customer/transfers', data)
+}
+
+// 依 referenceId 查詢交易紀錄
+export function getTransLogsByReferenceId(referenceId) {
+  return api.get(`/api/trans-logs/reference/${referenceId}`)
+}
+
+// 依帳號查詢交易紀錄（分頁）
+export function getTransLogsByAccountNumber(accountNumber, page = 0, size = 10) {
+  return api.get(`/api/trans-logs/account/${accountNumber}`, {
+    params: { page, size },
+  })
+}
+
+// 依客戶 ID 查詢交易紀錄（分頁）
+export function getTransLogsByCustomerId(customerId, page = 0, size = 10) {
+  return api.get(`/api/trans-logs/customer/${customerId}`, {
+    params: { page, size },
+  })
+}
+
+// 查詢最新交易紀錄（分頁）
+export function getLatestTransLogs(page = 0, size = 10) {
+  return api.get('/api/trans-logs/latest', {
+    params: { page, size },
+  })
+}
+
+// 依客戶 ID + 日期區間查詢交易紀錄（分頁）
+export function getTransLogsByCustomerIdAndDateRange(customerId, startDate, endDate, page = 0, size = 10) {
+  return api.get(`/api/trans-logs/customer/${customerId}/range`, {
+    params: { startDate, endDate, page, size },
+  })
+}
+
+// 變更帳戶狀態
+export function updateAccountStatus(accountNumber, newStatus) {
+  return api.patch(`/api/accounts/${accountNumber}/status`, null, {
+    params: { newStatus },
+  })
+}
+
+// 存款
+export function deposit(data) {
+  return api.post('/api/customer/cash/deposit', data)
+}
+
+// 提款
+export function withdraw(data) {
+  return api.post('/api/customer/cash/withdraw', data)
+}
+
+// 沖正
+export function reversal(data) {
+  return api.post('/api/admin/transfers/reversal', data)
+}
+
+// 查詢全站帳戶統計
+export function getAccountsStats() {
+  return api.get('/api/accounts/stats')
+}
+
+// 查詢全站交易紀錄統計
+export function getTransLogsStats() {
+  return api.get('/api/trans-logs/stats')
+}

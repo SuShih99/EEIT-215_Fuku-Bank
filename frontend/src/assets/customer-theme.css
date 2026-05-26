@@ -1,0 +1,507 @@
+
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700;900&family=Noto+Sans+TC:wght@300;400;500;600&family=Cormorant+Garamond:wght@400;500;600;700&display=swap');
+
+:root {
+  /* ── 色彩系統 ── */
+  /* Primary 品牌色 */
+  --primary:       #5C6B5F;
+  --primary-dark:  #3F4A42;
+  --primary-light:  rgba(92, 107, 95, 0.08);
+
+  /* Accent 點綴（印章紅） */
+  --accent:        #A65A4D;
+  --accent-light:  rgba(166, 90, 77, 0.10);
+
+  /* Neutral 灰階 5 級 */
+  --bg-primary:    #F5F1EA;   /* 頁面背景 */
+  --bg-secondary:  #EAE4DA;   /* 卡片底 / 分區 */
+  --bg-card:       #FFFFFF;   /* 白色卡片 */
+  --bg-input:      #FAFAF7;   /* 輸入框底色 */
+  --text-primary:  #2B2B2B;   /* 主文字 — WCAG AA 對比 ≥ 7:1 on bg-primary */
+  --text-secondary:#5C564E;   /* 次文字 — 加深至 4.8:1 對比度 */
+  --text-disabled: #A8A199;   /* 禁用文字 */
+  --text-placeholder:#B5ADA3; /* 佔位符 */
+  --border:        #D6CEC3;   /* 邊框 / 分隔線 */
+
+  /* ── 間距系統（8px 倍數）── */
+  --space-1:  4px;    /* 0.5x — 微調用 */
+  --space-2:  8px;    /* 1x */
+  --space-3:  16px;   /* 2x */
+  --space-4:  24px;   /* 3x */
+  --space-5:  32px;   /* 4x */
+  --space-6:  40px;   /* 5x */
+  --space-7:  48px;   /* 6x */
+  --space-8:  64px;   /* 8x */
+
+  /* ── 字體規範 ── */
+  --font-heading: 'Noto Serif TC', 'Cormorant Garamond', serif;
+  --font-display: 'Cormorant Garamond', 'Noto Serif TC', serif;
+  --font-body:    'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:    'SF Mono', 'Consolas', monospace;
+
+  /* 字級分級 */
+  --text-h1:   32px;
+  --text-h2:   24px;
+  --text-h3:   18px;
+  --text-body:  15px;
+  --text-sm:    13px;
+  --text-xs:    12px;
+
+  /* 行高統一 1.5x */
+  --leading:   1.5;
+  --leading-heading: 1.35;
+
+  /* ── 圓角 3 級 ── */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* ── 陰影 3 級 ── */
+  --shadow-sm: 0 1px 3px rgba(107, 95, 80, 0.08);
+  --shadow-md: 0 4px 16px rgba(107, 95, 80, 0.10);
+  --shadow-lg: 0 8px 32px rgba(107, 95, 80, 0.12);
+
+  /* ── 動畫 ── */
+  --ease:      cubic-bezier(0.4, 0, 0.2, 1);
+  --duration:  0.2s;
+}
+
+
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.customer-page {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.customer-page *,
+.customer-page *::before,
+.customer-page *::after {
+  box-sizing: border-box;
+}
+
+/* 標題統一 */
+.customer-page h1 {
+  font-family: var(--font-heading);
+  font-size: var(--text-h1);
+  font-weight: 700;
+  line-height: var(--leading-heading);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.customer-page h2 {
+  font-family: var(--font-heading);
+  font-size: var(--text-h2);
+  font-weight: 600;
+  line-height: var(--leading-heading);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.customer-page h3 {
+  font-family: var(--font-heading);
+  font-size: var(--text-h3);
+  font-weight: 600;
+  line-height: var(--leading-heading);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.customer-page p {
+  margin: 0;
+}
+
+
+
+/* 表單群組 */
+.jb-form-item {
+  margin-bottom: var(--space-4);
+}
+
+/* 標籤 */
+.jb-label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: var(--leading);
+}
+
+/* 輸入框 — 觸控區 ≥ 44px */
+.jb-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px var(--space-3);
+  font-size: var(--text-body);
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color var(--duration) var(--ease),
+              box-shadow var(--duration) var(--ease);
+}
+
+.jb-input::placeholder {
+  color: var(--text-placeholder);
+}
+
+.jb-input:hover:not(:disabled):not(:focus) {
+  border-color: var(--text-disabled);
+}
+
+.jb-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.jb-input:disabled {
+  background: var(--bg-secondary);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+  border-color: var(--border);
+}
+
+/* 密碼框 */
+.jb-password-wrap {
+  position: relative;
+}
+
+.jb-password-wrap .jb-input {
+  padding-right: var(--space-7);
+}
+
+.jb-password-toggle {
+  position: absolute;
+  right: var(--space-2);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 18px;
+  transition: background var(--duration) var(--ease),
+              color var(--duration) var(--ease);
+}
+
+.jb-password-toggle:hover {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+/* Select 下拉 */
+.jb-select {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px var(--space-3);
+  padding-right: var(--space-6);
+  font-size: var(--text-body);
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%235C564E' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-3) center;
+  cursor: pointer;
+  transition: border-color var(--duration) var(--ease),
+              box-shadow var(--duration) var(--ease);
+}
+
+.jb-select:hover:not(:disabled):not(:focus) {
+  border-color: var(--text-disabled);
+}
+
+.jb-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+/* 日期輸入 */
+.jb-date {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px var(--space-3);
+  font-size: var(--text-body);
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color var(--duration) var(--ease),
+              box-shadow var(--duration) var(--ease);
+}
+
+.jb-date:hover:not(:disabled):not(:focus) {
+  border-color: var(--text-disabled);
+}
+
+.jb-date:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+/* 表單錯誤訊息 */
+.jb-field-error {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--accent);
+  line-height: var(--leading);
+}
+
+/* 必填標記 */
+.jb-required {
+  color: var(--accent);
+  font-weight: 400;
+}
+
+
+
+/* 基底 — 觸控區 ≥ 44px */
+.jb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 10px var(--space-4);
+  font-size: var(--text-body);
+  font-weight: 500;
+  font-family: var(--font-body);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-decoration: none;
+  line-height: 1;
+  transition: all var(--duration) var(--ease);
+  user-select: none;
+}
+
+.jb-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.jb-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Primary */
+.jb-btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.jb-btn-primary:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  box-shadow: var(--shadow-md);
+}
+
+.jb-btn-primary:active {
+  transform: translateY(1px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Secondary */
+.jb-btn-secondary {
+  background: transparent;
+  color: var(--primary);
+  border-color: var(--border);
+}
+
+.jb-btn-secondary:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.jb-btn-secondary:active {
+  background: rgba(92, 107, 95, 0.12);
+}
+
+/* Text */
+.jb-btn-text {
+  background: transparent;
+  color: var(--primary);
+  border-color: transparent;
+  padding: 10px var(--space-3);
+}
+
+.jb-btn-text:hover {
+  color: var(--primary-dark);
+  background: var(--primary-light);
+}
+
+/* Danger */
+.jb-btn-danger {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.jb-btn-danger:hover {
+  background: #8B4A3F;
+  border-color: #8B4A3F;
+}
+
+.jb-btn-danger:active {
+  transform: translateY(1px);
+}
+
+/* 尺寸修飾 */
+.jb-btn-lg {
+  min-height: 52px;
+  padding: 14px var(--space-5);
+  font-size: 16px;
+}
+
+.jb-btn-sm {
+  min-height: 36px;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.jb-btn-block {
+  width: 100%;
+}
+
+
+.jb-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(214, 206, 195, 0.4);
+}
+
+
+.jb-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  border-radius: 20px;
+  line-height: var(--leading);
+}
+
+.jb-tag-green {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+.jb-tag-red {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.jb-tag-default {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+
+.jb-divider {
+  height: 1px;
+  background: var(--border);
+  border: none;
+  margin: var(--space-4) 0;
+}
+
+
+.jb-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(92, 107, 95, 0.2);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: jb-spin 0.6s linear infinite;
+}
+
+@keyframes jb-spin {
+  to { transform: rotate(360deg); }
+}
+
+
+.jb-link {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color var(--duration) var(--ease);
+}
+
+.jb-link:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+
+.jb-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+
+.jb-stamp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-7);
+  height: var(--space-7);
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 700;
+  transform: rotate(-8deg);
+  flex-shrink: 0;
+}
+
+
+.customer-page :focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.customer-page :focus:not(:focus-visible) {
+  outline: none;
+}

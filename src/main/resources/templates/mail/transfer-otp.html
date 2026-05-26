@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #eef1eb;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    .wrapper {
+        padding: 40px 20px;
+    }
+    .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #fdfbf7;
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+        border: 1px solid #e8e2d5;
+    }
+
+    /* 頂部 Header */
+    .header {
+        padding: 45px 30px 30px;
+        text-align: center;
+        border-bottom: 1px solid #e8e2d5;
+        position: relative;
+    }
+    
+    .header-logo {
+        font-size: 26px;
+        font-weight: 500;
+        color: #3e3a35;
+        letter-spacing: 4px;
+        margin: 0;
+        font-family: "Noto Serif TC", "Songti TC", serif;
+    }
+    
+    .header-subtitle {
+        color: #8c867a;
+        font-size: 13px;
+        margin-top: 12px;
+        letter-spacing: 6px;
+        font-family: "Noto Serif TC", "Songti TC", serif;
+    }
+    
+    .seal {
+        display: inline-block;
+        background-color: #a84238; /* 紅色印章 */
+        color: #fdfbf7;
+        font-size: 11px;
+        padding: 2px 4px;
+        border-radius: 2px;
+        margin-left: 8px;
+        vertical-align: middle;
+        font-family: "PMingLiU", serif;
+        letter-spacing: 1px;
+    }
+
+    /* 內容區域 */
+    .content {
+        padding: 40px 40px 35px;
+        color: #4a4641;
+        line-height: 1.8;
+        font-size: 15px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    
+    .content p {
+        margin-top: 0;
+        margin-bottom: 16px;
+    }
+
+    .greeting {
+        font-size: 19px;
+        font-weight: 600;
+        color: #3e3a35;
+        margin-bottom: 24px;
+        margin-top: 0;
+        font-family: "Noto Serif TC", "Songti TC", serif;
+    }
+
+    /* OTP 顯示 */
+    .otp-box {
+        display: inline-block;
+        background-color: #f5efe6;
+        padding: 15px 30px;
+        border-radius: 4px;
+        font-size: 28px;
+        font-weight: bold;
+        letter-spacing: 10px;
+        color: #5b6b55;
+        margin: 20px 0;
+        border: 1px solid #e8e2d5;
+    }
+
+    /* 底部 Footer */
+    .footer {
+        background-color: #f5efe6;
+        padding: 35px 40px;
+        text-align: center;
+        border-top: 1px solid #e8e2d5;
+    }
+    
+    .footer p {
+        margin: 0 0 8px;
+        font-size: 12px;
+        color: #8c867a;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    
+    .footer-logo {
+        font-family: "Noto Serif TC", "Songti TC", serif;
+        color: #757065;
+        font-size: 14px;
+        margin-top: 20px;
+        letter-spacing: 2px;
+    }
+
+    /* 響應式調整 */
+    @media only screen and (max-width: 600px) {
+        .wrapper {
+            padding: 15px 10px;
+        }
+        .content {
+            padding: 30px 20px 20px;
+        }
+        .footer {
+            padding: 25px 20px;
+        }
+    }
+</style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="container">
+            <!-- 頂部區塊 -->
+            <div class="header">
+                <div style="margin-bottom: 15px;">
+                    <img src="cid:logoImage" alt="Fuku Bank Logo" style="height: 80px; max-width: 100%;">
+                </div>
+                <h1 class="header-logo">Fuku Bank<img src="cid:sealImage" alt="福庫" style="height: 36px; vertical-align: middle; margin-left: 12px;"></h1>
+                <div class="header-subtitle">靜心理財 安穩致遠</div>
+            </div>
+            
+            <!-- 主要內容 -->
+            <div class="content">
+                <h2 class="greeting">親愛的客戶您好，</h2>
+                <p>您正在 Fuku Bank 進行轉帳交易。為了保障您的資金安全，請在交易畫面中輸入以下 6 位數一次性密碼（OTP）以完成驗證：</p>
+                <div style="text-align: center;">
+                    <div class="otp-box" th:text="${otp}">123456</div>
+                </div>
+                <p>此驗證碼將於 5 分鐘後失效。請勿將此驗證碼透露給任何人（包含銀行專員）。</p>
+                <p>如果您並未執行此操作，請立即聯繫我們的客服中心，我們將協助您確認帳戶安全。</p>
+            </div>
+            
+            <!-- 底部區塊 -->
+            <div class="footer">
+                <p>此為系統自動發送之信件，請勿直接回覆。</p>
+                <p>如需協助，請聯繫我們的客服中心。</p>
+                <div class="footer-logo">福庫銀行 Fuku Bank</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

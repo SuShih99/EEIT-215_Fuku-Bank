@@ -1,0 +1,992 @@
+<template>
+  <div class="repayment-page">
+
+    <!-- ── 頁首 ── -->
+    <div class="page-header">
+      <div class="page-header-inner">
+        <div class="page-title-block">
+          <span class="page-icon"><i class="fa-solid fa-coins"></i></span>
+          <div>
+            <h1 class="page-title">貸款還款</h1>
+            <p class="page-subtitle">選擇貸款帳戶與扣款帳戶進行繳款</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- ── 步驟一：選貸款帳戶 ── -->
+      <section class="section-card">
+        <h2 class="section-title">① 選擇貸款帳戶</h2>
+
+        <div v-if="loanLoading" class="state-inline">載入中…</div>
+        <div v-else-if="loanAccounts.length === 0" class="state-inline muted">
+          目前無貸款帳戶，<a class="link" @click="$router.push({ name: 'user-loan-apply' })">立即申請</a>
+        </div>
+        <div v-else class="loan-list">
+          <div
+            v-for="acc in loanAccounts"
+            :key="acc.accountId"
+            class="loan-option"
+            :class="{ selected: selectedLoan?.accountId === acc.accountId,
+                       disabled: acc.accountStatus === 'PAID_OFF' }"
+            @click="acc.accountStatus !== 'PAID_OFF' && selectLoan(acc)"
+          >
+            <div class="lo-left">
+              <span class="lo-id">{{ acc.accountId }}</span>
+              <span class="lo-type">{{ LOAN_TYPE_MAP[acc.applyType] || acc.applyType }}</span>
+              <span class="lo-status" :class="statusClass(acc.accountStatus)">
+                {{ statusLabel(acc.accountStatus) }}
+              </span>
+            </div>
+            <div class="lo-right">
+              <div class="lo-meta">
+                <span class="lo-label">剩餘本金</span>
+                <span class="lo-val accent">$ {{ fmt(acc.remainingPrincipal) }}</span>
+              </div>
+              <div class="lo-meta">
+                <span class="lo-label">月繳金額</span>
+                <span class="lo-val">$ {{ fmt(acc.monthlyPayment) }}</span>
+              </div>
+              <div class="lo-meta">
+                <span class="lo-label">下次繳款日</span>
+                <span class="lo-val mono" :class="{ 'overdue': isOverdue(acc) }">
+                  {{ acc.nextPaymentDate ? fmtDate(acc.nextPaymentDate) : '—' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 步驟二：還款表單（選定貸款後展開）── -->
+      <transition name="slide">
+        <section v-if="selectedLoan" class="section-card">
+          <h2 class="section-title">② 填寫還款資訊</h2>
+
+          <div v-if="currentRepayment" class="current-period-panel">
+            <div class="period-info">
+              <span class="period-label">本次繳款期數</span>
+              <strong>第 {{ currentRepayment.periodIndex }} 期</strong>
+            </div>
+            <div class="period-info">
+              <span class="period-label">應繳日</span>
+              <strong>{{ fmtDate(currentRepayment.scheduledDate) }}</strong>
+            </div>
+            <div class="period-info">
+              <span class="period-label">狀態</span>
+              <strong :class="{ overdue: currentRepayment.repaymentStatus === 'OVERDUE' }">
+                {{ repaymentStatusLabel(currentRepayment.repaymentStatus) }}
+              </strong>
+            </div>
+          </div>
+
+          <!-- 選扣款帳戶 -->
+          <div class="form-group">
+            <label class="form-label">扣款帳戶 <span class="req">*</span></label>
+            <div v-if="debitLoading" class="state-inline">載入可用帳戶…</div>
+            <div v-else-if="debitAccounts.length === 0" class="state-inline muted">
+              無可用台幣活存帳戶
+            </div>
+            <div v-else class="debit-list">
+              <label
+                v-for="acc in debitAccounts"
+                :key="acc.accountNumber"
+                class="debit-option"
+                :class="{ selected: form.fromAccountNumber === acc.accountNumber }"
+              >
+                <input
+                  type="radio"
+                  :value="acc.accountNumber"
+                  v-model="form.fromAccountNumber"
+                  class="debit-radio"
+                />
+                <div class="debit-body">
+                  <span class="debit-num mono">{{ acc.accountNumber }}</span>
+                  <span class="debit-bal">餘額 $ {{ fmt(acc.balance) }}</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 繳款期數選擇 -->
+          <div class="form-group">
+            <label class="form-label">繳款期數 <span class="req">*</span></label>
+            <div v-if="unpaidRepayments.length === 0" class="state-inline muted">
+              目前無待繳期數
+            </div>
+            <div v-else class="period-selector">
+              <button
+                class="period-btn"
+                :disabled="periodCount <= 1"
+                @click="periodCount > 1 && periodCount--"
+              >−</button>
+              <span class="period-count">{{ periodCount }} 期</span>
+              <button
+                class="period-btn"
+                :disabled="periodCount >= unpaidRepayments.length"
+                @click="periodCount < unpaidRepayments.length && periodCount++"
+              >+</button>
+              <button
+                v-if="unpaidRepayments.length > 1"
+                class="btn-preset"
+                @click="periodCount = unpaidRepayments.length"
+              >繳清剩餘期數</button>
+            </div>
+            <div class="amount-display">
+              <div class="amount-breakdown-detail">
+                <div class="amount-breakdown-row">
+                  <span class="amount-breakdown-label">償還本金</span>
+                  <span class="amount-breakdown-num">$ {{ fmt(paymentPrincipal) }}</span>
+                </div>
+                <div class="amount-breakdown-row">
+                  <span class="amount-breakdown-label">利息</span>
+                  <span class="amount-breakdown-num">$ {{ fmt(paymentInterest) }}</span>
+                </div>
+                <div class="amount-breakdown-divider"></div>
+                <div class="amount-breakdown-row amount-total-row">
+                  <span class="amount-label">本次應繳金額</span>
+                  <span class="amount-value">$ {{ fmt(paymentAmount) }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="amount-breakdown" v-if="unpaidRepayments.length > 0">
+              <span v-for="(rp, i) in unpaidRepayments.slice(0, periodCount)" :key="rp.repaymentId" class="breakdown-item">
+                第 {{ rp.periodIndex }} 期 ${{ fmt(rp.totalAmount) }}
+                <span v-if="i < periodCount - 1"> ＋ </span>
+              </span>
+            </div>
+          </div>
+
+          <!-- 備註 -->
+          <div class="form-group">
+            <label class="form-label">備註（選填）</label>
+            <input
+              type="text"
+              v-model="form.note"
+              class="form-input"
+              placeholder="例：2025年5月還款"
+              maxlength="100"
+            />
+          </div>
+
+          <!-- 送出 -->
+          <div class="form-actions">
+            <button
+              class="btn-submit"
+              :disabled="!canSubmit || submitting"
+              @click="submitRepayment"
+            >
+              {{ submitting ? '處理中…' : '確認還款' }}
+            </button>
+            <button class="btn-cancel" @click="reset">取消</button>
+          </div>
+
+          <!-- 錯誤訊息 -->
+          <div v-if="submitError" class="alert alert-error">{{ submitError }}</div>
+        </section>
+      </transition>
+
+      <!-- ── 成功回饋 ── -->
+      <transition name="slide">
+        <section v-if="lastResult" class="section-card result-card">
+          <div class="result-icon"><i class="fa-solid fa-circle-check"></i></div>
+          <div class="result-body">
+            <div class="result-title">還款成功</div>
+            <div class="result-meta">
+              <span>參考號碼</span>
+              <span class="mono">{{ lastResult.referenceId }}</span>
+            </div>
+            <div class="result-meta">
+              <span>還款金額</span>
+              <span class="accent">$ {{ fmt(lastResult.amount) }}</span>
+            </div>
+            <div class="result-meta">
+              <span>扣款帳戶餘額</span>
+              <span>$ {{ fmt(lastResult.sourceAccountBalance) }}</span>
+            </div>
+          </div>
+          <button class="btn-reload" @click="afterSuccess">繼續還款 / 查看明細</button>
+        </section>
+      </transition>
+
+      <!-- ── 還款紀錄 ── -->
+      <section class="section-card" v-if="selectedLoan">
+        <div class="section-title-row">
+          <h2 class="section-title">還款紀錄</h2>
+          <button class="btn-refresh" @click="loadHistory" :disabled="historyLoading">
+            {{ historyLoading ? '載入中…' : '↻ 重新整理' }}
+          </button>
+        </div>
+
+        <div v-if="historyLoading" class="state-inline">載入中…</div>
+
+        <div v-else-if="history.length === 0" class="state-inline muted">尚無還款紀錄</div>
+
+        <div v-else class="history-table-wrap">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>日期時間</th>
+                <th>參考號碼</th>
+                <th>金額</th>
+                <th>扣款帳戶</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="rec in history" :key="rec.transactionId">
+                <td class="mono">{{ fmtDateTime(rec.createdAt) }}</td>
+                <td class="mono small">{{ rec.referenceId }}</td>
+                <td class="accent mono">$ {{ fmt(rec.amount) }}</td>
+                <td class="mono">{{ rec.counterpartAccount }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <!-- 分頁 -->
+          <div class="pagination" v-if="totalPages > 1">
+            <button :disabled="currentPage === 0" @click="gotoPage(currentPage - 1)">‹</button>
+            <span>{{ currentPage + 1 }} / {{ totalPages }}</span>
+            <button :disabled="currentPage >= totalPages - 1" @click="gotoPage(currentPage + 1)">›</button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import api from '@/api/axios'
+const LOAN_TYPE_MAP = {
+  PERSONAL: '個人信貸', CAR: '汽車貸款', MOTOR: '機車貸款',
+  STUDENT: '學貸',     BUSINESS: '創業貸款', HOUSE: '房屋貸款', LAND: '土地貸款',
+}
+const STATUS_MAP = {
+  ACTIVE:   { label: '還款中', cls: 'st-active'  },
+  OVERDUE:  { label: '逾期',   cls: 'st-overdue' },
+  PAID_OFF: { label: '已結清', cls: 'st-paidoff' },
+}
+const loanAccounts  = ref([])
+const loanLoading   = ref(false)
+const selectedLoan  = ref(null)
+const currentRepayment = ref(null)
+
+const debitAccounts = ref([])
+const debitLoading  = ref(false)
+
+const form = ref({ fromAccountNumber: '', note: '' })
+const submitting  = ref(false)
+const submitError = ref('')
+const lastResult  = ref(null)
+const unpaidRepayments = ref([])
+// 本次欲繳期數（1 ～ unpaidRepayments.length）
+const periodCount = ref(1)
+const paymentAmount = computed(() => {
+  const periods = unpaidRepayments.value.slice(0, periodCount.value)
+  if (periods.length === 0) return 0
+  return Math.round(periods.reduce((acc, rp) => acc + Number(rp.totalAmount || 0), 0))
+})
+const paymentPrincipal = computed(() => {
+  return Math.round(unpaidRepayments.value.slice(0, periodCount.value)
+    .reduce((acc, rp) => acc + Number(rp.principalPortion || 0), 0))
+})
+const paymentInterest = computed(() => {
+  return Math.round(unpaidRepayments.value.slice(0, periodCount.value)
+    .reduce((acc, rp) => acc + Number(rp.interestPortion || 0), 0))
+})
+
+const history        = ref([])
+const historyLoading = ref(false)
+const currentPage    = ref(0)
+const totalPages     = ref(0)
+const token = () => localStorage.getItem('customer_token')
+const auth  = () => ({ headers: { Authorization: `Bearer ${token()}` } })
+
+function statusLabel(st) { return STATUS_MAP[st]?.label || st }
+function statusClass(st) { return STATUS_MAP[st]?.cls   || '' }
+function isOverdue(acc)  { return acc.accountStatus === 'OVERDUE' }
+function repaymentStatusLabel(st) {
+  return { SCHEDULED: '待繳', OVERDUE: '逾期', PAID: '已繳' }[st] || st
+}
+
+function fmt(n) {
+  return n != null
+    ? Number(n).toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+    : '—'
+}
+function fmtDate(d)     { return d ? String(d).substring(0, 10) : '—' }
+function fmtDateTime(d) {
+  if (!d) return '—'
+  return new Date(d).toLocaleString('zh-TW', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  })
+}
+const canSubmit = computed(() =>
+  !!form.value.fromAccountNumber &&
+  !!selectedLoan.value?.accountNumber &&
+  !!currentRepayment.value &&       // 有待繳期數
+  paymentAmount.value > 0 &&
+  !submitting.value
+)
+async function loadLoanAccounts() {
+  loanLoading.value = true
+  try {
+    const res = await api.get('/api/loan-accounts/my', auth())
+    loanAccounts.value = res.data.data || []
+  } catch { loanAccounts.value = [] }
+  finally { loanLoading.value = false }
+}
+async function loadDebitAccounts() {
+  debitLoading.value = true
+  debitAccounts.value = []
+  form.value.fromAccountNumber = ''
+  try {
+    const res = await api.get('/api/customer/loan-repayments/debit-accounts', auth())
+    debitAccounts.value = res.data.data || []
+    // 預選第一筆
+    if (debitAccounts.value.length > 0) {
+      form.value.fromAccountNumber = debitAccounts.value[0].accountNumber
+    }
+  } catch { debitAccounts.value = [] }
+  finally { debitLoading.value = false }
+}
+async function selectLoan(acc) {
+  selectedLoan.value = acc
+  form.value.note   = ''
+  submitError.value = ''
+  lastResult.value  = null
+  currentRepayment.value = null
+  await loadCurrentRepaymentAmount()
+  loadDebitAccounts()
+  loadHistory()
+}
+
+async function loadCurrentRepaymentAmount() {
+  if (!selectedLoan.value) return
+  try {
+    const res = await api.get(`/api/loan-accounts/${selectedLoan.value.accountId}/repayments`, auth())
+    const repayments = res.data.data || []
+    const unpaid = repayments
+      .filter(rp => rp.repaymentStatus === 'SCHEDULED' || rp.repaymentStatus === 'OVERDUE')
+      .sort((a, b) => Number(a.periodIndex) - Number(b.periodIndex))
+    unpaidRepayments.value = unpaid
+    currentRepayment.value = unpaid[0] || null
+    periodCount.value = 1
+  } catch {
+    unpaidRepayments.value = []
+    currentRepayment.value = null
+    periodCount.value = 1
+  }
+}
+async function submitRepayment() {
+  submitError.value = ''
+  submitting.value  = true
+  try {
+    const body = {
+      applicationId:     selectedLoan.value.applicationId,   // 讓 Loan 模組同步更新進度
+      loanAccountNumber: selectedLoan.value.accountNumber,
+      fromAccountNumber: form.value.fromAccountNumber,
+      amount:            paymentAmount.value,
+      note:              form.value.note || null,
+    }
+    const res = await api.post('/api/customer/loan-repayments', body, auth())
+    lastResult.value = res.data.data
+    // 更新貸款帳戶資料（剩餘本金）
+    await loadLoanAccounts()
+    const updated = loanAccounts.value.find(a => a.accountId === selectedLoan.value.accountId)
+    if (updated) selectedLoan.value = updated
+    await loadCurrentRepaymentAmount()
+    await loadHistory()
+  } catch (e) {
+    submitError.value = e.response?.data?.message || '還款失敗，請確認輸入資料或稍後重試'
+  } finally {
+    submitting.value = false
+  }
+}
+function afterSuccess() {
+  lastResult.value  = null
+  periodCount.value = 1
+  form.value.note   = ''
+  loadCurrentRepaymentAmount()
+}
+function reset() {
+  selectedLoan.value = null
+  currentRepayment.value = null
+  unpaidRepayments.value = []
+  periodCount.value = 1
+  debitAccounts.value = []
+  form.value = { fromAccountNumber: '', note: '' }
+  submitError.value = ''
+  lastResult.value  = null
+  history.value     = []
+}
+async function loadHistory(page = 0) {
+  if (!selectedLoan.value) return
+  historyLoading.value = true
+  try {
+    const params = {
+      loanAccountNumber: selectedLoan.value.accountNumber,
+      page,
+      size: 10,
+    }
+    const res = await api.get('/api/customer/loan-repayments', { ...auth(), params })
+    const data = res.data.data
+    history.value    = data?.content || []
+    currentPage.value = data?.page ?? 0
+    totalPages.value  = Math.ceil((data?.total ?? 0) / 10)
+  } catch { history.value = [] }
+  finally { historyLoading.value = false }
+}
+
+function gotoPage(page) {
+  currentPage.value = page
+  loadHistory(page)
+}
+
+const route = useRoute()
+
+onMounted(async () => {
+  await loadLoanAccounts()
+  // 若從 LoanAccountView 帶入 accountId query，自動預選該帳戶
+  const preselect = route.query.accountId
+  if (preselect) {
+    const target = loanAccounts.value.find(a => a.accountId === preselect)
+    if (target) selectLoan(target)
+  }
+})
+</script>
+
+<style scoped>
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css');
+
+/* ── CSS 變數 ── */
+.repayment-page {
+  --accent:    #A65A4D;
+  --primary:   #5C6B5F;
+  --pk:        #3F4A42;
+  --bg:        #F5F1EA;
+  --surface:   rgba(255, 249, 239, 0.78);
+  --surface-2: rgba(234, 228, 218, 0.80);
+  --border:    rgba(214, 206, 195, 0.92);
+  --ink:       #2B2B2B;
+  --muted:     #A89A8E;
+  --muted-2:   #6E6259;
+  --green:     #4A8C5C;
+  --red:       #A65A4D;
+
+  min-height: 100vh;
+  background: var(--bg);
+  font-family: 'Noto Sans TC', sans-serif;
+  color: var(--ink);
+}
+
+/* ── 頁首 ── */
+.page-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 28px 0;
+}
+.page-header-inner {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.page-title-block { display: flex; align-items: center; gap: 14px; }
+.page-icon   { font-size: 28px; }
+.page-title  { font-size: 22px; font-weight: 700; margin: 0 0 3px; }
+.page-subtitle { font-size: 13px; color: var(--muted-2); margin: 0; }
+
+/* ── Body ── */
+.page-body {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── 區塊卡片 ── */
+.section-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow: 0 10px 26px rgba(63,74,66,0.06);
+}
+.section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 0 18px;
+  letter-spacing: 0.02em;
+}
+.section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.section-title-row .section-title { margin: 0; }
+
+/* ── 狀態文字 ── */
+.state-inline {
+  font-size: 13px;
+  color: var(--muted-2);
+  padding: 12px 0;
+}
+.muted { color: var(--muted); }
+.link  { color: var(--primary); cursor: pointer; text-decoration: underline; }
+
+/* ── 貸款選項列表 ── */
+.loan-list { display: flex; flex-direction: column; gap: 10px; }
+
+.loan-option {
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.loan-option:hover { border-color: var(--primary); background: rgba(92,107,95,0.04); }
+.loan-option.selected {
+  border-color: var(--primary);
+  background: rgba(92,107,95,0.07);
+  box-shadow: 0 0 0 3px rgba(92,107,95,0.12);
+}
+.loan-option.disabled { opacity: 0.5; cursor: not-allowed; }
+
+.lo-left  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lo-right { display: flex; gap: 20px; flex-wrap: wrap; }
+.lo-id    { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted-2); }
+.lo-type  {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted-2);
+}
+.lo-status { font-size: 11px; font-weight: 600; padding: 2px 10px; border-radius: 20px; }
+.st-active  { background: rgba(74,140,92,0.10);  color: #1a7a40; }
+.st-overdue { background: rgba(166,90,77,0.10);  color: var(--red); }
+.st-paidoff { background: rgba(80,80,80,0.08);   color: #555; }
+
+.lo-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.lo-label { font-size: 10px; color: var(--muted-2); font-family: 'IBM Plex Mono', monospace; }
+.lo-val   { font-size: 13px; font-weight: 600; }
+.lo-val.accent { color: var(--primary); font-family: 'IBM Plex Mono', monospace; }
+.overdue  { color: var(--red); }
+
+.current-period-panel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+.period-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.period-label {
+  font-size: 11px;
+  color: var(--muted-2);
+}
+.period-info strong {
+  font-size: 14px;
+  color: var(--ink);
+}
+
+/* ── 表單 ── */
+.form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+.form-label { font-size: 13px; font-weight: 600; color: var(--ink); }
+.req { color: var(--red); margin-left: 2px; }
+.form-input {
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  font-size: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.form-input:focus { outline: none; border-color: var(--primary); }
+.form-hint { font-size: 12px; color: var(--muted-2); margin: 0; }
+
+/* ── 期數選擇器 ── */
+.period-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.period-btn {
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.period-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+.period-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.period-count {
+  min-width: 48px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.btn-preset {
+  padding: 0 14px;
+  height: 34px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 249, 239, 0.96);
+  color: var(--muted-2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.btn-preset:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ── 金額顯示 ── */
+.amount-display {
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  margin-top: 2px;
+}
+.amount-breakdown-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.amount-breakdown-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.amount-breakdown-label {
+  font-size: 12px;
+  color: var(--muted-2);
+}
+.amount-breakdown-num {
+  font-size: 13px;
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--muted-2);
+}
+.amount-breakdown-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 2px 0;
+}
+.amount-total-row { margin-top: 2px; }
+.amount-label { font-size: 13px; color: var(--ink); font-weight: 700; }
+.amount-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary);
+  font-family: 'IBM Plex Mono', monospace;
+}
+.amount-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 4px;
+  font-size: 11px;
+  color: var(--muted-2);
+  margin-top: 4px;
+}
+.breakdown-item { white-space: nowrap; }
+
+/* ── 扣款帳戶 ── */
+.debit-list { display: flex; flex-direction: column; gap: 8px; }
+.debit-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.debit-option:hover { border-color: var(--primary); }
+.debit-option.selected { border-color: var(--primary); background: rgba(92,107,95,0.06); }
+.debit-radio { accent-color: var(--primary); width: 16px; height: 16px; flex-shrink: 0; }
+.debit-body  { display: flex; flex-direction: column; gap: 2px; }
+.debit-num   { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; }
+.debit-bal   { font-size: 12px; color: var(--muted-2); }
+
+/* ── 表單操作 ── */
+.form-actions { display: flex; gap: 12px; margin-top: 4px; }
+.btn-submit {
+  padding: 11px 28px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  box-shadow: 0 8px 20px rgba(63,74,66,0.08);
+}
+.btn-submit:hover:not(:disabled) { background: var(--pk); }
+.btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-cancel {
+  padding: 11px 20px;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  font-size: 14px;
+  color: var(--muted-2);
+  cursor: pointer;
+}
+.btn-cancel:hover { border-color: var(--muted); }
+
+/* ── 錯誤提示 ── */
+.alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-top: 14px; }
+.alert-error { background: rgba(166,90,77,0.10); color: var(--red); border: 1px solid rgba(166,90,77,0.25); }
+
+/* ── 成功回饋 ── */
+.result-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border-color: rgba(74,140,92,0.35);
+  background: rgba(74,140,92,0.05);
+  flex-wrap: wrap;
+  border-radius: 22px;
+  box-shadow: 0 10px 26px rgba(63,74,66,0.06);
+}
+.result-icon  { font-size: 32px; flex-shrink: 0; }
+.result-body  { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.result-title { font-size: 15px; font-weight: 700; color: var(--green); }
+.result-meta  {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+}
+.result-meta .accent { color: var(--primary); font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+.btn-reload {
+  padding: 9px 18px;
+  background: var(--green);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-reload:hover { opacity: 0.85; }
+
+/* ── 還款紀錄 ── */
+.btn-refresh {
+  padding: 5px 14px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 249, 239, 0.96);
+  color: var(--muted-2);
+  cursor: pointer;
+}
+.btn-refresh:hover { border-color: var(--primary); color: var(--primary); }
+
+.history-table-wrap { overflow-x: auto; }
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.history-table th {
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--muted-2);
+  border-bottom: 1px solid var(--border);
+  background: rgba(234, 228, 218, 0.78);
+  font-weight: 600;
+}
+.history-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.history-table tr:last-child td { border-bottom: none; }
+.history-table .accent { color: var(--primary); font-weight: 600; }
+.history-table .small  { font-size: 11px; }
+
+.history-table-wrap {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(255, 249, 239, 0.78);
+}
+
+.history-table tr:hover td {
+  background: rgba(92,107,95,0.03);
+}
+
+.btn-submit:hover:not(:disabled) {
+  background: var(--pk);
+}
+
+.btn-cancel:hover {
+  border-color: rgba(166,90,77,0.28);
+  color: var(--accent);
+  background: rgba(166,90,77,0.04);
+}
+
+.btn-preset:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(92,107,95,0.05);
+}
+
+.loan-option.disabled {
+  opacity: 0.5;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 14px 0 0;
+  font-size: 13px;
+  color: var(--muted-2);
+}
+.pagination button {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 14px;
+}
+.pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── 通用 ── */
+.mono { font-family: 'IBM Plex Mono', monospace; }
+.accent { color: var(--primary); }
+
+/* ── 動畫 ── */
+.slide-enter-active, .slide-leave-active { transition: all 0.25s ease; }
+.slide-enter-from, .slide-leave-to       { opacity: 0; transform: translateY(-10px); }
+
+@media (max-width: 768px) {
+  .page-header-inner,
+  .page-body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .page-header {
+    padding: 22px 0;
+  }
+
+  .section-card {
+    padding: 18px 16px;
+  }
+
+  .loan-option {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .lo-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .lo-meta {
+    align-items: flex-start;
+    min-width: 0;
+    flex: 1 1 120px;
+  }
+
+  .current-period-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .amount-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-preset,
+  .btn-submit,
+  .btn-cancel,
+  .btn-reload,
+  .btn-refresh {
+    width: 100%;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .history-table {
+    min-width: 680px;
+  }
+
+  .pagination {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 520px) {
+  .page-title {
+    font-size: 20px;
+  }
+
+  .page-subtitle {
+    font-size: 12px;
+  }
+
+  .state-inline,
+  .form-label,
+  .form-hint,
+  .lo-label,
+  .lo-val,
+  .history-table th,
+  .history-table td {
+    font-size: 12px;
+  }
+}
+</style>

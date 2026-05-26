@@ -1,0 +1,393 @@
+import { createRouter, createWebHistory } from 'vue-router'
+
+const router = createRouter({
+  history: createWebHistory(import.meta.env.BASE_URL),
+  routes: [
+    {
+      path: '/',
+      name: 'landing',
+      component: () => import('../views/user/LandingView.vue'),
+    },
+    {
+      path: '/login',
+      name: 'user-login',
+      component: () => import('../views/user/UserLoginView.vue'),
+    },
+    {
+      path: '/register',
+      name: 'user-register',
+      component: () => import('../views/user/RegisterView.vue'),
+    },
+    {
+      path: '/verify-email',
+      name: 'verify-email',
+      component: () => import('../views/user/VerifyEmailView.vue'),
+    },
+    {
+      path: '/reset-password',
+      name: 'reset-password',
+      component: () => import('../views/user/ResetPasswordView.vue'),
+    },
+    {
+      path: '/user',
+      component: () => import('../layouts/UserLayout.vue'),
+      meta: { requiresCustomerAuth: true },
+      children: [
+        {
+          path: '',
+          redirect: { name: 'user-home' },
+        },
+        {
+          path: 'home',
+          name: 'user-home',
+          component: () => import('../views/user/UserHomeView.vue'),
+        },
+        {
+          path: 'profile',
+          name: 'user-profile',
+          component: () => import('../views/user/UserProfileView.vue'),
+        },
+        {
+          path: 'card-types',
+          name: 'user-card-types',
+          component: () => import('../views/user/CardTypeListView.vue'),
+        },
+        {
+          path: 'cards',
+          name: 'user-cards',
+          component: () => import('../views/user/CardView.vue'),
+        },
+        {
+          path: 'card-applications',
+          name: 'user-card-applications',
+          component: () => import('../views/user/CardApplicationForm.vue'),
+        },
+        {
+          path: 'card-txns',
+          name: 'user-card-txns',
+          component: () => import('../views/user/CardTxnView.vue'),
+        },
+        {
+          path: 'linepay/confirm',
+          component: () => import('../views/user/LinePayConfirmView.vue'),
+        },
+        {
+          path: 'card-bills',
+          name: 'user-card-bills',
+          component: () => import('../views/user/CardBillView.vue'),
+        },
+        {
+          path: 'account-application',
+          name: 'user-account-application',
+          component: () => import('../views/user/AccountApplicationView.vue'),
+        },
+        {
+          path: 'accounts',
+          name: 'user-accounts',
+          component: () => import('../views/user/UserAccountsView.vue'),
+        },
+        {
+          path: 'e-passbook',
+          name: 'user-e-passbook',
+          component: () => import('../views/user/EPassbookView.vue'),
+        },
+        {
+          path: 'security/password',
+          name: 'user-security-password',
+          component: () => import('../views/user/SecurityPasswordSettingsView.vue'),
+        },
+        {
+          path: 'security/login-records',
+          name: 'user-security-login-records',
+          component: () => import('../views/user/SecurityLoginRecordsView.vue'),
+        },
+        {
+          path: 'security/devices',
+          name: 'user-security-devices',
+          component: () => import('../views/user/SecurityDevicesView.vue'),
+        },
+        {
+          path: 'notification-settings',
+          name: 'user-notification-settings',
+          component: () => import('../views/user/NotificationSettingsView.vue'),
+        },
+        {
+          path: 'transactions',
+          name: 'user-transactions',
+          component: () => import('../views/user/UserTransactionsView.vue'),
+        },
+        {
+          path: 'transfer',
+          name: 'user-transfer',
+          component: () => import('../views/user/TransferView.vue'),
+        },
+        {
+          path: 'scheduled-transfer',
+          name: 'user-scheduled-transfer',
+          component: () => import('../views/user/ScheduledTransferView.vue'),
+        },
+        {
+          path: 'exchange',
+          name: 'user-exchange',
+          component: () => import('../views/user/ExchangeView.vue'),
+        },
+        {
+          path: 'favorite-accounts',
+          name: 'user-favorite-accounts',
+          component: () => import('../views/user/FavoriteAccountsView.vue'),
+        },
+        {
+          path: 'loan-apply',
+          name: 'user-loan-apply',
+          component: () => import('../views/user/LoanApplyView.vue'),
+        },
+        {
+          path: 'loan-status',
+          name: 'user-loan-status',
+          component: () => import('../views/user/LoanStatusView.vue'),
+        },
+        // 貸款帳戶：撥款後查看帳戶明細與每期還款進度
+        {
+          path: 'loan-accounts',
+          name: 'user-loan-accounts',
+          component: () => import('../views/user/LoanAccountView.vue'),
+        },
+        // 貸款還款：執行繳款與查詢繳款紀錄
+        {
+          path: 'loan-repayment',
+          name: 'user-loan-repayment',
+          component: () => import('../views/user/LoanRepaymentView.vue'),
+        },
+      ],
+    },
+    {
+      path: '/admin/login',
+      name: 'admin-login',
+      component: () => import('../views/admin/AdminLoginView.vue'),
+    },
+    {
+      path: '/admin',
+      component: () => import('../layouts/AdminLayout.vue'),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'admin-home',
+          component: () => import('../views/admin/AdminHomeView.vue'),
+        },
+        {
+          path: 'accounts',
+          name: 'admin-accounts',
+          meta: { requiresBusiness: true },
+          component: () => import('../views/admin/AccountListView.vue'),
+        },
+        {
+          path: 'account-applications',
+          name: 'admin-account-applications',
+          meta: { requiresBusiness: true },
+          component: () => import('../views/admin/AccountApplicationListView.vue'),
+        },
+        {
+          path: 'trans-logs',
+          name: 'admin-trans-logs',
+          meta: { requiresBusiness: true },
+          component: () => import('../views/admin/TransLogView.vue'),
+        },
+        {
+          path: 'employees',
+          name: 'admin-employees',
+          meta: { requiresAdmin: true },
+          component: () => import('../views/admin/EmployeeListView.vue'),
+        },
+        {
+          path: 'employees/create',
+          name: 'admin-employees-create',
+          meta: { requiresAdmin: true },
+          component: () => import('../views/admin/EmployeeCreateView.vue'),
+        },
+        {
+          path: 'customers',
+          name: 'admin-customers',
+          meta: { requiresBusiness: true },
+          component: () => import('../views/admin/CustomerListView.vue'),
+        },
+        {
+          path: 'customers/create',
+          name: 'admin-customers-create',
+          meta: { requiresBusiness: true },
+          component: () => import('../views/admin/CustomerCreateView.vue'),
+        },
+        {
+          path: 'card-types',
+          name: 'admin-card-types',
+          meta: { requiresBusiness: true },
+          component: () => import('../views/admin/CardTypeListView.vue'),
+        },
+        {
+          path: 'card-applications',
+          name: 'admin-card-applications',
+          meta: { requiresBusiness: true },
+          component: () => import('../views/admin/CardApplicationList.vue'),
+        },
+        {
+          path: 'card-txns',
+          name: 'admin-card-txns',
+          meta: { requiresBusiness: true },
+          //http://localhost:5173/admin/card-txns
+          component: () => import('../views/admin/CardTxnView.vue'),
+        },
+        {
+          path: 'card-bills',
+          name: 'admin-card-bills',
+          meta: { requiresBusiness: true },
+          //http://localhost:5173/admin/card-bills
+          component: () => import('../views/admin/CardBillView.vue'),
+        },
+        {
+          path: 'risk-events',
+          name: 'admin-risk-events',
+          meta: { requiresBusiness: true },
+          component: () => import('../views/admin/RiskEventView.vue'),
+        },
+        {
+          path: 'review-task',
+          name: 'admin-review-task',
+          meta: { requiresBusiness: true },
+          component: () => import('../views/admin/ReviewTask.vue'),
+        },
+        {
+          path: 'credit-list',
+          name: 'admin-credit-list',
+          meta: { requiresAuth: true, roles: ['CFDM', 'CFSO'] },
+          component: () => import('../views/admin/CreditList.vue'),
+        },
+        {
+          path: '/admin/risk/credit/:customerId',
+          name: 'admin-credit-detail',
+          component: () => import('../views/admin/CreditDetail.vue'),
+          meta: { requiresAuth: true, roles: ['CFDM', 'CFSO'] },
+        },
+        {
+          name: 'admin-card-application-detail',
+          path: '/admin/card-applications/:id',
+          meta: { requiresBusiness: true },
+          component: () => import('../views/admin/CardApplicationDetailView.vue'),
+        },
+        {
+          path: 'cards',
+          name: 'admin-cards',
+          meta: { requiresBusiness: true },
+          component: () => import('../views/admin/CardView.vue'),
+        },
+        // 貸款功能相關
+        {
+          path: 'loan-apply',
+          name: 'loan-apply', // 保留舊 name 防止其他地方引用失效
+          redirect: { name: 'user-loan-apply' }, // 重導到客戶端路由
+        },
+        {
+          path: 'loan-applications',
+          name: 'loan-applications',
+          meta: { requiresBusiness: true },
+          component: () => import('../views/admin/LoanApplicationView.vue'),
+        },
+        {
+          path: 'loan-accounts',
+          name: 'admin-loan-accounts',
+          meta: { requiresBusiness: true },
+          component: () => import('../views/admin/LoanAccountAdminView.vue'),
+        },
+        {
+          path: 'blacklist',
+          name: 'admin-blacklist',
+          meta: { requiresBusiness: true },
+          component: () => import('../views/admin/BlackListView.vue'),
+        },
+        {
+          path: 'logs',
+          name: 'admin-logs',
+          meta: { requiresAdmin: true },
+          component: () => import('../views/admin/SystemLogView.vue'),
+        },
+      ],
+    },
+    {
+      path: '/forbidden',
+      name: 'forbidden',
+      component: {
+        template: `
+          <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f5f6fa">
+            <div style="text-align:center">
+              <h1 style="font-size:72px;color:#ff4d4f;margin:0">403</h1>
+              <p style="font-size:18px;color:#666">您沒有權限存取此頁面</p>
+              <a-button type="primary" @click="$router.push('/')">回到首頁</a-button>
+            </div>
+          </div>
+        `,
+      },
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'NotFound',
+      component: () => import('../views/NotFoundView.vue'),
+    },
+  ],
+})
+router.beforeEach(async (to) => {
+  if (to.matched.some((record) => record.meta.requiresCustomerAuth)) {
+    const customerToken = localStorage.getItem('customer_token')
+    if (!customerToken) {
+      return { name: 'user-login' }
+    }
+  }
+  if (to.matched.some((record) => record.meta.requiresAuth)) {
+    const authUser = localStorage.getItem('auth_user')
+    if (!authUser) {
+      return { name: 'admin-login' }
+    }
+
+    let parsedUser = null
+    try {
+      parsedUser = JSON.parse(authUser)
+      if (parsedUser.role === 'CUSTOMER') {
+        return { name: 'forbidden' }
+      }
+    } catch {
+      // ignore parse error
+    }
+    if (to.matched.some((record) => record.meta.requiresBusiness)) {
+      if (parsedUser?.permLevel >= 4 || parsedUser?.roleCode === 'CISO') {
+        return { name: 'forbidden' }
+      }
+    }
+    if (to.matched.some((record) => record.meta.requiresAdmin)) {
+      if (parsedUser) {
+        // 放寬後的業務模組已拔除 requiresAdmin
+        // 所以會進入這裡的只剩 employees 跟 logs，這些保留給資安與系統管理員
+        const systemAdminRoles = ['ISSA', 'CISO', 'SYS_SUPER', 'SYS_STAFF']
+        if (!systemAdminRoles.includes(parsedUser.roleCode)) {
+          return { name: 'forbidden' }
+        }
+      } else {
+        return { name: 'admin-login' }
+      }
+    }
+
+    try {
+      const { checkAuth } = await import('@/api/auth')
+      await checkAuth()
+    } catch (error) {
+      const status = error?.response?.status
+      if (status === 401 || status === 403) {
+        localStorage.removeItem('auth_user')
+        localStorage.removeItem('auth_token')
+        return { name: 'admin-login' }
+      }
+      console.warn('Admin session check failed without auth status:', error)
+    }
+  }
+
+  return true
+})
+
+export default router

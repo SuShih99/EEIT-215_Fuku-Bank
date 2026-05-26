@@ -1,0 +1,94 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+rebel.xml
+
+### Eclipse
+.settings/
+.project
+.classpath
+.metadata/
+bin/
+
+# Mac
+.DS_Store
+.AppleDouble
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# 資料庫密碼
+src/main/resources/application-local.properties
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+# Node.js
+node_modules/
+dist/
+frontend/dist/
+frontend/dist.zip
+/package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+.vite/
+
+# 忽略 Vite 的快取資料夾
+frontend/.vite/
+
+# Log files
+*.log
+logs/
+
+# 一次性工具與本機產物
+/.postman/
+/scripts/
+/rename_script.py
+/tech_stack.png
+/output/
+/fuku-bank-source.zip
+/init.sql
+
+# Uploads
+/uploads/
+
+# 不須上傳之文件
+/docs/
+
+# 忽略不需要追蹤的輸出檔案與腳本
+/outputs/
+*.pptx
+/patch.sql
+/test-mappings.sh
+/test_overdue.sql

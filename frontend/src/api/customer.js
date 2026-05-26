@@ -1,0 +1,43 @@
+import api from './axios'
+
+// 查詢客戶（支援 keyword 模糊搜尋）
+// GET /api/customers           → 全部
+// GET /api/customers?keyword=王 → 姓名含「王」的
+export function getCustomers(keyword) {
+  return api.get('/api/customers', {
+    params: keyword ? { keyword } : {},
+  })
+}
+
+// 新增客戶
+export function createCustomer(data) {
+  return api.post('/api/customers', data)
+}
+
+// 修改客戶聯絡資訊
+export function updateCustomer(customerId, data) {
+  return api.put(`/api/customers/${customerId}`, data)
+}
+
+// 上傳顧客證件圖片，回傳 /uploads/id-cards/... 路徑
+export async function uploadCustomerDocument(formData) {
+  const res = await api.post('/api/customers/documents', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return res.data.data
+}
+
+// 註銷客戶（軟刪除）
+export function deactivateCustomer(customerId) {
+  return api.put(`/api/customers/${customerId}/deactivate`)
+}
+
+// 重新啟用客戶
+export function activateCustomer(customerId) {
+  return api.put(`/api/customers/${customerId}/activate`)
+}
+
+// 一鍵帶入測試資料
+export function seedCustomers() {
+  return api.post('/api/customers/seed')
+}

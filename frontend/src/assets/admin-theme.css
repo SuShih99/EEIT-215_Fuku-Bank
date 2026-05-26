@@ -1,0 +1,212 @@
+:root {
+  --admin-primary: #5C6B5F;
+  --admin-primary-hover: #4A574D;
+  --admin-bg: #f4f5f3;
+}
+
+body {
+  background-color: var(--admin-bg) !important;
+}
+
+.ant-menu-item {
+  border-radius: 14px !important;
+  margin: 4px 12px !important;
+  width: calc(100% - 24px) !important;
+}
+
+.ant-menu-item-selected {
+  background-color: var(--admin-primary) !important;
+  color: #ffffff !important;
+}
+
+/* 確保選中時的 icon 也是白色 */
+.ant-menu-item-selected .anticon {
+  color: #ffffff !important;
+}
+
+.ant-card {
+  border-radius: 14px !important;
+  border: 1px solid rgba(214, 206, 195, 0.78) !important;
+  box-shadow: 0 6px 18px rgba(63, 74, 66, 0.045) !important;
+}
+
+/* 讓所有頁面的 Table 外框變圓 */
+.ant-table-wrapper {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 16px;
+  border: 1px solid rgba(214, 206, 195, 0.78);
+  box-shadow: 0 6px 18px rgba(63, 74, 66, 0.045);
+}
+
+.ant-table-thead > tr > th {
+  background-color: rgba(234, 228, 218, 0.55) !important;
+  font-weight: 600;
+}
+
+/* 固定欄的 header 要有實色背景 + 更高 z-index，避免其他 header 捲過時文字重疊 */
+.ant-table-thead > tr > th.ant-table-cell-fix-left,
+.ant-table-thead > tr > th.ant-table-cell-fix-right {
+  background-color: #f4f2ed !important;
+  z-index: 3 !important;
+}
+
+/* 固定欄的 body cell 也要實色背景，避免資料列捲動時文字穿透 */
+.ant-table-tbody > tr > td.ant-table-cell-fix-left,
+.ant-table-tbody > tr > td.ant-table-cell-fix-right {
+  background-color: #ffffff !important;
+  z-index: 2 !important;
+}
+
+/* hover 行固定欄保持 hover 背景色 */
+.ant-table-tbody > tr:hover > td.ant-table-cell-fix-left,
+.ant-table-tbody > tr:hover > td.ant-table-cell-fix-right {
+  background-color: #fcfbf8 !important;
+}
+
+/* 移除固定欄的陰影分隔線 */
+.ant-table-cell-fix-left-last::after,
+.ant-table-cell-fix-right-first::after {
+  box-shadow: none !important;
+}
+
+.ant-btn {
+  border-radius: 12px !important;
+}
+
+.ant-btn-primary {
+  background-color: var(--admin-primary) !important;
+  border-color: var(--admin-primary) !important;
+}
+
+.ant-btn-primary:hover {
+  background-color: var(--admin-primary-hover) !important;
+  border-color: var(--admin-primary-hover) !important;
+}
+
+.ant-menu-item:focus-visible,
+.ant-menu-item:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.ant-layout-header {
+  height: 80px !important; 
+  line-height: 80px !important;
+  padding: 0 32px !important;
+  background: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.page-container {
+  padding: 32px 40px;
+  width: 100%;
+  max-width: 1520px;
+  margin: 0 auto;
+  min-width: 0;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2B2B2B;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+/* 頂部 F 橫劃：搜尋與操作列 */
+.action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.search-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.search-input :deep(input),
+.search-input input {
+  border-radius: 12px;
+}
+
+.search-input {
+  width: 280px;
+}
+
+.global-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.rounded-btn {
+  border-radius: 10px !important;
+  font-weight: 600;
+}
+
+.btn-ghost {
+  border-color: rgba(214, 206, 195, 0.95);
+  color: var(--admin-primary);
+  background: #fff;
+}
+
+.btn-ghost:hover {
+  border-color: var(--admin-primary);
+  color: var(--admin-primary);
+  background: rgba(92, 107, 95, 0.05);
+}
+
+/* 右側 F 終點：行動按鈕區塊 */
+.action-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.action-btn {
+  font-weight: 600;
+  padding: 0 8px;
+}
+
+.edit-btn {
+  color: var(--admin-primary);
+}
+
+.edit-btn:hover {
+  color: var(--admin-primary-hover);
+  background-color: rgba(92, 107, 95, 0.05);
+}
+
+@media (max-width: 900px) {
+  .page-container {
+    padding: 16px 12px;
+  }
+  .ant-table-wrapper {
+    padding: 8px;
+    border-radius: 8px;
+  }
+  /* 手機版取消表格固定欄位，避免擠壓中間內容 */
+  .ant-table-wrapper .ant-table-cell-fix-left,
+  .ant-table-wrapper .ant-table-cell-fix-right,
+  .ant-table-thead > tr > th.ant-table-cell-fix-left,
+  .ant-table-thead > tr > th.ant-table-cell-fix-right,
+  .ant-table-tbody > tr > td.ant-table-cell-fix-left,
+  .ant-table-tbody > tr > td.ant-table-cell-fix-right {
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    z-index: auto !important;
+    box-shadow: none !important;
+  }
+}

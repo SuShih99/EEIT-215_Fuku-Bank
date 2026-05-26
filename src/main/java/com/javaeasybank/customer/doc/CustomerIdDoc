@@ -1,0 +1,59 @@
+# 取得當前登入帳號 Customer ID 指南
+
+在我們設計的系統架構中，其他組員若要確認當前登入帳號的 `customer_id`，是透過 **解析 JWT Token** 來實現的。
+
+這樣設計的好處是：**不需要為了取得使用者身分而額外去查一次資料庫**，藉此提升效能。以下是具體的運作機制與組員可以參考的寫法：
+
+## 1. 登入時已將 `customer_id` 放入 Token 中
+當客戶登入成功時，系統會透過 `JwtUtil.java` 產生 JWT Token。在產生的過程中，我們已經把 `customerId` 作為 Payload (Claim) 的一部分存進去了：
+
+```java
+// 在 JwtUtil.java 的 generateToken 方法中
+Jwts.builder()
+    .subject(username)
+    .claim("role", role)
+    .claim("customerId", customerId) // <-- 關鍵：將客戶ID隨身攜帶在 Token 中
+    // ...
+```
+
+## 2. 組員如何取得？ (攔截 Request Header)
+如果其他組員在開發其他 Controller（例如：帳戶模組、信用卡模組）時，需要拿到當前登入的 `customer_id`，只要在 API 的參數中加上 `HttpServletRequest`，然後透過 `JwtUtil` 把 Token 裡面的 ID 抽出來即可。
+
+在 `CustomerAuthController.java` 中有實作一段很好的範例 `extractCustomerId` 可以讓組員直接複製或參考：
+
+```java
+// 這是寫在 Controller 裡的 Helper 方法
+private String extractCustomerId(HttpServletRequest request) {
+    // 1. 取得前端傳來的 Authorization 標頭
+    String authHeader = request.getHeader("Authorization");
+    
+    if (authHeader != null && authHeader.startsWith("Bearer ")) {
+        // 2. 濾掉 "Bearer " 字串，只留 Token 本體
+        String token = authHeader.substring(7);
+        
+        // 3. 呼叫 JwtUtil 直接把 customerId 解析出來
+        return jwtUtil.getCustomerIdFromToken(token);
+    }
+    throw new com.javaeasybank.common.exception.BusinessException("無法取得客戶身分資訊");
+}
+```
+
+## 3. API 實際應用的樣子
+當組員要寫一支「取得登入者個人資料」或「申請信用卡」的 API 時，寫法會像這樣：
+
+```java
+@PreAuthorize("hasRole('CUSTOMER')") // 確保這支 API 只有登入的客戶能打
+@GetMapping("/me")
+public ResponseEntity<ApiResponse<CustomerDto.CustomerResponse>> getProfile(
+        HttpServletRequest request) { // <-- 注入 HttpServletRequest
+        
+    // 這裡就能直接拿到當前使用者的 customer_id
+    String customerId = extractCustomerId(request); 
+    
+    // 把拿到的 customerId 丟給 Service 進行後續的業務邏輯
+    return ResponseEntity.ok(ApiResponse.success(customerAuthService.getProfile(customerId)));
+}
+```
+
+## 總結
+由於 `JwtAuthenticationFilter` 已經在請求進來時，幫忙驗證過 Token 的「合法性與是否過期」，所以組員在 Controller 層**只要攔截 Request、拿出 Token、呼叫 `jwtUtil.getCustomerIdFromToken(token)`**，就能 100% 確認並拿到當前登入帳號的 `customer_id`。
