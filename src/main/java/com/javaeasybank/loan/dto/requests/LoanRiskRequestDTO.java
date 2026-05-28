@@ -8,6 +8,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 // 送往風控模組的審核請求 DTO
+/**
+ * 貸款送風控請求 DTO。
+ * 匯整申請資料、行員確認條件、補件文件與回調 URL，供風控模組審核使用。
+ */
 @Getter
 @Setter
 public class LoanRiskRequestDTO {

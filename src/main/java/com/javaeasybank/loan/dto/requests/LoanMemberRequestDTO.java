@@ -5,7 +5,10 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 
-// 客戶提交貸款申請的請求 DTO
+/**
+ * 客戶送出貸款申請時的請求 DTO。
+ * 承載貸款種類、申請金額、期數、利率與撥款入帳帳號。
+ */
 @Getter
 @Setter
 public class LoanMemberRequestDTO {

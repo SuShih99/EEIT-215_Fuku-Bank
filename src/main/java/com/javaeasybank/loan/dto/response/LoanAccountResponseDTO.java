@@ -10,6 +10,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 // 貸款帳戶查詢回應 DTO
+/**
+ * 貸款帳戶回應 DTO。
+ * 呈現撥款後帳戶的核准條件、還款進度、下期繳款日與明細清單。
+ */
 @Getter
 @Setter
 public class LoanAccountResponseDTO {

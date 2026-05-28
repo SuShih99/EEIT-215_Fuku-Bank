@@ -14,7 +14,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-// 行員端貸款申請管理 Controller
+/**
+ * 行員端貸款案件管理 API。
+ * 串接案件查詢、聯繫紀錄、二次填單、送審、核准、退件與補件等後台流程。
+ */
 @RestController
 @RequestMapping("/api/admin/loan-applications")
 @RequiredArgsConstructor

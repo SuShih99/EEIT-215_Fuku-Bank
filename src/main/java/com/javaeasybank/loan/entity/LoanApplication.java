@@ -12,6 +12,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 // 貸款申請主表 Entity，對應資料庫 LOAN_APPLICATION
+/**
+ * 貸款申請主表 Entity，對應資料庫 LOAN_APPLICATION。
+ * 記錄客戶送件內容、目前審核狀態、最新聯繫摘要與補件批次資訊。
+ */
 @Entity
 @Table(name = "LOAN_APPLICATION")
 @Getter

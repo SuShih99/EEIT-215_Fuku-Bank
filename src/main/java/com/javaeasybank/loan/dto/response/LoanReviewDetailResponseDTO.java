@@ -7,6 +7,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 // 行員二次填單（審核詳情）查詢回應 DTO
+/**
+ * 行員二次填單回應 DTO。
+ * 回傳核准條件、風控送審狀態、行員與填單時間，供後台草稿/送審畫面使用。
+ */
 @Getter
 @Setter
 public class LoanReviewDetailResponseDTO {

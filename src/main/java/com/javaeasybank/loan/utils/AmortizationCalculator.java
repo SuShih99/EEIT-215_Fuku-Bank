@@ -7,6 +7,10 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 本息平均攤還計算工具。
+ * 依本金、年利率與期數計算每月應繳金額，並產生每一期本金/利息/剩餘本金明細。
+ */
 public class AmortizationCalculator {
 
     private AmortizationCalculator() {}

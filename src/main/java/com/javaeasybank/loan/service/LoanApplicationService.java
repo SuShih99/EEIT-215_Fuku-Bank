@@ -46,12 +46,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/*
- * 負責處理所有貸款申請相關的核心業務，包含：
- *   - 申請建立與查詢
- *   - 行員聯繫紀錄（同步更新主表最新聯繫狀態）
- *   - 二次填單草稿儲存與送審（同步更新主表狀態）
- *   - 利率規則回傳 (前端根據規則自行計算)
+/**
+ * 貸款申請流程核心服務。
+ * 統一處理會員申請、行員聯繫、二次填單、風控送審、審核回調、核准撥款與狀態查詢。
  */
 @Slf4j
 @Service
@@ -674,21 +671,11 @@ public class LoanApplicationService {
                 .map(profile -> profile.getName())
                 .orElse("親愛的客戶");
         String contractNo = formatContractNumber(loan.getApplicationId());
-        String body = """
-                <html>
-                <body style="font-family: Microsoft JhengHei, Arial, sans-serif; color:#333; line-height:1.7;">
-                  <p>%s 您好：</p>
-                  <p>您的貸款已核准並完成撥款，附件為依最終填單內容產生之貸款契約書，請留存備查。</p>
-                  <p>契約編號：<b>%s</b></p>
-                  <p>Java Easy Bank 敬上</p>
-                </body>
-                </html>
-                """.formatted(customerName, contractNo);
 
-        emailService.sendEmailWithAttachment(
+        emailService.sendLoanContractEmail(
                 email,
-                "Java Easy Bank - 貸款契約書",
-                body,
+                customerName,
+                contractNo,
                 "loan-contract-" + applicationId + ".pdf",
                 pdfBytes);
         log.info("[LoanContract] 契約附件寄送完成 applicationId={} email={}", applicationId, email);

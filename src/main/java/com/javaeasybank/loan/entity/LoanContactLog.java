@@ -10,7 +10,10 @@ import org.springframework.data.domain.Persistable;
 
 import java.time.LocalDateTime;
 
-// 行員聯繫紀錄 Entity，對應資料庫 LOAN_CONTACT_LOG
+/**
+ * 貸款聯繫紀錄 Entity，對應資料庫 LOAN_CONTACT_LOG。
+ * 記錄行員與客戶的電話、Email 或簡訊互動，並作為案件最新聯繫狀態的來源。
+ */
 @Entity
 @Table(name = "LOAN_CONTACT_LOG")
 @Getter

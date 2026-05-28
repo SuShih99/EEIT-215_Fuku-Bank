@@ -11,6 +11,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 // 行員二次填單（審核詳情）Entity，對應資料庫 LOAN_REVIEW_DETAIL
+/**
+ * 行員二次填單 Entity，對應資料庫 LOAN_REVIEW_DETAIL。
+ * 保存行員確認後的核准金額、期數、利率與審核備註，作為送風控與契約產生依據。
+ */
 @Entity
 @Table(name = "LOAN_REVIEW_DETAIL")
 @Getter

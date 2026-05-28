@@ -1,6 +1,10 @@
 package com.javaeasybank.loan.enums;
 
 // 貸款申請文件類型列舉
+/**
+ * 補件文件類型。
+ * 定義客戶可上傳及風控可要求補充的文件分類。
+ */
 public enum LoanDocumentType {
 
     ID_CARD,  // 身分證

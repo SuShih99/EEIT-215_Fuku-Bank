@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Optional;
 
 // 貸款帳戶資料存取介面
+/**
+ * 貸款帳戶資料存取介面。
+ * 支援依客戶、申請編號、帳戶狀態與建立時間查詢正式成立的貸款帳戶。
+ */
 public interface LoanAccountRepository extends JpaRepository<LoanAccount, String> {
 
     // 依關聯的貸款申請 ID 查詢帳戶

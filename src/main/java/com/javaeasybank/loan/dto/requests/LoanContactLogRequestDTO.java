@@ -4,6 +4,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 // 新增聯繫紀錄的請求 DTO
+/**
+ * 行員新增聯繫紀錄時的請求 DTO。
+ * 記錄聯繫管道、結果狀態、備註與下一次聯繫時間。
+ */
 @Getter
 @Setter
 public class LoanContactLogRequestDTO {

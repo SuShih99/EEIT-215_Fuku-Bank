@@ -5,7 +5,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-// 傳送給風控模組的補件文件資訊 DTO
+/**
+ * 補件文件摘要 DTO。
+ * 送風控時描述單一文件的類型、檔名與檔案位置。
+ */
 @Getter
 @Setter
 @NoArgsConstructor

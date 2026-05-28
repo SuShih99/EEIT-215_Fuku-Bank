@@ -8,7 +8,10 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-// 補件文件 Entity，對應資料庫 LOAN_DOCUMENT
+/**
+ * 貸款補件文件 Entity，對應資料庫 LOAN_DOCUMENT。
+ * 保存客戶上傳文件的批次、類型、檔案路徑與送審狀態，用於風控退件補件流程。
+ */
 @Entity
 @Table(name = "LOAN_DOCUMENT")
 @Getter

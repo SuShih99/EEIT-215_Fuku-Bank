@@ -17,6 +17,10 @@ import java.util.Map;
 
 // 風控模組 HTTP 客戶端
 @Slf4j
+/**
+ * 風控模組整合 Client。
+ * 封裝送審、補件回補與連線失敗時的錯誤處理，讓貸款服務層不直接依賴 HTTP 細節。
+ */
 @Component
 public class LoanRiskClient {
 

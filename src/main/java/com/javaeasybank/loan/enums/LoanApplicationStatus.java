@@ -1,6 +1,10 @@
 package com.javaeasybank.loan.enums;
 
 // 貸款申請狀態列舉
+/**
+ * 貸款申請狀態。
+ * 描述案件從待聯繫、審核、補件、核准、撥款到結案的主流程。
+ */
 public enum LoanApplicationStatus {
 
     PENDING_CONTACT,  // 待聯絡

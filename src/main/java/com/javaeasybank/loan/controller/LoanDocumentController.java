@@ -17,6 +17,10 @@ import java.util.List;
 import java.util.Map;
 
 // 補件文件 Controller，整合客戶端與行員端的文件操作
+/**
+ * 貸款補件文件 API。
+ * 同時提供客戶端上傳/刪除/送出補件，以及行員端查閱補件清單的功能。
+ */
 @RestController
 @RequiredArgsConstructor
 public class LoanDocumentController {

@@ -15,7 +15,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-// 客戶端貸款帳戶查詢 Controller
+/**
+ * 客戶端貸款帳戶 API。
+ * 提供會員查詢自己的貸款帳戶、還款明細與送出還款交易。
+ */
 @RestController
 @RequestMapping("/api/loan-accounts")
 @RequiredArgsConstructor

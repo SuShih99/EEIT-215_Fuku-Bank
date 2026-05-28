@@ -10,6 +10,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * 貸款帳戶 Entity，對應資料庫 loan_account。
+ * 代表撥款後正式成立的貸款帳戶，保存本金、期數、利率、還款進度與帳戶狀態。
+ */
 @Entity
 @Table(name = "loan_account")
 @Getter

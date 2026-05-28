@@ -9,6 +9,10 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 // 補件文件資料存取介面
+/**
+ * 補件文件資料存取介面。
+ * 依申請編號與補件批次查詢文件，支援客戶補件與行員審閱文件清單。
+ */
 @Repository
 public interface LoanDocumentRepository extends JpaRepository<LoanDocument, String> {
 

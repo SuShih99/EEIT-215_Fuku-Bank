@@ -32,6 +32,10 @@ import java.util.stream.Collectors;
 
 // 還款期數業務邏輯 Service
 @Slf4j
+/**
+ * 貸款還款服務。
+ * 負責建立分期還款表、驗證帳務扣款結果、更新期數與帳戶狀態，並寄送還款通知。
+ */
 @Service
 @Transactional
 public class LoanRepaymentService {

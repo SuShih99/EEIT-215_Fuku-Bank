@@ -26,6 +26,10 @@ import java.util.stream.Collectors;
 
 // 貸款帳戶業務邏輯 Service
 @Slf4j
+/**
+ * 貸款帳戶服務。
+ * 在撥款完成後建立貸款帳戶與還款排程，並提供客戶端/行員端帳戶查詢資料。
+ */
 @Service
 @Transactional
 public class LoanAccountService {

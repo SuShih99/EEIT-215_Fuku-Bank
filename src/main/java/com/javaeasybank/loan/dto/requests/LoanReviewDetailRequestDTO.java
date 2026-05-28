@@ -6,6 +6,10 @@ import lombok.Setter;
 import java.math.BigDecimal;
 
 // 行員儲存或提交二次填單（審核詳情）的請求 DTO
+/**
+ * 行員二次填單請求 DTO。
+ * 承載確認後的核准金額、期數、利率、審核意見與擔保品備註。
+ */
 @Getter
 @Setter
 public class LoanReviewDetailRequestDTO {

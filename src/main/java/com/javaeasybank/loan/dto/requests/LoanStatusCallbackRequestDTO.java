@@ -6,9 +6,10 @@ import lombok.Setter;
 
 import java.util.List;
 
-// ===外部模組回調：更新申請狀態===
-// 風控模組：PENDING_REVIEW → APPROVED / REJECTED
-// 帳戶模組：APPROVED → DISBURSED
+/**
+ * 外部模組狀態回調 DTO。
+ * 風控可將 PENDING_REVIEW 推進為 APPROVED/REJECTED，帳務可將 APPROVED 推進為 DISBURSED。
+ */
 @Getter
 @Setter
 public class LoanStatusCallbackRequestDTO {

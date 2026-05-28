@@ -25,6 +25,10 @@ import java.util.stream.Collectors;
 
 // 貸款還款排程批次元件
 @Slf4j
+/**
+ * 貸款還款排程。
+ * 每日掃描逾期期數並寄出逾期通知，同時提醒即將到期的待繳期數。
+ */
 @Component
 @RequiredArgsConstructor
 public class LoanRepaymentScheduler {

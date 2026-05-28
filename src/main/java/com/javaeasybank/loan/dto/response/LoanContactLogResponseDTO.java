@@ -7,6 +7,10 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 // 聯繫紀錄查詢回應 DTO
+/**
+ * 聯繫紀錄回應 DTO。
+ * 呈現行員聯繫客戶的管道、結果、備註、建立者與時間資訊。
+ */
 @Getter
 @Setter
 public class LoanContactLogResponseDTO {

@@ -7,6 +7,10 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 // 補件文件查詢回應 DTO
+/**
+ * 補件文件回應 DTO。
+ * 提供前台/後台顯示文件類型、檔名、檔案 URL、批次與送出時間。
+ */
 @Getter
 @Setter
 public class LoanDocumentResponseDTO {

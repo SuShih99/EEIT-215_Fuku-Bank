@@ -9,6 +9,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 // 貸款申請查詢回應 DTO
+/**
+ * 貸款申請回應 DTO。
+ * 給前台/後台列表使用，彙整申請條件、客戶聯絡資訊、案件狀態與補件摘要。
+ */
 @Getter
 @Setter
 public class LoanApplicationResponseDTO {

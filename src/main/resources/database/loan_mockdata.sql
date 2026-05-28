@@ -576,7 +576,7 @@ SELECT
     a.application_id,
     a.customer_id,
     a.apply_type,
-    CAST(a.apply_amount AS BIGINT) AS principal_amount,
+    CAST(loan_account.liability AS BIGINT) AS principal_amount,
     a.apply_period AS confirmed_period,
     a.rate,
     CAST(ROUND((a.apply_amount / NULLIF(a.apply_period, 0)) * (1 + a.rate), 2) AS DECIMAL(18, 2)) AS monthly_payment,
@@ -586,7 +586,7 @@ SELECT
     END AS paid_periods,
     CASE ROW_NUMBER() OVER (ORDER BY a.seq) % 4
         WHEN 0 THEN CAST(0 AS DECIMAL(18, 2))
-        ELSE CAST(a.apply_amount AS DECIMAL(18, 2))
+        ELSE CAST(loan_account.liability AS DECIMAL(18, 2))
     END AS remaining_principal,
     CAST(a.create_time AS DATE) AS start_date,
     CASE ROW_NUMBER() OVER (ORDER BY a.seq) % 4

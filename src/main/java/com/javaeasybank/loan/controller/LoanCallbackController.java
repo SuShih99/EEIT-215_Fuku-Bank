@@ -8,7 +8,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-// 外部模組回調 Controller
+/**
+ * 外部模組回調 API。
+ * 接收風控與帳務模組回傳的貸款狀態，並交由服務層推進案件流程。
+ */
 @RestController
 @RequestMapping("/api/loan-callbacks")
 @RequiredArgsConstructor

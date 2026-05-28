@@ -10,7 +10,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-// 還款期數 Entity，對應資料庫 LOAN_REPAYMENT
+/**
+ * 貸款還款期數 Entity，對應資料庫 LOAN_REPAYMENT。
+ * 每筆資料代表一個貸款帳戶的一期應繳款，包含本金、利息、到期日與繳款狀態。
+ */
 @Entity
 @Table(name = "LOAN_REPAYMENT")
 @Getter
