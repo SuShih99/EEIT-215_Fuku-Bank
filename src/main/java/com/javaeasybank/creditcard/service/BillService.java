@@ -155,10 +155,13 @@ public class BillService {
                         savedBill.getDueDate(),
                         pdfPassword);
 
-                emailService.sendEmailWithAttachment(
+                emailService.sendCardBillStatementEmail(
                         cardAccount.getCustomer().getEmail(),
-                        "Java Easy Bank - 信用卡月結帳單",
-                        "您的信用卡月結帳單已產生，PDF 附件請使用身分證字號末 4 碼開啟。",
+                        cardAccount.getCustomer().getName(),
+                        billingMonth,
+                        total,
+                        minimumPayment,
+                        savedBill.getDueDate(),
                         "card-bill-" + billingMonth + ".pdf",
                         pdfBytes);
                 notificationService.createNotification(

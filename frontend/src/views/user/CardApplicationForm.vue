@@ -30,14 +30,20 @@ const previewTitle = ref('')
 
 const applicationRows = computed(() =>
   applications.value.flatMap((app) => {
-    if (!app.items?.length) return [app]
+    if (!app.items?.length) {
+      return [{
+        ...app,
+        isFirstItem: true
+      }]
+    }
 
-    return app.items.map((item) => ({
+    return app.items.map((item, index) => ({
       ...app,
       ...item,
       rowKey: `${app.applicationId}-${item.itemId}`,
       itemResult: item.result,
       remark: app.remark,
+      isFirstItem: index === 0,
     }))
   }),
 )
@@ -77,6 +83,10 @@ const getStatusType = (status) => {
   switch (status) {
     case 'COMPLETED':
       return 'success'
+    case 'RESUBMITTED':
+      return 'info'
+    case 'REJECTED':
+      return 'danger'
     default:
       return 'warning'
   }
@@ -88,6 +98,8 @@ const getStatusText = (status) => {
       return '已完成'
     case 'NEED_SUPPLEMENT':
       return '需補件'
+    case 'RESUBMITTED':
+      return '已補件'
     case 'REJECTED':
       return '拒絕'
     default:
@@ -396,12 +408,12 @@ onBeforeUnmount(() => {
                 </span>
                 <span v-else-if="column.key === 'document'">
                   <button
-                  v-if="app.status === 'NEED_SUPPLEMENT'"  
-                  class="jb-btn jb-btn-secondary jb-btn-sm"
+                    v-if="app.status === 'NEED_SUPPLEMENT' && app.isFirstItem"  
+                    class="jb-btn jb-btn-secondary jb-btn-sm"
                     type="button"
                     @click="openUploadModal(app)"
                   >
-                    {{ app.status === 'NEED_SUPPLEMENT' ? '補件上傳' : '上傳附件' }}
+                    補件上傳
                   </button>
                   <span v-else>-</span>
                 </span>
@@ -644,6 +656,11 @@ tbody tr:last-child td {
 .status-warning {
   color: #ad6800;
   background: #fffbe6;
+}
+
+.status-info {
+  color: #096dd9;
+  background: #e6f7ff;
 }
 
 .state-panel {

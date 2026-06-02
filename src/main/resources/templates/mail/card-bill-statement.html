@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fuku Bank - 通知</title>
+    <title>福庫銀行 Fuku-Bank - 信用卡月結帳單</title>
     <style>
         /* 基礎重置 - 禪意水墨風格 */
         body {
@@ -218,7 +218,28 @@
             
             <!-- 主要內容 -->
             <div class="content">
-                
+                <h2 class="greeting">親愛的客戶 <span th:text="${customerName}"></span> 您好：</h2>
+                <p>您的信用卡月結帳單已產生，詳細帳務資訊如下：</p>
+                <table class="data-table">
+                    <tr>
+                        <th>帳單月份</th>
+                        <td th:text="${billingMonth}"></td>
+                    </tr>
+                    <tr>
+                        <th>本期應繳金額</th>
+                        <td style="font-weight: bold; color: #a84238;">NT$ <span th:text="${#numbers.formatDecimal(totalAmount, 1, 'COMMA', 0, 'POINT')}"></span></td>
+                    </tr>
+                    <tr>
+                        <th>最低應繳金額</th>
+                        <td>NT$ <span th:text="${#numbers.formatDecimal(minimumPayment, 1, 'COMMA', 0, 'POINT')}"></span></td>
+                    </tr>
+                    <tr>
+                        <th>繳款截止日</th>
+                        <td th:text="${dueDate}"></td>
+                    </tr>
+                </table>
+                <p>本期信用卡月結帳單 PDF 附件已加密並寄送至您的信箱，密碼為您的身分證字號末 4 碼，請查收附件並妥善留存。</p>
+                <p>感謝您對福庫銀行的支持。</p>
             </div>
             
             <!-- 底部區塊 -->

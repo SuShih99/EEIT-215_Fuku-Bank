@@ -30,6 +30,28 @@ const currentDocuments = ref([])
 const supplementRemark = ref('')
 const supplementModalVisible = ref(false)
 
+const previewVisible = ref(false)
+const previewUrl = ref('')
+const previewTitle = ref('')
+
+const openPreview = (doc) => {
+  previewUrl.value = getFileUrl(doc.fileUrl)
+  previewTitle.value = doc.fileName || doc.fileUrl || '檔案預覽'
+  previewVisible.value = true
+}
+
+const isImageUrl = (url) => {
+  if (!url) return false
+  const ext = url.split('.').pop()?.toLowerCase()
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) || url.startsWith('data:image')
+}
+
+const isPdfUrl = (url) => {
+  if (!url) return false
+  const ext = url.split('.').pop()?.toLowerCase()
+  return ext === 'pdf'
+}
+
 const statusOptions = [
   { label: '全部', value: null },
   { label: '審核中', value: 'PENDING' },
@@ -37,6 +59,7 @@ const statusOptions = [
   { label: '已拒絕', value: 'REJECTED' },
   { label: '已完成', value: 'COMPLETED' },
   { label: '需補件', value: 'NEED_SUPPLEMENT' },
+  { label: '已補件', value: 'RESUBMITTED' },
 ]
 
 const applicationStatusLabelMap = {
@@ -45,6 +68,7 @@ const applicationStatusLabelMap = {
   REJECTED: '已拒絕',
   COMPLETED: '已完成',
   NEED_SUPPLEMENT: '需補件',
+  RESUBMITTED: '已補件',
 }
 
 const getApplicationStatusLabel = (statusValue) =>
@@ -312,15 +336,44 @@ onMounted(() => {
 
   <div v-else class="document-list">
     <div v-for="doc in currentDocuments" :key="doc.documentId" class="document-item">
-      <a :href="getFileUrl(doc.fileUrl)" target="_blank">
+      <a-button type="link" @click="openPreview(doc)">
         {{ doc.fileName || doc.fileUrl }}
-      </a>
+      </a-button>
       <div class="document-time">
         補件時間：{{ formatDocumentTime(doc.uploadedAt) }}
       </div>
     </div>
   </div>
 </a-modal>
+
+    <!-- 檔案預覽 Modal -->
+    <a-modal
+      v-model:open="previewVisible"
+      :title="previewTitle"
+      :footer="null"
+      width="800px"
+      style="top: 50px"
+    >
+      <div style="text-align: center; max-height: 70vh; overflow-y: auto;">
+        <img
+          v-if="isImageUrl(previewUrl)"
+          :src="previewUrl"
+          style="max-width: 100%; object-fit: contain;"
+          alt="圖片預覽"
+        />
+        <iframe
+          v-else-if="isPdfUrl(previewUrl)"
+          :src="previewUrl"
+          style="width: 100%; height: 60vh; border: none;"
+        ></iframe>
+        <div v-else style="padding: 40px 0;">
+          <p>此檔案格式不支援線上預覽，請下載後查看：</p>
+          <a-button type="primary" :href="previewUrl" download target="_blank">
+            下載檔案
+          </a-button>
+        </div>
+      </div>
+    </a-modal>
 
 <a-modal
   v-model:open="supplementModalVisible"
@@ -433,6 +486,15 @@ onMounted(() => {
 
 .status-need_supplement .status-dot {
   background-color: #1677ff;
+}
+
+.status-resubmitted {
+  background-color: rgba(114, 101, 160, 0.1);
+  color: #7265a0;
+}
+
+.status-resubmitted .status-dot {
+  background-color: #7265a0;
 }
 
 .document-list {

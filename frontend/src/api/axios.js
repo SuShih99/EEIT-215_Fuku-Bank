@@ -15,6 +15,7 @@ api.interceptors.request.use(
     const requestUrl = config.url || ''
     const isCustomerApi =
       requestUrl.startsWith('/api/customer/') ||
+      requestUrl.startsWith('/api/user/') ||
       requestUrl.startsWith('/user/') ||
       requestUrl.startsWith('/api/loan-applications/') ||
       requestUrl.startsWith('/api/loan-accounts/') ||

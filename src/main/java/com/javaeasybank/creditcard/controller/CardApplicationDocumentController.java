@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/user/card-application-documents")
+@RequestMapping("/api/user/card-application-documents")
 public class CardApplicationDocumentController {
 
     private final CardApplicationDocumentService documentService;

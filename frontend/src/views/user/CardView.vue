@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { getMyCards, activateCard } from '@/api/userCard'
 import { BASE_URL } from '@/api/axios'
+import { message } from 'ant-design-vue'
 
 const cards = ref([])
 const showActivateModal = ref(false)
@@ -48,7 +49,7 @@ const handleActivateCard = async (cardId) => {
   try {
     await activateCard(cardId)
 
-    alert('開卡成功!')
+    message.success('開卡成功！')
 
     fetchCards()
   } catch (error) {
@@ -77,19 +78,19 @@ const openActivateModal = (card) => {
 }
 const submitActivateCard = async () => {
   if (!activateForm.value.cvv || activateForm.value.cvv.length !== 3) {
-    alert('請輸入 3 碼安全碼')
+    message.warning('請輸入 3 碼安全碼')
     return
   }
 
   try {
     await activateCard(selectedCard.value.cardId)
 
-    alert('開卡成功！')
+    message.success('開卡成功！')
     showActivateModal.value = false
     await fetchCards()
   } catch (error) {
     console.error(error)
-    alert('開卡失敗')
+    message.error('開卡失敗')
   }
 }
 

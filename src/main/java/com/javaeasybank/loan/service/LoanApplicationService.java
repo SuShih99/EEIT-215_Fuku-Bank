@@ -666,21 +666,11 @@ public class LoanApplicationService {
                 .map(profile -> profile.getName())
                 .orElse("親愛的客戶");
         String contractNo = formatContractNumber(loan.getApplicationId());
-        String body = """
-                <html>
-                <body style="font-family: Microsoft JhengHei, Arial, sans-serif; color:#333; line-height:1.7;">
-                  <p>%s 您好：</p>
-                  <p>您的貸款已核准並完成撥款，附件為依最終填單內容產生之貸款契約書，請留存備查。</p>
-                  <p>契約編號：<b>%s</b></p>
-                  <p>Java Easy Bank 敬上</p>
-                </body>
-                </html>
-                """.formatted(customerName, contractNo);
 
-        emailService.sendEmailWithAttachment(
+        emailService.sendLoanContractEmail(
                 email,
-                "Java Easy Bank - 貸款契約書",
-                body,
+                customerName,
+                contractNo,
                 "loan-contract-" + applicationId + ".pdf",
                 pdfBytes);
         log.info("[LoanContract] 契約附件寄送完成 applicationId={} email={}", applicationId, email);

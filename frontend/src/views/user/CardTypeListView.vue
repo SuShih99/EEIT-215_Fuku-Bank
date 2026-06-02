@@ -216,7 +216,12 @@ async function fetchMyApplications() {
   try {
     const data = await getMyApplications()
     const applications = Array.isArray(data) ? data : data?.content || []
-    appliedCardTypeIds.value = applications.map((app) => app.cardTypeId)
+    const ids = applications.flatMap((app) => [
+      app.cardTypeId,
+      ...(Array.isArray(app.items) ? app.items.map((item) => item.cardTypeId) : []),
+    ])
+
+    appliedCardTypeIds.value = [...new Set(ids.filter((id) => id !== null && id !== undefined))]
   } catch (error) {
     console.error(error)
   }
@@ -225,6 +230,18 @@ async function fetchMyApplications() {
 async function applyCardType() {
   if (selectedCards.value.length === 0) {
     message.warning('請先選擇卡片')
+    return
+  }
+
+  const duplicateCards = selectedCards.value.filter((card) =>
+    appliedCardTypeIds.value.includes(card.cardTypeId),
+  )
+
+  if (duplicateCards.length > 0) {
+    message.warning(`${duplicateCards.map((card) => card.cardTypeName).join('、')} 已申辦`)
+    selectedCards.value = selectedCards.value.filter(
+      (card) => !appliedCardTypeIds.value.includes(card.cardTypeId),
+    )
     return
   }
 

@@ -26,7 +26,7 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/user/card-txns")
+@RequestMapping("/api/user/card-txns")
 public class CardTxnController {
 
     private final CardTxnService cardTxnService;

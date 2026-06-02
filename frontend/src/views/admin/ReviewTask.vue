@@ -300,8 +300,7 @@
                 <a-button
                   type="link"
                   class="action-btn-link"
-                  :href="getFileUrl(doc.fileUrl)"
-                  target="_blank"
+                  @click="openPreview(doc)"
                   v-if="doc.fileUrl"
                 >
                   查看文件
@@ -491,8 +490,7 @@
             <a-button
               type="link"
               class="action-btn-link"
-              :href="getFileUrl(doc.fileUrl)"
-              target="_blank"
+              @click="openPreview(doc)"
               v-if="doc.fileUrl"
             >
               查看文件
@@ -531,6 +529,35 @@
         </a-form-item>
       </a-form>
     </a-modal>
+
+    <!-- 檔案預覽 Modal -->
+    <a-modal
+      v-model:open="previewVisible"
+      :title="previewTitle"
+      :footer="null"
+      width="800px"
+      style="top: 50px"
+    >
+      <div style="text-align: center; max-height: 70vh; overflow-y: auto;">
+        <img
+          v-if="isImageUrl(previewUrl)"
+          :src="previewUrl"
+          style="max-width: 100%; object-fit: contain;"
+          alt="圖片預覽"
+        />
+        <iframe
+          v-else-if="isPdfUrl(previewUrl)"
+          :src="previewUrl"
+          style="width: 100%; height: 60vh; border: none;"
+        ></iframe>
+        <div v-else style="padding: 40px 0;">
+          <p>此檔案格式不支援線上預覽，請下載後查看：</p>
+          <a-button type="primary" :href="previewUrl" download target="_blank">
+            下載檔案
+          </a-button>
+        </div>
+      </div>
+    </a-modal>
   </div>
 </template>
 
@@ -553,6 +580,28 @@ const modalVisible = ref(false)
 const drawerVisible = ref(false)
 const currentTask = ref(null)
 const drawerTask = ref(null)
+
+const previewVisible = ref(false)
+const previewUrl = ref('')
+const previewTitle = ref('')
+
+const openPreview = (doc) => {
+  previewUrl.value = getFileUrl(doc.fileUrl)
+  previewTitle.value = doc.originalName || doc.documentId || '檔案預覽'
+  previewVisible.value = true
+}
+
+const isImageUrl = (url) => {
+  if (!url) return false
+  const ext = url.split('.').pop()?.toLowerCase()
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) || url.startsWith('data:image')
+}
+
+const isPdfUrl = (url) => {
+  if (!url) return false
+  const ext = url.split('.').pop()?.toLowerCase()
+  return ext === 'pdf'
+}
 
 const authStore = useAuthStore()
 const currentUser = computed(() => authStore.user)

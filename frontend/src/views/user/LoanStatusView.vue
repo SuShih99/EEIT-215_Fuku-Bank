@@ -226,7 +226,7 @@
                   >
                     <span class="doc-icon" v-html="docIcon(d.originalName)"></span>
                     <div class="doc-info">
-                      <a :href="d.fileUrl" target="_blank" class="doc-name">
+                      <a href="javascript:void(0)" @click="openPreview(d)" class="doc-name">
                         {{ d.originalName || '（未命名）' }}
                       </a>
                       <span class="doc-meta">
@@ -345,6 +345,28 @@
       </div><!-- end outer v-else -->
 
     </div>
+
+    <!-- ── Preview Modal Overlay ── -->
+    <transition name="modal-fade">
+      <div v-if="previewVisible" class="modal-overlay" @click.self="closePreview" style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 24px;">
+        <div class="modal" style="background: #fff; border-radius: 16px; width: 100%; max-width: 800px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.18); overflow: hidden;">
+          <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 16px; border-bottom: 1px solid #eee; flex-shrink: 0;">
+            <div class="modal-title" style="font-size: 18px; font-weight: 700; color: #1a1a1a;">{{ previewTitle }}</div>
+            <button class="close-btn" @click="closePreview" style="background: none; border: none; color: #aaa; font-size: 18px; cursor: pointer; padding: 2px 6px; border-radius: 6px; transition: background 0.15s;">
+              <i class="fa-solid fa-x"></i>
+            </button>
+          </div>
+          <div class="modal-body" style="flex: 1; overflow-y: auto; padding: 20px 24px; text-align: center; background: #fafafa;">
+            <img v-if="isImageUrl(previewUrl)" :src="previewUrl" style="max-width: 100%; max-height: 70vh; object-fit: contain;" />
+            <iframe v-else-if="isPdfUrl(previewUrl)" :src="previewUrl" style="width: 100%; height: 70vh; border: none;"></iframe>
+            <div v-else style="padding: 40px 0;">
+              <p>此檔案格式不支援線上預覽，請下載後查看：</p>
+              <a :href="previewUrl" :download="previewTitle" style="padding: 8px 22px; background: #5C6B5F; color: #fff; border: none; border-radius: 9px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block;">下載檔案</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -361,6 +383,32 @@ const currentPage = ref(1)
 const docPanelId = ref(null)   // 目前展開的申請 ID
 const docs = ref({})     // { [applicationId]: LoanDocumentResponseDTO[] }
 const docLoading = ref(false)
+
+const previewVisible = ref(false)
+const previewUrl = ref('')
+const previewTitle = ref('')
+
+function openPreview(doc) {
+  previewUrl.value = doc.fileUrl
+  previewTitle.value = doc.originalName || '檔案預覽'
+  previewVisible.value = true
+}
+
+function closePreview() {
+  previewVisible.value = false
+}
+
+function isImageUrl(url) {
+  if (!url) return false
+  const ext = url.split('.').pop()?.toLowerCase()
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) || url.startsWith('data:image')
+}
+
+function isPdfUrl(url) {
+  if (!url) return false
+  const ext = url.split('.').pop()?.toLowerCase()
+  return ext === 'pdf'
+}
 
 const uploadForm = ref({documentType: '', file: null})
 const uploading = ref(false)

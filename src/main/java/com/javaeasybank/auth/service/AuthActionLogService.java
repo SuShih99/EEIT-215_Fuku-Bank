@@ -70,35 +70,57 @@ public class AuthActionLogService {
         List<AuthActionLog> logs = actionLogRepository.findAllByOrderByActionTimeDesc();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
+        byte[] fontBytes;
+        try (java.io.InputStream fontStream = getClass()
+                        .getClassLoader()
+                        .getResourceAsStream("fonts/SourceHanSansTC-Normal.otf")) {
+            if (fontStream == null) {
+                throw new RuntimeException("字型檔案 fonts/SourceHanSansTC-Normal.otf 未能在 classpath 中找到");
+            }
+            fontBytes = fontStream.readAllBytes();
+        }
+
+        com.lowagie.text.pdf.BaseFont baseFont = com.lowagie.text.pdf.BaseFont.createFont(
+                        "SourceHanSansTC-Normal.otf",
+                        com.lowagie.text.pdf.BaseFont.IDENTITY_H,
+                        com.lowagie.text.pdf.BaseFont.EMBEDDED,
+                        true,
+                        fontBytes,
+                        null);
+
+        Font chineseFont = new Font(baseFont, 10);
+        Font boldChineseFont = new Font(baseFont, 10, Font.BOLD);
+        Font titleFont = new Font(baseFont, 14, Font.BOLD);
+
         Document document = new Document(PageSize.A4.rotate());
         PdfWriter.getInstance(document, out);
         document.open();
 
-        Font font = new Font(Font.HELVETICA, 12, Font.BOLD);
-        document.add(new Paragraph("System Audit Logs", font));
+        document.add(new Paragraph("System Audit Logs", titleFont));
         document.add(new Paragraph(" "));
 
         PdfPTable table = new PdfPTable(8);
         table.setWidthPercentage(100);
-        table.addCell("ID");
-        table.addCell("EmpID");
-        table.addCell("Name");
-        table.addCell("Action");
-        table.addCell("Target");
-        table.addCell("Details");
-        table.addCell("Time");
-        table.addCell("IP");
+        
+        table.addCell(new Paragraph("ID", boldChineseFont));
+        table.addCell(new Paragraph("EmpID", boldChineseFont));
+        table.addCell(new Paragraph("Name", boldChineseFont));
+        table.addCell(new Paragraph("Action", boldChineseFont));
+        table.addCell(new Paragraph("Target", boldChineseFont));
+        table.addCell(new Paragraph("Details", boldChineseFont));
+        table.addCell(new Paragraph("Time", boldChineseFont));
+        table.addCell(new Paragraph("IP", boldChineseFont));
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         for (AuthActionLog log : logs) {
-            table.addCell(log.getId().toString());
-            table.addCell(log.getEmpId() != null ? log.getEmpId() : "-");
-            table.addCell(log.getEmpName() != null ? log.getEmpName() : "-");
-            table.addCell(log.getAction());
-            table.addCell(log.getTarget() != null ? log.getTarget() : "-");
-            table.addCell(log.getDetails() != null ? log.getDetails() : "-");
-            table.addCell(log.getActionTime().format(formatter));
-            table.addCell(log.getIpAddress() != null ? log.getIpAddress() : "-");
+            table.addCell(new Paragraph(log.getId().toString(), chineseFont));
+            table.addCell(new Paragraph(log.getEmpId() != null ? log.getEmpId() : "-", chineseFont));
+            table.addCell(new Paragraph(log.getEmpName() != null ? log.getEmpName() : "-", chineseFont));
+            table.addCell(new Paragraph(log.getAction(), chineseFont));
+            table.addCell(new Paragraph(log.getTarget() != null ? log.getTarget() : "-", chineseFont));
+            table.addCell(new Paragraph(log.getDetails() != null ? log.getDetails() : "-", chineseFont));
+            table.addCell(new Paragraph(log.getActionTime().format(formatter), chineseFont));
+            table.addCell(new Paragraph(log.getIpAddress() != null ? log.getIpAddress() : "-", chineseFont));
         }
 
         document.add(table);

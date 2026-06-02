@@ -47,7 +47,7 @@
               >
                 <span class="doc-icon" v-html="fileIcon(d.originalName)"></span>
                 <div class="doc-info">
-                  <a :href="d.fileUrl" target="_blank" class="doc-name">
+                  <a href="javascript:void(0)" @click="openPreview(d)" class="doc-name">
                     {{ d.originalName || '（未命名）' }}
                   </a>
                   <div class="doc-meta-row">
@@ -63,7 +63,7 @@
                   </div>
                 </div>
                 <div class="doc-actions">
-                  <a :href="d.fileUrl" target="_blank" class="doc-action-btn doc-view-btn" title="開啟檔案">
+                  <a href="javascript:void(0)" @click="openPreview(d)" class="doc-action-btn doc-view-btn" title="開啟檔案">
                     <i class="fa-solid fa-eye"></i>
                   </a>
                   <a
@@ -89,6 +89,26 @@
         </div>
       </div>
     </transition>
+
+    <!-- ── Preview Modal Overlay ── -->
+    <transition name="modal-fade">
+      <div v-if="previewVisible" class="modal-overlay preview-overlay" @click.self="closePreview" style="z-index: 1000;">
+        <div class="modal preview-modal" style="max-width: 800px; max-height: 85vh;">
+          <div class="modal-header">
+            <div class="modal-title">{{ previewTitle }}</div>
+            <button class="close-btn" @click="closePreview"><i class="fa-solid fa-x"></i></button>
+          </div>
+          <div class="modal-body" style="text-align: center; background: #fafafa; overflow-y: auto;">
+            <img v-if="isImageUrl(previewUrl)" :src="previewUrl" style="max-width: 100%; max-height: 70vh; object-fit: contain;" />
+            <iframe v-else-if="isPdfUrl(previewUrl)" :src="previewUrl" style="width: 100%; height: 70vh; border: none;"></iframe>
+            <div v-else style="padding: 40px 0;">
+              <p>此檔案格式不支援線上預覽，請下載後查看：</p>
+              <a :href="previewUrl" :download="previewTitle" class="btn-close" style="display: inline-block; text-decoration: none;">下載檔案</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
   </teleport>
 </template>
 
@@ -104,6 +124,32 @@ const emit = defineEmits(['update:modelValue'])
 
 const docs    = ref([])
 const loading = ref(false)
+
+const previewVisible = ref(false)
+const previewUrl = ref('')
+const previewTitle = ref('')
+
+function openPreview(doc) {
+  previewUrl.value = doc.fileUrl
+  previewTitle.value = doc.originalName || '檔案預覽'
+  previewVisible.value = true
+}
+
+function closePreview() {
+  previewVisible.value = false
+}
+
+function isImageUrl(url) {
+  if (!url) return false
+  const ext = url.split('.').pop()?.toLowerCase()
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) || url.startsWith('data:image')
+}
+
+function isPdfUrl(url) {
+  if (!url) return false
+  const ext = url.split('.').pop()?.toLowerCase()
+  return ext === 'pdf'
+}
 
 const DOC_TYPE_MAP = {
   ID_CARD:         '身分證',

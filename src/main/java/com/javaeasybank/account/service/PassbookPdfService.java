@@ -11,28 +11,30 @@ import com.javaeasybank.account.enums.AccountType;
 import com.javaeasybank.account.enums.Currency;
 import com.javaeasybank.account.repository.AccountRepository;
 import com.javaeasybank.common.exception.BusinessException;
+import com.javaeasybank.common.util.PdfCjkFontLoader;
 import com.javaeasybank.customer.entity.CustomerProfile;
 import com.javaeasybank.customer.repository.CustomerProfileRepository;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PassbookPdfService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy / MM / dd");
-    private static final String PDF_FONT_FAMILY = "JavaBankCjk";
+    private static final String PDF_FONT_FAMILY = PdfCjkFontLoader.FONT_FAMILY;
 
     private final AccountRepository accountRepository;
     private final CustomerProfileRepository customerProfileRepository;
@@ -51,19 +53,26 @@ public class PassbookPdfService {
             byte[] plainPdf = renderHtmlToPdf(buildHtml(account, profile));
             return encryptPdf(plainPdf, profile);
         } catch (Exception e) {
+            log.error("[PassbookPdf] 產生失敗 customerId={}, accountNumber={}, error={}",
+                    customerId, accountNumber, e.getMessage(), e);
             throw new BusinessException("電子存摺 PDF 產生失敗");
         }
     }
 
     private byte[] renderHtmlToPdf(String html) throws Exception {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        PdfRendererBuilder builder = new PdfRendererBuilder();
-        builder.useFastMode();
-        registerCjkFont(builder);
-        builder.withHtmlContent(html, null);
-        builder.toStream(output);
-        builder.run();
-        return output.toByteArray();
+        Path tempFontFile = null;
+        try {
+            PdfRendererBuilder builder = new PdfRendererBuilder();
+            builder.useFastMode();
+            tempFontFile = registerCjkFont(builder);
+            builder.withHtmlContent(html, null);
+            builder.toStream(output);
+            builder.run();
+            return output.toByteArray();
+        } finally {
+            PdfCjkFontLoader.deleteTempFontFile(tempFontFile, log, "[PassbookPdf]");
+        }
     }
 
     private byte[] encryptPdf(byte[] plainPdf, CustomerProfile profile) throws Exception {
@@ -104,11 +113,14 @@ public class PassbookPdfService {
                   <meta charset="UTF-8" />
                   <style>
                     @page { size: A4 landscape; margin: 14mm; }
-                    * { box-sizing: border-box; }
+                    * {
+                      box-sizing: border-box;
+                      font-family: '%s', sans-serif;
+                    }
                     body {
                       margin: 0;
                       color: #2f3330;
-                      font-family: "%s", sans-serif;
+                      font-family: '%s', sans-serif;
                       background: #fbf8f1;
                     }
                     .page {
@@ -277,6 +289,7 @@ public class PassbookPdfService {
                 </html>
                 """.formatted(
                 PDF_FONT_FAMILY,
+                PDF_FONT_FAMILY,
                 logo,
                 ownerName,
                 accountNumber,
@@ -287,33 +300,11 @@ public class PassbookPdfService {
         );
     }
 
-    private void registerCjkFont(PdfRendererBuilder builder) {
-        Path fontPath = findCjkFontPath();
-        if (fontPath != null) {
-            builder.useFont(fontPath.toFile(), PDF_FONT_FAMILY);
-        }
-    }
-
-    private Path findCjkFontPath() {
-        String[] candidates = {
-                "/Library/Fonts/Arial Unicode.ttf",
-                "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
-                "/System/Library/Fonts/STHeiti Medium.ttc",
-                "/System/Library/Fonts/STHeiti Light.ttc",
-                "C:/Windows/Fonts/msjh.ttc",
-                "C:/Windows/Fonts/mingliu.ttc",
-                "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-                "/usr/share/fonts/opentype/noto/NotoSansCJKtc-Regular.otf",
-                "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
-                "/usr/share/fonts/truetype/arphic/uming.ttc"
-        };
-        for (String candidate : candidates) {
-            File file = new File(candidate);
-            if (file.exists() && file.isFile()) {
-                return file.toPath();
-            }
-        }
-        return null;
+    private Path registerCjkFont(PdfRendererBuilder builder) throws Exception {
+        Path tempFontFile = PdfCjkFontLoader.copyClasspathFontToTempFile(
+                getClass().getClassLoader(), log, "[PassbookPdf]");
+        builder.useFont(tempFontFile.toFile(), PDF_FONT_FAMILY);
+        return tempFontFile;
     }
 
     private String logoDataUri() {

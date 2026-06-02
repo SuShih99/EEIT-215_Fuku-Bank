@@ -17,7 +17,7 @@ import com.javaeasybank.creditcard.service.CreditCardService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/user/cards")
+@RequestMapping("/api/user/cards")
 @RequiredArgsConstructor
 public class CardController {
 

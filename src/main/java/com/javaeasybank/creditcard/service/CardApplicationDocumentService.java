@@ -14,6 +14,7 @@ import com.javaeasybank.creditcard.mapper.CardApplicationDocumentMapper;
 import com.javaeasybank.creditcard.repository.CardAppRepository;
 import com.javaeasybank.creditcard.repository.CardApplicationDocumentRepository;
 
+import com.javaeasybank.creditcard.enums.CardApplicationStatus;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -38,6 +39,11 @@ public class CardApplicationDocumentService {
         document.setApplication(application);
 
         CardApplicationDocument saved = documentRepository.save(document);
+
+        if (application.getStatus() == CardApplicationStatus.NEED_SUPPLEMENT) {
+            application.setStatus(CardApplicationStatus.RESUBMITTED);
+            cardApplicationRepository.save(application);
+        }
 
         return mapper.toDto(saved);
     }

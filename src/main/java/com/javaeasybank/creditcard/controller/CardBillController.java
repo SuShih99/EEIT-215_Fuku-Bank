@@ -23,7 +23,7 @@ import com.javaeasybank.creditcard.service.CardTxnService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/user/card-bills")
+@RequestMapping("/api/user/card-bills")
 @RequiredArgsConstructor
 public class CardBillController {
 

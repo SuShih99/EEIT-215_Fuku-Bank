@@ -1,6 +1,7 @@
 package com.javaeasybank.loan.service;
 
 import com.javaeasybank.common.exception.BusinessException;
+import com.javaeasybank.common.util.PdfCjkFontLoader;
 import com.javaeasybank.customer.entity.CustomerProfile;
 import com.javaeasybank.customer.repository.CustomerProfileRepository;
 import com.javaeasybank.loan.entity.LoanApplication;
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Path;
@@ -29,7 +29,7 @@ public class LoanContractPdfService {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    private static final String PDF_FONT_FAMILY = "JavaBankCjk";
+    private static final String PDF_FONT_FAMILY = PdfCjkFontLoader.FONT_FAMILY;
 
     private final CustomerProfileRepository customerProfileRepository;
     private final LoanReviewDetailRepository loanReviewDetailRepository;
@@ -52,13 +52,18 @@ public class LoanContractPdfService {
 
     private byte[] renderHtmlToPdf(String html) throws Exception {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            Path tempFontFile = null;
             PdfRendererBuilder builder = new PdfRendererBuilder();
-            builder.useFastMode();
-            registerCjkFont(builder);
-            builder.withHtmlContent(html, null);
-            builder.toStream(outputStream);
-            builder.run();
-            return outputStream.toByteArray();
+            try {
+                builder.useFastMode();
+                tempFontFile = registerCjkFont(builder);
+                builder.withHtmlContent(html, null);
+                builder.toStream(outputStream);
+                builder.run();
+                return outputStream.toByteArray();
+            } finally {
+                PdfCjkFontLoader.deleteTempFontFile(tempFontFile, log, "[LoanContractPdf]");
+            }
         }
     }
 
@@ -96,11 +101,14 @@ public class LoanContractPdfService {
                   <meta charset="UTF-8" />
                   <style>
                     @page { size: A4 portrait; margin: 16mm 15mm 18mm; }
-                    * { box-sizing: border-box; }
+                    * {
+                      box-sizing: border-box;
+                      font-family: '%s', sans-serif;
+                    }
                     body {
                       margin: 0;
                       color: #202124;
-                      font-family: "%s", "Microsoft JhengHei", "Noto Sans CJK TC", sans-serif;
+                      font-family: '%s', sans-serif;
                       line-height: 1.55;
                     }
                     .wrap { width: 100%%; }
@@ -172,7 +180,7 @@ public class LoanContractPdfService {
                     .sign th { background: #f6f7f8; color: #214f79; }
                     .sigline {
                       margin: 5mm 0 2mm;
-                      font-family: "Courier New", monospace;
+                      font-family: '%s', sans-serif;
                     }
                     .small-note {
                       margin-top: 4mm;
@@ -243,6 +251,8 @@ public class LoanContractPdfService {
                 </html>
                 """.formatted(
                 PDF_FONT_FAMILY,
+                PDF_FONT_FAMILY,
+                PDF_FONT_FAMILY,
                 contractNo,
                 customerName,
                 idNumber,
@@ -266,34 +276,11 @@ public class LoanContractPdfService {
         );
     }
 
-    private void registerCjkFont(PdfRendererBuilder builder) {
-        Path fontPath = findCjkFontPath();
-        if (fontPath != null) {
-            builder.useFont(fontPath.toFile(), PDF_FONT_FAMILY);
-        }
-    }
-
-    private Path findCjkFontPath() {
-        String[] candidates = {
-                "C:/Windows/Fonts/msjh.ttc",
-                "C:/Windows/Fonts/msjhbd.ttc",
-                "C:/Windows/Fonts/mingliu.ttc",
-                "/Library/Fonts/Arial Unicode.ttf",
-                "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
-                "/System/Library/Fonts/STHeiti Medium.ttc",
-                "/System/Library/Fonts/STHeiti Light.ttc",
-                "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-                "/usr/share/fonts/opentype/noto/NotoSansCJKtc-Regular.otf",
-                "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
-                "/usr/share/fonts/truetype/arphic/uming.ttc"
-        };
-        for (String candidate : candidates) {
-            File file = new File(candidate);
-            if (file.exists() && file.isFile()) {
-                return file.toPath();
-            }
-        }
-        return null;
+    private Path registerCjkFont(PdfRendererBuilder builder) throws Exception {
+        Path tempFontFile = PdfCjkFontLoader.copyClasspathFontToTempFile(
+                getClass().getClassLoader(), log, "[LoanContractPdf]");
+        builder.useFont(tempFontFile.toFile(), PDF_FONT_FAMILY);
+        return tempFontFile;
     }
 
     private String safe(String value) {
