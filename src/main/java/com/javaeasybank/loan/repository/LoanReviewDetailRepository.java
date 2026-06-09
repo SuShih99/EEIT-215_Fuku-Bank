@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.repository;
 
+/**
+ * 程式說明：
+ * - 貸款審核明細資料存取介面。
+ * - 提供依申請編號取得審核結果與核准條件的查詢方法。
+ */
+
 import com.javaeasybank.loan.entity.LoanReviewDetail;
 import org.springframework.data.jpa.repository.JpaRepository;
 

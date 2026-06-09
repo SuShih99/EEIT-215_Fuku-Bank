@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.dto.response;
 
+/**
+ * 程式說明：
+ * - 審核明細查詢回應資料物件。
+ * - 回傳核准條件、審核狀態、風險分數與審核意見，供後台確認決策依據。
+ */
+
 import com.javaeasybank.loan.enums.LoanReviewStatus;
 import lombok.Getter;
 import lombok.Setter;

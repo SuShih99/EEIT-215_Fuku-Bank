@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.controller;
 
+/**
+ * 程式說明：
+ * - 後台貸款帳戶管理 API。
+ * - 提供管理員查詢貸款帳戶、檢視還款狀態與執行後台維護功能。
+ */
+
 import com.javaeasybank.common.dto.response.ApiResponse;
 import com.javaeasybank.loan.dto.response.LoanAccountResponseDTO;
 import com.javaeasybank.loan.dto.response.LoanRepaymentResponseDTO;

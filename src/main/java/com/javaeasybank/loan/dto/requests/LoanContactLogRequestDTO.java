@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.dto.requests;
 
+/**
+ * 程式說明：
+ * - 新增聯絡紀錄的請求資料物件。
+ * - 封裝客服或審核人員與申請人聯絡時的管道、結果、備註與員工編號。
+ */
+
 import lombok.Getter;
 import lombok.Setter;
 

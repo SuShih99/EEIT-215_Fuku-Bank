@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.repository;
 
+/**
+ * 程式說明：
+ * - 貸款文件資料存取介面。
+ * - 管理文件清單、補件批次、文件類型與申請編號相關查詢。
+ */
+
 import com.javaeasybank.loan.entity.LoanDocument;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

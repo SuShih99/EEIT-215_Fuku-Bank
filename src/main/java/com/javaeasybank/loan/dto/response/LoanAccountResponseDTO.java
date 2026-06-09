@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.dto.response;
 
+/**
+ * 程式說明：
+ * - 貸款帳戶查詢回應資料物件。
+ * - 把貸款帳戶主檔、狀態、利率、剩餘本金與期數資訊整理給前端顯示。
+ */
+
 import com.javaeasybank.loan.enums.LoanAccountStatus;
 import lombok.Getter;
 import lombok.Setter;

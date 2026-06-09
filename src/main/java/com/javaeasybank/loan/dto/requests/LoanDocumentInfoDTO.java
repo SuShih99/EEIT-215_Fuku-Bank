@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.dto.requests;
 
+/**
+ * 程式說明：
+ * - 單筆貸款文件資訊的請求資料物件。
+ * - 用於描述文件類型、名稱、路徑或狀態，支援文件上傳與審核流程傳遞資料。
+ */
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.controller;
 
+/**
+ * 程式說明：
+ * - 貸款文件上傳與查詢 API。
+ * - 管理會員補件、審核文件清單、合約 PDF 下載與文件狀態回報。
+ */
+
 import com.javaeasybank.common.dto.response.ApiResponse;
 import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.common.util.JwtUtil;

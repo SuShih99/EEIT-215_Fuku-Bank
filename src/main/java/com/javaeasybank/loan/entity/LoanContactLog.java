@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.entity;
 
+/**
+ * 程式說明：
+ * - 貸款聯絡紀錄 Entity，對應資料表 LOAN_CONTACT_LOG。
+ * - 保存每次與申請人聯絡的時間、管道、結果、處理員工與備註。
+ */
+
 import com.javaeasybank.loan.enums.LoanContactChannel;
 import com.javaeasybank.loan.enums.LoanContactStatus;
 import jakarta.persistence.*;

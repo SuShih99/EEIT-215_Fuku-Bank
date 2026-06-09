@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.repository;
 
+/**
+ * 程式說明：
+ * - 貸款帳戶資料存取介面。
+ * - 透過 Spring Data JPA 查詢貸款帳戶主檔與依狀態、客戶或申請編號篩選資料。
+ */
+
 import com.javaeasybank.loan.entity.LoanAccount;
 import com.javaeasybank.loan.enums.LoanAccountStatus;
 import org.springframework.data.jpa.repository.JpaRepository;

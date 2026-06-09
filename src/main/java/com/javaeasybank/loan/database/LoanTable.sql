@@ -1,3 +1,7 @@
+-- 程式說明：
+-- - 貸款模組資料表建置腳本。
+-- - 定義貸款申請、審核、文件、帳戶與還款相關資料表，提供後端 Entity 對應使用。
+
 DROP TABLE IF EXISTS loan_repayment;
 DROP TABLE IF EXISTS loan_account;
 DROP TABLE IF EXISTS loan_review_detail;

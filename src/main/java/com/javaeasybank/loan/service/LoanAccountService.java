@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.service;
 
+/**
+ * 程式說明：
+ * - 貸款帳戶業務服務。
+ * - 負責建立貸款帳戶、查詢帳戶與串接帳務模組，承接核准後的放款流程。
+ */
+
 import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.customer.repository.CustomerProfileRepository;
 import com.javaeasybank.loan.dto.response.LoanAccountResponseDTO;

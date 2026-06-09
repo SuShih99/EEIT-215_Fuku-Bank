@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.dto.requests;
 
+/**
+ * 程式說明：
+ * - 貸款狀態回呼的請求資料物件。
+ * - 封裝外部流程通知本系統時需要的申請編號、狀態與補充訊息。
+ */
+
 import com.javaeasybank.loan.enums.LoanApplicationStatus;
 import lombok.Getter;
 import lombok.Setter;

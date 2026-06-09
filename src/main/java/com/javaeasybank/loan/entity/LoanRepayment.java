@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.entity;
 
+/**
+ * 程式說明：
+ * - 貸款還款明細 Entity，對應資料表 LOAN_REPAYMENT。
+ * - 記錄每期還款的本金、利息、應繳總額、到期日、付款日與繳款狀態。
+ */
+
 import com.javaeasybank.loan.enums.LoanRepaymentStatus;
 import jakarta.persistence.*;
 import lombok.Getter;

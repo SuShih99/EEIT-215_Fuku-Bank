@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.dto.response;
 
+/**
+ * 程式說明：
+ * - 貸款申請查詢回應資料物件。
+ * - 整合申請內容、目前狀態、聯絡結果、文件狀態與審核備註供前端呈現。
+ */
+
 import com.javaeasybank.loan.enums.LoanApplicationStatus;
 import com.javaeasybank.loan.enums.LoanContactStatus;
 import lombok.Getter;

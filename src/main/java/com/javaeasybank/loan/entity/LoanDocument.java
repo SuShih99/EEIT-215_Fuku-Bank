@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.entity;
 
+/**
+ * 程式說明：
+ * - 貸款文件 Entity，對應資料表 LOAN_DOCUMENT。
+ * - 保存會員上傳文件或合約文件的類型、路徑、審核狀態與補件批次。
+ */
+
 import com.javaeasybank.loan.enums.LoanDocumentType;
 import jakarta.persistence.*;
 import lombok.Getter;

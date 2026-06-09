@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.dto.response;
 
+/**
+ * 程式說明：
+ * - 聯絡紀錄查詢回應資料物件。
+ * - 提供聯絡時間、管道、結果、員工與備註資訊，協助後台追蹤溝通歷程。
+ */
+
 import com.javaeasybank.loan.enums.LoanContactChannel;
 import com.javaeasybank.loan.enums.LoanContactStatus;
 import lombok.Getter;

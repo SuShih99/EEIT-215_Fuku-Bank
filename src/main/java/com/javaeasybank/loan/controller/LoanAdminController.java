@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.controller;
 
+/**
+ * 程式說明：
+ * - 後台貸款申請審核 API。
+ * - 提供管理員依狀態查詢申請、建立聯絡紀錄、保存審核結果與核准或退回申請。
+ */
+
 import com.javaeasybank.common.dto.response.ApiResponse;
 import com.javaeasybank.loan.dto.requests.LoanContactLogRequestDTO;
 import com.javaeasybank.loan.dto.requests.LoanReviewDetailRequestDTO;

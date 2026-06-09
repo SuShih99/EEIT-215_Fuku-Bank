@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.entity;
 
+/**
+ * 程式說明：
+ * - 貸款申請主檔 Entity，對應資料表 LOAN_APPLICATION。
+ * - 記錄會員申請內容、聯絡進度、文件補件、審核狀態與申請生命週期時間。
+ */
+
 import com.javaeasybank.loan.enums.LoanApplicationStatus;
 import com.javaeasybank.loan.enums.LoanContactStatus;
 import jakarta.persistence.*;

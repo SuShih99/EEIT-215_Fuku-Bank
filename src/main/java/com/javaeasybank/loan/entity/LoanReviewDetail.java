@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.entity;
 
+/**
+ * 程式說明：
+ * - 貸款審核明細 Entity，對應資料表 LOAN_REVIEW_DETAIL。
+ * - 保存審核人員、審核結果、核准條件、風險資料與決策備註。
+ */
+
 import com.javaeasybank.loan.enums.LoanReviewStatus;
 import jakarta.persistence.*;
 import lombok.Getter;

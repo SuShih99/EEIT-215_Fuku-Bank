@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.dto.requests;
 
+/**
+ * 程式說明：
+ * - 貸款審核明細的請求資料物件。
+ * - 保存審核人員輸入的風險分數、核准金額、利率、期數與審核意見。
+ */
+
 import lombok.Getter;
 import lombok.Setter;
 

@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.repository;
 
+/**
+ * 程式說明：
+ * - 貸款申請資料存取介面。
+ * - 提供依申請狀態、客戶編號與更新時間排序查詢申請資料的方法。
+ */
+
 import com.javaeasybank.loan.entity.LoanApplication;
 import com.javaeasybank.loan.enums.LoanApplicationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;

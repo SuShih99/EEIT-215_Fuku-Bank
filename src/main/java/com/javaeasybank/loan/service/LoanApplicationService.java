@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.service;
 
+/**
+ * 程式說明：
+ * - 貸款申請核心業務服務。
+ * - 處理申請建立、聯絡紀錄、審核、文件補件、核准撥款、通知與狀態流轉。
+ */
+
 import com.javaeasybank.account.dto.request.LoanAccountCreateRequest;
 import com.javaeasybank.account.dto.request.LoanDisbursementRequest;
 import com.javaeasybank.account.dto.response.LoanAccountResponse;

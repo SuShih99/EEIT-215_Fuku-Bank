@@ -1,2 +1,6 @@
+# 程式說明：
+# - 貸款模組 API 測試範例。
+# - 可在支援 .http 的 IDE 中直接送出請求，快速驗證端點行為。
+
 PATCH http://localhost:8080/api/admin/loan-applications/LA202605161213189938/disburse/retry
 Cookie: JSESSIONID=401085E47F63EC08E42639F154F849FE

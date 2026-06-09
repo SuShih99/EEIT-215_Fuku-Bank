@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.repository;
 
+/**
+ * 程式說明：
+ * - 貸款聯絡紀錄資料存取介面。
+ * - 提供依申請編號查詢聯絡歷程，支援後台檢視溝通紀錄。
+ */
+
 import com.javaeasybank.loan.entity.LoanContactLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 

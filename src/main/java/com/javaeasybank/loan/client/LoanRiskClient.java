@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.client;
 
+/**
+ * 程式說明：
+ * - 對外呼叫風險評分服務的 HTTP Client。
+ * - 將貸款申請資料送至風控模組，並把回傳結果提供給審核流程使用。
+ */
+
 import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.loan.dto.requests.LoanDocumentInfoDTO;
 import com.javaeasybank.loan.dto.requests.LoanRiskRequestDTO;

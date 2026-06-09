@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.scheduler;
 
+/**
+ * 程式說明：
+ * - 貸款還款排程服務。
+ * - 定期檢查到期或逾期還款資料，更新狀態並通知相關會員。
+ */
+
 import com.javaeasybank.common.service.EmailService;
 import com.javaeasybank.customer.service.CustomerService;
 import com.javaeasybank.loan.entity.LoanAccount;

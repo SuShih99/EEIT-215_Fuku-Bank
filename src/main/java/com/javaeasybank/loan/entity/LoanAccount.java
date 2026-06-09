@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.entity;
 
+/**
+ * 程式說明：
+ * - 貸款帳戶主檔 Entity，對應資料表 LOAN_ACCOUNT。
+ * - 保存已核准並撥款後的貸款帳戶條件、餘額、狀態與關聯申請資料。
+ */
+
 import com.javaeasybank.loan.enums.LoanAccountStatus;
 import jakarta.persistence.*;
 import lombok.Getter;

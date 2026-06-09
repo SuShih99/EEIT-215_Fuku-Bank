@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.service;
 
+/**
+ * 程式說明：
+ * - 貸款還款業務服務。
+ * - 負責產生還款期程、查詢還款明細、處理付款狀態與計算還款資訊。
+ */
+
 import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.common.service.EmailService;
 import com.javaeasybank.account.entity.Account;
