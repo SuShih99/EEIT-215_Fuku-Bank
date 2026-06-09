@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.dto.response;
 
+/**
+ * 程式說明：
+ * - 貸款還款紀錄查詢回應資料物件。
+ * - 提供每期應繳本金、利息、總額、到期日與繳款狀態給前端或後台顯示。
+ */
+
 import com.javaeasybank.loan.enums.LoanRepaymentStatus;
 import lombok.Getter;
 import lombok.Setter;
@@ -8,6 +14,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 // 單期還款紀錄查詢回應 DTO
+/**
+ * 還款期數回應 DTO。
+ * 對外呈現單一期數的應繳日、實繳日、本金、利息、剩餘本金與狀態。
+ */
 @Getter
 @Setter
 public class LoanRepaymentResponseDTO {

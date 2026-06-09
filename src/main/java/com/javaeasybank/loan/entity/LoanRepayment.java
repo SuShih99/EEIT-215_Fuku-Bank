@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.entity;
 
+/**
+ * 程式說明：
+ * - 貸款還款明細 Entity，對應資料表 LOAN_REPAYMENT。
+ * - 記錄每期還款的本金、利息、應繳總額、到期日、付款日與繳款狀態。
+ */
+
 import com.javaeasybank.loan.enums.LoanRepaymentStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -10,7 +16,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-// 還款期數 Entity，對應資料庫 LOAN_REPAYMENT
+/**
+ * 貸款還款期數 Entity，對應資料庫 LOAN_REPAYMENT。
+ * 每筆資料代表一個貸款帳戶的一期應繳款，包含本金、利息、到期日與繳款狀態。
+ */
 @Entity
 @Table(name = "LOAN_REPAYMENT")
 @Getter

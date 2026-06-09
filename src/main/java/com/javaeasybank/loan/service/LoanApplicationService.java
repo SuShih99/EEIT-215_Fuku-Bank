@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.service;
 
+/**
+ * 程式說明：
+ * - 貸款申請核心業務服務。
+ * - 處理申請建立、聯絡紀錄、審核、文件補件、核准撥款、通知與狀態流轉。
+ */
+
 import com.javaeasybank.account.dto.request.LoanAccountCreateRequest;
 import com.javaeasybank.account.dto.request.LoanDisbursementRequest;
 import com.javaeasybank.account.dto.response.LoanAccountResponse;
@@ -46,12 +52,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/*
- * 負責處理所有貸款申請相關的核心業務，包含：
- *   - 申請建立與查詢
- *   - 行員聯繫紀錄（同步更新主表最新聯繫狀態）
- *   - 二次填單草稿儲存與送審（同步更新主表狀態）
- *   - 利率規則回傳 (前端根據規則自行計算)
+/**
+ * 貸款申請流程核心服務。
+ * 統一處理會員申請、行員聯繫、二次填單、風控送審、審核回調、核准撥款與狀態查詢。
  */
 @Slf4j
 @Service
@@ -766,6 +769,8 @@ public class LoanApplicationService {
         customerProfileRepository.findById(loan.getCustomerId()).ifPresent(p -> {
             dto.setCif(p.getCif());
             dto.setMemberName(p.getName());
+            dto.setPhone(p.getPhone());
+            dto.setEmail(p.getEmail());
             dto.setCustomerPhone(p.getPhone());
             dto.setCustomerEmail(p.getEmail());
         });

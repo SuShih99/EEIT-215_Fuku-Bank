@@ -9,6 +9,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
+/**
+ * PDF 中文字型載入工具。
+ * 將 classpath 內的 NotoSansTC-Regular.ttf 複製成暫存檔，供 OpenHTMLtoPDF 註冊字型使用。
+ */
 public final class PdfCjkFontLoader {
 
     public static final String FONT_FAMILY = "JavaBankCjk";

@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.service;
 
+/**
+ * 程式說明：
+ * - 貸款合約 PDF 產生服務。
+ * - 依貸款申請與核准條件產生合約文件，供會員下載或文件審核流程保存。
+ */
+
 import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.common.util.PdfCjkFontLoader;
 import com.javaeasybank.customer.entity.CustomerProfile;
@@ -22,6 +28,10 @@ import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * 貸款契約 PDF 產生服務。
+ * 依貸款申請、客戶資料與行員二次填單內容組出契約 HTML，並轉成可寄送的 PDF 附件。
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor

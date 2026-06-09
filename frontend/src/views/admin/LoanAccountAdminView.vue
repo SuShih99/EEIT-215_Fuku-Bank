@@ -86,6 +86,37 @@
         >×</button>
       </div>
 
+      <!-- 案件編號搜尋 -->
+      <div class="id-search-wrap">
+        <span class="id-search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input
+          class="id-search-input"
+          type="text"
+          placeholder="案件編號…"
+          v-model="applicationIdQuery"
+          @input="currentPage = 1"
+        />
+        <button v-if="applicationIdQuery" class="id-search-clear" @click="applicationIdQuery = ''; currentPage = 1">
+          <i class="fa-solid fa-x"></i>
+        </button>
+      </div>
+
+      <!-- 貸款帳戶編號搜尋 -->
+      <div class="id-search-wrap">
+        <span class="id-search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input
+          class="id-search-input"
+          type="text"
+          placeholder="貸款帳戶編號…"
+          v-model="accountNumberQuery"
+          @input="currentPage = 1"
+        />
+        <button v-if="accountNumberQuery" class="id-search-clear" @click="accountNumberQuery = ''; currentPage = 1">
+          <i class="fa-solid fa-x"></i>
+        </button>
+      </div>
+
+      <!-- 結果摘要 -->
       <div class="filter-meta" v-if="!loading">
         <span class="status-dot" :class="STATUS_OPTIONS.find(s => s.value === currentStatus)?.dot"></span>
         共 <strong>{{ filteredAccounts.length }}</strong> 筆
@@ -119,18 +150,42 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th @click="setSort('applicationId')" class="sortable">業務編號 <span v-if="sortKey === 'applicationId'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span></th>
-                <th @click="setSort('accountNumber')" class="sortable">貸款帳戶 <span v-if="sortKey === 'accountNumber'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span></th>
-                <th @click="setSort('memberName')" class="sortable">客戶 <span v-if="sortKey === 'memberName'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span></th>
-                <th @click="setSort('applyType')" class="sortable">類型 <span v-if="sortKey === 'applyType'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span></th>
-                <th @click="setSort('principalAmount')" class="sortable text-right">本金 <span v-if="sortKey === 'principalAmount'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span></th>
-                <th @click="setSort('monthlyPayment')" class="sortable text-right">月繳 <span v-if="sortKey === 'monthlyPayment'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span></th>
-                <th @click="setSort('rate')" class="sortable text-right">年利率 <span v-if="sortKey === 'rate'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span></th>
-                <th @click="setSort('paidPeriods')" class="sortable text-center">期數進度 <span v-if="sortKey === 'paidPeriods'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span></th>
-                <th @click="setSort('remainingPrincipal')" class="sortable text-right">剩餘本金 <span v-if="sortKey === 'remainingPrincipal'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span></th>
-                <th @click="setSort('nextPaymentDate')" class="sortable">下次繳款日 <span v-if="sortKey === 'nextPaymentDate'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span></th>
-                <th @click="setSort('accountStatus')" class="sortable">狀態 <span v-if="sortKey === 'accountStatus'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span></th>
-                <th @click="setSort('startDate')" class="sortable">撥款日 <span v-if="sortKey === 'startDate'">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span></th>
+                <th class="sortable" @click="setSort('applicationId')">
+                  案件編號<span class="sort-icon">{{ sortIcon('applicationId') }}</span>
+                </th>
+                <th class="sortable" @click="setSort('accountNumber')">
+                  貸款帳務帳號<span class="sort-icon">{{ sortIcon('accountNumber') }}</span>
+                </th>
+                <th class="sortable" @click="setSort('memberName')">
+                  客戶<span class="sort-icon">{{ sortIcon('memberName') }}</span>
+                </th>
+                <th class="sortable" @click="setSort('applyType')">
+                  類型<span class="sort-icon">{{ sortIcon('applyType') }}</span>
+                </th>
+                <th class="sortable text-right" @click="setSort('principalAmount')">
+                  本金<span class="sort-icon">{{ sortIcon('principalAmount') }}</span>
+                </th>
+                <th class="sortable text-right" @click="setSort('monthlyPayment')">
+                  月繳<span class="sort-icon">{{ sortIcon('monthlyPayment') }}</span>
+                </th>
+                <th class="sortable text-right" @click="setSort('rate')">
+                  年利率<span class="sort-icon">{{ sortIcon('rate') }}</span>
+                </th>
+                <th class="sortable text-center" @click="setSort('paidPeriods')">
+                  期數進度<span class="sort-icon">{{ sortIcon('paidPeriods') }}</span>
+                </th>
+                <th class="sortable text-right" @click="setSort('remainingPrincipal')">
+                  剩餘本金<span class="sort-icon">{{ sortIcon('remainingPrincipal') }}</span>
+                </th>
+                <th class="sortable" @click="setSort('nextPaymentDate')">
+                  下次繳款日<span class="sort-icon">{{ sortIcon('nextPaymentDate') }}</span>
+                </th>
+                <th class="sortable" @click="setSort('accountStatus')">
+                  狀態<span class="sort-icon">{{ sortIcon('accountStatus') }}</span>
+                </th>
+                <th class="sortable" @click="setSort('startDate')">
+                  撥款日<span class="sort-icon">{{ sortIcon('startDate') }}</span>
+                </th>
                 <th class="text-center">還款時間表</th>
               </tr>
             </thead>
@@ -142,7 +197,7 @@
                 :class="{ 'row-overdue': acc.accountStatus === 'OVERDUE' }"
               >
                 <td>
-                  <span class="mono text-sm">{{ acc.applicationId }}</span>
+                  <span class="mono text-sm">{{ acc.applicationId || '—' }}</span>
                 </td>
                 <td>
                   <span class="mono text-sm">{{ acc.accountNumber || '—' }}</span>
@@ -251,7 +306,7 @@
             <div class="modal-title-group">
               <span class="modal-title">還款時間表</span>
               <span v-if="modalAccount" class="modal-subtitle">
-                帳戶 {{ modalAccount.accountNumber || modalAccount.accountId }}
+                案件 {{ modalAccount.applicationId || '—' }} ｜ 貸款帳務帳號 {{ modalAccount.accountNumber || '—' }}
                 <span class="type-badge" :class="'tb-' + modalAccount.applyType" style="margin-left:8px;">
                   {{ LOAN_TYPE_NAME[modalAccount.applyType] || modalAccount.applyType }}
                 </span>
@@ -384,13 +439,22 @@ const repaymentLoading = ref(false)
 const currentPage     = ref(1)
 const pageSize        = 15
 
-// 排序狀態
-const sortKey         = ref('startDate')
-const sortOrder       = ref('desc') // 'asc' 或 'desc'
+// ── 排序 ──
+const sortKey = ref('startDate')
+const sortOrder = ref('desc')
+const applicationIdQuery  = ref('')
+const accountNumberQuery  = ref('')
+
+function sortIcon(key) {
+  if (sortKey.value !== key) return '⇅'
+  return sortOrder.value === 'asc' ? '↑' : '↓'
+}
 
 // Modal 狀態
 const showModal    = ref(false)
 const modalAccount = ref(null)
+
+// ── 篩選 + 排序 ──
 const filteredAccounts = computed(() => {
   let list = accounts.value
   if (currentStatus.value) {
@@ -402,6 +466,14 @@ const filteredAccounts = computed(() => {
   const keyword = nameKeyword.value.trim().toLowerCase()
   if (keyword) {
     list = list.filter(a => String(a.memberName || '').toLowerCase().includes(keyword))
+  }
+  if (applicationIdQuery.value.trim()) {
+    const q = applicationIdQuery.value.trim().toLowerCase()
+    list = list.filter(a => (a.applicationId || '').toLowerCase().includes(q))
+  }
+  if (accountNumberQuery.value.trim()) {
+    const q = accountNumberQuery.value.trim().toLowerCase()
+    list = list.filter(a => (a.accountNumber || '').toLowerCase().includes(q))
   }
   return list
 })
@@ -467,6 +539,7 @@ function setSort(key) {
     sortKey.value = key
     sortOrder.value = 'asc'
   }
+  currentPage.value = 1
 }
 
 async function fetchAccounts() {
@@ -789,6 +862,54 @@ onMounted(fetchAccounts)
 .idot-HOUSE    { background: #7B6B8E; }
 .idot-LAND     { background: #8E7B6B; }
 
+/* ── ID 搜尋欄位 ── */
+.id-search-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.id-search-icon {
+  position: absolute;
+  left: 9px;
+  font-size: 12px;
+  color: var(--muted);
+  pointer-events: none;
+  opacity: 0.6;
+}
+.id-search-input {
+  width: 160px;
+  padding: 6px 28px 6px 28px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-family: 'IBM Plex Mono', monospace;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.id-search-input::placeholder { color: var(--muted); opacity: 1; }
+.id-search-input:focus { border-color: var(--accent); }
+.id-search-clear {
+  position: absolute;
+  right: 7px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 10px;
+  line-height: 1;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.12s;
+}
+.id-search-clear:hover { color: var(--ink); }
+
+.filter-meta { font-size: 14px; color: var(--muted-2); margin-left: auto; }
+.filter-meta strong { color: var(--ink); }
+
 /* ── Table Card ── */
 .table-card {
   background: var(--surface);
@@ -838,6 +959,17 @@ onMounted(fetchAccounts)
 }
 .data-table th.text-right  { text-align: right; }
 .data-table th.text-center { text-align: center; }
+.data-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+.data-table th.sortable:hover { color: var(--accent); }
+.sort-icon {
+  font-size: 11px;
+  opacity: 0.5;
+  margin-left: 4px;
+}
+.data-table th.sortable:hover .sort-icon { opacity: 1; }
 
 .sortable { cursor: pointer; user-select: none; }
 .sortable:hover { color: var(--accent); }

@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.repository;
 
+/**
+ * 程式說明：
+ * - 貸款文件資料存取介面。
+ * - 管理文件清單、補件批次、文件類型與申請編號相關查詢。
+ */
+
 import com.javaeasybank.loan.entity.LoanDocument;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -9,6 +15,10 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 // 補件文件資料存取介面
+/**
+ * 補件文件資料存取介面。
+ * 依申請編號與補件批次查詢文件，支援客戶補件與行員審閱文件清單。
+ */
 @Repository
 public interface LoanDocumentRepository extends JpaRepository<LoanDocument, String> {
 

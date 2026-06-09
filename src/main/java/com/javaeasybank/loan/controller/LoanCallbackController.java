@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.controller;
 
+/**
+ * 程式說明：
+ * - 貸款狀態回呼 API。
+ * - 接收外部或其他模組送回的貸款狀態更新，讓申請流程與後續帳務保持同步。
+ */
+
 import com.javaeasybank.common.dto.response.ApiResponse;
 import com.javaeasybank.loan.dto.requests.LoanStatusCallbackRequestDTO;
 import com.javaeasybank.loan.service.LoanApplicationService;
@@ -8,7 +14,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-// 外部模組回調 Controller
+/**
+ * 外部模組回調 API。
+ * 接收風控與帳務模組回傳的貸款狀態，並交由服務層推進案件流程。
+ */
 @RestController
 @RequestMapping("/api/loan-callbacks")
 @RequiredArgsConstructor

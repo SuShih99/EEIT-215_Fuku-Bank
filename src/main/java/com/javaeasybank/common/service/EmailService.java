@@ -160,7 +160,6 @@ public class EmailService {
             log.error("Failed to send email with attachment to {}: {}", to, e.getMessage());
         }
     }
-    
     /** 寄送貸款契約書通知。 */
     public void sendLoanContractEmail(
             String to,

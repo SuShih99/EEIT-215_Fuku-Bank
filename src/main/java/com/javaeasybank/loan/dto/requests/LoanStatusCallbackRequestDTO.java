@@ -1,12 +1,20 @@
 package com.javaeasybank.loan.dto.requests;
 
+/**
+ * 程式說明：
+ * - 貸款狀態回呼的請求資料物件。
+ * - 封裝外部流程通知本系統時需要的申請編號、狀態與補充訊息。
+ */
+
 import com.javaeasybank.loan.enums.LoanApplicationStatus;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
-// 風控模組：PENDING_REVIEW → APPROVED / REJECTED
-// 帳戶模組：APPROVED → DISBURSED
+/**
+ * 外部模組狀態回調 DTO。
+ * 風控可將 PENDING_REVIEW 推進為 APPROVED/REJECTED，帳務可將 APPROVED 推進為 DISBURSED。
+ */
 @Getter
 @Setter
 public class LoanStatusCallbackRequestDTO {

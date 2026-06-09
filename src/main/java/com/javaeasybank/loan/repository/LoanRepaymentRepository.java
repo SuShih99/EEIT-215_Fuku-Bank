@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.repository;
 
+/**
+ * 程式說明：
+ * - 貸款還款資料存取介面。
+ * - 支援依貸款帳戶、到期日與繳款狀態查詢還款明細，供排程與前端使用。
+ */
+
 import com.javaeasybank.loan.entity.LoanRepayment;
 import com.javaeasybank.loan.enums.LoanRepaymentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,6 +15,10 @@ import java.util.List;
 import java.util.Optional;
 
 // 還款期數資料存取介面
+/**
+ * 還款期數資料存取介面。
+ * 提供依帳戶、期數狀態、到期日查詢，用於還款頁、排程逾期掃描與到期提醒。
+ */
 public interface LoanRepaymentRepository extends JpaRepository<LoanRepayment, String> {
 
     // 查詢指定帳戶的所有還款期數，依期數升序排列（第一期在前）

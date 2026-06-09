@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.dto.response;
 
+/**
+ * 程式說明：
+ * - 貸款文件查詢回應資料物件。
+ * - 回傳文件種類、檔名、上傳時間、審核狀態與補件批次等文件管理資訊。
+ */
+
 import com.javaeasybank.loan.enums.LoanDocumentType;
 import lombok.Getter;
 import lombok.Setter;
@@ -7,6 +13,10 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 // 補件文件查詢回應 DTO
+/**
+ * 補件文件回應 DTO。
+ * 提供前台/後台顯示文件類型、檔名、檔案 URL、批次與送出時間。
+ */
 @Getter
 @Setter
 public class LoanDocumentResponseDTO {

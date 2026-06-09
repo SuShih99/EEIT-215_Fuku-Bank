@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.controller;
 
+/**
+ * 程式說明：
+ * - 會員端貸款申請 API。
+ * - 負責接收會員送出的貸款申請、查詢本人申請紀錄，以及提供前端利率規則。
+ */
+
 import com.javaeasybank.common.dto.response.ApiResponse;
 import com.javaeasybank.common.util.JwtUtil;
 import com.javaeasybank.common.exception.BusinessException;
@@ -15,7 +21,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-// 客戶端貸款申請入口 Controller
+/**
+ * 客戶端貸款申請 API。
+ * 負責接收會員送出的貸款申請、查詢本人申請紀錄，以及提供前端利率規則。
+ */
 @RestController
 @RequestMapping("/api/loan-applications")
 @RequiredArgsConstructor

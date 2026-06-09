@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.entity;
 
+/**
+ * 程式說明：
+ * - 貸款帳戶主檔 Entity，對應資料表 LOAN_ACCOUNT。
+ * - 保存已核准並撥款後的貸款帳戶條件、餘額、狀態與關聯申請資料。
+ */
+
 import com.javaeasybank.loan.enums.LoanAccountStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -10,7 +16,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-// 貸款帳戶 Entity，對應資料庫 loan_account
+/**
+ * 貸款帳戶 Entity，對應資料庫 loan_account。
+ * 代表撥款後正式成立的貸款帳戶，保存本金、期數、利率、還款進度與帳戶狀態。
+ */
 @Entity
 @Table(name = "loan_account")
 @Getter
@@ -18,53 +27,53 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class LoanAccount {
 
-    // 帳戶唯一識別碼（UUID），作為主鍵
     @Id
+    @Column(name = "account_id", nullable = false)
     private String accountId;
 
-    // 貸款帳號（對外識別號，由帳戶模組產生並於撥款回調時帶入）
+    @Column(name = "account_number", length = 14)
     private String accountNumber;
 
-    // 關聯的貸款申請識別碼，可追溯原始申請
+    @Column(name = "application_id", nullable = false)
     private String applicationId;
 
-    // 客戶內部識別碼（系統內部使用，不對外顯示）
+    @Column(name = "customer_id", nullable = false)
     private String customerId;
 
-    // 貸款種類，例如 "PERSONAL"（信貸）、"HOUSE"（房貸）
+    @Column(name = "apply_type", length = 50)
     private String applyType;
 
-    // 核准撥款本金（新台幣，單位
+    @Column(name = "principal_amount")
     private Long principalAmount;
 
-    // 核准還款期數（月）
+    @Column(name = "confirmed_period")
     private Integer confirmedPeriod;
 
-    // 核准年利率（百分比小數，例如 0.05 代表 5%）
+    @Column(name = "rate")
     private BigDecimal rate;
 
-    // 每期（月）應繳總金額，由 AmortizationCalculator 計算
+    @Column(name = "monthly_payment")
     private BigDecimal monthlyPayment;
 
-    // 目前已繳清的期數，初始為 0，每次繳款後 +1
+    @Column(name = "paid_periods", nullable = false)
     private Integer paidPeriods;
 
-    // 目前尚未還清的本金餘額（新台幣）
+    @Column(name = "remaining_principal")
     private BigDecimal remainingPrincipal;
 
-    // 撥款日，同時作為還款起算日（第一期應繳日從此日起算一個月）
+    @Column(name = "start_date")
     private LocalDate startDate;
 
-    // 下一期的應繳截止日，繳款後更新為下一期的 scheduledDate
+    @Column(name = "next_payment_date")
     private LocalDate nextPaymentDate;
 
-    // 帳戶還款狀態，以字串形式存入 DB，參見 LoanAccountStatus
     @Enumerated(EnumType.STRING)
+    @Column(name = "account_status", nullable = false)
     private LoanAccountStatus accountStatus;
 
-    // 帳戶建立時間（即撥款時間）
+    @Column(name = "create_time", nullable = false)
     private LocalDateTime createTime;
 
-    // 最後更新時間，每次繳款或狀態異動時更新
+    @Column(name = "update_time")
     private LocalDateTime updateTime;
 }

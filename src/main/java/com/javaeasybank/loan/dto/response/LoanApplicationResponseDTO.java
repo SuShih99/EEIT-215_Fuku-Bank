@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.dto.response;
 
+/**
+ * 程式說明：
+ * - 貸款申請查詢回應資料物件。
+ * - 整合申請內容、目前狀態、聯絡結果、文件狀態與審核備註供前端呈現。
+ */
+
 import com.javaeasybank.loan.enums.LoanApplicationStatus;
 import com.javaeasybank.loan.enums.LoanContactStatus;
 import lombok.Getter;
@@ -9,6 +15,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 // 貸款申請查詢回應 DTO
+/**
+ * 貸款申請回應 DTO。
+ * 給前台/後台列表使用，彙整申請條件、客戶聯絡資訊、案件狀態與補件摘要。
+ */
 @Getter
 @Setter
 public class LoanApplicationResponseDTO {
@@ -24,6 +34,12 @@ public class LoanApplicationResponseDTO {
 
     // 會員姓名，由會員模組查詢後填入，供前端列表直接顯示
     private String memberName;
+
+    // 會員電話，供行員聯繫紀錄視窗顯示
+    private String phone;
+
+    // 會員 Email，供行員聯繫紀錄視窗顯示
+    private String email;
 
     // 會員電話，供管理端聯繫紀錄顯示
     private String customerPhone;

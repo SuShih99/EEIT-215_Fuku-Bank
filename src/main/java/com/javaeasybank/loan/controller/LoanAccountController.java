@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.controller;
 
+/**
+ * 程式說明：
+ * - 會員端貸款帳戶 API。
+ * - 提供登入會員查詢自己的貸款帳戶、還款明細與帳務狀態。
+ */
+
 import com.javaeasybank.common.dto.response.ApiResponse;
 import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.common.util.JwtUtil;
@@ -15,7 +21,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-// 客戶端貸款帳戶查詢 Controller
+/**
+ * 客戶端貸款帳戶 API。
+ * 提供會員查詢自己的貸款帳戶、還款明細與送出還款交易。
+ */
 @RestController
 @RequestMapping("/api/loan-accounts")
 @RequiredArgsConstructor

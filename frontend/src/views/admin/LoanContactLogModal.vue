@@ -8,7 +8,7 @@
           <div class="modal-header">
             <div class="header-left">
               <span class="modal-icon"><i class="fa-solid fa-square-phone"></i></span>
-              <div>
+              <div class="header-info">
                 <div class="modal-title">聯繫紀錄</div>
                 <div class="modal-sub">
                   <span class="id-chip">{{ app?.applicationId }}</span>
@@ -17,13 +17,13 @@
                   </span>
                 </div>
                 <div class="contact-target">
-                  <span v-if="app?.customerPhone || app?.applicantPhone">
+                  <span>
                     <i class="fa-solid fa-phone"></i>
-                    {{ app?.customerPhone || app?.applicantPhone }}
+                    {{ app?.customerPhone || app?.phone || app?.applicantPhone || '未提供電話' }}
                   </span>
-                  <span v-if="app?.customerEmail || app?.applicantEmail">
+                  <span>
                     <i class="fa-solid fa-envelope"></i>
-                    {{ app?.customerEmail || app?.applicantEmail }}
+                    {{ app?.customerEmail || app?.email || app?.applicantEmail || '未提供 Email' }}
                   </span>
                 </div>
               </div>
@@ -370,7 +370,8 @@ function formatDateTime(d) {
   background: var(--surface);
   flex-shrink: 0;
 }
-.header-left { display: flex; align-items: center; gap: 12px; }
+.header-left { display: flex; align-items: flex-start; gap: 12px; }
+.header-info { min-width: 0; }
 .modal-icon  { font-size: 22px; }
 .modal-title {
   font-family: 'Noto Serif TC', serif;

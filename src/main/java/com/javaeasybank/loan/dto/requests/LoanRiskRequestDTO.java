@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.dto.requests;
 
+/**
+ * 程式說明：
+ * - 送往風控評分服務的請求資料物件。
+ * - 彙整客戶財務資料與貸款條件，供風控模型計算風險等級或建議結果。
+ */
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,6 +14,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 // 送往風控模組的審核請求 DTO
+/**
+ * 貸款送風控請求 DTO。
+ * 匯整申請資料、行員確認條件、補件文件與回調 URL，供風控模組審核使用。
+ */
 @Getter
 @Setter
 public class LoanRiskRequestDTO {

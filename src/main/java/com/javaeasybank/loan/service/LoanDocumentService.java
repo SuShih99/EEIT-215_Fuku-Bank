@@ -1,5 +1,11 @@
 package com.javaeasybank.loan.service;
 
+/**
+ * 程式說明：
+ * - 貸款文件業務服務。
+ * - 負責文件上傳、補件批次、文件審核狀態、合約文件與查詢回應組裝。
+ */
+
 import com.javaeasybank.common.exception.BusinessException;
 import com.javaeasybank.common.service.FileStorageService;
 import com.javaeasybank.loan.client.LoanRiskClient;
@@ -24,6 +30,10 @@ import java.util.stream.Collectors;
 
 // 補件文件管理業務邏輯 Service
 @Slf4j
+/**
+ * 貸款補件文件服務。
+ * 管理文件上傳、刪除、送出補件批次，並在補件完成後通知風控重新審核。
+ */
 @Service
 @Transactional
 public class LoanDocumentService {

@@ -1,11 +1,20 @@
 package com.javaeasybank.loan.dto.requests;
 
+/**
+ * 程式說明：
+ * - 會員送出貸款申請時使用的請求資料物件。
+ * - 承載申請類型、金額、期數、利率與撥款帳戶等前端輸入資料。
+ */
+
 import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
 
-// 客戶提交貸款申請的請求 DTO
+/**
+ * 客戶送出貸款申請時的請求 DTO。
+ * 承載貸款種類、申請金額、期數、利率與撥款入帳帳號。
+ */
 @Getter
 @Setter
 public class LoanMemberRequestDTO {
